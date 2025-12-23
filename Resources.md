@@ -1,1 +1,1 @@
-What is Humanoid operating system (official presentation): [https://www.canva.com/design/DAG8TbgIF1M/BE5LF0BD2FqtSPsm_BYW8w/view?utm_content=DAG8TbgIF1M&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=hfd9aa4bdc5](url)
+What is Humanoid operating system (official presentation): [View on Canva]([url](https://www.canva.com/design/DAG8TbgIF1M/BE5LF0BD2FqtSPsm_BYW8w/view?utm_content=DAG8TbgIF1M&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=hfd9aa4bdc5))

@@ -3,8 +3,7 @@ import threading
 from bytez import Bytez
 
 # --- Configuration ---
-# Aarav, verify your Bytez quota. If 'None' persists, the model might be offline.
-BYTEZ_KEY = "3b16bf615f01386ad83ee97fc3b6f51f"
+BYTEZ_KEY = "YOUR BYTEZ API, if you don't have one, get it from: www.bytez.com"
 client = Bytez(BYTEZ_KEY)
 model = client.model("Qwen/Qwen2.5-7B-Instruct")
 

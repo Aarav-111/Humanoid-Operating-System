@@ -1,137 +1,162 @@
 import pygame
-import sys
-import os
-import math
+import threading
+from bytez import Bytez
 
+# --- Configuration ---
+# Aarav, verify your Bytez quota. If 'None' persists, the model might be offline.
+BYTEZ_KEY = "3b16bf615f01386ad83ee97fc3b6f51f"
+client = Bytez(BYTEZ_KEY)
+model = client.model("Qwen/Qwen2.5-7B-Instruct")
+
+# --- Pygame Setup ---
 pygame.init()
-
-info = pygame.display.Info()
-WIDTH, HEIGHT = info.current_w, info.current_h
+WIDTH, HEIGHT = 800, 400
 screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
-pygame.display.set_caption("Robot Navigation - No Escape")
+pygame.display.set_caption("Prolabs Robotics - AI Home Navigator")
+font = pygame.font.SysFont("Consolas", 18)
 
-clock = pygame.time.Clock()
-
-BG = (220, 240, 255)
-BLACK = (0, 0, 0)
-RED = (230, 60, 60)
+# Colors
+BLUE = (30, 144, 255)
+BLACK = (20, 20, 20)
+WOOD_BROWN = (101, 67, 33)
+RED = (255, 50, 50)
 WHITE = (255, 255, 255)
-GRAY = (150, 150, 150)
 
-font = pygame.font.SysFont("arial", 24, bold=True)
-small_font = pygame.font.SysFont("arial", 20)
+# --- Global State ---
+player_x = 400.0
+target_x = 400.0
+user_input = ""
+status_msg = "Awaiting command..."
 
-ROOM_COORDS = {
-    "l": (WIDTH // 5, HEIGHT // 4),
-    "k": (4 * WIDTH // 5, HEIGHT // 4),
-    "be": (WIDTH // 5, 3 * HEIGHT // 4),
-    "ba": (4 * WIDTH // 5, 3 * HEIGHT // 4)
+# Local synonym dictionary for robust fallback
+SYNONYMS = {
+    "kitchen": ["food", "cook", "hungry", "eat", "chef"],
+    "living_room": ["tv", "sofa", "relax", "living", "couch"],
+    "bathroom": ["shower", "wash", "toilet", "bath"],
+    "bedroom": ["sleep", "bed", "tired", "nap"]
 }
-CENTER = (WIDTH // 2, HEIGHT // 2)
 
-robot_radius = 25
-robot_x, robot_y = ROOM_COORDS["be"]
 
-SPEED = 7
-input_text = ""
-target_queue = []
+def get_coordinates(location_name):
+    mapping = {
+        "kitchen": 100,
+        "bathroom": 400,
+        "bedroom": 400,
+        "living_room": 700
+    }
+    return mapping.get(location_name, 400)
 
-walls = [
-    pygame.Rect(50, 50, WIDTH - 100, 15),
-    pygame.Rect(50, HEIGHT - 100, WIDTH - 100, 15),
-    pygame.Rect(50, 50, 15, HEIGHT - 150),
-    pygame.Rect(WIDTH - 65, 50, 15, HEIGHT - 150),
-    pygame.Rect(100, HEIGHT // 2 - 7, WIDTH // 3, 15), 
-    pygame.Rect(2 * WIDTH // 3 - 50, HEIGHT // 2 - 7, WIDTH // 3, 15), 
-]
 
-def draw_dotted_line(surf, color, start_pos, end_pos, width=2, dash_length=15):
-    x1, y1 = start_pos
-    x2, y2 = end_pos
-    dist = math.hypot(x2 - x1, y2 - y1)
-    dashes = int(dist // dash_length)
-    for i in range(dashes):
-        start = (x1 + (x2 - x1) * i / dashes, y1 + (y2 - y1) * i / dashes)
-        end = (x1 + (x2 - x1) * (i + 0.5) / dashes, y1 + (y2 - y1) * (i + 0.5) / dashes)
-        if i % 2 == 0:
-            pygame.draw.line(surf, color, start, end, width)
+def call_bytez_ai(query):
+    global target_x, status_msg
+    query_clean = query.lower().strip()
+    print(f"\n[PROLABS DEBUG] User Query: {query_clean}")
 
-def draw_walls():
-    for wall in walls:
-        pygame.draw.rect(screen, BLACK, wall)
+    prompt = f"Map the query to one room: kitchen, bathroom, bedroom, living_room. Query: {query_clean}. Answer with ONLY the room name."
 
-def draw_labels():
-    labels = [
-        ("Living Room (l)", (ROOM_COORDS["l"][0] - 80, ROOM_COORDS["l"][1] - 60)),
-        ("Kitchen (k)", (ROOM_COORDS["k"][0] - 60, ROOM_COORDS["k"][1] - 60)),
-        ("Bed Room (be)", (ROOM_COORDS["be"][0] - 80, ROOM_COORDS["be"][1] + 40)),
-        ("Bathroom (ba)", (ROOM_COORDS["ba"][0] - 60, ROOM_COORDS["ba"][1] + 40))
-    ]
-    for text, pos in labels:
-        screen.blit(font.render(text, True, BLACK), pos)
+    decision = None
+    try:
+        print("[PROLABS DEBUG] Calling Bytez API...")
+        result = model.run(prompt)
+        if result and (output_text := getattr(result, 'output', None)):
+            decision = output_text.strip().lower()
+            print(f"[PROLABS DEBUG] AI Decision: {decision}")
+    except Exception as e:
+        print(f"[ERROR] API Call failed: {e}")
 
-def draw_robot(x, y):
-    pygame.draw.circle(screen, RED, (int(x), int(y)), robot_radius)
+    # --- Robust Extraction & Fallback ---
+    found = False
+    rooms = ["kitchen", "living_room", "bathroom", "bedroom"]
 
-def set_destination(cmd):
-    global target_queue
-    if cmd not in ROOM_COORDS: return
-    
-    dest_pos = ROOM_COORDS[cmd]
-    curr_room = None
-    for room, pos in ROOM_COORDS.items():
-        if math.hypot(robot_x - pos[0], robot_y - pos[1]) < 5:
-            curr_room = room
-    
-    if curr_room == cmd: return
+    # 1. Check AI decision first
+    if decision:
+        for r in rooms:
+            if r.replace("_", " ") in decision or r in decision:
+                target_x = get_coordinates(r)
+                status_msg = f"AI: Moving to {r.replace('_', ' ').title()}"
+                found = True
+                break
 
-    is_diagonal = (curr_room == 'be' and cmd == 'k') or (curr_room == 'k' and cmd == 'be') or \
-                  (curr_room == 'l' and cmd == 'ba') or (curr_room == 'ba' and cmd == 'l')
-    
-    if is_diagonal:
-        target_queue = [dest_pos]
+    # 2. If AI failed, use local Keyword + Synonym Fallback
+    if not found:
+        print("[PROLABS DEBUG] AI failed/None. Checking synonyms...")
+        for room_key, words in SYNONYMS.items():
+            if any(word in query_clean for word in words) or room_key.replace("_", " ") in query_clean:
+                target_x = get_coordinates(room_key)
+                status_msg = f"Fallback: Moving to {room_key.replace('_', ' ').title()}"
+                found = True
+                break
+
+    if found:
+        print(f"[SUCCESS] Target set to x={target_x}")
     else:
-        target_queue = [CENTER, dest_pos]
+        status_msg = "AI: Destination unknown."
+        print("[FAILED] No match found in AI or Fallback.")
 
-def move_robot():
-    global robot_x, robot_y, target_queue
-    if target_queue:
-        tx, ty = target_queue[0]
-        dx, dy = tx - robot_x, ty - robot_y
-        dist = math.hypot(dx, dy)
-        if dist < SPEED:
-            robot_x, robot_y = tx, ty
-            target_queue.pop(0)
-        else:
-            robot_x += (dx / dist) * SPEED
-            robot_y += (dy / dist) * SPEED
 
-def render():
-    screen.fill(BG)
-    draw_dotted_line(screen, GRAY, ROOM_COORDS["k"], ROOM_COORDS["be"], 2)
-    draw_dotted_line(screen, GRAY, ROOM_COORDS["l"], ROOM_COORDS["ba"], 2)
-    draw_walls()
-    draw_labels()
-    draw_robot(robot_x, robot_y)
-    
-    pygame.draw.rect(screen, WHITE, (50, HEIGHT - 70, 300, 40))
-    pygame.draw.rect(screen, BLACK, (50, HEIGHT - 70, 300, 40), 2)
-    screen.blit(small_font.render(input_text, True, BLACK), (60, HEIGHT - 62))
-    pygame.display.flip()
-
+# --- Main Game Loop ---
 running = True
+clock = pygame.time.Clock()
+print("[SYSTEM] Cuda.py active. Using Python 3.13.2")
+
 while running:
+    screen.fill(BLUE)
+
+    # 1. Draw Wooden Line
+    pygame.draw.rect(screen, WOOD_BROWN, (45, 193, 710, 14))
+    pygame.draw.rect(screen, BLACK, (50, 197, 700, 6))
+
+    # 2. Draw Stops
+    stops = [(100, "Kitchen"), (400, "Bed/Bath"), (700, "Living Room")]
+    for sx, name in stops:
+        pygame.draw.circle(screen, BLACK, (sx, 200), 10)
+        is_here = abs(player_x - sx) < 15
+        color = (255, 255, 0) if is_here else WHITE
+        lbl = font.render(name, True, color)
+        screen.blit(lbl, (sx - lbl.get_width() // 2, 225))
+
+    # 3. Input Handling
     for event in pygame.event.get():
-        if event.type == pygame.QUIT: running = False
+        if event.type == pygame.QUIT:
+            running = False
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RETURN:
-                set_destination(input_text.lower().strip())
-                input_text = ""
-            elif event.key == pygame.K_BACKSPACE: input_text = input_text[:-1]
-            else: input_text += event.unicode
-    move_robot()
-    render()
+                if user_input.strip():
+                    status_msg = "AI: Thinking..."
+                    threading.Thread(target=call_bytez_ai, args=(user_input,), daemon=True).start()
+                    user_input = ""
+            elif event.key == pygame.K_ESCAPE:
+                running = False
+            elif event.key == pygame.K_BACKSPACE:
+                user_input = user_input[:-1]
+            else:
+                user_input += event.unicode
+
+    # 4. Manual Arrow Controls
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_LEFT] and player_x > 55:
+        player_x -= 5
+        target_x = player_x
+    if keys[pygame.K_RIGHT] and player_x < 745:
+        player_x += 5
+        target_x = player_x
+
+    # 5. Smooth Movement
+    if abs(player_x - target_x) > 1:
+        player_x += (target_x - player_x) * 0.1
+
+    # 6. Draw Player
+    pygame.draw.circle(screen, WHITE, (int(player_x), 200), 12)
+    pygame.draw.circle(screen, RED, (int(player_x), 200), 9)
+
+    # 7. UI
+    pygame.draw.rect(screen, WHITE, (50, 330, 700, 40), border_radius=8)
+    txt_surf = font.render(user_input + "|", True, BLACK)
+    screen.blit(txt_surf, (65, 340))
+    status_surf = font.render(status_msg, True, WHITE)
+    screen.blit(status_surf, (50, 40))
+
+    pygame.display.flip()
     clock.tick(60)
 
 pygame.quit()
-sys.exit()

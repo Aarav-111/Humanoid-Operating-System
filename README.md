@@ -97,6 +97,7 @@ Collaborators:
 - Vivan Rajpuria
 - Samvedh Narayanam
 - Maker’s Asylum
+- Siyona chicker
 
 Contact:  
 prolabsrobotics@gmail.com

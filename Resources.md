@@ -2,4 +2,4 @@
 
 **High level planner LLM:** [View on chatgpt](https://chatgpt.com/g/g-694a7fd2a8248191ba3ccc878d8edfc1-high-level-planner)
 
-**HOS Robotic arm ER (position planner for worker arm):** [View on chatgpt]([https://chatgpt.com/g/g-694a7fd2a8248191ba3ccc878d8edfc1-high-level-planner](https://chatgpt.com/g/g-69511e521be481918d855a8ce7c8ee78-hos-robotics-arm-er))
+**HOS Robotic arm ER (position planner for worker arm):** [View on chatgpt](https://chatgpt.com/g/g-69511e521be481918d855a8ce7c8ee78-hos-robotics-arm-er)

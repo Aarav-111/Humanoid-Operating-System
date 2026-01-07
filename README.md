@@ -82,9 +82,90 @@ The system is tested on a standard residential layout, enabling room-level navig
 
 - [x] HOS Concept Design
 - [x] Navigation Logic and System Prompting
-- [ ] Vehicle wheels physical prototyping (in progress)
-- [ ] Gemini Robotics arm integration
+- [x] Vehicle wheels physical prototyping
+- [ ] Gemini Robotics arm integration (in progress)
 - [ ] Full humanoid deployment
+
+---
+
+## **Upcoming Versions**
+
+## **Version 1.0**
+****Basic humanoid prototype****
+
+Uses a Cartesian robot with an electromagnet and belt-based navigation.  
+Focused on simple object movement and transport tasks.
+
+****Example Tasks****
+- Grab water from the refrigerator
+- Bring soda from the kitchen
+
+---
+
+## **Version 1.5**
+****Robotic arm with gripper upgrade****
+
+Replaces the electromagnet with a real robotic arm and gripper.  
+Enables improved grasping and interaction with household objects.
+
+****Example Tasks****
+- Clean the living room
+- Bring soda from the refrigerator
+- Sort clothes and put white clothes into the washing machine
+
+---
+
+## **Version 2.0**
+****Full robotic arm system****
+
+Replaces the Cartesian setup with a robotic arm capable of multi-angle reach and finer manipulation.
+
+****Example Tasks****
+- Cut vegetables and put them into a pan for sautéing
+- Grab water from the refrigerator
+- Sort clothes and load the washing machine
+
+---
+
+## **Version 3.0**
+****Advanced mobility and intelligence****
+
+Includes two major upgrades:
+- Longer and more advanced track system
+- Improved high-level planners, ER systems, and contextual planning
+
+****Example Tasks****
+- Cook a complete meal including vegetables, dal-rice, and cucumber salad
+- Perform all tasks from previous versions
+
+---
+
+## **Version 4.0**
+****Wheeled humanoid navigation****
+
+Removes the track system and adds wheels.  
+Uses LiDAR and cameras to navigate a controlled mini-room environment.
+
+****Outcome****
+- Brings the system significantly closer to a true humanoid robot
+
+---
+
+## **Version 5.0**
+****Full-room humanoid autonomy****
+
+A wheeled humanoid capable of navigating a full-sized bedroom with major system-wide upgrades.
+
+****Key Improvements****
+- 2x stronger ER systems
+- Advanced error correction mechanisms
+- More capable LLMs and vision systems
+- Major high-level planner upgrade
+
+****Example Tasks****
+- Mop the room
+- Clean the toilet
+- Perform all tasks from previous versions
 
 ---
 

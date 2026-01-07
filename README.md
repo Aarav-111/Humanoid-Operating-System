@@ -90,6 +90,16 @@ The system is tested on a standard residential layout, enabling room-level navig
 
 ## **Upcoming Versions**
 
+## **Version 0.5**
+****Basic humanoid prototype****
+
+Uses a Cartesian robot 1D with an electromagnet and belt-based navigation.  
+Focused on simple object movement and transport tasks.
+
+****Example Tasks****
+- Bring soda from the kitchen
+
+
 ## **Version 1.0**
 ****Basic humanoid prototype****
 

@@ -91,9 +91,9 @@ The system is tested on a standard residential layout, enabling room-level navig
 ## **Upcoming Versions**
 
 ## **Version 0.5**
-****super Basic 1D humanoid prototype****
+****super Basic 2D humanoid prototype****
 
-Uses a Cartesian robot 1D with an electromagnet and belt-based navigation.  
+Uses a Cartesian robot 2D (z & x) with a gripper and belt-based navigation.  
 Focused on simple object movement and transport tasks.
 
 ****Example Tasks****
@@ -104,27 +104,15 @@ Focused on simple object movement and transport tasks.
 ## **Version 1.0**
 ****Basic humanoid prototype****
 
-Uses a Cartesian robot with an electromagnet and belt-based navigation.  
+Uses a Cartesian 3D robot with a gripper and belt-based navigation.  
 Focused on simple object movement and transport tasks.
 
 ****Example Tasks****
 - Grab water from the refrigerator
-- Bring soda from the kitchen
-
----
-
-## **Version 1.5**
-****Robotic arm with gripper upgrade****
-
-Replaces the electromagnet with a real robotic arm and gripper.  
-Enables improved grasping and interaction with household objects.
-
-****Example Tasks****
-- Clean the living room
-- Bring soda from the refrigerator
+- cut some vegitables (coin shaped)
 - Sort clothes and put white clothes into the washing machine
-
 ---
+
 
 ## **Version 2.0**
 ****Full robotic arm system****
@@ -177,6 +165,22 @@ A wheeled humanoid capable of navigating a full-sized bedroom with major system-
 - Mop the room
 - Clean the toilet
 - Perform all tasks from previous versions
+
+---
+
+## **Version 6.0**
+****Full humanoid autonomy****
+
+A wheeled humanoid capable of navigating a whole house with major system-wide upgrades.
+
+****Key Improvements****
+- 1.5x stronger ER systems
+- Advanced error correction mechanisms
+- Better high-level planner for each scinario
+
+****Example Tasks****
+- Mop the whole house
+- Call my dad here from his room
 
 ---
 

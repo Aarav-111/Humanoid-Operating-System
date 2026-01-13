@@ -40,6 +40,33 @@ Current focus: finalizing the navigation layer before integrating the robotic ar
 
 ---
 
+## Navigator Robot Objective
+
+**Objective:**
+
+The robotic arm is mounted on a linear rail or track. It must follow instructions given by a Path Planner LLM.
+The Path Planner LLM decides where the robot should go and how it should move. The robotic arm must correctly understand and execute these instructions.
+
+For example:
+	• If the Path Planner LLM tells the robot to go to the kitchen, the robot must move to the kitchen.
+	• If it tells the robot to go to the living room, the robot must move to the living room.
+	• The same behaviour applies to any other location.
+
+In short, the robotic arm should reliably move to any specified location by following the Path Planner LLM’s guidance.
+
+**Input:** initially, I'll type it in the textbox of the Arduino IDE's Serial Monitor to go to a certain location, and the LLM to guide it to the same.
+
+How will we do it?
+
+- Create a track
+- Create a carriage to slide on the track
+- Add a stepper/encoder motor with a belt & attach to carriage
+- Make Custom GPT to guide the robot to the location
+- When instruction is given, the LLM will guide it to the location using camera
+
+
+---
+
 ## Smart Navigation Logic
 
 The navigation system uses a top-down visual feedback loop.

@@ -118,7 +118,7 @@ The system is tested on a standard residential layout, enabling room-level navig
 ## **Upcoming Versions**
 
 ## **Version 0.5**
-****super Basic 2D humanoid prototype****
+****Super Basic 2D humanoid prototype**** *(Completed)*
 
 Uses a Cartesian robot 2D (z & x) with a gripper and belt-based navigation.  
 Focused on simple object movement and transport tasks.
@@ -129,7 +129,7 @@ Focused on simple object movement and transport tasks.
 
 
 ## **Version 1.0**
-****Basic humanoid prototype****
+****Basic humanoid prototype**** *(Skipped)*
 
 Uses a Cartesian 3D robot with a gripper and belt-based navigation.  
 Focused on simple object movement and transport tasks.
@@ -142,7 +142,7 @@ Focused on simple object movement and transport tasks.
 
 
 ## **Version 2.0**
-****Full robotic arm system****
+****Full robotic arm system**** *In progress*
 
 Replaces the Cartesian setup with a robotic arm capable of multi-angle reach and finer manipulation.
 

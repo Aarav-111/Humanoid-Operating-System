@@ -128,16 +128,6 @@ Focused on simple object movement and transport tasks.
 - Pack my bag for a vacation to the beach
 
 
-## **Version 1.0**
-****Basic humanoid prototype**** *(Skipped)*
-
-Uses a Cartesian 3D robot with a gripper and belt-based navigation.  
-Focused on simple object movement and transport tasks.
-
-****Example Tasks****
-- Grab water from the refrigerator
-- cut some vegitables (coin shaped)
-- Sort clothes and put white clothes into the washing machine
 ---
 
 

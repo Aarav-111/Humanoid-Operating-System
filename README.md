@@ -1,6 +1,6 @@
 # Humanoid Operating System (HOS)
 
-World’s first LLM-powered humanoid robot and a modular operating system for humanoids
+World’s first LLM-powered humanoid robot and a modular operating system for All humanoids
 
 ---
 
@@ -10,7 +10,7 @@ The Humanoid Operating System (HOS) is a foundational software and hardware fram
 
 Instead of training isolated models for each task, HOS enables multi-modal decision-making through an LLM-driven control layer.
 
-This repository focuses on the Navigation System, the mobile base that enables humanoid locomotion and spatial movement.
+This repository focuses on the Whole HOS System, the mobile base that enables humanoid locomotion and spatial movement & The Robotic arm which gives it hands to do stuff.
 
 ---
 
@@ -33,7 +33,7 @@ A complete HOS humanoid consists of two primary hardware integrations:
 
 | Component | Role | Description |
 |----------|------|-------------|
-| Robotic Arm | Worker | Manipulation and task execution, developed by Gemini Robotics |
+| Robotic Arm | Worker | Manipulation and task execution|
 | Navigation System | Mover | Mobile base providing locomotion and orientation |
 
 Current focus: finalizing the navigation layer before integrating the robotic arm to form a complete autonomous humanoid.
@@ -71,10 +71,7 @@ How will we do it?
 
 The navigation system uses a top-down visual feedback loop.
 
-The LLM functions as an experienced driver by interpreting a bird’s-eye camera feed:
-
-- Red Circle: robot’s current position
-- Black Arrow: forward-facing orientation
+The LLM functions as an experienced driver by interpreting a bird’s-eye camera feed.
 
 Based on this visual context, the system issues precise movement commands.
 
@@ -108,8 +105,8 @@ The system is tested on a standard residential layout, enabling room-level navig
 ## Development Roadmap
 
 - [x] HOS Concept Design
-- [x] Navigation Logic and System Prompting
 - [x] Vehicle wheels physical prototyping
+- [x] Navigation Logic and System Prompting
 - [ ] Gemini Robotics arm integration (in progress)
 - [ ] Full humanoid deployment
 

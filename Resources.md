@@ -4,4 +4,4 @@
 
 **HOS Robotic arm ER (Position planner for worker arm):** [View on chatgpt](https://chatgpt.com/g/g-69511e521be481918d855a8ce7c8ee78-hos-robotics-arm-er)
 
-**View HOS Robotic arm ER 2.0** [View on chatgpt](https://chatgpt.com/g/g-6964a1ea9c988191a679d03c5c9ef154-robotic-arm-er-2-0)
+**HOS Robotic arm ER 2.0 (updated Position planner for worker arm - Circular)** [View on chatgpt](https://chatgpt.com/g/g-6964a1ea9c988191a679d03c5c9ef154-robotic-arm-er-2-0)

@@ -128,10 +128,10 @@ Focused on simple object movement and transport tasks.
 ---
 
 
-## **Version 2.0**
+## **Version 1.5**
 ****Full robotic arm system**** *In progress*
 
-Replaces the Cartesian setup with a robotic arm capable of multi-angle reach and finer manipulation.
+A powerful Cartesian setup capable of doing any task on the table.
 
 ****Example Tasks****
 - Cut vegetables and put them into a pan for sautéing

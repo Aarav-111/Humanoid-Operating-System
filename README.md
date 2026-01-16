@@ -129,9 +129,9 @@ Focused on simple object movement and transport tasks.
 
 
 ## **Version 1.5**
-****Full robotic arm system**** *In progress*
+****Full robotic arm system**** *(In progress)*
 
-A powerful Cartesian setup capable of doing any task on the table.
+A powerful 3D Cartesian setup capable of doing any task on the table.
 
 ****Example Tasks****
 - Cut vegetables and put them into a pan for sautéing

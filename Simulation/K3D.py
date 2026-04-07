@@ -1,5 +1,6 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
+import webbrowser
 
 HTML = r"""<!DOCTYPE html>
 <html lang="en">
@@ -120,8 +121,6 @@ HTML = r"""<!DOCTYPE html>
         }
         .obj-lib-entry:hover .obj-lib-meta { display: block; }
         .obj-lib-wrap { position: relative; }
-
-        /* AI execution log styles */
         .cmd-log-entry {
             font-family: 'JetBrains Mono', monospace;
             font-size: 10px;
@@ -133,6 +132,37 @@ HTML = r"""<!DOCTYPE html>
         .cmd-active { color: #fbbf24; background: rgba(251,191,36,0.1); }
         .cmd-done { color: #4ade80; }
         .cmd-error { color: #f87171; }
+        #stl-drop-zone {
+            border: 2px dashed #3f3f46;
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        #stl-drop-zone:hover, #stl-drop-zone.drag-over {
+            border-color: #3b82f6;
+            background: rgba(59,130,246,0.06);
+        }
+        #stl-progress {
+            display: none;
+            margin-top: 8px;
+        }
+        #stl-progress-bar-wrap {
+            width: 100%;
+            background: #27272a;
+            border-radius: 999px;
+            height: 4px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        #stl-progress-bar {
+            height: 4px;
+            background: #3b82f6;
+            border-radius: 999px;
+            width: 0%;
+            transition: width 0.2s;
+        }
     </style>
 </head>
 <body class="bg-zinc-950 text-zinc-200 overflow-hidden">
@@ -206,17 +236,13 @@ HTML = r"""<!DOCTYPE html>
         </div>
     </div>
 
-    <!-- Right Side: Single unified panel top-to-bottom -->
     <div class="ui-overlay top-20 right-6 bottom-6 w-80 flex flex-col gap-0">
-        <!-- Object Positions -->
         <div class="bg-zinc-900/95 backdrop-blur border border-zinc-700/60 rounded-2xl p-4 mb-3 shrink-0" style="max-height: 28vh; overflow-y: auto;">
             <h2 class="text-xs font-bold mb-3 text-zinc-300 tracking-widest uppercase">Object Positions</h2>
             <div id="objects-list" class="space-y-2">
                 <div class="text-xs text-zinc-500 italic">No objects on board</div>
             </div>
         </div>
-
-        <!-- AI Task Planner — fills remaining space -->
         <div class="bg-zinc-900/95 backdrop-blur border border-zinc-700/60 rounded-2xl flex flex-col flex-1 min-h-0">
             <div class="flex items-center gap-2 px-4 pt-3 pb-3 border-b border-zinc-700/60 shrink-0">
                 <div class="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">AI</div>
@@ -226,13 +252,10 @@ HTML = r"""<!DOCTYPE html>
                 </div>
                 <div id="ai-status-dot" class="ml-auto w-2 h-2 bg-zinc-600 rounded-full"></div>
             </div>
-
-            <!-- Execution log -->
             <div id="exec-log" class="shrink-0 px-3 pt-2 pb-1 border-b border-zinc-800/50 overflow-y-auto" style="max-height: 120px; display:none;">
                 <div class="text-xs mono text-zinc-500 mb-1 uppercase tracking-widest">Execution Plan</div>
                 <div id="exec-log-entries"></div>
             </div>
-
             <div id="chat-messages" class="flex-1 overflow-y-auto px-3 py-3 space-y-2 min-h-0">
                 <div class="flex gap-2">
                     <div class="w-5 h-5 bg-blue-600 rounded-md flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5">AI</div>
@@ -330,15 +353,26 @@ HTML = r"""<!DOCTYPE html>
             </div>
         </div>
         <hr class="lib-divider">
-        <div class="lib-section-title">Custom Image Object</div>
-        <label class="flex items-center gap-3 bg-zinc-800 hover:bg-zinc-700 transition-colors rounded-xl px-4 py-3 cursor-pointer border border-zinc-700 border-dashed">
-            <span class="text-2xl">🖼️</span>
-            <div>
-                <div class="text-xs font-bold text-zinc-300">Upload Image</div>
-                <div class="text-xs text-zinc-500 mono">PNG / JPG / WEBP</div>
-            </div>
-            <input type="file" id="img-upload" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
-        </label>
+        <div class="lib-section-title">Custom STL Model</div>
+
+        <!-- STL Drop Zone -->
+        <div id="stl-drop-zone"
+             onclick="document.getElementById('stl-upload').click()"
+             ondragover="event.preventDefault(); this.classList.add('drag-over')"
+             ondragleave="this.classList.remove('drag-over')"
+             ondrop="handleSTLDrop(event)">
+            <div class="text-2xl mb-1">📐</div>
+            <div class="text-xs font-bold text-zinc-300">Upload STL Model</div>
+            <div class="text-xs text-zinc-500 mono mt-0.5">Binary or ASCII · .stl</div>
+            <div class="text-xs text-zinc-600 mono mt-1">Click or drag & drop</div>
+            <input type="file" id="stl-upload" accept=".stl" class="hidden" onchange="handleSTLUpload(event)">
+        </div>
+
+        <!-- Progress indicator -->
+        <div id="stl-progress">
+            <div class="text-xs mono text-zinc-400" id="stl-progress-label">Parsing STL...</div>
+            <div id="stl-progress-bar-wrap"><div id="stl-progress-bar"></div></div>
+        </div>
     </div>
 
     <div id="context-menu">
@@ -360,7 +394,6 @@ HTML = r"""<!DOCTYPE html>
     </div>
 
     <script>
-        // ─── Three.js globals ────────────────────────────────────────────────────
         let scene, camera, renderer;
         let xRail, yCarriage, zRailGroup, zCarriage, gripperMount;
         let gripperLeftJaw, gripperRightJaw;
@@ -380,15 +413,11 @@ HTML = r"""<!DOCTYPE html>
         const objectSprites = new Map();
         const RAIL_TOP_Y = 8.5, RAIL_LENGTH = 8.0;
         let ctxTarget = null;
-
-        // ─── Task execution globals ──────────────────────────────────────────────
         let commandQueue = [];
         let executionActive = false;
-        let executionInterval = null;
         let totalCommands = 0;
         let completedCommands = 0;
 
-        // ─── Helpers ─────────────────────────────────────────────────────────────
         function setStatus(html) { document.getElementById('status').innerHTML = html; }
         function setGripperState(s) { document.getElementById('gripper-state').textContent = 'Gripper: ' + s; }
 
@@ -404,7 +433,6 @@ HTML = r"""<!DOCTYPE html>
             return null;
         }
 
-        // ─── Label creation ───────────────────────────────────────────────────────
         function createFlatLabel(text) {
             const canvas = document.createElement('canvas');
             canvas.width = 256; canvas.height = 128;
@@ -435,7 +463,6 @@ HTML = r"""<!DOCTYPE html>
             return sprite;
         }
 
-        // ─── Gripper ──────────────────────────────────────────────────────────────
         function buildGripper(parent) {
             const gripperGroup = new THREE.Group();
             const darkMat = new THREE.MeshPhongMaterial({ color: 0x1a1f2e });
@@ -502,7 +529,6 @@ HTML = r"""<!DOCTYPE html>
             requestAnimationFrame(tick);
         }
 
-        // ─── Z Axis ───────────────────────────────────────────────────────────────
         function buildZAxis(parent) {
             zRailGroup = new THREE.Group();
             const railMat = new THREE.MeshPhongMaterial({ color: 0x374151 });
@@ -545,7 +571,6 @@ HTML = r"""<!DOCTYPE html>
             return zRailGroup;
         }
 
-        // ─── Three.js init ────────────────────────────────────────────────────────
         function initThree() {
             const container = document.getElementById('canvas-container');
             scene = new THREE.Scene(); scene.background = new THREE.Color(0x000000);
@@ -633,7 +658,6 @@ HTML = r"""<!DOCTYPE html>
             });
         }
 
-        // ─── Camera ────────────────────────────────────────────────────────────────
         function onMouseDown(e) {
             if (e.button !== 0) return;
             const mouse = new THREE.Vector2(
@@ -729,7 +753,7 @@ HTML = r"""<!DOCTYPE html>
                 if (raycaster.ray.intersectPlane(plane, point)) {
                     selectedObject.position.x = Math.max(0.5, Math.min(GRID_WIDTH - 0.5, Math.floor(point.x) + 0.5));
                     selectedObject.position.z = Math.max(0.5, Math.min(GRID_HEIGHT - 0.5, Math.floor(point.z) + 0.5));
-                    selectedObject.position.y = selectedObject.userData.flatImage ? 0 : 0.5;
+                    selectedObject.position.y = 0.5;
                     const sprite = objectSprites.get(selectedObject);
                     if (sprite) { sprite.position.x = selectedObject.position.x; sprite.position.z = selectedObject.position.z; }
                 }
@@ -748,7 +772,6 @@ HTML = r"""<!DOCTYPE html>
             camera.position.set(x, y, z); camera.lookAt(orbitTarget);
         }
 
-        // ─── Gantry movement ──────────────────────────────────────────────────────
         function updateGantryPosition(x, y, z) {
             xRail.position.x = x; yCarriage.position.z = y; zCarriage.position.y = -z;
             currentX = x; currentY = y; currentZ = z;
@@ -893,12 +916,10 @@ HTML = r"""<!DOCTYPE html>
             });
         };
 
-        // ─── Object spawning ──────────────────────────────────────────────────────
         function spawnObject(obj, type) {
             const rx = Math.floor(Math.random() * GRID_WIDTH) + 0.5;
             const ry = Math.floor(Math.random() * GRID_HEIGHT) + 0.5;
-            const baseY = obj.userData.flatImage ? 0 : 0.5;
-            obj.position.set(rx, baseY, ry);
+            obj.position.set(rx, 0.5, ry);
             scene.add(obj);
             objects.push(obj);
             objectTypes.set(obj, type);
@@ -922,38 +943,168 @@ HTML = r"""<!DOCTYPE html>
             else if (type === 'glass') obj = createGlass();
             if (obj) { spawnObject(obj, type); setStatus(`✅ Added ${type}`); }
         };
-        window.handleImageUpload = function(event) {
+
+        // ─── STL Parser ───────────────────────────────────────────────────────────
+        // Handles both binary and ASCII STL formats.
+        function parseSTL(buffer) {
+            // Check for ASCII STL: first 256 bytes decoded as text, look for "solid"
+            const headerView = new Uint8Array(buffer, 0, Math.min(256, buffer.byteLength));
+            const headerText = String.fromCharCode(...headerView).trimStart();
+            const isASCII = headerText.startsWith('solid') && headerText.includes('facet');
+
+            if (isASCII) {
+                return parseASCIISTL(new TextDecoder().decode(buffer));
+            } else {
+                return parseBinarySTL(buffer);
+            }
+        }
+
+        function parseBinarySTL(buffer) {
+            // Binary STL: 80 byte header, 4 byte triangle count, then 50 bytes per triangle
+            const view = new DataView(buffer);
+            const triCount = view.getUint32(80, true);
+            const positions = new Float32Array(triCount * 9);
+            const normals = new Float32Array(triCount * 9);
+            let offset = 84;
+            for (let i = 0; i < triCount; i++) {
+                const nx = view.getFloat32(offset, true);
+                const ny = view.getFloat32(offset + 4, true);
+                const nz = view.getFloat32(offset + 8, true);
+                offset += 12;
+                for (let v = 0; v < 3; v++) {
+                    const base = i * 9 + v * 3;
+                    positions[base]     = view.getFloat32(offset, true);
+                    positions[base + 1] = view.getFloat32(offset + 4, true);
+                    positions[base + 2] = view.getFloat32(offset + 8, true);
+                    normals[base]     = nx;
+                    normals[base + 1] = ny;
+                    normals[base + 2] = nz;
+                    offset += 12;
+                }
+                offset += 2; // attribute byte count
+            }
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geo.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+            return geo;
+        }
+
+        function parseASCIISTL(text) {
+            const posArr = [];
+            const normArr = [];
+            const facetRe = /facet\s+normal\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)[\s\S]*?vertex\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)\s+vertex\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)\s+vertex\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)/g;
+            let m;
+            while ((m = facetRe.exec(text)) !== null) {
+                const nx = parseFloat(m[1]), ny = parseFloat(m[2]), nz = parseFloat(m[3]);
+                for (let v = 0; v < 3; v++) {
+                    posArr.push(parseFloat(m[4 + v*3]), parseFloat(m[5 + v*3]), parseFloat(m[6 + v*3]));
+                    normArr.push(nx, ny, nz);
+                }
+            }
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(posArr), 3));
+            geo.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(normArr), 3));
+            return geo;
+        }
+
+        function normalizeSTLGeometry(geo) {
+            // Center the geometry and scale it to fit within a 1.5-unit bounding box
+            geo.computeBoundingBox();
+            const box = geo.boundingBox;
+            const center = new THREE.Vector3();
+            box.getCenter(center);
+            const size = new THREE.Vector3();
+            box.getSize(size);
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const scale = 1.5 / maxDim;
+            geo.translate(-center.x, -center.y, -center.z);
+            geo.scale(scale, scale, scale);
+            // After centering, translate so bottom sits at y=0
+            geo.computeBoundingBox();
+            geo.translate(0, -geo.boundingBox.min.y, 0);
+            return geo;
+        }
+
+        function showSTLProgress(show, label) {
+            const prog = document.getElementById('stl-progress');
+            prog.style.display = show ? 'block' : 'none';
+            if (label) document.getElementById('stl-progress-label').textContent = label;
+        }
+        function setSTLProgressBar(pct) {
+            document.getElementById('stl-progress-bar').style.width = pct + '%';
+        }
+
+        function loadSTLFromBuffer(buffer, typeName) {
+            showSTLProgress(true, 'Parsing STL...');
+            setSTLProgressBar(30);
+
+            // Use setTimeout to let the UI update before heavy parse
+            setTimeout(() => {
+                try {
+                    let geo = parseSTL(buffer);
+                    setSTLProgressBar(65);
+                    normalizeSTLGeometry(geo);
+                    setSTLProgressBar(85);
+
+                    const mat = new THREE.MeshPhongMaterial({
+                        color: 0x64b5f6,
+                        specular: 0x2266aa,
+                        shininess: 60,
+                        side: THREE.DoubleSide
+                    });
+                    const mesh = new THREE.Mesh(geo, mat);
+                    const group = new THREE.Group();
+                    group.add(mesh);
+
+                    // Small base platform so it sits clearly on the grid
+                    const baseMat = new THREE.MeshPhongMaterial({ color: 0x1e3a5f });
+                    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.08, 24), baseMat);
+                    base.position.y = -0.04;
+                    group.add(base);
+
+                    setSTLProgressBar(100);
+                    spawnObject(group, typeName);
+                    setStatus(`✅ STL loaded: ${typeName}`);
+                    showSTLProgress(false, '');
+                    document.getElementById('stl-upload').value = '';
+                } catch (err) {
+                    showSTLProgress(false, '');
+                    setStatus('❌ STL parse error: ' + err.message);
+                    console.error(err);
+                }
+            }, 30);
+        }
+
+        window.handleSTLUpload = function(event) {
             const file = event.target.files[0];
             if (!file) return;
+            if (!file.name.toLowerCase().endsWith('.stl')) {
+                setStatus('⚠️ Please upload a .stl file');
+                return;
+            }
+            const typeName = file.name.replace(/\.stl$/i, '').substring(0, 18) || 'stl_model';
+            showSTLProgress(true, 'Reading file...');
+            setSTLProgressBar(10);
             const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = 256; canvas.height = 256;
-                    const ctx = canvas.getContext('2d');
-                    const aspect = img.width / img.height;
-                    let sw = 256, sh = 256;
-                    if (aspect > 1) sh = 256 / aspect; else sw = 256 * aspect;
-                    ctx.drawImage(img, (256 - sw) / 2, (256 - sh) / 2, sw, sh);
-                    const texture = new THREE.CanvasTexture(canvas);
-                    const mat = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
-                    const geo = new THREE.PlaneGeometry(1.8, 1.8);
-                    const mesh = new THREE.Mesh(geo, mat);
-                    mesh.rotation.x = -Math.PI / 2; mesh.position.y = 0.06;
-                    const border = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.06, 1.9), new THREE.MeshPhongMaterial({ color: 0x1e40af }));
-                    border.position.y = 0.0;
-                    const group = new THREE.Group();
-                    group.add(border); group.add(mesh);
-                    const typeName = file.name.replace(/\.[^/.]+$/, '').substring(0, 18);
-                    group.userData.flatImage = true;
-                    spawnObject(group, typeName);
-                    setStatus(`🖼️ Added image: ${typeName}`);
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-            event.target.value = '';
+            reader.onload = (e) => loadSTLFromBuffer(e.target.result, typeName);
+            reader.readAsArrayBuffer(file);
+        };
+
+        window.handleSTLDrop = function(event) {
+            event.preventDefault();
+            document.getElementById('stl-drop-zone').classList.remove('drag-over');
+            const file = event.dataTransfer.files[0];
+            if (!file) return;
+            if (!file.name.toLowerCase().endsWith('.stl')) {
+                setStatus('⚠️ Please drop a .stl file');
+                return;
+            }
+            const typeName = file.name.replace(/\.stl$/i, '').substring(0, 18) || 'stl_model';
+            showSTLProgress(true, 'Reading file...');
+            setSTLProgressBar(10);
+            const reader = new FileReader();
+            reader.onload = (e) => loadSTLFromBuffer(e.target.result, typeName);
+            reader.readAsArrayBuffer(file);
         };
 
         // ─── Object shape creators ────────────────────────────────────────────────
@@ -1066,7 +1217,6 @@ HTML = r"""<!DOCTYPE html>
             return g;
         }
 
-        // ─── Object positions display ──────────────────────────────────────────────
         function updateObjectPositionsDisplay() {
             const list = document.getElementById('objects-list');
             if (objects.length === 0) {
@@ -1091,6 +1241,7 @@ HTML = r"""<!DOCTYPE html>
                 else if (type.includes('powder')) colorClass = 'text-yellow-600';
                 else if (type.includes('plate')) colorClass = 'text-gray-300';
                 else if (type.includes('glass')) colorClass = 'text-cyan-300';
+                else if (type.includes('stl') || type.includes('_')) colorClass = 'text-blue-300';
                 else colorClass = 'text-purple-400';
                 html += `<div class="bg-zinc-800/50 border border-zinc-700/40 rounded-lg p-3 flex items-center justify-between hover:bg-zinc-800 transition-colors">
                     <div>
@@ -1106,7 +1257,6 @@ HTML = r"""<!DOCTYPE html>
             list.innerHTML = html;
         }
 
-        // ─── Render loop ───────────────────────────────────────────────────────────
         let updateCounter = 0;
         function animate() {
             requestAnimationFrame(animate);
@@ -1123,7 +1273,6 @@ HTML = r"""<!DOCTYPE html>
             }
         }
 
-        // ─── Screenshot ────────────────────────────────────────────────────────────
         window.takeTopDownScreenshot = function() {
             const PAD = 0.3;
             const PANEL_W = 340, FOOTER_H = 90, CELL_PX = 56;
@@ -1175,7 +1324,7 @@ HTML = r"""<!DOCTYPE html>
                 };
                 function objColor(type) {
                     for (const k of Object.keys(colorMap)) { if (type.includes(k)) return colorMap[k]; }
-                    return '#c084fc';
+                    return '#93c5fd';
                 }
                 let rowY = 68;
                 objects.forEach((obj, idx) => {
@@ -1241,7 +1390,6 @@ HTML = r"""<!DOCTYPE html>
             ctx.closePath();
         }
 
-        // ─── Board state for AI ───────────────────────────────────────────────────
         function getBoardContext() {
             const objs = objects.map((o, i) => {
                 const x = Math.floor(o.position.x), z = Math.floor(o.position.z);
@@ -1254,7 +1402,6 @@ HTML = r"""<!DOCTYPE html>
                 `Objects on board: ${objs.length ? objs.join(', ') : 'none'}.`;
         }
 
-        // ─── Chat UI helpers ──────────────────────────────────────────────────────
         function appendMessage(role, text) {
             const box = document.getElementById('chat-messages');
             const wrap = document.createElement('div');
@@ -1279,7 +1426,6 @@ HTML = r"""<!DOCTYPE html>
             box.scrollTop = box.scrollHeight;
         }
 
-        // ─── Execution plan log ───────────────────────────────────────────────────
         function showExecLog(commands) {
             const logDiv = document.getElementById('exec-log');
             const entries = document.getElementById('exec-log-entries');
@@ -1311,7 +1457,6 @@ HTML = r"""<!DOCTYPE html>
             document.getElementById('exec-log').style.display = 'none';
         }
 
-        // ─── Promise-based gantry actions for sequencing ──────────────────────────
         function moveTo(col, row) {
             return new Promise(resolve => {
                 const targetX = colLetterToX(col);
@@ -1381,21 +1526,16 @@ HTML = r"""<!DOCTYPE html>
         }
         function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-        // ─── Command execution engine ─────────────────────────────────────────────
         async function executeCommands(commands) {
-            const cmdIndex = { current: 0 };
             totalCommands = commands.length;
             completedCommands = 0;
             showExecLog(commands);
             updateProgress(0, totalCommands);
-
             for (let i = 0; i < commands.length; i++) {
                 const raw = commands[i].trim();
                 markCmdActive(i);
                 updateProgress(i, totalCommands);
-
                 if (raw.toLowerCase().includes('goto_coordinate')) {
-                    // parse: goto_coordinate = COL, ROW
                     const eqPart = raw.split('=').slice(1).join('=').trim();
                     const parts = eqPart.split(',');
                     if (parts.length >= 2) {
@@ -1416,16 +1556,13 @@ HTML = r"""<!DOCTYPE html>
                     updateProgress(totalCommands, totalCommands);
                     break;
                 }
-
                 markCmdDone(i);
                 await delay(100);
             }
-
             updateProgress(totalCommands, totalCommands);
             setTimeout(hideProgress, 2000);
         }
 
-        // ─── AI Task Planner ──────────────────────────────────────────────────────
         const chatHistory = [];
         const SYSTEM_PROMPT = `You are K3D — an autonomous task planner for the Prolabs V12.2 Precision Cartesian Gantry robot.
 
@@ -1466,29 +1603,20 @@ Example output for "move bottle from A1 to D5":
             document.getElementById('ai-status-dot').className = 'ml-auto w-2 h-2 bg-blue-400 rounded-full animate-pulse';
             appendMessage('user', text);
             appendThinking();
-
             const boardState = getBoardContext();
             const userContent = `Task: ${text}\n\nCurrent board state: ${boardState}`;
-
             chatHistory.push({ role: 'user', content: userContent });
-
             try {
                 const res = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        system: SYSTEM_PROMPT,
-                        messages: chatHistory
-                    })
+                    body: JSON.stringify({ system: SYSTEM_PROMPT, messages: chatHistory })
                 });
                 const data = await res.json();
                 const reply = data.reply || data.error || '';
                 chatHistory.push({ role: 'assistant', content: reply });
                 document.getElementById('thinking-bubble')?.remove();
-
-                // Parse commands from response
                 const commands = [...reply.matchAll(/\{([^}]+)\}/g)].map(m => m[1].trim());
-
                 if (commands.length === 0) {
                     appendMessage('assistant', reply || 'No executable commands found in response.');
                     executionActive = false;
@@ -1497,21 +1625,15 @@ Example output for "move bottle from A1 to D5":
                     document.getElementById('ai-status-dot').className = 'ml-auto w-2 h-2 bg-zinc-600 rounded-full';
                     return;
                 }
-
-                // Show plan summary
                 const planText = commands.map((c, i) => `${i + 1}. ${c}`).join('\n');
                 appendMessage('assistant', `📋 Executing ${commands.length} steps:\n<pre class="text-xs mt-1 text-emerald-400">${planText}</pre>`);
-
                 setStatus(`<span class="w-2 h-2 bg-blue-400 rounded-full inline-block animate-pulse"></span>&nbsp;Executing task...`);
-
                 await executeCommands(commands);
-
             } catch (e) {
                 document.getElementById('thinking-bubble')?.remove();
                 appendMessage('assistant', '❌ Error: ' + e.message);
                 setStatus('⚠️ Error');
             }
-
             executionActive = false;
             input.disabled = false;
             btn.disabled = false;
@@ -1519,7 +1641,6 @@ Example output for "move bottle from A1 to D5":
             document.getElementById('ai-status-dot').className = 'ml-auto w-2 h-2 bg-emerald-400 rounded-full';
         };
 
-        // ─── Boot ─────────────────────────────────────────────────────────────────
         window.onload = function() { initThree(); animate(); };
     </script>
 </body>
@@ -1540,20 +1661,15 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/api/chat":
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length))
-
             system_prompt = body.get("system", "")
             messages = body.get("messages", [])
-
-            # Build OpenAI messages array with system prepended
             oai_messages = [{"role": "system", "content": system_prompt}] + messages
-
             payload = json.dumps({
                 "model": "gpt-4o",
                 "messages": oai_messages,
                 "max_tokens": 1000,
                 "temperature": 0
             }).encode("utf-8")
-
             req = urllib.request.Request(
                 "https://api.openai.com/v1/chat/completions",
                 data=payload,
@@ -1563,7 +1679,6 @@ class Handler(BaseHTTPRequestHandler):
                 },
                 method="POST"
             )
-
             try:
                 with urllib.request.urlopen(req, timeout=30) as resp:
                     data = json.loads(resp.read())
@@ -1589,4 +1704,5 @@ class Handler(BaseHTTPRequestHandler):
 if __name__ == "__main__":
     server = HTTPServer(("0.0.0.0", 8080), Handler)
     print("K3D Simulator → http://localhost:8080")
+    webbrowser.open("http://localhost:8080")
     server.serve_forever()

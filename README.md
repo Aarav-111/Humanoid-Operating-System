@@ -6,11 +6,9 @@ World’s first LLM-powered humanoid robot and a modular operating system for Al
 
 ## Overview
 
-The Humanoid Operating System (HOS) is a foundational software and hardware framework designed to give humanoid robots a generalized, reasoning-driven “mind”.
+The CEO of NVIDIA said that "We need a breakthrough & come up with a fully general purpose robot, only then can we make a humanoid and revelutionise robotics". And this is what our team at the Humanoid Operating System is working on. The Humanoid Operating System (HOS) is a foundational software and hardware framework designed to give humanoid robots a generalized, reasoning-driven “mind”. 
 
-Instead of training isolated models for each task, HOS enables multi-modal decision-making through an LLM-driven control layer.
-
-This repository focuses on the Whole HOS System, the mobile base that enables humanoid locomotion and spatial movement & The Robotic arm which gives it hands to do stuff.
+Instead of training isolated models for each task like other VLA models (Including Gemini robotics, π0.5 etc.), HOS enables multi-modal decision-making through an LLM-driven control layer. This repository focuses on the Whole HOS System, the mobile base that enables humanoid locomotion and spatial movement & The Robotic arm which gives it hands to do stuff.
 
 ---
 
@@ -54,10 +52,9 @@ A powerful 3D Cartesian setup capable of doing any task on the table.
 ---
 
 ## **Version 3.0**
-****Advanced mobility and intelligence****
+****Advanced intelligence****
 
-Includes two major upgrades:
-- Longer and more advanced track system
+Includes a major upgrade:
 - Improved high-level planners, ER systems, and contextual planning
 
 ****Example Tasks****
@@ -69,8 +66,8 @@ Includes two major upgrades:
 ## **Version 4.0**
 ****Wheeled humanoid navigation****
 
-Removes the track system and adds wheels.  
-Uses LiDAR and cameras to navigate a controlled mini-room environment.
+- Adds wheels.  
+- Uses LiDAR and cameras to navigate a controlled mini-room environment.
 
 ****Outcome****
 - Brings the system significantly closer to a true humanoid robot
@@ -80,10 +77,9 @@ Uses LiDAR and cameras to navigate a controlled mini-room environment.
 ## **Version 5.0**
 ****Full-room humanoid autonomy****
 
-A wheeled humanoid capable of navigating a full-sized bedroom with major system-wide upgrades.
+A Legged humanoid capable of navigating a full-sized bedroom with major system-wide upgrades.
 
 ****Key Improvements****
-- 2x stronger ER systems
 - Advanced error correction mechanisms
 - More capable LLMs and vision systems
 - Major high-level planner upgrade
@@ -98,7 +94,7 @@ A wheeled humanoid capable of navigating a full-sized bedroom with major system-
 ## **Version 6.0**
 ****Full humanoid autonomy****
 
-A wheeled humanoid capable of navigating a whole house with major system-wide upgrades.
+A Legged humanoid capable of navigating a whole house with major system-wide upgrades.
 
 ****Key Improvements****
 - 1.5x stronger ER systems
@@ -119,8 +115,8 @@ Project Lead: Aarav J.
 Collaborators:
 - Vivan Rajpuria
 - Samvedh Narayanam
-- Maker’s Asylum PVT LTD
 - Siyona chicker
+- Sachin
 
 Contact:  
 prolabsrobotics@gmail.com

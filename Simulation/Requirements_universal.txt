@@ -1,1 +1,17 @@
+Requirements:
 
+Httpsserver
+Pyside6
+pyside6_qtwidgets
+urllib
+sys
+math
+re
+openai
+
+
+
+
+Command to install all:
+
+pip install PySide6 openai qtwidgets

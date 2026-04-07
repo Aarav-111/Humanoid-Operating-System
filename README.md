@@ -24,11 +24,28 @@ A complete HOS humanoid consists of two primary hardware integrations:
 | Mobile Arm | Mover | Mobile base providing locomotion and orientation |
 ---
 
+## HOS Working
+
+The Humanoid Operating system (HOS) version 2.0 uses a 2D coordinate system and an LLM. The screenshot/image of the 2D base is taken from the top and sent to the LLM for processing, the LLM then outputs json-like code for further Function calling.
+
+Example output:
+
+{goto_coordinate = T,8}
+{pickup}
+{goto_coordinate = K,8}
+{keep}
+{Task_Completed}
+
+
+
+For non "keep, pickup, up, down" tasks, we also have something called as *special functions* which inlcudes functions like {Pour}, {pick_up_from_spoon} etc. these special functions are used rearely as most tasks just involve "keep, pickup, up, down" motions apart from the x & y axis motions.
+
+---
+
 
 - [x] HOS Concept Design
 - [x] Navigation Logic and System Prompting
-- [ ] Gemini Robotics arm integration (in progress)
-- [ ] Full humanoid deployment
+- [ ] Arm integration (in progress)
 
 ---
 

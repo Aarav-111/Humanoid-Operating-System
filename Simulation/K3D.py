@@ -259,7 +259,7 @@ HTML = r"""<!DOCTYPE html>
             <div id="chat-messages" class="flex-1 overflow-y-auto px-3 py-3 space-y-2 min-h-0">
                 <div class="flex gap-2">
                     <div class="w-5 h-5 bg-blue-600 rounded-md flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5">AI</div>
-                    <div class="bg-zinc-800 rounded-xl rounded-tl-sm px-3 py-2 text-xs text-zinc-300 leading-relaxed">Hi! I'm the K3D Task Planner. Tell me what to do — I'll plan and execute the moves automatically. Try: <span class="text-blue-400">"Move bottle to C3"</span>, <span class="text-blue-400">"Pick up the box and place it at F5"</span>, or <span class="text-blue-400">"Sort all objects by type"</span>.</div>
+                    <div class="bg-zinc-800 rounded-xl rounded-tl-sm px-3 py-2 text-xs text-zinc-300 leading-relaxed">Hi! I'm the K3D Task Planner. Tell me what to do — I'll plan and execute the moves automatically. Try: <span class="text-blue-400">"Move bottle to C3"</span>, <span class="text-blue-400">"Pick up the box and place it at F5"</span>, or <span class="text-blue-400">"Apply soap to the plate at B2"</span>.</div>
                 </div>
             </div>
             <div class="px-3 pb-3 pt-2 border-t border-zinc-800 shrink-0">
@@ -355,7 +355,6 @@ HTML = r"""<!DOCTYPE html>
         <hr class="lib-divider">
         <div class="lib-section-title">Custom STL Model</div>
 
-        <!-- STL Drop Zone -->
         <div id="stl-drop-zone"
              onclick="document.getElementById('stl-upload').click()"
              ondragover="event.preventDefault(); this.classList.add('drag-over')"
@@ -368,7 +367,6 @@ HTML = r"""<!DOCTYPE html>
             <input type="file" id="stl-upload" accept=".stl" class="hidden" onchange="handleSTLUpload(event)">
         </div>
 
-        <!-- Progress indicator -->
         <div id="stl-progress">
             <div class="text-xs mono text-zinc-400" id="stl-progress-label">Parsing STL...</div>
             <div id="stl-progress-bar-wrap"><div id="stl-progress-bar"></div></div>
@@ -916,6 +914,46 @@ HTML = r"""<!DOCTYPE html>
             });
         };
 
+        // ─── Apply Soap ──────────────────────────────────────────────────────────
+        // Visits each coord in sequence: move XY → descend to scrub height →
+        // brief pause → rise back to travel height. Object stays in gripper throughout.
+        window.doApplySoap = async function(coordsStr) {
+    if (!heldObject) {
+        setStatus('⚠️ Not holding any object');
+        appendMessage('assistant', '⚠️ Not holding any object — cannot apply soap.');
+        return;
+    }
+    const SCRUB_Z = 5.6;
+    const TRAVEL_Z = 2.5;
+    const coords = coordsStr.split(',').map(s => s.trim()).filter(Boolean);
+    const parsed = coords.map(coord => {
+        const col = coord.match(/^([A-Ta-t])/)?.[1];
+        const row = coord.match(/(\d+)$/)?.[1];
+        if (!col || !row) return null;
+        const tx = colLetterToX(col);
+        const ty = rowNumberToY(row);
+        if (tx === null || ty === null) return null;
+        return { col, row, tx, ty };
+    }).filter(Boolean);
+    if (parsed.length === 0) return;
+    // Move to first coord at travel height
+    isAnimating = true;
+    await new Promise(r => animateXY(parsed[0].tx, parsed[0].ty, 400, r));
+    // Descend once to scrub height
+    await new Promise(r => animateZ(currentZ, SCRUB_Z, 350, r));
+    // Drag across all remaining coords while pressed down
+    for (let i = 0; i < parsed.length; i++) {
+        const { col, row, tx, ty } = parsed[i];
+        setStatus('🧼 Soaping ' + col.toUpperCase() + row + '...');
+        await new Promise(r => animateXY(tx, ty, 350, r));
+        await new Promise(r => setTimeout(r, 80));
+    }
+    // Lift once after all coords
+    await new Promise(r => animateZ(currentZ, TRAVEL_Z, 300, r));
+    isAnimating = false;
+    setStatus('✅ Soap applied to all coords');
+};
+
         function spawnObject(obj, type) {
             const rx = Math.floor(Math.random() * GRID_WIDTH) + 0.5;
             const ry = Math.floor(Math.random() * GRID_HEIGHT) + 0.5;
@@ -945,13 +983,10 @@ HTML = r"""<!DOCTYPE html>
         };
 
         // ─── STL Parser ───────────────────────────────────────────────────────────
-        // Handles both binary and ASCII STL formats.
         function parseSTL(buffer) {
-            // Check for ASCII STL: first 256 bytes decoded as text, look for "solid"
             const headerView = new Uint8Array(buffer, 0, Math.min(256, buffer.byteLength));
             const headerText = String.fromCharCode(...headerView).trimStart();
             const isASCII = headerText.startsWith('solid') && headerText.includes('facet');
-
             if (isASCII) {
                 return parseASCIISTL(new TextDecoder().decode(buffer));
             } else {
@@ -960,7 +995,6 @@ HTML = r"""<!DOCTYPE html>
         }
 
         function parseBinarySTL(buffer) {
-            // Binary STL: 80 byte header, 4 byte triangle count, then 50 bytes per triangle
             const view = new DataView(buffer);
             const triCount = view.getUint32(80, true);
             const positions = new Float32Array(triCount * 9);
@@ -981,7 +1015,7 @@ HTML = r"""<!DOCTYPE html>
                     normals[base + 2] = nz;
                     offset += 12;
                 }
-                offset += 2; // attribute byte count
+                offset += 2;
             }
             const geo = new THREE.BufferGeometry();
             geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -1008,7 +1042,6 @@ HTML = r"""<!DOCTYPE html>
         }
 
         function normalizeSTLGeometry(geo) {
-            // Center the geometry and scale it to fit within a 1.5-unit bounding box
             geo.computeBoundingBox();
             const box = geo.boundingBox;
             const center = new THREE.Vector3();
@@ -1019,7 +1052,6 @@ HTML = r"""<!DOCTYPE html>
             const scale = 1.5 / maxDim;
             geo.translate(-center.x, -center.y, -center.z);
             geo.scale(scale, scale, scale);
-            // After centering, translate so bottom sits at y=0
             geo.computeBoundingBox();
             geo.translate(0, -geo.boundingBox.min.y, 0);
             return geo;
@@ -1037,15 +1069,12 @@ HTML = r"""<!DOCTYPE html>
         function loadSTLFromBuffer(buffer, typeName) {
             showSTLProgress(true, 'Parsing STL...');
             setSTLProgressBar(30);
-
-            // Use setTimeout to let the UI update before heavy parse
             setTimeout(() => {
                 try {
                     let geo = parseSTL(buffer);
                     setSTLProgressBar(65);
                     normalizeSTLGeometry(geo);
                     setSTLProgressBar(85);
-
                     const mat = new THREE.MeshPhongMaterial({
                         color: 0x64b5f6,
                         specular: 0x2266aa,
@@ -1055,13 +1084,10 @@ HTML = r"""<!DOCTYPE html>
                     const mesh = new THREE.Mesh(geo, mat);
                     const group = new THREE.Group();
                     group.add(mesh);
-
-                    // Small base platform so it sits clearly on the grid
                     const baseMat = new THREE.MeshPhongMaterial({ color: 0x1e3a5f });
                     const base = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.08, 24), baseMat);
                     base.position.y = -0.04;
                     group.add(base);
-
                     setSTLProgressBar(100);
                     spawnObject(group, typeName);
                     setStatus(`✅ STL loaded: ${typeName}`);
@@ -1524,6 +1550,12 @@ HTML = r"""<!DOCTYPE html>
                 });
             });
         }
+        function applySoapAction(coordsStr) {
+            return new Promise(async resolve => {
+                await window.doApplySoap(coordsStr);
+                resolve();
+            });
+        }
         function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 
         async function executeCommands(commands) {
@@ -1549,6 +1581,9 @@ HTML = r"""<!DOCTYPE html>
                     await placeDown();
                 } else if (raw.toLowerCase() === 'pour') {
                     await pourAction();
+                } else if (raw.toLowerCase().startsWith('apply_soap')) {
+                    const m = raw.match(/apply_soap\s*\(([^)]+)\)/i);
+                    if (m) await applySoapAction(m[1]);
                 } else if (raw.toLowerCase() === 'task_completed') {
                     setStatus('<span class="w-2 h-2 bg-emerald-400 rounded-full inline-block animate-pulse"></span>&nbsp;Task Complete!');
                     appendMessage('assistant', '✅ Task completed successfully!');
@@ -1575,6 +1610,7 @@ Valid commands:
 {pickup}
 {keep}
 {pour}
+{Apply_soap(A1, A2, B3, ...)}
 {Task_Completed}
 
 Rules:
@@ -1584,10 +1620,20 @@ Rules:
 - No text outside curly braces — commands only
 - Always end with {Task_Completed}
 
+SOAP RULE: To apply soap on a plate/bowl/utensil, first pick up the soap. Then use Apply_soap(...) with ALL grid coordinates that the utensil occupies or touches, including even partial overlaps. Every coordinate that the object covers even slightly must be included. The arm will automatically descend and scrub each listed coordinate while holding the soap. Do NOT use keep while soaping. After soaping is complete, return the soap to its original coordinate using keep, then Task_Completed.
+
 Example output for "move bottle from A1 to D5":
 {goto_coordinate = A, 1}
 {pickup}
 {goto_coordinate = D, 5}
+{keep}
+{Task_Completed}
+
+Example output for "apply soap to the plate at B2 B3 C2 C3":
+{goto_coordinate = B, 2}
+{pickup}
+{Apply_soap(B2, B3, C2, C3)}
+{goto_coordinate = B, 2}
 {keep}
 {Task_Completed}`;
 

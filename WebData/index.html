@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K3D</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-zinc-950 text-zinc-200 overflow-hidden">
+    <div class="ui-overlay top-0 left-0 right-0 bg-black/90 backdrop-blur border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-x-3">
+            <div class="w-9 h-9 bg-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-xl">K</div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight">K3D · Precision Cartesian Gantry</h1>
+                <p class="text-xs text-zinc-400 mono">Prolabs V12.2 · AI-Controlled · XYZ-Axis</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-x-3">
+            <!-- HOS AI Toggle -->
+            <div id="hos-toggle" class="hos-toggle-wrap" onclick="toggleHOS()">
+                <div id="hos-switch" class="hos-switch"></div>
+                <span class="hos-label" id="hos-label">HOS AI</span>
+            </div>
+            <div id="status" class="px-5 py-2 bg-emerald-900/50 text-emerald-400 rounded-full text-xs font-semibold mono flex items-center gap-x-2">
+                <span class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
+                READY
+            </div>
+            <button onclick="takeTopDownScreenshot()"
+                    class="px-5 py-2 bg-violet-700 hover:bg-violet-600 transition-colors rounded-full text-xs font-semibold">
+                📸 SCREENSHOT (2D)
+            </button>
+            <button onclick="resetToHome()"
+                    class="px-5 py-2 bg-zinc-800 hover:bg-zinc-700 transition-colors rounded-full text-xs font-semibold">
+                RESET HOME (A1)
+            </button>
+        </div>
+    </div>
+    <div id="canvas-container"></div>
+    <div class="ui-overlay top-20 left-6 bg-zinc-900/95 backdrop-blur border border-zinc-700/60 rounded-2xl w-72 p-4" style="max-height: calc(100vh - 96px); overflow-y: auto;">
+        <h2 class="text-xs font-bold mb-3 text-zinc-300 tracking-widest uppercase">Target Coordinate</h2>
+        <div class="flex gap-2 mb-3">
+            <div class="flex-1">
+                <label class="text-xs text-zinc-500 mono mb-1 block">X AXIS</label>
+                <select id="x-letter" class="w-full bg-zinc-800 border border-zinc-700 focus:border-blue-500 rounded-xl px-3 py-2 text-lg font-bold text-center mono cursor-pointer"></select>
+            </div>
+            <div class="flex items-end justify-center pb-2 text-xl text-zinc-600">×</div>
+            <div class="flex-1">
+                <label class="text-xs text-zinc-500 mono mb-1 block">Y AXIS</label>
+                <select id="y-number" class="w-full bg-zinc-800 border border-zinc-700 focus:border-blue-500 rounded-xl px-3 py-2 text-lg font-bold text-center mono cursor-pointer"></select>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="text-xs text-zinc-500 mono mb-1 flex justify-between"><span>Z AXIS HEIGHT</span><span id="z-label" class="text-blue-400">4.0</span></label>
+            <input type="range" id="z-slider" min="0.5" max="7" step="0.1" value="4.0"
+                   class="w-full h-2 bg-zinc-700 rounded-full outline-none cursor-pointer accent-blue-500"
+                   oninput="onZSlider(this.value)">
+            <div class="flex justify-between text-xs mono text-zinc-600 mt-1"><span>LOW</span><span>HIGH</span></div>
+        </div>
+        <button onclick="moveGripper()"
+                class="w-full bg-blue-600 hover:bg-blue-500 py-2 rounded-xl text-white font-bold text-sm mb-2 transition-colors">
+            MOVE GRIPPER
+        </button>
+        <div class="grid grid-cols-3 gap-2 mb-3">
+            <button onclick="doPickup()"
+                    class="bg-amber-600 hover:bg-amber-500 py-2 rounded-xl text-white font-bold text-xs transition-colors">
+                PICKUP
+            </button>
+            <button onclick="doKeep()"
+                    class="bg-emerald-700 hover:bg-emerald-600 py-2 rounded-xl text-white font-bold text-xs transition-colors">
+                PLACE
+            </button>
+            <button onclick="doPour()"
+                    class="bg-violet-700 hover:bg-violet-600 py-2 rounded-xl text-white font-bold text-xs transition-colors">
+                POUR
+            </button>
+        </div>
+        <div class="bg-zinc-800/70 border border-zinc-700/40 rounded-xl p-3">
+            <div class="text-xs mono text-zinc-500 mb-1">POSITION</div>
+            <div id="current-position" class="mono text-2xl font-bold text-blue-400">A1</div>
+            <div id="current-coords" class="mono text-xs text-zinc-400 mt-1">(0.0, 0.0, 4.0)</div>
+            <div id="gripper-state" class="mono text-xs text-zinc-500 mt-1">Gripper: OPEN</div>
+        </div>
+    </div>
+
+    <div class="ui-overlay top-20 right-6 bottom-6 w-80 flex flex-col gap-0">
+        <div class="bg-zinc-900/95 backdrop-blur border border-zinc-700/60 rounded-2xl p-4 mb-3 shrink-0" style="max-height: 28vh; overflow-y: auto;">
+            <h2 class="text-xs font-bold mb-3 text-zinc-300 tracking-widest uppercase">Object Positions</h2>
+            <div id="objects-list" class="space-y-2">
+                <div class="text-xs text-zinc-500 italic">No objects on board</div>
+            </div>
+        </div>
+        <div class="bg-zinc-900/95 backdrop-blur border border-zinc-700/60 rounded-2xl flex flex-col flex-1 min-h-0">
+            <div class="flex items-center gap-2 px-4 pt-3 pb-3 border-b border-zinc-700/60 shrink-0">
+                <div class="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">AI</div>
+                <div>
+                    <div class="text-xs font-bold text-zinc-200 tracking-widest uppercase">K3D Task Planner</div>
+                    <div class="text-xs text-zinc-500 mono" id="planner-subtitle">Prolabs V12.2 · Claude</div>
+                </div>
+                <div id="ai-status-dot" class="ml-auto w-2 h-2 bg-zinc-600 rounded-full"></div>
+            </div>
+            <div id="exec-log" class="shrink-0 px-3 pt-2 pb-1 border-b border-zinc-800/50 overflow-y-auto" style="max-height: 120px; display:none;">
+                <div class="text-xs mono text-zinc-500 mb-1 uppercase tracking-widest">Execution Plan</div>
+                <div id="exec-log-entries"></div>
+            </div>
+            <div id="chat-messages" class="flex-1 overflow-y-auto px-3 py-3 space-y-2 min-h-0">
+                <div class="flex gap-2">
+                    <div class="w-5 h-5 bg-blue-600 rounded-md flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5">AI</div>
+                    <div class="bg-zinc-800 rounded-xl rounded-tl-sm px-3 py-2 text-xs text-zinc-300 leading-relaxed">Hi! I'm the K3D Task Planner. Tell me what to do — I'll plan and execute the moves automatically. Try: <span class="text-blue-400">"Move bottle to C3"</span>, <span class="text-blue-400">"Pick up the box and place it at F5"</span>, or <span class="text-blue-400">"Sort all objects by type"</span>.<br><br><span class="text-indigo-400 text-xs">Enable <b>HOS AI</b> in the header for high-level task understanding.</span></div>
+                </div>
+            </div>
+            <div class="px-3 pb-3 pt-2 border-t border-zinc-800 shrink-0">
+                <div class="flex gap-2">
+                    <input id="chat-input" type="text" placeholder="Describe a task to execute..."
+                        class="flex-1 bg-zinc-800 border border-zinc-700 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-zinc-200 outline-none mono placeholder-zinc-600"
+                        onkeydown="if(event.key==='Enter')sendTask()">
+                    <button onclick="sendTask()" id="chat-send-btn" class="bg-blue-600 hover:bg-blue-500 transition-colors rounded-xl px-3 py-2 text-white text-xs font-bold">▶</button>
+                </div>
+                <div id="task-progress" class="mt-2 hidden">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs mono text-zinc-500">Executing...</span>
+                        <span id="task-step-counter" class="text-xs mono text-zinc-500">0/0</span>
+                    </div>
+                    <div class="w-full bg-zinc-800 rounded-full h-1.5">
+                        <div id="task-progress-bar" class="bg-blue-500 h-1.5 rounded-full transition-all duration-300" style="width:0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="ui-overlay bottom-6 left-6 bg-zinc-900/95 backdrop-blur border border-zinc-700/60 rounded-2xl p-5 w-80" style="max-height: 48vh; overflow-y: auto;">
+        <h3 class="text-xs font-bold mb-1 tracking-widest text-zinc-400 uppercase">Objects Library</h3>
+        <p class="text-xs text-zinc-600 mb-3 mono">Right-click any board object to rename or delete</p>
+        <div class="lib-section-title">Basic</div>
+        <div class="grid grid-cols-5 gap-3 mb-2">
+            <div class="obj-lib-wrap obj-lib-entry" onclick="addObject('bottle')">
+                <div class="text-3xl mb-1">🍼</div>
+                <span class="text-xs text-zinc-400">Bottle</span>
+            </div>
+            <div class="obj-lib-wrap obj-lib-entry" onclick="addObject('box')">
+                <div class="text-3xl mb-1">📦</div>
+                <span class="text-xs text-zinc-400">Box</span>
+            </div>
+            <div class="obj-lib-wrap obj-lib-entry" onclick="addObject('mug')">
+                <div class="text-3xl mb-1">☕</div>
+                <span class="text-xs text-zinc-400">Mug</span>
+            </div>
+            <div class="obj-lib-wrap obj-lib-entry" onclick="addObject('book')">
+                <div class="text-3xl mb-1">📖</div>
+                <span class="text-xs text-zinc-400">Book</span>
+            </div>
+            <div class="obj-lib-wrap obj-lib-entry" onclick="addObject('plant')">
+                <div class="text-3xl mb-1">🪴</div>
+                <span class="text-xs text-zinc-400">Plant</span>
+            </div>
+        </div>
+        <hr class="lib-divider">
+        <div class="lib-section-title">Household (Library)</div>
+        <div class="grid grid-cols-5 gap-3 mb-2">
+            <div class="obj-lib-wrap obj-lib-entry" onclick="addObject('wooden_box')">
+                <div class="text-3xl mb-1">🪵</div>
+                <span class="text-xs text-zinc-400">Wooden Box</span>
+                <div class="obj-lib-meta">
+                    <div class="font-bold text-zinc-200 mb-1">wooden_box</div>
+                    <div>Open-lid wooden box. Material: wood. Graspability: surprisingly decent.</div>
+                </div>
+            </div>
+            <div class="obj-lib-wrap obj-lib-entry" onclick="addObject('water_cup')">
+                <div class="text-3xl mb-1">🥤</div>
+                <span class="text-xs text-zinc-400">Water Cup</span>
+                <div class="obj-lib-meta">
+                    <div class="font-bold text-zinc-200 mb-1">water_cup</div>
+                    <div>Cup filled with water. Risk: spill = career-ending. Fragility: moderate.</div>
+                </div>
+            </div>
+            <div class="obj-lib-wrap obj-lib-entry" onclick="addObject('powder_box')">
+                <div class="text-3xl mb-1">🧴</div>
+                <span class="text-xs text-zinc-400">Powder Box</span>
+                <div class="obj-lib-meta">
+                    <div class="font-bold text-zinc-200 mb-1">powder_box</div>
+                    <div>Cylindrical container. Contents: unknown powder. Sneeze factor: extreme.</div>
+                </div>
+            </div>
+            <div class="obj-lib-wrap obj-lib-entry" onclick="addObject('plate')">
+                <div class="text-3xl mb-1">🍽️</div>
+                <span class="text-xs text-zinc-400">Plate</span>
+                <div class="obj-lib-meta">
+                    <div class="font-bold text-zinc-200 mb-1">ceramic_dinner_plate</div>
+                    <div>Pristine ceramic plate. Dishwasher safe but emotionally fragile. Breakage: 50/50.</div>
+                </div>
+            </div>
+            <div class="obj-lib-wrap obj-lib-entry" onclick="addObject('glass')">
+                <div class="text-3xl mb-1">🥛</div>
+                <span class="text-xs text-zinc-400">Glass</span>
+                <div class="obj-lib-meta">
+                    <div class="font-bold text-zinc-200 mb-1">glass_of_juice</div>
+                    <div>Glass of OJ. State: dangerously close to becoming a science experiment.</div>
+                </div>
+            </div>
+        </div>
+        <hr class="lib-divider">
+        <div class="lib-section-title">Custom STL Model</div>
+        <div id="stl-drop-zone"
+             onclick="document.getElementById('stl-upload').click()"
+             ondragover="event.preventDefault(); this.classList.add('drag-over')"
+             ondragleave="this.classList.remove('drag-over')"
+             ondrop="handleSTLDrop(event)">
+            <div class="text-2xl mb-1">📐</div>
+            <div class="text-xs font-bold text-zinc-300">Upload STL Model</div>
+            <div class="text-xs text-zinc-500 mono mt-0.5">Binary or ASCII · .stl</div>
+            <div class="text-xs text-zinc-600 mono mt-1">Click or drag & drop</div>
+            <input type="file" id="stl-upload" accept=".stl" class="hidden" onchange="handleSTLUpload(event)">
+        </div>
+        <div id="stl-progress">
+            <div class="text-xs mono text-zinc-400" id="stl-progress-label">Parsing STL...</div>
+            <div id="stl-progress-bar-wrap"><div id="stl-progress-bar"></div></div>
+        </div>
+    </div>
+
+    <div id="context-menu">
+        <div class="text-xs mono text-zinc-500 px-3 py-1" id="ctx-obj-name">object</div>
+        <hr>
+        <button onclick="ctxRename()">✏️ Rename</button>
+        <button onclick="ctxDelete()" class="danger">🗑️ Delete</button>
+    </div>
+    <div id="rename-modal">
+        <div class="modal-box">
+            <div class="text-sm font-bold text-zinc-300 mb-1">Rename Object</div>
+            <div class="text-xs text-zinc-500 mono" id="rename-current"></div>
+            <input type="text" id="rename-input" placeholder="Enter new name..." maxlength="32">
+            <div class="flex gap-2 mt-2">
+                <button onclick="confirmRename()" class="flex-1 bg-blue-600 hover:bg-blue-500 py-2 rounded-lg text-sm font-bold transition-colors">Rename</button>
+                <button onclick="closeRenameModal()" class="flex-1 bg-zinc-700 hover:bg-zinc-600 py-2 rounded-lg text-sm font-bold transition-colors">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src = "script.js"></script>
+</body>
+</html>

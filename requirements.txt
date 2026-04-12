@@ -1,0 +1,4 @@
+Httpsserver
+Pyside6
+openai
+python-dotenv

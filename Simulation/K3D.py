@@ -259,7 +259,7 @@ HTML = r"""<!DOCTYPE html>
             <div id="chat-messages" class="flex-1 overflow-y-auto px-3 py-3 space-y-2 min-h-0">
                 <div class="flex gap-2">
                     <div class="w-5 h-5 bg-blue-600 rounded-md flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5">AI</div>
-                    <div class="bg-zinc-800 rounded-xl rounded-tl-sm px-3 py-2 text-xs text-zinc-300 leading-relaxed">Hi! I'm the K3D Task Planner. Tell me what to do — I'll plan and execute the moves automatically. Try: <span class="text-blue-400">"Move bottle to C3"</span>, <span class="text-blue-400">"Pick up the box and place it at F5"</span>, or <span class="text-blue-400">"Apply soap to the plate at B2"</span>.</div>
+                    <div class="bg-zinc-800 rounded-xl rounded-tl-sm px-3 py-2 text-xs text-zinc-300 leading-relaxed">Hi! I'm the K3D Task Planner. Tell me what to do — I'll plan and execute the moves automatically. Try: <span class="text-blue-400">"Move bottle to C3"</span>, <span class="text-blue-400">"Pick up the box and place it at F5"</span>, or <span class="text-blue-400">"Soap the plate"</span>.</div>
                 </div>
             </div>
             <div class="px-3 pb-3 pt-2 border-t border-zinc-800 shrink-0">
@@ -354,7 +354,6 @@ HTML = r"""<!DOCTYPE html>
         </div>
         <hr class="lib-divider">
         <div class="lib-section-title">Custom STL Model</div>
-
         <div id="stl-drop-zone"
              onclick="document.getElementById('stl-upload').click()"
              ondragover="event.preventDefault(); this.classList.add('drag-over')"
@@ -366,7 +365,6 @@ HTML = r"""<!DOCTYPE html>
             <div class="text-xs text-zinc-600 mono mt-1">Click or drag & drop</div>
             <input type="file" id="stl-upload" accept=".stl" class="hidden" onchange="handleSTLUpload(event)">
         </div>
-
         <div id="stl-progress">
             <div class="text-xs mono text-zinc-400" id="stl-progress-label">Parsing STL...</div>
             <div id="stl-progress-bar-wrap"><div id="stl-progress-bar"></div></div>
@@ -429,6 +427,13 @@ HTML = r"""<!DOCTYPE html>
             const num = parseInt(row.trim());
             if (!isNaN(num) && num >= 1 && num <= GRID_HEIGHT) return num - 1;
             return null;
+        }
+
+        function parseCoord(str) {
+            str = str.trim().toUpperCase();
+            const m = str.match(/^([A-T])(\d+)$/);
+            if (!m) return null;
+            return { col: m[1], row: m[2] };
         }
 
         function createFlatLabel(text) {
@@ -914,46 +919,6 @@ HTML = r"""<!DOCTYPE html>
             });
         };
 
-        // ─── Apply Soap ──────────────────────────────────────────────────────────
-        // Visits each coord in sequence: move XY → descend to scrub height →
-        // brief pause → rise back to travel height. Object stays in gripper throughout.
-        window.doApplySoap = async function(coordsStr) {
-    if (!heldObject) {
-        setStatus('⚠️ Not holding any object');
-        appendMessage('assistant', '⚠️ Not holding any object — cannot apply soap.');
-        return;
-    }
-    const SCRUB_Z = 5.6;
-    const TRAVEL_Z = 2.5;
-    const coords = coordsStr.split(',').map(s => s.trim()).filter(Boolean);
-    const parsed = coords.map(coord => {
-        const col = coord.match(/^([A-Ta-t])/)?.[1];
-        const row = coord.match(/(\d+)$/)?.[1];
-        if (!col || !row) return null;
-        const tx = colLetterToX(col);
-        const ty = rowNumberToY(row);
-        if (tx === null || ty === null) return null;
-        return { col, row, tx, ty };
-    }).filter(Boolean);
-    if (parsed.length === 0) return;
-    // Move to first coord at travel height
-    isAnimating = true;
-    await new Promise(r => animateXY(parsed[0].tx, parsed[0].ty, 400, r));
-    // Descend once to scrub height
-    await new Promise(r => animateZ(currentZ, SCRUB_Z, 350, r));
-    // Drag across all remaining coords while pressed down
-    for (let i = 0; i < parsed.length; i++) {
-        const { col, row, tx, ty } = parsed[i];
-        setStatus('🧼 Soaping ' + col.toUpperCase() + row + '...');
-        await new Promise(r => animateXY(tx, ty, 350, r));
-        await new Promise(r => setTimeout(r, 80));
-    }
-    // Lift once after all coords
-    await new Promise(r => animateZ(currentZ, TRAVEL_Z, 300, r));
-    isAnimating = false;
-    setStatus('✅ Soap applied to all coords');
-};
-
         function spawnObject(obj, type) {
             const rx = Math.floor(Math.random() * GRID_WIDTH) + 0.5;
             const ry = Math.floor(Math.random() * GRID_HEIGHT) + 0.5;
@@ -982,18 +947,13 @@ HTML = r"""<!DOCTYPE html>
             if (obj) { spawnObject(obj, type); setStatus(`✅ Added ${type}`); }
         };
 
-        // ─── STL Parser ───────────────────────────────────────────────────────────
         function parseSTL(buffer) {
             const headerView = new Uint8Array(buffer, 0, Math.min(256, buffer.byteLength));
             const headerText = String.fromCharCode(...headerView).trimStart();
             const isASCII = headerText.startsWith('solid') && headerText.includes('facet');
-            if (isASCII) {
-                return parseASCIISTL(new TextDecoder().decode(buffer));
-            } else {
-                return parseBinarySTL(buffer);
-            }
+            if (isASCII) return parseASCIISTL(new TextDecoder().decode(buffer));
+            else return parseBinarySTL(buffer);
         }
-
         function parseBinarySTL(buffer) {
             const view = new DataView(buffer);
             const triCount = view.getUint32(80, true);
@@ -1010,9 +970,7 @@ HTML = r"""<!DOCTYPE html>
                     positions[base]     = view.getFloat32(offset, true);
                     positions[base + 1] = view.getFloat32(offset + 4, true);
                     positions[base + 2] = view.getFloat32(offset + 8, true);
-                    normals[base]     = nx;
-                    normals[base + 1] = ny;
-                    normals[base + 2] = nz;
+                    normals[base] = nx; normals[base + 1] = ny; normals[base + 2] = nz;
                     offset += 12;
                 }
                 offset += 2;
@@ -1022,10 +980,8 @@ HTML = r"""<!DOCTYPE html>
             geo.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
             return geo;
         }
-
         function parseASCIISTL(text) {
-            const posArr = [];
-            const normArr = [];
+            const posArr = [], normArr = [];
             const facetRe = /facet\s+normal\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)[\s\S]*?vertex\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)\s+vertex\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)\s+vertex\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)/g;
             let m;
             while ((m = facetRe.exec(text)) !== null) {
@@ -1040,7 +996,6 @@ HTML = r"""<!DOCTYPE html>
             geo.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(normArr), 3));
             return geo;
         }
-
         function normalizeSTLGeometry(geo) {
             geo.computeBoundingBox();
             const box = geo.boundingBox;
@@ -1056,7 +1011,6 @@ HTML = r"""<!DOCTYPE html>
             geo.translate(0, -geo.boundingBox.min.y, 0);
             return geo;
         }
-
         function showSTLProgress(show, label) {
             const prog = document.getElementById('stl-progress');
             prog.style.display = show ? 'block' : 'none';
@@ -1065,7 +1019,6 @@ HTML = r"""<!DOCTYPE html>
         function setSTLProgressBar(pct) {
             document.getElementById('stl-progress-bar').style.width = pct + '%';
         }
-
         function loadSTLFromBuffer(buffer, typeName) {
             showSTLProgress(true, 'Parsing STL...');
             setSTLProgressBar(30);
@@ -1075,12 +1028,7 @@ HTML = r"""<!DOCTYPE html>
                     setSTLProgressBar(65);
                     normalizeSTLGeometry(geo);
                     setSTLProgressBar(85);
-                    const mat = new THREE.MeshPhongMaterial({
-                        color: 0x64b5f6,
-                        specular: 0x2266aa,
-                        shininess: 60,
-                        side: THREE.DoubleSide
-                    });
+                    const mat = new THREE.MeshPhongMaterial({ color: 0x64b5f6, specular: 0x2266aa, shininess: 60, side: THREE.DoubleSide });
                     const mesh = new THREE.Mesh(geo, mat);
                     const group = new THREE.Group();
                     group.add(mesh);
@@ -1096,18 +1044,13 @@ HTML = r"""<!DOCTYPE html>
                 } catch (err) {
                     showSTLProgress(false, '');
                     setStatus('❌ STL parse error: ' + err.message);
-                    console.error(err);
                 }
             }, 30);
         }
-
         window.handleSTLUpload = function(event) {
             const file = event.target.files[0];
             if (!file) return;
-            if (!file.name.toLowerCase().endsWith('.stl')) {
-                setStatus('⚠️ Please upload a .stl file');
-                return;
-            }
+            if (!file.name.toLowerCase().endsWith('.stl')) { setStatus('⚠️ Please upload a .stl file'); return; }
             const typeName = file.name.replace(/\.stl$/i, '').substring(0, 18) || 'stl_model';
             showSTLProgress(true, 'Reading file...');
             setSTLProgressBar(10);
@@ -1115,16 +1058,12 @@ HTML = r"""<!DOCTYPE html>
             reader.onload = (e) => loadSTLFromBuffer(e.target.result, typeName);
             reader.readAsArrayBuffer(file);
         };
-
         window.handleSTLDrop = function(event) {
             event.preventDefault();
             document.getElementById('stl-drop-zone').classList.remove('drag-over');
             const file = event.dataTransfer.files[0];
             if (!file) return;
-            if (!file.name.toLowerCase().endsWith('.stl')) {
-                setStatus('⚠️ Please drop a .stl file');
-                return;
-            }
+            if (!file.name.toLowerCase().endsWith('.stl')) { setStatus('⚠️ Please drop a .stl file'); return; }
             const typeName = file.name.replace(/\.stl$/i, '').substring(0, 18) || 'stl_model';
             showSTLProgress(true, 'Reading file...');
             setSTLProgressBar(10);
@@ -1133,7 +1072,6 @@ HTML = r"""<!DOCTYPE html>
             reader.readAsArrayBuffer(file);
         };
 
-        // ─── Object shape creators ────────────────────────────────────────────────
         function createWaterBottle() {
             const g = new THREE.Group();
             const mat = new THREE.MeshPhongMaterial({ color: 0x3b82f6 });
@@ -1550,12 +1488,53 @@ HTML = r"""<!DOCTYPE html>
                 });
             });
         }
-        function applySoapAction(coordsStr) {
+
+        function applySoapAtCoord(col, row) {
             return new Promise(async resolve => {
-                await window.doApplySoap(coordsStr);
-                resolve();
+                await moveTo(col, row);
+                isAnimating = true;
+                setStatus(`🧼 Applying soap at ${col.toUpperCase()}${row}...`);
+                animateZ(currentZ, 5.5, 400, () => {
+                    setTimeout(() => {
+                        animateZ(currentZ, 3.0, 350, () => {
+                            isAnimating = false;
+                            resolve();
+                        });
+                    }, 300);
+                });
             });
         }
+
+        function applyClothAtCoord(col, row) {
+            return new Promise(async resolve => {
+                await moveTo(col, row);
+                isAnimating = true;
+                setStatus(`🧹 Wiping at ${col.toUpperCase()}${row}...`);
+                animateZ(currentZ, 5.5, 400, () => {
+                    const baseX = currentX, baseY = currentY;
+                    const WIPE_STEPS = 4, WIPE_AMP = 0.3;
+                    let wipeStep = 0;
+                    function doWipe() {
+                        if (wipeStep >= WIPE_STEPS) {
+                            animateXY(baseX, baseY, 150, () => {
+                                animateZ(currentZ, 3.0, 350, () => {
+                                    isAnimating = false;
+                                    resolve();
+                                });
+                            });
+                            return;
+                        }
+                        const offset = (wipeStep % 2 === 0) ? WIPE_AMP : -WIPE_AMP;
+                        animateXY(baseX + offset, baseY, 120, () => {
+                            wipeStep++;
+                            doWipe();
+                        });
+                    }
+                    doWipe();
+                });
+            });
+        }
+
         function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 
         async function executeCommands(commands) {
@@ -1563,34 +1542,60 @@ HTML = r"""<!DOCTYPE html>
             completedCommands = 0;
             showExecLog(commands);
             updateProgress(0, totalCommands);
+
             for (let i = 0; i < commands.length; i++) {
                 const raw = commands[i].trim();
                 markCmdActive(i);
                 updateProgress(i, totalCommands);
-                if (raw.toLowerCase().includes('goto_coordinate')) {
+
+                const rawLower = raw.toLowerCase();
+
+                if (rawLower.includes('goto_coordinate')) {
                     const eqPart = raw.split('=').slice(1).join('=').trim();
                     const parts = eqPart.split(',');
-                    if (parts.length >= 2) {
-                        const col = parts[0].trim();
-                        const row = parts[1].trim();
-                        await moveTo(col, row);
-                    }
-                } else if (raw.toLowerCase() === 'pickup') {
+                    if (parts.length >= 2) await moveTo(parts[0].trim(), parts[1].trim());
+
+                } else if (rawLower === 'pickup') {
                     await pickup();
-                } else if (raw.toLowerCase() === 'keep') {
+
+                } else if (rawLower === 'keep') {
                     await placeDown();
-                } else if (raw.toLowerCase() === 'pour') {
+
+                } else if (rawLower === 'pour') {
                     await pourAction();
-                } else if (raw.toLowerCase().startsWith('apply_soap')) {
-                    const m = raw.match(/apply_soap\s*\(([^)]+)\)/i);
-                    if (m) await applySoapAction(m[1]);
-                } else if (raw.toLowerCase() === 'task_completed') {
+
+                } else if (rawLower.startsWith('apply_soap')) {
+                    const coordStr = raw.replace(/apply_soap/i, '')
+                                       .replace(/[()=]/g, ' ')
+                                       .trim();
+                    const coordTokens = coordStr.split(',').map(s => s.trim()).filter(Boolean);
+                    setStatus(`🧼 Starting soap pass — ${coordTokens.length} cell(s)...`);
+                    for (const token of coordTokens) {
+                        const parsed = parseCoord(token);
+                        if (parsed) await applySoapAtCoord(parsed.col, parsed.row);
+                    }
+                    setStatus('✅ Soap pass complete');
+
+                } else if (rawLower.startsWith('apply_cloth')) {
+                    const coordStr = raw.replace(/apply_cloth/i, '')
+                                       .replace(/[()=]/g, ' ')
+                                       .trim();
+                    const coordTokens = coordStr.split(',').map(s => s.trim()).filter(Boolean);
+                    setStatus(`🧹 Starting wipe pass — ${coordTokens.length} cell(s)...`);
+                    for (const token of coordTokens) {
+                        const parsed = parseCoord(token);
+                        if (parsed) await applyClothAtCoord(parsed.col, parsed.row);
+                    }
+                    setStatus('✅ Wipe pass complete');
+
+                } else if (rawLower === 'task_completed') {
                     setStatus('<span class="w-2 h-2 bg-emerald-400 rounded-full inline-block animate-pulse"></span>&nbsp;Task Complete!');
                     appendMessage('assistant', '✅ Task completed successfully!');
                     markCmdDone(i);
                     updateProgress(totalCommands, totalCommands);
                     break;
                 }
+
                 markCmdDone(i);
                 await delay(100);
             }
@@ -1601,17 +1606,20 @@ HTML = r"""<!DOCTYPE html>
         const chatHistory = [];
         const SYSTEM_PROMPT = `You are K3D — an autonomous task planner for the Prolabs V12.2 Precision Cartesian Gantry robot.
 
-The board is a grid with columns A–T (left to right, 20 columns) and rows 1–11 (front to back, 11 rows).
+The board is a grid with columns A-T (left to right, 20 columns) and rows 1-11 (front to back, 11 rows).
 
-You will receive the current board state in each message. Your job is to output ONLY a sequence of commands — no explanations, no commentary, no punctuation outside the command format.
+You will receive the current board state in each message. Output ONLY a sequence of commands — no explanations, no commentary, no punctuation outside the command format.
 
 Valid commands:
 {goto_coordinate = COL, ROW}
 {pickup}
 {keep}
 {pour}
-{Apply_soap(A1, A2, B3, ...)}
+{Apply_soap(X1, X2, X3, ...)}
+{Apply_cloth(X1, X2, X3, ...)}
 {Task_Completed}
+
+COORDINATE FORMAT inside Apply_soap / Apply_cloth: always ColRow with no space, e.g. A1, B3, T11.
 
 Rules:
 - Always go to the exact center of an object before picking it up
@@ -1620,22 +1628,44 @@ Rules:
 - No text outside curly braces — commands only
 - Always end with {Task_Completed}
 
-SOAP RULE: To apply soap on a plate/bowl/utensil, first pick up the soap. Then use Apply_soap(...) with ALL grid coordinates that the utensil occupies or touches, including even partial overlaps. Every coordinate that the object covers even slightly must be included. The arm will automatically descend and scrub each listed coordinate while holding the soap. Do NOT use keep while soaping. After soaping is complete, return the soap to its original coordinate using keep, then Task_Completed.
-
-Example output for "move bottle from A1 to D5":
+Example — move bottle from A1 to D5:
 {goto_coordinate = A, 1}
 {pickup}
 {goto_coordinate = D, 5}
 {keep}
 {Task_Completed}
 
-Example output for "apply soap to the plate at B2 B3 C2 C3":
-{goto_coordinate = B, 2}
-{pickup}
-{Apply_soap(B2, B3, C2, C3)}
-{goto_coordinate = B, 2}
-{keep}
-{Task_Completed}`;
+SOAP RULE:
+1. Pick up the soap first with {pickup}.
+2. Expand the target object into its list of grid coordinates.
+   Example: plate at G5 spanning 2x2 -> G5, G6, H5, H6
+3. Apply soap to all coordinates in one command:
+   {Apply_soap(G5, G6, H5, H6)}
+4. Do NOT use {keep} during soaping.
+5. After all coordinates are done, return soap to its original position with {goto_coordinate} then {keep}.
+6. End with {Task_Completed}.
+
+CLEANING RULE:
+1. Pick up the cloth first with {pickup}.
+2. Expand the target object / stain into its list of grid coordinates.
+3. Apply cloth to all coordinates in one command:
+   {Apply_cloth(G5, G6, H5, H6)}
+4. Do NOT use {keep} during cleaning.
+5. After all coordinates are done, return cloth to its original position with {goto_coordinate} then {keep}.
+6. End with {Task_Completed}.
+
+COFFEE RULE:
+1. Pick up the water first with {pickup}.
+2. Pour water into the mug using {pour} command while holding the water above the mug.
+3. After pouring, return water to its original position with {goto_coordinate} then {keep}.
+4. Pour coffee powder into the mug using {pickup} and {pour} commands.
+5. Keep the coffee powder box at its original position with {goto_coordinate} then {keep}.
+6. End with {Task_Completed}.
+
+Multi-Step Reorganization rule:
+Task: "Organize the board"
+While organising, Always keep same things together but different things/group-of-things apart. For example, keep all the bottles together but away from mugs/plants, keep all the mug(s) together but away from the water bottle/plant, and keep the plant away from the mug/water bottle.
+`;
 
         window.sendTask = async function() {
             const input = document.getElementById('chat-input');
@@ -1692,7 +1722,7 @@ Example output for "apply soap to the plate at B2 B3 C2 C3":
 </body>
 </html>"""
 
-OPENAI_API_KEY = "ADD YOUR OPENAI API KEY HERE"
+OPENAI_API_KEY = "ADD YOUR OPENAI API KEY"
 
 import urllib.request
 

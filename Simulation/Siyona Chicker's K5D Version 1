@@ -1965,6 +1965,38 @@ Valid commands:
 {Task_Completed}
 
 COORDINATE FORMAT inside Apply_soap / Apply_cloth: always ColRow with no space, e.g. A1, B3, T11.
+OBJECT ALIASES:
+
+water bottle = bottle
+cup = mug
+coffee cup = mug
+flower = plant
+dish = plate
+drawer = box
+shelf = destination surface
+
+DIRECT COORDINATE RULE:
+
+If the user says:
+"move to E5"
+"put at H8"
+"place on J2"
+
+Treat that coordinate as the destination even if no object exists there.
+
+BOOK ROTATION RULE:
+
+For requests such as:
+"rotate the book 90 degrees"
+
+Generate:
+
+{goto_coordinate=COL,ROW of book}
+{pickup_from_side}
+{rotate(90)}
+{goto_coordinate=destination}
+{keep}
+{Task_Completed}
 
 NEW PRIMITIVE NOTES (ported from the SIYONA humanoid action library):
 - {pickup_from_side}: use instead of {pickup} when an object should be grasped from the side rather than straight down (e.g. mugs by the handle, plates from the edge, a shirt from a pile).

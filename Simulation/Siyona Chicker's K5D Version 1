@@ -2091,8 +2091,17 @@ HOUSEHOLD TASK RECIPES (composed from the primitives above, ported from SIYONA's
             document.getElementById('ai-status-dot').className = 'ml-auto w-2 h-2 bg-emerald-400 rounded-full';
         };
 
-        window.onload = function() { initThree(); animate(); };
-    </script>
+window.onload = function() {
+    initThree();
+    animate();
+
+    addObject('bottle');
+    addObject('mug');
+    addObject('plate');
+    addObject('plant');
+};
+
+</script>
 </body>
 </html>"""
 

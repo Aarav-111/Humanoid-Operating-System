@@ -2044,12 +2044,21 @@ CLEANING RULE:
 6. End with {Task_Completed}.
 
 COFFEE RULE:
-1. Pick up the water first with {pickup}.
-2. Pour water into the mug using {pour} command while holding the water above the mug.
-3. After pouring, return water to its original position with {goto_coordinate} then {keep}.
-4. Pour coffee powder into the mug using {pickup} and {pour} commands.
-5. Keep the coffee powder box at its original position with {goto_coordinate} then {keep}.
-6. End with {Task_Completed}.
+
+Preferred workflow:
+
+1. Pick up water_cup or bottle.
+2. Move above mug.
+3. {pour}
+4. Return water source.
+5. Pick up powder_box.
+6. Move above mug.
+7. {pour}
+8. Return powder_box.
+9. {Task_Completed}
+
+If coffee_machine objects exist,
+they may be used instead.
 
 Multi-Step Reorganization rule:
 Task: "Organize the board"

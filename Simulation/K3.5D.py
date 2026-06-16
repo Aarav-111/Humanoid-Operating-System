@@ -283,6 +283,38 @@ HTML = r"""<!DOCTYPE html>
     </div>
 
     <div class="ui-overlay bottom-6 left-6 bg-zinc-900/95 backdrop-blur border border-zinc-700/60 rounded-2xl p-5 w-80" style="max-height: 48vh; overflow-y: auto;">
+        <div class="mb-4 rounded-2xl bg-zinc-800/80 border border-zinc-700/50 p-3">
+            <div class="flex items-center justify-between mb-2">
+                <div class="text-xs font-bold uppercase tracking-widest text-zinc-300">Change Orientation</div>
+                <div class="text-[10px] text-zinc-500 mono">All objects</div>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+                <button onclick="rotateAllObjects('x', 90)"
+                        class="bg-slate-700 hover:bg-slate-600 py-2 rounded-xl text-white font-bold text-xs transition-colors">
+                    X +90
+                </button>
+                <button onclick="rotateAllObjects('x', -90)"
+                        class="bg-slate-700 hover:bg-slate-600 py-2 rounded-xl text-white font-bold text-xs transition-colors">
+                    X -90
+                </button>
+                <button onclick="rotateAllObjects('y', 90)"
+                        class="bg-slate-700 hover:bg-slate-600 py-2 rounded-xl text-white font-bold text-xs transition-colors">
+                    Y +90
+                </button>
+                <button onclick="rotateAllObjects('y', -90)"
+                        class="bg-slate-700 hover:bg-slate-600 py-2 rounded-xl text-white font-bold text-xs transition-colors">
+                    Y -90
+                </button>
+                <button onclick="rotateAllObjects('z', 90)"
+                        class="bg-slate-700 hover:bg-slate-600 py-2 rounded-xl text-white font-bold text-xs transition-colors">
+                    Z +90
+                </button>
+                <button onclick="rotateAllObjects('z', -90)"
+                        class="bg-slate-700 hover:bg-slate-600 py-2 rounded-xl text-white font-bold text-xs transition-colors">
+                    Z -90
+                </button>
+            </div>
+        </div>
         <h3 class="text-xs font-bold mb-1 tracking-widest text-zinc-400 uppercase">Objects Library</h3>
         <p class="text-xs text-zinc-600 mb-3 mono">Right-click any board object to rename or delete</p>
         <div class="lib-section-title">Basic</div>
@@ -945,6 +977,22 @@ HTML = r"""<!DOCTYPE html>
             else if (type === 'plate') obj = createPlate();
             else if (type === 'glass') obj = createGlass();
             if (obj) { spawnObject(obj, type); setStatus(`✅ Added ${type}`); }
+        };
+
+        function rotateObject(obj, axis, rad) {
+            if (!obj) return;
+            if (axis === 'x') obj.rotation.x += rad;
+            else if (axis === 'y') obj.rotation.y += rad;
+            else if (axis === 'z') obj.rotation.z += rad;
+        }
+        window.rotateAllObjects = function(axis, degrees) {
+            const rad = degrees * Math.PI / 180;
+            if (objects.length === 0) {
+                setStatus('⚠️ No objects on board to rotate');
+                return;
+            }
+            objects.forEach(obj => rotateObject(obj, axis, rad));
+            setStatus(`🔄 Rotated all objects ${axis.toUpperCase()} ${degrees > 0 ? '+' : ''}${degrees}°`);
         };
 
         function parseSTL(buffer) {

@@ -183,6 +183,10 @@ HTML = r"""<!DOCTYPE html>
                     class="px-5 py-2 bg-violet-700 hover:bg-violet-600 transition-colors rounded-full text-xs font-semibold">
                 📸 SCREENSHOT (2D)
             </button>
+            <button onclick="copyFullPrompt()"
+                    class="px-5 py-2 bg-zinc-700 hover:bg-zinc-600 transition-colors rounded-full text-xs font-semibold">
+                📋 COPY PROMPT
+            </button>
             <button onclick="resetToHome()"
                     class="px-5 py-2 bg-zinc-800 hover:bg-zinc-700 transition-colors rounded-full text-xs font-semibold">
                 RESET HOME (A1)
@@ -259,15 +263,28 @@ HTML = r"""<!DOCTYPE html>
             <div id="chat-messages" class="flex-1 overflow-y-auto px-3 py-3 space-y-2 min-h-0">
                 <div class="flex gap-2">
                     <div class="w-5 h-5 bg-blue-600 rounded-md flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5">AI</div>
-                    <div class="bg-zinc-800 rounded-xl rounded-tl-sm px-3 py-2 text-xs text-zinc-300 leading-relaxed">Hi! I'm the K3D Task Planner. Tell me what to do — I'll plan and execute the moves automatically. Try: <span class="text-blue-400">"Move bottle to C3"</span>, <span class="text-blue-400">"Pick up the box and place it at F5"</span>, or <span class="text-blue-400">"Soap the plate"</span>.</div>
+                    <div class="bg-zinc-800 rounded-xl rounded-tl-sm px-3 py-2 text-xs text-zinc-300 leading-relaxed">Hi! I'm the K3D Task Planner. I'll <span class="text-yellow-300 font-bold">plan first</span> and wait for your approval before executing anything. Try: <span class="text-blue-400">"Sweep the floor"</span>, <span class="text-blue-400">"Wash the clothes"</span>, or <span class="text-blue-400">"Cook a meal"</span>. Type <span class="text-purple-300">memory</span> to see what I remember, or <span class="text-purple-300">remember: [note]</span> to teach me something.</div>
                 </div>
             </div>
             <div class="px-3 pb-3 pt-2 border-t border-zinc-800 shrink-0">
+                <!-- Plan approval panel (hidden until a plan is ready) -->
+                <div id="plan-approval" class="hidden mb-2">
+                    <div class="bg-zinc-700/60 border border-blue-500/40 rounded-xl p-3 mb-2">
+                        <div class="text-xs font-bold text-blue-300 mb-2">📋 PLAN — approve to execute</div>
+                        <pre id="plan-text" class="text-xs text-zinc-200 whitespace-pre-wrap leading-relaxed max-h-36 overflow-y-auto"></pre>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="approvePlan()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2 px-3 rounded-lg transition-colors">✅ Approve & Execute</button>
+                        <button onclick="editPlan()" class="bg-zinc-700 hover:bg-zinc-600 text-zinc-200 text-xs font-bold py-2 px-3 rounded-lg transition-colors">✏️ Edit</button>
+                        <button onclick="rejectPlan()" class="bg-red-900/60 hover:bg-red-800 text-red-300 text-xs font-bold py-2 px-3 rounded-lg transition-colors">✖ Cancel</button>
+                    </div>
+                </div>
                 <div class="flex gap-2">
                     <input id="chat-input" type="text" placeholder="Describe a task to execute..."
                         class="flex-1 bg-zinc-800 border border-zinc-700 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-zinc-200 outline-none mono placeholder-zinc-600"
                         onkeydown="if(event.key==='Enter')sendTask()">
                     <button onclick="sendTask()" id="chat-send-btn" class="bg-blue-600 hover:bg-blue-500 transition-colors rounded-xl px-3 py-2 text-white text-xs font-bold">▶</button>
+                    <button onclick="showMemory()" title="Show robot memory" class="bg-zinc-700 hover:bg-zinc-600 transition-colors rounded-xl px-2 py-2 text-purple-300 text-xs font-bold">🧠</button>
                 </div>
                 <div id="task-progress" class="mt-2 hidden">
                     <div class="flex items-center justify-between mb-1">
@@ -494,11 +511,6 @@ HTML = r"""<!DOCTYPE html>
                 <span class="text-xs text-zinc-400">Washing Machine</span>
                 <div class="obj-lib-meta"><div class="font-bold text-zinc-200 mb-1">washing_machine</div><div>Open door, load clothes, add detergent, run_cycle. Too heavy to lift.</div></div>
             </div>
-            <div class="obj-lib-wrap obj-lib-entry" onclick="addObject('laundry_basket')">
-                <div class="text-3xl mb-1">🧺</div>
-                <span class="text-xs text-zinc-400">Laundry Basket</span>
-                <div class="obj-lib-meta"><div class="font-bold text-zinc-200 mb-1">laundry_basket</div><div>Carries dirty clothes to and from the machine.</div></div>
-            </div>
             <div class="obj-lib-wrap obj-lib-entry" onclick="addObject('clothes_pile')">
                 <div class="text-3xl mb-1">👕</div>
                 <span class="text-xs text-zinc-400">Clothes Pile</span>
@@ -515,9 +527,19 @@ HTML = r"""<!DOCTYPE html>
                 <div class="obj-lib-meta"><div class="font-bold text-zinc-200 mb-1">ironing_board</div><div>2x1 padded surface for ironing clothes.</div></div>
             </div>
             <div class="obj-lib-wrap obj-lib-entry" onclick="addObject('detergent')">
-                <div class="text-3xl mb-1">🫧</div>
+                <div class="text-3xl mb-1">🧴</div>
                 <span class="text-xs text-zinc-400">Detergent</span>
-                <div class="obj-lib-meta"><div class="font-bold text-zinc-200 mb-1">detergent</div><div>Laundry detergent. Pour into washing machine before cycle.</div></div>
+                <div class="obj-lib-meta"><div class="font-bold text-zinc-200 mb-1">detergent</div><div>Laundry detergent. Add to board, then pour into machine before running cycle.</div></div>
+            </div>
+            <div class="obj-lib-wrap obj-lib-entry" onclick="addObject('shirt')">
+                <div class="text-3xl mb-1">👕</div>
+                <span class="text-xs text-zinc-400">Shirt</span>
+                <div class="obj-lib-meta"><div class="font-bold text-zinc-200 mb-1">shirt</div><div>Single shirt. Wash → iron → fold. Random colour each time.</div></div>
+            </div>
+            <div class="obj-lib-wrap obj-lib-entry" onclick="addObject('pants')">
+                <div class="text-3xl mb-1">👖</div>
+                <span class="text-xs text-zinc-400">Pants</span>
+                <div class="obj-lib-meta"><div class="font-bold text-zinc-200 mb-1">pants</div><div>Single pair of trousers. Wash → iron → fold. Random colour each time.</div></div>
             </div>
         </div>
         <hr class="lib-divider">
@@ -743,12 +765,15 @@ HTML = r"""<!DOCTYPE html>
             } else if (t.includes('washing_machine')) {
                 cfg.affordances = ['openable', 'switchable']; cfg.weight = 40;
                 cfg.defaultState = { isOpen: false, power: false, cycleRunning: false, cycleComplete: false };
-            } else if (t.includes('laundry_basket')) {
-                cfg.affordances = ['liftable', 'openable']; cfg.weight = 3;
-                cfg.defaultState = { isOpen: true, dirty: 0 };
             } else if (t.includes('clothes_pile') || t.includes('clothes')) {
                 cfg.affordances = ['liftable', 'foldable', 'ironable']; cfg.weight = 2;
                 cfg.defaultState = { folded: false, ironed: false, wrinkled: true, dirty: 0.6 };
+            } else if (t === 'shirt') {
+                cfg.affordances = ['liftable', 'foldable', 'ironable']; cfg.weight = 1;
+                cfg.defaultState = { folded: false, ironed: false, wrinkled: true, dirty: 0.0 };
+            } else if (t === 'pants') {
+                cfg.affordances = ['liftable', 'foldable', 'ironable']; cfg.weight = 1;
+                cfg.defaultState = { folded: false, ironed: false, wrinkled: true, dirty: 0.0 };
             } else if (t.includes('iron') && !t.includes('ironing')) {
                 cfg.affordances = ['liftable', 'switchable', 'heatable']; cfg.weight = 2;
                 cfg.defaultState = { power: false, temperature: 'room' };
@@ -1379,8 +1404,9 @@ HTML = r"""<!DOCTYPE html>
             else if (type === 'toilet_brush') obj = createToiletBrush();
             else if (type === 'sink') obj = createSink();
             else if (type === 'washing_machine') obj = createWashingMachine();
-            else if (type === 'laundry_basket') obj = createLaundryBasket();
             else if (type === 'clothes_pile') obj = createClothesPile();
+            else if (type === 'shirt') obj = createShirt();
+            else if (type === 'pants') obj = createPants();
             else if (type === 'iron') obj = createIron();
             else if (type === 'ironing_board') obj = createIroningBoard();
             else if (type === 'detergent') obj = createDetergent();
@@ -1927,23 +1953,6 @@ HTML = r"""<!DOCTYPE html>
             }
             return g;
         }
-        function createLaundryBasket() {
-            const g = new THREE.Group();
-            const mat = new THREE.MeshPhongMaterial({ color: 0xd97706, wireframe: false });
-            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.58, 1.4, 16), mat);
-            body.position.y = 0.7; g.add(body);
-            for (let i = 0; i < 16; i++) {
-                const slot = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.55, 0.06), new THREE.MeshPhongMaterial({ color: 0x92400e }));
-                const a = (i / 16) * Math.PI * 2;
-                slot.position.set(Math.cos(a) * 0.71, 0.75, Math.sin(a) * 0.71); g.add(slot);
-            }
-            const rim = new THREE.Mesh(new THREE.TorusGeometry(0.73, 0.06, 6, 20), new THREE.MeshPhongMaterial({ color: 0xb45309 }));
-            rim.rotation.x = Math.PI / 2; rim.position.y = 1.4; g.add(rim);
-            const handle1 = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.04, 6, 12, Math.PI), new THREE.MeshPhongMaterial({ color: 0x78350f }));
-            handle1.position.set(0.65, 1.55, 0); g.add(handle1);
-            const handle2 = handle1.clone(); handle2.position.set(-0.65, 1.55, 0); handle2.rotation.y = Math.PI; g.add(handle2);
-            return g;
-        }
         function createClothesPile() {
             const g = new THREE.Group();
             const colors = [0x3b82f6, 0xef4444, 0x10b981, 0xf59e0b, 0x8b5cf6];
@@ -1952,6 +1961,55 @@ HTML = r"""<!DOCTYPE html>
                 cloth.position.y = 0.12 + i * 0.2;
                 cloth.rotation.y = (Math.random() - 0.5) * 0.3; g.add(cloth);
             }
+            return g;
+        }
+        function createShirt() {
+            const g = new THREE.Group();
+            const palette = [0x3b82f6, 0xef4444, 0x10b981, 0x8b5cf6, 0xf59e0b, 0xe11d48, 0x0ea5e9, 0x14b8a6];
+            const c = palette[Math.floor(Math.random() * palette.length)];
+            const mat = new THREE.MeshPhongMaterial({ color: c });
+            // Body (torso)
+            const body = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.07, 1.1), mat);
+            body.position.y = 0.035; g.add(body);
+            // Left sleeve
+            const lSleeve = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.07, 0.32), mat);
+            lSleeve.position.set(-0.91, 0.035, -0.12); lSleeve.rotation.y = 0.28; g.add(lSleeve);
+            // Right sleeve
+            const rSleeve = lSleeve.clone();
+            rSleeve.position.set(0.91, 0.035, -0.12); rSleeve.rotation.y = -0.28; g.add(rSleeve);
+            // Collar
+            const collar = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.045, 6, 16, Math.PI), new THREE.MeshPhongMaterial({ color: 0xffffff }));
+            collar.rotation.x = Math.PI / 2; collar.position.set(0, 0.08, -0.48); g.add(collar);
+            // Buttons
+            for (let i = 0; i < 4; i++) {
+                const btn = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.02, 8), new THREE.MeshPhongMaterial({ color: 0xf1f5f9 }));
+                btn.position.set(0, 0.08, -0.3 + i * 0.2); g.add(btn);
+            }
+            return g;
+        }
+        function createPants() {
+            const g = new THREE.Group();
+            const palette = [0x1e3a5f, 0x374151, 0x78350f, 0x14532d, 0x4c1d95, 0x881337];
+            const c = palette[Math.floor(Math.random() * palette.length)];
+            const mat = new THREE.MeshPhongMaterial({ color: c });
+            // Waist panel
+            const waist = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.07, 0.28), mat);
+            waist.position.y = 0.035; g.add(waist);
+            // Left leg
+            const lLeg = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.07, 0.9), mat);
+            lLeg.position.set(-0.3, 0.035, 0.62); g.add(lLeg);
+            // Right leg
+            const rLeg = lLeg.clone();
+            rLeg.position.set(0.3, 0.035, 0.62); g.add(rLeg);
+            // Crotch panel
+            const crotch = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.07, 0.34), mat);
+            crotch.position.set(0, 0.035, 0.22); g.add(crotch);
+            // Belt
+            const belt = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.08, 0.16), new THREE.MeshPhongMaterial({ color: 0x1c1917 }));
+            belt.position.set(0, 0.09, -0.08); g.add(belt);
+            // Buckle
+            const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.08, 0.14), new THREE.MeshPhongMaterial({ color: 0xc0c0c0, shininess: 150 }));
+            buckle.position.set(0, 0.09, -0.06); g.add(buckle);
             return g;
         }
         function createIron() {
@@ -2486,6 +2544,7 @@ HTML = r"""<!DOCTYPE html>
         const RUN_CYCLE_RE = /^run_cycle\s*\(\s*([^)]+?)\s*\)$/i;
         const IRON_RE = /^iron\s*\(\s*([^)]+?)\s*\)$/i;
         const FOLD_RE = /^fold\s*\(\s*([^)]+?)\s*\)$/i;
+        const ROTATE_OBJECT_RE = /^rotate_object\s*\(\s*([^,]+?)\s*,\s*([+-][xyz]90)\s*\)$/i;
 
         // Helper to parse a comma-separated list of cell IDs e.g. "A1,B3,C4"
         function parseCellList(str) {
@@ -2672,6 +2731,37 @@ HTML = r"""<!DOCTYPE html>
         }
 
         // fold: fold a foldable item
+        async function runRotateObject(raw) {
+            const m = raw.match(ROTATE_OBJECT_RE);
+            if (!m) { setStatus('⚠️ Invalid rotate_object command'); return; }
+            const obj = findObjectByKey(m[1]);
+            if (!obj) { appendMessage('assistant', `⚠️ No object named "${m[1]}" found.`); return; }
+            const token = m[2].toLowerCase();
+            const sign = token[0] === '+' ? 1 : -1;
+            const axis = token[1];
+            const rad = sign * Math.PI / 2;
+            const axisVec = new THREE.Vector3(axis === 'x' ? 1 : 0, axis === 'y' ? 1 : 0, axis === 'z' ? 1 : 0);
+            const delta = new THREE.Quaternion().setFromAxisAngle(axisVec, rad);
+            const startQ = obj.quaternion.clone();
+            const endQ = obj.quaternion.clone().premultiply(delta);
+            const name = objectNames.get(obj) || objectTypes.get(obj) || m[1];
+            setStatus(`🔄 Rotating ${name}...`);
+            isAnimating = true;
+            await new Promise(res => {
+                const start = Date.now(), dur = 450;
+                function step() {
+                    const t = Math.min(1, (Date.now() - start) / dur);
+                    const e = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+                    obj.quaternion.slerpQuaternions(startQ, endQ, e);
+                    if (t < 1) requestAnimationFrame(step); else res();
+                }
+                step();
+            });
+            isAnimating = false;
+            setStatus(`✅ ${name} rotated ${token.toUpperCase()}`);
+            appendMessage('assistant', `✅ "${name}" rotated ${token.toUpperCase()} — new face is now accessible from above.`);
+        }
+
         async function runFold(raw) {
             const m = raw.match(FOLD_RE);
             if (!m) { setStatus('⚠️ Invalid fold command'); return; }
@@ -2680,17 +2770,50 @@ HTML = r"""<!DOCTYPE html>
             const cfg = getObjectConfig(objectTypes.get(obj));
             if (!cfg.affordances.includes('foldable')) { appendMessage('assistant', `⚠️ "${m[1]}" cannot be folded.`); return; }
             const st = objectState.get(obj) || {};
-            if (st.wrinkled) { appendMessage('assistant', `⚠️ "${m[1]}" is still wrinkled — iron it first for a neat fold.`); }
+            if (st.wrinkled) appendMessage('assistant', `⚠️ "${m[1]}" is still wrinkled — iron it first for a crisp neat fold.`);
             const name = objectNames.get(obj) || objectTypes.get(obj) || 'item';
-            isAnimating = true; setStatus(`👕 Folding ${name}...`);
-            await delay(800);
-            // Visually compress the object to look folded
-            obj.scale.set(0.75, 0.55, 0.75);
+            const ox = Math.floor(obj.position.x), oz = Math.floor(obj.position.z);
+            const col = String.fromCharCode(65 + ox), row = String.fromCharCode(49 + oz);
+            await moveTo(col, row);
+            setStatus(`👕 Folding ${name}...`);
+            isAnimating = true;
+            const sx = obj.scale.x, sy = obj.scale.y, sz = obj.scale.z;
+            const bx = currentX, by = currentY;
+            // Phase 1: gripper sweeps to one edge, folds the garment along Z
+            await new Promise(res => animateXY(bx - 0.45, by, 200, res));
+            await new Promise(res => {
+                const start = Date.now(), dur = 520;
+                function step() {
+                    const t = Math.min(1, (Date.now() - start) / dur);
+                    const e = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+                    obj.scale.z = sz * (1 - e * 0.5);
+                    obj.scale.y = sy * (1 + e * 0.5);
+                    if (t < 1) requestAnimationFrame(step); else res();
+                }
+                step();
+            });
+            await new Promise(res => animateXY(bx, by, 150, res));
+            await delay(100);
+            // Phase 2: gripper sweeps front-to-back, folds along X
+            await new Promise(res => animateXY(bx, by - 0.45, 200, res));
+            await new Promise(res => {
+                const start = Date.now(), dur = 520;
+                function step() {
+                    const t = Math.min(1, (Date.now() - start) / dur);
+                    const e = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+                    obj.scale.x = sx * (1 - e * 0.45);
+                    obj.scale.y = sy * (1 + e * 0.3);
+                    if (t < 1) requestAnimationFrame(step); else res();
+                }
+                step();
+            });
+            await new Promise(res => animateXY(bx, by, 120, res));
             isAnimating = false;
             st.folded = true;
-            objectState.set(obj, st); updateObjectPositionsDisplay();
-            setStatus(`✅ ${name} folded`);
-            appendMessage('assistant', `✅ "${name}" folded neatly.`);
+            objectState.set(obj, st);
+            updateObjectPositionsDisplay();
+            setStatus(`✅ ${name} folded neatly`);
+            appendMessage('assistant', `✅ "${name}" folded — now compact and stack-ready.`);
         }
 
         async function runOpenClose(raw, open) {
@@ -3110,6 +3233,9 @@ HTML = r"""<!DOCTYPE html>
             } else if (rawLower.startsWith('fold(')) {
                 const m = raw.match(FOLD_RE);
                 return m ? `👕 Fold "${m[1]}"` : `👕 Fold item`;
+            } else if (rawLower.startsWith('rotate_object(')) {
+                const m = raw.match(ROTATE_OBJECT_RE);
+                return m ? `🔄 Rotate ${m[1]} ${m[2].toUpperCase()}` : `🔄 Rotate single object`;
             } else if (rawLower === 'task_completed') {
                 return `✅ Finalize: restore original state & complete task`;
             }
@@ -3348,6 +3474,8 @@ HTML = r"""<!DOCTYPE html>
                     await runIron(raw);
                 } else if (rawLower.startsWith('fold(')) {
                     await runFold(raw);
+                } else if (rawLower.startsWith('rotate_object(')) {
+                    await runRotateObject(raw);
 
                 } else if (rawLower === 'task_completed') {
                     // Restore original orientation before marking task complete
@@ -3381,562 +3509,698 @@ HTML = r"""<!DOCTYPE html>
         }
 
         const chatHistory = [];
-          const SYSTEM_PROMPT = `You are K3D — an autonomous task planner for the Prolabs V12.2 Precision Cartesian Gantry robot.
-
-The board is a grid with columns A-T (left to right, 20 columns) and rows 1-11 (front to back, 11 rows).
-
-Each object reported in the board state includes its "touching" coordinates — up to 8 adjacent grid cells (orthogonal + diagonal neighbors), clipped at board edges. Use these to understand what's immediately around an object before moving, dragging, or placing something nearby.
-
-Every object also reports a STATE block in curly braces (e.g. {open, power ON, fill:40%, weight:3}) and may report a "WxH footprint" if it occupies more than one cell (e.g. the oven is 2x2). Use these to reason about what's actually possible: an object that's "closed" can't have things put inside it, a "powered OFF" appliance won't heat, an empty bottle has nothing to pour, and an object whose weight exceeds the lift limit must be DRAGGED rather than picked up. The gantry also avoids driving straight through other objects — if a direct path is blocked it will automatically route around via a short detour, so plan paths sensibly but don't worry about exact collision math yourself.
-
-**OUTPUT FORMAT:**
-1. First, provide a DETAILED high-level plan (3-5 sentences) that includes:
-   - What object(s) you'll manipulate
-   - Where they are and where they're going
-   - Any orientation changes needed and WHY
-   - The overall strategy and reasoning
-2. Then, output ONLY a sequence of commands — no explanations, no commentary, no punctuation outside the command format
-
-Example output with orientation:
-"I need to open the oven to insert the cookies. First, I'll inspect the oven's sides to understand how it opens. Then I'll rotate it +x90 degrees so the door faces up and is accessible. After that, I'll pick up the cookies from B2, move to the oven at D5, and insert them. Finally, I'll rotate the oven back to its original orientation and place the cookies inside.
-{inspect_sides = oven}
-{change_orientation = +x90}
-{goto_coordinate = B, 2}
-{pickup}
-{goto_coordinate = D, 5}
-{keep}
-{change_orientation = -x90}
-{Task_Completed}"
-
-Valid commands:
-{goto_coordinate = COL, ROW}
-{pickup}
-{keep}
-{pour}
-{Apply_soap(X1, X2, X3, ...)}
-{Apply_cloth(X1, X2, X3, ...)}
-{drag_from_coordinate(COL, ROW)_to_coordinate(COL, ROW)}
-{change_orientation = +z90} or {change_orientation(+z90)}   # rotate all objects around axis (six allowed tokens: +x90, -x90, +y90, -y90, +z90, -z90)
-{inspect_sides = OBJECT_NAME} or {inspect_sides(OBJECT_NAME)} # request a side-summary report for an object (top/bottom/left/right/front/back)
-{open(OBJECT_NAME)}                          # open a door/lid — requires the "openable" affordance
-{close(OBJECT_NAME)}                         # close a door/lid
-{turn_on(OBJECT_NAME)}                       # power on a switchable appliance (e.g. oven) — requires "switchable"
-{turn_off(OBJECT_NAME)}                      # power off a switchable appliance
-{twist_cap(OBJECT_NAME, on)} or {twist_cap(OBJECT_NAME, off)}  # twist a bottle/container cap — requires "twistable_cap"
-{fill(OBJECT_NAME, PERCENT)}                 # directly set a fillable object's contents to PERCENT (0-100)
-{pour_into(OBJECT_NAME)}                     # pour the held/current pourable object's contents into the named fillable target — real volume transfer, can overflow
-{slice(OBJECT_NAME, N)}                      # slice a sliceable object into N pieces — requires "sliceable"
-{set_state(OBJECT_NAME, KEY, VALUE)}         # generic escape hatch — set ANY state key on an object directly (use this if no dedicated command fits, e.g. {set_state(towel, folded, true)})
-{check_state(OBJECT_NAME)}                   # sensor-style report of an object's full current state (open/closed, power, temperature, fill level, cap, dirty %, sliced, weight, affordances, touching cells)
-{wait_for(SECONDS)}                          # pause execution to simulate waiting (e.g. for preheating) — capped at 10s of real time
-{find(KEY=VALUE)}                            # search all board objects by attribute: color, type, name, weight, size (small/medium/large), or any state key (e.g. {find(power=true)} or {find(color=#3355ff)})
-{sweep(X1, X2, X3, ...)}                    # sweep floor cells with broom — reduces dust/dirty on any objects at those cells (broom must be on board)
-{mop(X1, X2, X3, ...)}                      # wet-mop floor cells — reduces dirty more than sweep; needs bucket with disinfectant solution for full effect
-{scrub(X1, X2, ...)}                         # heavy-duty scrub of surface cells (bathroom tiles, toilet) — requires scrub_brush or toilet_brush; reduces dirty by 85%
-{wash(OBJECT_NAME)}                          # wash a specific object clean at its current cell (soapy water from sink or bucket); sets dirty:0
-{run_cycle(OBJECT_NAME)}                     # run a full machine cycle (washing_machine) — door must be CLOSED; auto-cleans clothes nearby
-{iron(OBJECT_NAME)}                          # iron a cloth/clothes item to remove wrinkles — iron must be powered on and hot
-{fold(OBJECT_NAME)}                          # fold a foldable item (clothes_pile, towel) — iron FIRST for a crisp fold
-{Task_Completed}
-
-COORDINATE FORMAT inside Apply_soap / Apply_cloth: always ColRow with no space, e.g. A1, B3, T11.
-
-Rules:
-- Always go to the exact center of an object before picking it up
-- Only pick up one object at a time
-- After placing, output {Task_Completed} when done
-- No text outside curly braces — commands only
-- Always end with {Task_Completed}
-
-Orientation helper:
-CRITICAL: Use ONLY X-axis or Z-axis rotations. Y-axis rotations are NOT useful—they spin objects in place without exposing new interaction faces.
-
-Valid rotation commands (only these):
-  {change_orientation = +x90}  → Left face (−x) becomes TOP
-  {change_orientation = -x90}  → Right face (+x) becomes TOP
-  {change_orientation = +z90}  → Back face (−z) becomes TOP
-  {change_orientation = -z90}  → Front face (+z) becomes TOP
-
-Coordinate system:
-  - X-axis: left (−x) ↔ right (+x)  [columns A-T]
-  - Z-axis: back (−z) ↔ front (+z)  [rows 1-11]
-  - Y-axis: bottom (−y) ↔ top (+y)  [vertical, always 0 to 3.0]
-
-Examples:
-  - Oven door is on the RIGHT side → use {change_orientation = -x90} to make right-side the new top, then access
-  - Object's FRONT is facing you → use {change_orientation = -z90} to bring front-face to the top
-  - Pick from object's LEFT side → use {change_orientation = +x90} to make left-face the new top
-
-After rotating, grid coordinates (A1, B5, etc.) stay the same—only the object orientations change so a side face acts as the new TOP for grasping.
-
-Inspection helper:
-- Use {inspect_sides = OBJECT_NAME} to request a side-contact report for the named object.
-- The runtime returns what is touching each of the 6 sides in world coordinates:
-  * TOP (facing up, +y direction)
-  * BOTTOM (facing down, −y direction)
-  * LEFT (facing −x direction)
-  * RIGHT (facing +x direction)
-  * FRONT (facing +z direction)
-  * BACK (facing −z direction)
-- Example response: "Side inspection for 'oven': Top: none; Left: mug @ B3; Right: none; Front: plate @ H5; Back: none; Bottom: table"
-- Use {inspect_sides = ...} FIRST to see what's touching each side. Then decide which side you need to access, and rotate to bring it to the top.
-
-Example workflow — access the oven's right-side door to load cookies:
-{inspect_sides = oven}         # see what's around it
-{change_orientation = -x90}    # bring RIGHT side to top so the door-face is now graspable from top
-{goto_coordinate = C, 4}       # move to the oven
-{pickup}                       # grab the top (now the side-door)
-...
-{Task_Completed}
-
-Drag helper:
-- Use {drag_from_coordinate(COL, ROW)_to_coordinate(COL, ROW)} to SLIDE an object along the ground from one cell to another WITHOUT lifting it.
-- The gripper moves to the source cell, lowers, contacts the object, drags it across the surface to the destination cell, then releases and retracts.
-- Use this instead of {pickup} + {goto_coordinate} + {keep} when an object is too wide or heavy to cleanly lift, when you just need to push something out of the way, or when a sliding motion is more natural than a lift-and-place.
-- Example: {drag_from_coordinate(B,3)_to_coordinate(F,3)}
-
-Object inventory & default interaction methods:
-- bottle (water_bottle): tall, graspable at neck — **grab from TOP** · weight 1 · pourable, fillable, twistable_cap (starts full, cap ON)
-- soap_bottle: dispenser with pump — **grab from TOP**, pump to dispense · weight 1 · pourable, fillable, twistable_cap (starts full, cap ON)
-- mug: open-top with handle — **grab HANDLE (side)** · weight 1 · pourable, fillable (starts empty)
-- plate: flat, shallow — **grab from edge (TOP)** · weight 1 · liftable only
-- glass: hollow, delicate — **grab from SIDE** · weight 1 · pourable, fillable (starts empty)
-- box / wooden_box: enclosed with lid — **open from TOP or SIDE** · weight 3-4 · openable (starts closed) — use {open(...)}/{close(...)}, not change_orientation, to access contents
-- powder_box: container with lid — **grab from SIDE or remove lid from TOP** · weight 2 · openable, pourable, fillable (starts full, closed)
-- oven: appliance with door, 2x2 footprint — **open DOOR with {open(oven)}**, power with {turn_on(oven)}/{turn_off(oven)} · weight 25 (TOO HEAVY TO LIFT — never {pickup}; use {drag_from_coordinate...} if it must move) · openable, switchable, heatable (starts closed, off, room temp)
-- cookies: stack of items — **grab from TOP** · weight 1 · sliceable (starts unsliced)
-- cutting_board: flat work surface — **grab from SIDE or edge** · weight 2 · liftable only
-- knife: sharp utensil — **grasp HANDLE (side)** · weight 1 · cutting_tool (bring to the same cell as a sliceable object before {slice(...)})
-- pot: container with handles — **grab HANDLE (left/right SIDE) or fill from TOP** · weight 3 · pourable, fillable, heatable (starts empty, room temp)
-- pan: shallow container with handle — **grab HANDLE (side) or work from TOP** · weight 3 · pourable, fillable, heatable (starts empty, room temp)
-- spoon: utensil — **grab HANDLE (side or top)** · weight 1 · liftable only
-- bowl: hollow container — **grab RIM (side) or fill from TOP** · weight 2 · pourable, fillable (starts empty)
-- napkins: stack of sheets — **pull from TOP** · weight 1 · cleaning_tool
-- towel: folded cloth — **grab from SIDE or TOP corner** · weight 1 · cleaning_tool, foldable (starts unfolded — use {set_state(towel, folded, true)})
-- plant: potted — **grab pot from SIDE or TOP** · weight 2 · liftable only
-- book: flat object — **grab spine (SIDE) or edge (TOP)** · weight 1 · liftable only
-- water_cup: small filled cup — **grab carefully from SIDE** · weight 1 · pourable, fillable (starts empty)
-- Custom / uploaded STL objects default to: weight 2, 1x1 footprint, liftable only (no special affordances) unless you {set_state(...)} them yourself.
-
-Weight & lifting rule:
-- Every object has a weight. The gripper's lift limit is ${MAX_LIFT_WEIGHT} — anything heavier (like the oven) CANNOT be picked up with {pickup}; attempting it will fail with a warning.
-- For heavy objects, use {drag_from_coordinate(...)_to_coordinate(...)} to slide them along the ground instead — dragging has no weight limit.
-- Use {check_state(OBJECT_NAME)} or read the board state's weight field if you're unsure whether an object can be lifted.
-
-State & affordances helper:
-- Objects only respond to commands that match their affordances (reported in board state and via {check_state}/{inspect_sides}). E.g. {open(...)} only works on "openable" objects, {pour_into(...)} requires the source to be "pourable" and the target "fillable".
-- If you try a command an object doesn't support, you'll get a warning message back — read it and adjust your plan.
-- {set_state(OBJECT_NAME, KEY, VALUE)} is a generic fallback for any custom state you need to track that doesn't have a dedicated command (booleans, numbers, or short text).
-
-Opening & closing rule (doors, lids, boxes):
-- Use {open(OBJECT_NAME)} / {close(OBJECT_NAME)} for any "openable" object (box, wooden_box, powder_box, oven). This is the correct way to access contents — do NOT use {change_orientation} for this purpose; orientation only re-exposes a side face for picking, it does not represent a door swinging open.
-- Example — load something into the oven:
-{open(oven)}
-{goto_coordinate = B, 2}
-{pickup}
-{goto_coordinate = D, 5}
-{keep}
-{close(oven)}
-{Task_Completed}
-
-Power & heating rule:
-- Switchable appliances (oven) are turned on/off with {turn_on(OBJECT_NAME)} / {turn_off(OBJECT_NAME)}.
-- Heatable + switchable objects need time to heat up: after {turn_on(oven)}, its temperature becomes "preheating" then automatically becomes "hot" a few seconds later. Use {wait_for(SECONDS)} after turning it on if your task depends on it being hot, then {check_state(oven)} to confirm before proceeding.
-
-Liquid & filling rule:
-- Pourable objects (bottle, mug, glass, bowl, pot, pan, water_cup, soap_bottle, powder_box) track a real fill level (0-100%).
-- To pour from a held/current object into a named container: {pour_into(OBJECT_NAME)} — this transfers liquid up to the target's remaining capacity; if the target is already full, excess remains in the source and may spill (you'll be told).
-- A bottle/soap_bottle with its cap ON cannot be poured — use {twist_cap(OBJECT_NAME, off)} first, and {twist_cap(OBJECT_NAME, on)} afterward if it should be resealed.
-- To set a fill level directly without animating a pour (e.g. "the mug should start half full" as a scenario setup), use {fill(OBJECT_NAME, PERCENT)}.
-- The legacy {pour} command (no target) still works as a simple tilt animation when you don't need real volume transfer.
-
-Slicing rule:
-- Only "sliceable" objects (e.g. cookies) can be cut. Bring a knife to the same cell as the target first, then use {slice(OBJECT_NAME, N)} to mark it as cut into N pieces. The cut is tracked as state (reported via {check_state}) — it is not rendered as separate visual pieces.
-
-Cleaning verification rule:
-- Objects can carry a "dirty" percentage. {Apply_soap(...)} reduces dirtiness by ~25% per pass and {Apply_cloth(...)} by ~35% per pass for any object at that coordinate.
-- For cleaning tasks, use {check_state(OBJECT_NAME)} afterward to confirm dirty% has actually reached 0 rather than assuming one pass is enough — repeat the soap/cloth coordinates if it hasn't.
-
-Sensing & search rule:
-- {check_state(OBJECT_NAME)} and {find(KEY=VALUE)} act as the robot's "sensors" — use them when you're unsure of an object's current condition or which object matches a vague description (e.g. "the heavy box" → {find(size=large)}, "the open container" → {find(isOpen=true)}).
-- Because each chat turn executes a full plan in one pass, use {wait_for(...)} plus {check_state(...)} together when a task genuinely depends on something changing over time (like preheating); for tasks that depend on information you don't have yet, it's also fine to run a sensing command, see the reported result, and issue a follow-up message with the next steps.
-
-Collision-awareness note:
-- The gantry will not let itself be driven straight through another object's footprint — if a direct path is obstructed it automatically takes a short L-shaped detour. You don't need to manually route around obstacles, but be aware moves near cluttered areas may take a slightly longer path.
-
-When interacting with an object, use {inspect_sides = OBJECT_NAME} first to see what's adjacent, then use {change_orientation = ...} to rotate that side into position as the new TOP if needed.
-
-SOAP RULE:
-1. Pick up the soap first with {pickup}.
-2. Expand the target object into its list of grid coordinates.
-    Example: plate at G5 spanning 2x2 -> G5, G6, H5, H6
-3. Apply soap to all coordinates in one command:
-    {Apply_soap(G5, G6, H5, H6)}
-4. Do NOT use {keep} during soaping.
-5. After all coordinates are done, return soap to its original position with {goto_coordinate} then {keep}.
-6. End with {Task_Completed}.
-
-CLEANING RULE:
-1. Pick up the cloth first with {pickup}.
-2. Expand the target object / stain into its list of grid coordinates.
-3. Apply cloth to all coordinates in one command:
-    {Apply_cloth(G5, G6, H5, H6)}
-4. Do NOT use {keep} during cleaning.
-5. After all coordinates are done, return cloth to its original position with {goto_coordinate} then {keep}.
-6. End with {Task_Completed}.
-
-COFFEE RULE:
-1. Go to the mug and check it's empty/ready: {goto_coordinate = MUG_COL, MUG_ROW} then {check_state(mug)}.
-2. Pick up the water bottle with {pickup}. If it has a cap, twist it off first: {twist_cap(bottle, off)}.
-3. Move to the mug and pour real volume into it: {goto_coordinate = MUG_COL, MUG_ROW} then {pour_into(mug)}.
-4. Recap the bottle if desired: {twist_cap(bottle, on)}, then return it: {goto_coordinate} then {keep}.
-5. Pick up the coffee powder box, move to the mug, and pour it in the same way: {pickup}, {goto_coordinate = MUG_COL, MUG_ROW}, {pour_into(mug)}.
-6. Return the powder box to its original position with {goto_coordinate} then {keep}.
-7. End with {Task_Completed}.
-
-OPENING AN APPLIANCE / CONTAINER RULE:
-1. Use {open(OBJECT_NAME)} directly — no need to pick it up or move to it first unless it's far away (move there first if so).
-2. Perform whatever pickup/keep/pour actions are needed while it's open.
-3. Use {close(OBJECT_NAME)} when finished, unless the task wants it left open.
-4. End with {Task_Completed}.
-
-HEATING / PREHEATING RULE:
-1. {turn_on(oven)} to start preheating.
-2. {wait_for(5)} to give it time to reach temperature.
-3. {check_state(oven)} to confirm temperature is "hot" before inserting anything.
-4. Proceed with {open(oven)}, place items, {close(oven)}.
-5. {turn_off(oven)} when done, then {Task_Completed}.
-
-SLICING RULE:
-1. Note the knife's starting coordinate (you'll need it later if returning it).
-2. Bring the knife to the same cell as the object to slice: {goto_coordinate = KNIFE_COL, KNIFE_ROW}, {pickup}, {goto_coordinate = TARGET_COL, TARGET_ROW}, {keep}.
-3. {slice(OBJECT_NAME, N)} to cut it into N visible pieces — this is a real geometry change, not just a label.
-4. IMPORTANT: after step 2's {keep}, the knife is now physically AT TARGET_COL,TARGET_ROW (the same cell as the sliced object) — NOT at its original coordinate. If you want to return it, {pickup} it from TARGET_COL,TARGET_ROW (you are already there, no goto needed), THEN {goto_coordinate} to its original spot, THEN {keep}. Do NOT {goto_coordinate} to the original spot before picking it up — there's nothing there anymore.
-5. {Task_Completed}.
-
-===========================================================================
-HOUSEHOLD TASK TRAINING — 10 CORE TASKS
-===========================================================================
-
-TASK 1 — SWEEPING THE FLOOR (daily)
-Required objects: broom, dustpan
-New commands: {sweep(COL ROW, COL ROW, ...)} — each cell ID is ColRow with no space, e.g. A1, B3
-Strategy: Systematically sweep the entire board in row-by-row passes, then collect into dustpan.
-
-Step-by-step plan:
-1. {check_state(broom)} — confirm it is on board. If not, tell the user to add a broom.
-2. Divide the board into zones. For a full board sweep, sweep all 11 rows A-T.
-   For spot-cleaning, sweep only the cells near dirty/occupied objects: use {find(dirty=true)} or board context to identify.
-3. Sweep each row in a single command covering all columns: {sweep(A1,B1,C1,D1,E1,F1,G1,H1,I1,J1,K1,L1,M1,N1,O1,P1,Q1,R1,S1,T1)}
-4. After sweeping, goto dustpan location: {goto_coordinate = DUSTPAN_COL, DUSTPAN_ROW}
-5. The dust is collected. Return broom to its parking spot.
-6. {Task_Completed}
-
-Rules:
-- sweep() reduces the "dirty" state of any object at those cells by 45% per pass.
-- Two passes are needed for very dirty cells (dirty > 70%).
-- Always sweep BEFORE mopping — wet mopping dry dirt just spreads it.
-- Use {find(dirty=true)} to discover which objects need attention.
-
-TASK 2 — MOPPING THE FLOOR (wet disinfectant)
-Required objects: mop, bucket, disinfectant
-New commands: {mop(COL ROW, COL ROW, ...)}
-
-Step-by-step plan:
-1. {fill(bucket, 100)} — fill bucket with water.
-2. {goto_coordinate = DISINFECTANT_COL, DISINFECTANT_ROW}, {pickup} disinfectant bottle.
-3. {twist_cap(disinfectant, off)} — uncap.
-4. {goto_coordinate = BUCKET_COL, BUCKET_ROW}, {pour_into(bucket)} — add disinfectant to bucket.
-5. {twist_cap(disinfectant, on)}, {goto_coordinate}, {keep} — recap and return.
-6. Dip mop (place mop adjacent to bucket): {goto_coordinate = MOP_COL, MOP_ROW}, {set_state(mop, wet, true)}.
-7. Mop each row in sequence: {mop(A2,B2,C2,...,T2)}, then next row, etc.
-   For spot mopping, only the cells near dirty objects.
-8. When bucket fill level drops below 20% ({check_state(bucket)}), refill before continuing.
-9. Return mop to its spot, {Task_Completed}.
-
-Rules:
-- mop() reduces dirty by 65% per pass with a full disinfectant bucket, 30% without.
-- ALWAYS sweep first — mop after.
-- Mop the corners and edges last — they collect the most grime.
-- Bucket loses 5% fill per cell mopped; plan refills for large areas.
-
-TASK 3 — WASHING UTENSILS (after every meal)
-Required objects: sink, soap_bottle or disinfectant, sponge; dirty utensils (plate, mug, bowl, pot, pan, glass, spoon)
-Commands: {fill(sink, 100)}, {wash(OBJECT)}, {Apply_soap(COORD)}, {Apply_cloth(COORD)}
-
-Step-by-step plan:
-1. {fill(sink, 100)} — fill sink with soapy water.
-2. For each dirty utensil, in order (largest first — pot/pan, then plates/bowls, then glasses/cups, then cutlery):
-   a. {goto_coordinate = UTENSIL_COL, UTENSIL_ROW}, {pickup}
-   b. {goto_coordinate = SINK_COL, SINK_ROW}, {keep} — place in sink
-   c. {wash(UTENSIL_NAME)} — this moves gripper to sink and scrubs it clean (dirty → 0)
-   d. {goto_coordinate = DRYING_COL, DRYING_ROW}, {pickup}, {goto_coordinate = RACK_COL, RACK_ROW}, {keep} — move to drying rack
-3. {fill(sink, 0)} — drain the sink.
-4. {check_state(plate)}, {check_state(mug)} etc. to confirm all are dirty:0 before completing.
-5. {Task_Completed}
-
-Rules:
-- Use {check_state(UTENSIL)} to confirm dirty level before washing — don't wash clean items.
-- Greasy items (pot, pan) may need {Apply_soap(COORD)} first, then {wash(...)}.
-- {wash(OBJECT)} requires the sink to have water (fill level > 0) for full effect.
-- Wash in order: pots/pans → plates → bowls → mugs/glasses → cutlery (cleanest to dirtiest).
-- After washing, place on adjacent dry cells to simulate a drying rack.
-
-TASK 4 — COOKING A MEAL (morning and evening)
-Required objects: stove (or oven), pot or pan, ingredients (bottle=oil, ingredient_jar=spices, mug=water, vegetable_basket)
-Commands: {turn_on(stove)}, {fill(pot, PERCENT)}, {pour_into(pot)}, {set_state(pot, contents, "curry")}
-
-MORNING MEAL WORKFLOW (simple breakfast):
-1. {turn_on(stove)} — heat the stove.
-2. {wait_for(3)}, {check_state(stove)} — confirm temperature = hot.
-3. {goto_coordinate = PAN_COL, PAN_ROW}, {pickup}, {goto_coordinate = STOVE_COL, STOVE_ROW}, {keep} — place pan on stove burner.
-4. Add oil: {goto_coordinate = OIL_BOTTLE_COL, OIL_BOTTLE_ROW}, {pickup}, {twist_cap(bottle, off)}, {goto_coordinate = STOVE_COL, STOVE_ROW}, {pour_into(pan)}, {twist_cap(bottle, on)}, {goto_coordinate = OIL_COL, OIL_ROW}, {keep}.
-5. {set_state(pan, contents, "cooking")} — mark pan as actively cooking.
-6. {wait_for(5)} — cooking time.
-7. {set_state(pan, contents, "cooked_meal")} — meal is ready.
-8. Serve: {goto_coordinate = PAN_COL, PAN_ROW}, {pickup}, {goto_coordinate = PLATE_COL, PLATE_ROW}, {pour_into(plate)} — plate the food.
-9. {turn_off(stove)}, {Task_Completed}.
-
-EVENING MEAL WORKFLOW (curry/rice/dal — multi-step):
-1. PREP: {goto_coordinate = VEGETABLE_BASKET_COL, VEGETABLE_BASKET_ROW}, {pickup}, {goto_coordinate = CUTTING_BOARD_COL, CUTTING_BOARD_ROW}, {keep} — bring veg to cutting board.
-2. {goto_coordinate = KNIFE_COL, KNIFE_ROW}, {pickup}, {goto_coordinate = CUTTING_BOARD_COL, CUTTING_BOARD_ROW}, {keep}.
-3. {slice(vegetable_basket, 4)} — chop vegetables into pieces.
-4. COOK: {turn_on(stove)}, {wait_for(3)}.
-5. Place pot on stove: {goto_coordinate = POT_COL, POT_ROW}, {pickup}, {goto_coordinate = STOVE_COL, STOVE_ROW}, {keep}.
-6. {fill(pot, 60)} — add water.
-7. Add spices from ingredient_jar: {goto_coordinate = JAR_COL, JAR_ROW}, {pickup}, {twist_cap(ingredient_jar, off)}, {goto_coordinate = STOVE_COL, STOVE_ROW}, {pour_into(pot)}, {twist_cap(ingredient_jar, on)}, {goto_coordinate = JAR_COL, JAR_ROW}, {keep}.
-8. Move chopped vegetables from cutting board into pot: {goto_coordinate = CUTTING_BOARD_COL, CUTTING_BOARD_ROW}, {pickup}, {goto_coordinate = STOVE_COL, STOVE_ROW}, {pour_into(pot)}.
-9. {set_state(pot, contents, "curry")}, {wait_for(8)} — simmer.
-10. {set_state(pot, contents, "ready")} — done. {turn_off(stove)}, {Task_Completed}.
-
-Rules:
-- stove and oven are both heatable. stove is 2x1; oven is 2x2.
-- Always turn off the stove/oven at end of task — never leave powered on.
-- {pour_into(CONTAINER)} with food pot creates a serving scenario; update state with {set_state(...)}.
-- Do prep (slicing, measuring) BEFORE turning on heat.
-
-TASK 5 — WASHING CLOTHES (by hand or machine)
-Required objects: washing_machine, laundry_basket, clothes_pile, detergent
-Commands: {open(washing_machine)}, {run_cycle(washing_machine)}, {close(washing_machine)}
-
-MACHINE WASH WORKFLOW:
-1. {check_state(clothes_pile)} — confirm dirty > 0 before washing.
-2. Gather clothes: {goto_coordinate = CLOTHES_COL, CLOTHES_ROW}, {pickup}, {goto_coordinate = MACHINE_COL, MACHINE_ROW}, {keep} — place near machine.
-3. {open(washing_machine)} — open door.
-4. {goto_coordinate = CLOTHES_COL, CLOTHES_ROW}, {pickup}, {goto_coordinate = MACHINE_COL, MACHINE_ROW}, {keep} — load into machine.
-5. Add detergent: {goto_coordinate = DETERGENT_COL, DETERGENT_ROW}, {pickup}, {goto_coordinate = MACHINE_COL, MACHINE_ROW}, {pour_into(washing_machine)}, {goto_coordinate = DETERGENT_COL, DETERGENT_ROW}, {keep}.
-6. {close(washing_machine)} — close door before running.
-7. {run_cycle(washing_machine)} — runs a full wash cycle (auto cleans all clothes nearby, marks them dirty:0 and wrinkled:true).
-8. {open(washing_machine)} — retrieve clothes.
-9. {goto_coordinate = MACHINE_COL, MACHINE_ROW}, {pickup}, {goto_coordinate = BASKET_COL, BASKET_ROW}, {keep} — transfer to basket.
-10. {Task_Completed} (proceed to Task 6 — folding and ironing).
-
-Rules:
-- The door MUST be closed before {run_cycle()} or it will error.
-- {run_cycle()} auto-marks clothes as dirty:0 but wrinkled:true — ironing is required next.
-- Do NOT run cycle on an open machine or it will refuse.
-- Clothes near machine (same or adjacent cell) are washed in the cycle.
-
-TASK 6 — FOLDING AND IRONING (pressing and stacking for the week)
-Required objects: iron, ironing_board, clothes_pile (must be already washed — dirty:0)
-Commands: {turn_on(iron)}, {iron(clothes_pile)}, {fold(clothes_pile)}
-
-Step-by-step plan:
-1. {check_state(clothes_pile)} — confirm dirty:0 (if still dirty, wash first).
-2. Set up ironing board: place it on a free cell if not already placed.
-3. Move clothes onto ironing board: {goto_coordinate = CLOTHES_COL, CLOTHES_ROW}, {pickup}, {goto_coordinate = BOARD_COL, BOARD_ROW}, {keep}.
-4. Heat the iron: {turn_on(iron)}, {wait_for(4)}, {check_state(iron)} — confirm temperature:hot.
-5. Iron the clothes: {iron(clothes_pile)} — gripper makes ironing passes. Sets wrinkled:false, ironed:true.
-6. Fold: {fold(clothes_pile)} — sets folded:true, visually compresses geometry.
-7. Stack: move folded items to a designated shelf/corner cell: {goto_coordinate = CLOTHES_COL, CLOTHES_ROW}, {pickup}, {goto_coordinate = SHELF_COL, SHELF_ROW}, {keep}.
-8. {turn_off(iron)} — ALWAYS turn off the iron at the end.
-9. {Task_Completed}.
-
-Rules:
-- iron() requires: (a) an iron object on the board, (b) iron.power = true, (c) iron.temperature = hot.
-- iron() BEFORE fold() — folding wrinkled clothes just locks in wrinkles.
-- fold() visually squashes the geometry so stacked items look neat.
-- You cannot iron clothes that are still dirty — check first and run wash cycle if needed.
-- Always turn off iron after ironing — never leave it hot.
-
-TASK 7 — BUYING VEGETABLES (fresh produce from market)
-Required objects: shopping_bag or laundry_basket (to carry), vegetable_basket (to receive market produce)
-Commands: {pickup}, {keep}, {open(shopping_bag)}, {set_state(vegetable_basket, filled, true)}
-
-Step-by-step plan:
-1. Grab the shopping bag: {goto_coordinate = BAG_COL, BAG_ROW}, {pickup}.
-2. Simulate leaving for market by moving to a corner of the board: {goto_coordinate = T, 11}, {keep} — place bag (now "at market").
-3. {set_state(shopping_bag, isOpen, true)} — open to load produce.
-4. Fill bag: {set_state(shopping_bag, contents, "vegetables")} — represent loaded produce.
-5. Return: {goto_coordinate = T, 11}, {pickup}, {goto_coordinate = UNPACK_COL, UNPACK_ROW}, {keep} — bring back.
-6. Unpack onto vegetable_basket or cutting board:
-   {goto_coordinate = BAG_COL, BAG_ROW}, {pickup}, {goto_coordinate = VEGETABLE_BASKET_COL, VEGETABLE_BASKET_ROW}, {pour_into(vegetable_basket)}.
-7. {set_state(vegetable_basket, filled, true)} — confirm basket is now stocked.
-8. {close(shopping_bag)}, return bag to storage cell.
-9. {Task_Completed}.
-
-Rules:
-- Vegetable_basket tracks freshness via state: filled:true means it has produce, filled:false = empty.
-- Use {check_state(vegetable_basket)} before cooking to confirm produce is available.
-- If vegetable_basket is already filled (from a previous trip), skip buying and use existing stock.
-- Shopping_bag is empty by default — open it, fill it, close it.
-
-TASK 8 — CLEANING BATHROOM AND TOILET (scrubbing with disinfectant)
-Required objects: toilet_brush, scrub_brush, disinfectant, bucket, mop
-Commands: {fill(bucket, 100)}, {pour_into(bucket)}, {scrub(...)}, {mop(...)}, {wash(...)}
-
-Step-by-step plan:
-1. Prepare solution: {fill(bucket, 100)}, {goto_coordinate = DISINFECTANT_COL, DISINFECTANT_ROW}, {pickup}, {twist_cap(disinfectant, off)}, {goto_coordinate = BUCKET_COL, BUCKET_ROW}, {pour_into(bucket)}, {twist_cap(disinfectant, on)}, {goto_coordinate}, {keep}.
-2. TOILET: Grab toilet_brush, go to toilet cell, scrub: {goto_coordinate = TOILET_COL, TOILET_ROW}, {scrub(TOILET_COORD)}.
-   Scrub reduces dirty by 85% per pass — for very dirty toilets, scrub twice.
-3. SINK AREA: {scrub(SINK_COL ROW)} — scrub around sink.
-4. TILES / FLOOR: {mop(A1,B1,C1,...)} — mop bathroom floor tiles with disinfectant solution.
-5. {wash(scrub_brush)} — clean the brush itself after use.
-6. {wash(toilet_brush)} — clean toilet brush.
-7. Empty bucket: {pour_into(sink)}, {fill(sink, 0)} — dispose of dirty water.
-8. {check_state(toilet_brush)}, {check_state(scrub_brush)} — confirm dirty:0.
-9. Return all tools to their storage spots, {Task_Completed}.
-
-Rules:
-- scrub() reduces dirty by 85% — far more powerful than sweep/mop.
-- Use {scrub()} for hard surfaces (tiles, toilet, sink basin).
-- Use {mop()} for large floor areas.
-- Always clean the cleaning tools themselves after use — {wash(toilet_brush)}, {wash(scrub_brush)}.
-- A full disinfectant bucket is needed for effective sanitation.
-
-TASK 9 — DUSTING FURNITURE AND SURFACES (daily wipe-down)
-Required objects: duster, optionally disinfectant
-Commands: {Apply_cloth(...)}, {sweep(...)} for surface dust
-
-Step-by-step plan:
-1. {goto_coordinate = DUSTER_COL, DUSTER_ROW}, {pickup} — pick up feather duster.
-2. Identify all furniture/object cells from board state — these need dusting.
-3. For each furniture cell (or any object location), apply cloth to wipe dust:
-   {Apply_cloth(A1, A2, B1, B2)} — covers the cell group around the object.
-4. For objects: {check_state(OBJECT_NAME)} — if dirty > 0, apply cloth passes until clean.
-5. Dust high surfaces first (tops of objects), then lower surfaces — use {change_orientation = +x90} if you need to expose a top surface first, dust it, then restore.
-6. Wipe down all flat surfaces: tables, shelves, appliances.
-   For large surfaces: Apply_cloth to all cells in a systematic left-to-right, top-to-bottom order.
-7. {check_state(duster)} — if duster.dirty > 50%, clean it: {wash(duster)}.
-8. Return duster to storage, {Task_Completed}.
-
-Rules:
-- {Apply_cloth(...)} is the primary dusting command — it reduces dirty by 35% per pass.
-- Two passes are needed for dusty objects (dirty > 60%).
-- Dust falls downward — dust tops before sides before floors.
-- Use {find(dirty=true)} to discover which objects need attention.
-- After dusting, mop the floor to catch settled dust.
-
-TASK 10 — TIDYING THE BOARD (organizing and putting things back)
-Required objects: all objects currently on board
-Commands: {goto_coordinate}, {pickup}, {keep}, {drag_from_coordinate(...)_to_coordinate(...)}, {find(...)}
-
-Step-by-step plan:
-1. {find(type=cleaning_tool)} — find all cleaning tools (broom, mop, bucket, duster, brushes) and move to one corner (e.g. rows 9-11, columns A-D = "cleaning storage zone").
-2. {find(type=kitchen)} — find cooking items (pot, pan, stove, bowls, plates) and group them near the stove/oven area (columns H-L, rows 1-4 = "kitchen zone").
-3. {find(type=laundry)} — find laundry items (washing machine, basket, clothes, iron) and group (columns M-P, rows 1-4 = "laundry zone").
-4. Find bottles/jars: pick up each, place in "pantry zone" (columns Q-T, rows 1-4).
-5. Heavy items (stove, washing_machine, oven, sink): use {drag_from_coordinate(...)_to_coordinate(...)} to reposition — never try to {pickup} items with weight > 8.
-6. Return tools to their designated spots: broom/dustpan to corner, knife to rack, etc.
-7. Verify organization with board state context — ensure no stray objects.
-8. {Task_Completed}.
-
-Zone map suggestion:
-- A1–D4: Bathroom/cleaning tools (broom, mop, bucket, brushes, disinfectant)
-- E1–H4: Dining (plates, bowls, mugs, glasses, cutlery, napkins)
-- I1–L4: Kitchen (stove, pot, pan, ingredient jars, cutting board)
-- M1–P4: Laundry (washing machine, basket, clothes, iron, ironing board)
-- Q1–T4: Pantry/storage (bottles, boxes, vegetable basket, shopping bag)
-- A5–T11: Open working area
-
-Rules:
-- Never pickup heavy objects (weight > 8) — use drag instead.
-- Group same-category items together, separated from other categories.
-- Same items (e.g. all bottles) should be adjacent, touching each other.
-- Leave the central board area clear for active task execution.
-
-Multi-Step Reorganization rule:
-Task: "Organize the board"
-While organising, Always keep same things together but different things/group-of-things apart. For example, keep all the bottles together but away from mugs/plants, keep all the mug(s) together but away from the water bottle/plant, and keep the plant away from the mug/water bottle. Follow the zone map above for larger reorganization tasks.
+        let pendingPlan = null;
+        let pendingBoardState = '';
+        let pendingUserText = '';
+
+        // ── Robot Memory (persisted to localStorage) ──────────────────────────
+        const MEMORY_KEY = 'k3d_robot_memory';
+        function loadMemory() {
+            try { return JSON.parse(localStorage.getItem(MEMORY_KEY) || '{}'); } catch { return {}; }
+        }
+        function saveMemory(mem) {
+            try { localStorage.setItem(MEMORY_KEY, JSON.stringify(mem)); } catch {}
+        }
+        function getMemory() {
+            const mem = loadMemory();
+            if (!mem.completedTasks) mem.completedTasks = [];
+            if (!mem.failedTasks) mem.failedTasks = [];
+            if (!mem.notes) mem.notes = [];
+            if (!mem.objectHistory) mem.objectHistory = {};
+            return mem;
+        }
+        function rememberTask(text, plan, commandCount, success) {
+            const mem = getMemory();
+            const entry = {
+                task: text,
+                plan: plan.substring(0, 300),
+                commands: commandCount,
+                time: new Date().toLocaleString(),
+                board: getBoardContext().substring(0, 200)
+            };
+            if (success) {
+                mem.completedTasks.unshift(entry);
+                if (mem.completedTasks.length > 15) mem.completedTasks.pop();
+            } else {
+                mem.failedTasks.unshift(entry);
+                if (mem.failedTasks.length > 5) mem.failedTasks.pop();
+            }
+            saveMemory(mem);
+        }
+        function buildMemoryContext() {
+            const mem = getMemory();
+            const parts = [];
+            if (mem.notes && mem.notes.length) parts.push(`User notes: ${mem.notes.join('; ')}.`);
+            if (mem.completedTasks && mem.completedTasks.length) {
+                const recent = mem.completedTasks.slice(0, 5).map(t => `"${t.task}" (${t.commands} steps, ${t.time})`).join('; ');
+                parts.push(`Recently completed: ${recent}.`);
+            }
+            if (mem.failedTasks && mem.failedTasks.length) {
+                const fails = mem.failedTasks.slice(0, 3).map(t => `"${t.task}"`).join(', ');
+                parts.push(`Previously cancelled/failed: ${fails} — avoid repeating the same mistakes.`);
+            }
+            return parts.length ? '\n\nROBOT MEMORY:\n' + parts.join('\n') : '';
+        }
+        window.clearMemory = function() {
+            localStorage.removeItem(MEMORY_KEY);
+            appendMessage('assistant', '🧠 Memory cleared.');
+        };
+        window.addMemoryNote = function(note) {
+            const mem = getMemory();
+            mem.notes.push(note);
+            if (mem.notes.length > 10) mem.notes.shift();
+            saveMemory(mem);
+            appendMessage('assistant', `🧠 Noted: "${note}"`);
+        };
+        window.showMemory = function() {
+            const mem = getMemory();
+            const lines = [];
+            if (mem.notes && mem.notes.length) lines.push(`📝 Notes: ${mem.notes.join(' | ')}`);
+            if (mem.completedTasks && mem.completedTasks.length) {
+                lines.push(`✅ Completed (${mem.completedTasks.length}):`);
+                mem.completedTasks.slice(0, 8).forEach(t => lines.push(`  • ${t.task} [${t.time}]`));
+            }
+            if (mem.failedTasks && mem.failedTasks.length) {
+                lines.push(`❌ Cancelled/failed (${mem.failedTasks.length}):`);
+                mem.failedTasks.forEach(t => lines.push(`  • ${t.task}`));
+            }
+            if (!lines.length) lines.push('(no memory yet)');
+            appendMessage('assistant', `<div class="bg-zinc-700/50 border border-zinc-600 rounded-lg p-3">
+                <div class="text-xs font-bold text-purple-300 mb-2">🧠 ROBOT MEMORY</div>
+                <pre class="text-xs text-zinc-300 whitespace-pre-wrap">${lines.join('\n')}</pre>
+                <button onclick="clearMemory()" class="mt-2 text-xs text-red-400 hover:text-red-300 underline">Clear memory</button>
+            </div>`);
+        };
+
+        // ── PLANNING PROMPT ── high-level only, multi-task aware ──────────────
+        const PLANNING_PROMPT = `You are K3D — an intelligent household robot planner.
+
+Given a task request and the current board state, produce a HIGH-LEVEL plan that a human can read, understand, and approve in 5 seconds.
+
+OUTPUT FORMAT:
+- If the task is simple (1 thing): 3–4 bullet points max.
+- If the task is multi-step or multi-task: use PHASES. Each phase is a bold label followed by 2–3 bullets. Max 3 phases.
+- If an appliance wait is involved (washing machine, oven, iron heating): note what happens in parallel during the wait.
+- End with one line: ⚠️ NEEDS: [list any objects missing from board] — or omit this line if everything is present.
+- NO commands, NO coordinates, NO curly braces. Plain human English only.
+- Total length: under 12 lines.
+
+MULTI-TASK EXAMPLE for "do the laundry then sweep the floor":
+PHASE 1 — Laundry
+• Tilt machine open, load clothes, add detergent, close and run cycle
+• While machine runs → sweep entire floor with broom
+PHASE 2 — Retrieve & Finish
+• Unload washed clothes into basket
+• Iron and fold each item, stack neatly
+
+SINGLE-TASK EXAMPLE for "cook dinner":
+• Heat stove, place pot, add water and ingredients
+• Simmer until cooked, plate the food
+• Turn off stove and clean up
+
+MISSING-OBJECTS EXAMPLE:
+⚠️ NEEDS: broom (to sweep), detergent (for washing machine)`;
+
+          // ── SYSTEM PROMPT ── master execution intelligence ─────────────────
+          const SYSTEM_PROMPT = `You are K3D — the intelligent controller of a Prolabs V12.2 Precision Cartesian Gantry robot. Given an approved plan and board state, generate the COMPLETE, CORRECT sequence of K3D commands to execute it.
+
+BOARD: columns A–T (20 cols, left→right), rows 1–11 (11 rows, front→back). Grid cell = ColRow e.g. A1, T11.
+Board state format: name at COORD [footprint] {state flags} (touching: adjacent cells).
+Gripper approaches from above; Z-axis lowers to pick/interact. Path planner auto-routes around obstacles.
+
+━━━ COMMANDS ━━━
+{goto_coordinate = COL, ROW}               move above cell
+{pickup}                                    lift object at cell (weight ≤ 8 only)
+{keep}                                      place held object at current cell
+{pour}                                      tilt animation (no volume tracking)
+{pour_into(NAME)}                           real volume transfer held→named target
+{drag_from_coordinate(C,R)_to_coordinate(C,R)}  slide heavy object (no weight limit)
+{change_orientation = TOKEN}                rotate ALL objects — tokens: +x90 -x90 +y90 -y90 +z90 -z90
+{rotate_object(NAME, TOKEN)}                rotate ONE named object (same tokens)
+{open(NAME)} / {close(NAME)}               toggle openable objects
+{turn_on(NAME)} / {turn_off(NAME)}         toggle switchable appliances
+{twist_cap(NAME, on|off)}                  twist bottle/jar cap
+{fill(NAME, PERCENT)}                      set fillable object fill level 0–100
+{slice(NAME, N)}                           cut sliceable into N pieces (knife must be same cell)
+{set_state(NAME, KEY, VALUE)}              set any state key directly
+{check_state(NAME)}                        read full state — use to verify results
+{sweep(X1,X2,...)}                         broom sweep cells (requires broom on board)
+{mop(X1,X2,...)}                           wet mop cells (requires mop + filled bucket)
+{scrub(X1,X2,...)}                         hard scrub cells (requires scrub_brush or toilet_brush)
+{Apply_soap(X1,X2,...)}                    soap cells — coordinates are ColRow no space e.g. A1
+{Apply_cloth(X1,X2,...)}                   wipe cells
+{wash(NAME)}                               wash object clean dirty→0 (needs filled sink)
+{run_cycle(NAME)}                          run washing machine (door MUST be closed first)
+{iron(NAME)}                               iron cloth item (iron MUST be hot)
+{fold(NAME)}                               fold item (iron FIRST — never fold wrinkled)
+{inspect_sides(NAME)}                      report what's adjacent to all 6 faces
+{find(KEY=VALUE)}                          find objects by attribute
+{wait_for(SECONDS)}                        pause up to 10s
+{Task_Completed}                           always last
+
+━━━ NON-NEGOTIABLE RULES ━━━
+WEIGHT: objects with weight > 8 CANNOT be picked up. Use drag or rotate_object instead.
+  Too heavy: oven(25), stove(20), sink(30), washing_machine(40)
+
+WASHING MACHINE DOOR is on the +z face (front). To access:
+  1. {rotate_object(washing_machine, -x90)}  ← tilts door face upward
+  2. {open(washing_machine)}
+  3. load / unload clothes
+  4. {close(washing_machine)}
+  5. {rotate_object(washing_machine, +x90)}  ← restore upright
+  6. {run_cycle(washing_machine)}
+  NEVER run_cycle with door open. NEVER skip the rotation steps.
+
+DEPENDENCY ORDER (never break these):
+  sweep → mop  (always sweep before wet mopping)
+  wash clothes → iron → fold  (never skip or reorder)
+  preheat → cook → plate → turn_off  (always turn off stove/oven/iron at end)
+  fill(sink,100) → wash(object)  (sink must have water)
+  fill(bucket,100) + disinfectant → mop  (bucket must have solution)
+  twist_cap(off) → pour_into() → twist_cap(on)  (if cap is on)
+  turn_on(iron) → wait_for(4) → check_state(iron) confirms hot → iron()
+
+SLICING: bring knife to SAME CELL as target first. After {keep}, knife is AT TARGET cell.
+  To return knife: {pickup} from TARGET (you're already there) → goto origin → {keep}.
+
+APPLIANCES — ALWAYS turn off before Task_Completed:
+  stove, oven, iron must be powered OFF at end. Washing machine door must be closed and upright.
+
+━━━ EFFICIENCY ━━━
+- BATCH surface ops: one {sweep(A1,B1,C1,...,T1)} per row, not 20 individual calls
+- EXPLOIT WAITS: start other work immediately after run_cycle / turn_on — return later
+- ZONE-FIRST: finish one area before moving to another
+- RETURN ON THE WAY: carry next needed object when returning from a delivery
+- VERIFY KEY RESULTS: use {check_state()} on important outputs before Task_Completed
+
+━━━ MULTI-TASK: when plan has multiple phases ━━━
+Execute in dependency order. Exploit machine wait times for parallel work:
+  After run_cycle → immediately sweep/dust → come back to retrieve clothes
+  After turn_on(oven) → prep other ingredients → return to check temp
+Sequence commands as one continuous list — don't repeat moves already made.
+
+━━━ OBJECTS QUICK REFERENCE ━━━
+bottle/soap_bottle  wt:1  pourable fillable twistable_cap  (fill:100% cap:on)
+mug/glass/bowl      wt:1  pourable fillable
+pot/pan             wt:3  pourable fillable heatable
+plate/spoon/book    wt:1  liftable
+cookies             wt:1  sliceable
+knife               wt:1  cutting_tool (must be at same cell as sliceable target)
+broom               wt:1  sweeping_tool — needed for sweep()
+dustpan             wt:1  collecting_tool
+mop                 wt:2  mopping_tool — needed for mop()
+bucket              wt:2  fillable pourable capacity:2.0
+scrub_brush         wt:1  scrubbing_tool — needed for scrub()
+toilet_brush        wt:1  scrubbing_tool — needed for scrub()
+duster              wt:1  dusting_tool
+disinfectant        wt:1  pourable spray_tool (fill:100% cap:on)
+detergent           wt:2  pourable (pour into washing_machine before cycle)
+clothes_pile        wt:2  foldable ironable (dirty:60% wrinkled:true)
+shirt/pants         wt:1  foldable ironable (dirty:0% wrinkled:true)
+towel               wt:1  foldable ironable cleaning_tool
+iron                wt:2  switchable heatable (must reach temp:hot before iron())
+ironing_board       wt:5  liftable 2×1 footprint
+ingredient_jar      wt:1  pourable fillable twistable_cap
+vegetable_basket    wt:4  openable
+shopping_bag        wt:2  openable
+box/wooden_box      wt:3  openable (isOpen:false)
+oven                wt:25 openable switchable heatable 2×2 footprint
+stove               wt:20 switchable heatable 2×1 footprint
+sink                wt:30 fillable drainable 2×1 footprint
+washing_machine     wt:40 openable switchable (door on +z — rotate -x90 to open from above)
+
+━━━ TASK PLAYBOOKS ━━━
+
+1. SWEEPING:
+Pre-check: {find(type=broom)} — if no broom on board, report and stop.
+           {find(dirty=true)} — identify which cells/objects need sweeping.
+Zone: if user specifies area, resolve to cell list. If not, full board A1–T11.
+Step 1 — Sweep row by row, one call per row:
+  {sweep(A1,B1,C1,D1,E1,F1,G1,H1,I1,J1,K1,L1,M1,N1,O1,P1,Q1,R1,S1,T1)}
+  Repeat for rows 2–11.
+Step 2 — Second pass on any cell still showing dirty > 40%:
+  {check_state(OBJECT)} on objects in those cells, re-sweep if needed.
+Step 3 — Collect: {goto_coordinate = DUSTPAN_COL, DUSTPAN_ROW},
+  simulate collecting by moving gripper over dustpan.
+Step 4 — {check_state(broom)} — if dirty > 60%, {wash(broom)}.
+NEVER mop before sweeping is fully complete.
+
+2. MOPPING:
+Pre-check: {find(type=mop)} — if missing, report and stop.
+           {find(type=bucket)} — if missing, report and stop.
+           Sweeping MUST be complete before mopping begins.
+Step 1 — Prepare solution:
+  {fill(bucket, 100)}
+  {goto_coordinate = DISINFECTANT_COL, DISINFECTANT_ROW}, {pickup}
+  {twist_cap(disinfectant, off)}
+  {goto_coordinate = BUCKET_COL, BUCKET_ROW}, {pour_into(bucket)}
+  {twist_cap(disinfectant, on)}, return disinfectant, {keep}
+Step 2 — {set_state(mop, wet, true)}
+Step 3 — Mop row by row:
+  {mop(A1,B1,C1,...,T1)} — one call per row, all 20 columns.
+  Repeat rows 2–11.
+Step 4 — Monitor bucket: {check_state(bucket)} every 3 rows.
+  If fillLevel < 20%: refill before continuing.
+Step 5 — Return mop. Empty bucket:
+  {goto_coordinate = SINK_COL, SINK_ROW}, {pour_into(sink)}, {fill(sink, 0)}.
+Step 6 — {check_state(mop)} — confirm dirty level reduced.
+
+3. WASHING UTENSILS:
+Pre-check: {find(type=sink)} — must exist.
+           {find(dirty=true)} — list all dirty utensils.
+           Object priority order: pot/pan → plate/bowl → mug/glass → cutlery/spoon.
+Step 1 — Fill sink: {fill(sink, 100)}
+Step 2 — Add soap:
+  {goto_coordinate = SOAP_COL, SOAP_ROW}, {pickup}
+  {twist_cap(soap_bottle, off)}
+  {goto_coordinate = SINK_COL, SINK_ROW}, {pour_into(sink)}
+  {twist_cap(soap_bottle, on)}, return soap bottle, {keep}
+Step 3 — For each dirty utensil (largest first):
+  {goto_coordinate = UTENSIL_COL, UTENSIL_ROW}, {pickup}
+  {goto_coordinate = SINK_COL, SINK_ROW}, {keep}
+  {wash(UTENSIL_NAME)}
+  {goto_coordinate = DRYING_COL, DRYING_ROW}, {pickup}, {keep}
+Step 4 — Repeat Step 3 for all dirty utensils.
+Step 5 — {fill(sink, 0)} — drain sink.
+Step 6 — {check_state(plate)}, {check_state(mug)} etc. — confirm dirty:0.
+NEVER use apply_soap/apply_cloth for utensils — use wash() which properly resets dirty state.
+
+4. COOKING:
+Pre-check: {find(type=stove)} or {find(type=oven)} — identify heat source.
+           {find(type=pot)} or {find(type=pan)} — identify cookware.
+           {find(type=ingredient_jar)} or {find(type=vegetable_basket)}.
+PREP (always before heat):
+  {goto_coordinate = KNIFE_COL, KNIFE_ROW}, {pickup}
+  {goto_coordinate = CUTTING_BOARD_COL, CUTTING_BOARD_ROW}, {keep}
+  {slice(vegetable_basket, 4)}
+  {twist_cap(ingredient_jar, off)}, measure spices ready to add.
+HEAT:
+  {turn_on(stove)}, {wait_for(3)}, {check_state(stove)} — confirm temp:hot.
+COOK:
+  {goto_coordinate = POT_COL, POT_ROW}, {pickup}
+  {goto_coordinate = STOVE_COL, STOVE_ROW}, {keep}
+  {fill(pot, 60)}
+  {goto_coordinate = CUTTING_BOARD_COL, CUTTING_BOARD_ROW}, {pickup}
+  {goto_coordinate = STOVE_COL, STOVE_ROW}, {pour_into(pot)}
+  {twist_cap(ingredient_jar, off)}
+  {goto_coordinate = JAR_COL, JAR_ROW}, {pickup}
+  {goto_coordinate = STOVE_COL, STOVE_ROW}, {pour_into(pot)}
+  {twist_cap(ingredient_jar, on)}, return jar, {keep}
+  {set_state(pot, contents, cooking)}, {wait_for(8)}
+  {set_state(pot, contents, ready)}
+PLATE:
+  {goto_coordinate = PLATE_COL, PLATE_ROW}, {pickup}
+  {goto_coordinate = STOVE_COL, STOVE_ROW}, {pour_into(plate)}
+  Move plated food to serving area.
+SHUTDOWN:
+  {turn_off(stove)} — MANDATORY before Task_Completed.
+  Return pot to storage. Return knife to rack.
+
+
+5. WASHING CLOTHES:
+Pre-check: {find(dirty=true)} filtered to foldable+ironable objects only.
+           If nothing dirty → report "all clothes already clean", skip.
+           {find(type=detergent)} — if missing, report ⚠️ NEEDS: detergent.
+MACHINE WASH SEQUENCE (exact order, never deviate):
+  1. {rotate_object(washing_machine, -x90)} ← door tilts upward
+  2. {open(washing_machine)}
+  3. For each dirty garment (shirt/pants/clothes_pile/towel) not anything apart from garments:
+     {goto_coordinate = GARMENT_COL, GARMENT_ROW}, {pickup}
+     {goto_coordinate = MACHINE_COL, MACHINE_ROW}, {keep}
+  4. {goto_coordinate = DETERGENT_COL, DETERGENT_ROW}, {pickup}
+     {goto_coordinate = MACHINE_COL, MACHINE_ROW}, {pour_into(washing_machine)}
+     {goto_coordinate = DETERGENT_COL, DETERGENT_ROW}, {keep}
+  5. {close(washing_machine)}
+  6. {rotate_object(washing_machine, +x90)} ← MUST restore upright before cycle
+  7. {run_cycle(washing_machine)} ← wait for cycle to complete fully
+  8. {rotate_object(washing_machine, -x90)}, {open(washing_machine)}
+  10. {close(washing_machine)}, {rotate_object(washing_machine, +x90)}
+  11. {check_state(washing_machine)} — confirm door closed, upright.
+
+6. IRONING & FOLDING:
+Pre-check: {find(wrinkled=true)} — only process wrinkled items.
+           {find(dirty=true)} on same objects — if still dirty, wash first.
+           {find(type=iron)} — must exist on board.
+SETUP:
+  Position ironing_board on a clear cell.
+  {turn_on(iron)}, {wait_for(4)}
+  {check_state(iron)} — MUST confirm temperature:hot before proceeding.
+  If not hot: {wait_for(3)}, {check_state(iron)} again.
+PER GARMENT (one at a time):
+  {goto_coordinate = GARMENT_COL, GARMENT_ROW}, {pickup}
+  {goto_coordinate = BOARD_COL, BOARD_ROW}, {keep}
+  {iron(GARMENT_NAME)} ← sets wrinkled:false, ironed:true
+  {fold(GARMENT_NAME)} ← sets folded:true
+  {goto_coordinate = BOARD_COL, BOARD_ROW}, {pickup}
+  {goto_coordinate = STACK_COL, STACK_ROW}, {keep}
+  Repeat for all wrinkled garments.
+SHUTDOWN:
+  {turn_off(iron)} — MANDATORY, never skip.
+  {check_state(iron)} — confirm power:false before Task_Completed.
+NEVER fold before ironing. NEVER iron with cold iron. NEVER leave iron on.
+
+7. BUYING VEGETABLES:
+Pre-check: {find(type=shopping_bag)} — if missing, report ⚠️ NEEDS: shopping_bag.
+           {check_state(vegetable_basket)} — if filled:true, skip and report
+           "vegetable_basket already stocked".
+SEQUENCE:
+  Step 1 — {goto_coordinate = BAG_COL, BAG_ROW}, {pickup}
+  Step 2 — Simulate market trip:
+    {goto_coordinate = T, 11}, {keep}
+    {open(shopping_bag)}
+    {set_state(shopping_bag, contents, fresh_vegetables)}
+    {set_state(shopping_bag, filled, true)}
+  Step 3 — Return:
+    {goto_coordinate = T, 11}, {pickup}
+    {goto_coordinate = UNPACK_COL, UNPACK_ROW}, {keep}
+  Step 4 — Unpack:
+    {goto_coordinate = BAG_COL, BAG_ROW}, {pickup}
+    {goto_coordinate = BASKET_COL, BASKET_ROW}, {pour_into(vegetable_basket)}
+    {set_state(vegetable_basket, filled, true)}
+  Step 5 — {close(shopping_bag)}, return bag to storage.
+  Step 6 — {check_state(vegetable_basket)} — confirm filled:true.
+After buying → vegetables ready for COOKING task.
+
+8. BATHROOM CLEANING:
+Pre-check: {find(type=toilet_brush)} — if missing, report ⚠️ NEEDS: toilet_brush.
+           {find(type=scrub_brush)} — if missing, report ⚠️ NEEDS: scrub_brush.
+           {find(type=disinfectant)} — check fillLevel > 0.
+           {find(type=bucket)} — needed for mopping solution.
+SEQUENCE (strict order):
+  Step 1 — Prepare solution:
+    {fill(bucket, 100)}
+    {goto_coordinate = DISINFECTANT_COL, DISINFECTANT_ROW}, {pickup}
+    {twist_cap(disinfectant, off)}
+    {goto_coordinate = BUCKET_COL, BUCKET_ROW}, {pour_into(bucket)}
+    {twist_cap(disinfectant, on)}, return disinfectant, {keep}
+  Step 2 — Toilet scrub (2 passes minimum):
+    {scrub(TOILET_COORD)}
+    {scrub(TOILET_COORD)}
+  Step 3 — Sink area:
+    {scrub(SINK_COORD)}
+  Step 4 — Tiles and floor:
+    {Apply_soap(FLOOR_CELLS)}
+    {scrub(FLOOR_CELLS)}
+    {mop(FLOOR_CELLS)}
+  Step 5 — Clean tools:
+    {wash(toilet_brush)}, {wash(scrub_brush)}
+    {check_state(toilet_brush)}, {check_state(scrub_brush)} — confirm dirty:0
+  Step 6 — Dispose dirty water:
+    {goto_coordinate = SINK_COL, SINK_ROW}, {pour_into(sink)}, {fill(sink, 0)}
+NEVER skip tool cleaning — dirty tools spread contamination.
+
+9. DUSTING:
+Pre-check: {find(type=duster)} — if missing, report ⚠️ NEEDS: duster.
+           {find(dirty=true)} — identify objects/surfaces needing dusting.
+SEQUENCE (always high-to-low — dust falls downward):
+  Step 1 — Large/heavy objects first (oven, stove, sink, washing_machine):
+    {Apply_cloth(OBJ_COORD)}
+    If dirty > 60%: second pass immediately.
+  Step 2 — Medium objects (boxes, baskets):
+    {Apply_cloth(OBJ_COORD)}
+  Step 3 — Small objects (plates, mugs, bottles, jars):
+    {Apply_cloth(OBJ_COORD)}
+  Step 4 — Open surfaces and empty cells:
+    {Apply_cloth(A1,B1,...)} for each surface row.
+  Step 5 — {check_state(duster)} — if dirty > 50%:
+    {wash(duster)}, {check_state(duster)} confirm clean.
+  Step 6 — Follow with sweep pass to catch fallen dust:
+    {sweep(ALL_CELLS)}
+FULL CLEAN ORDER: dust → sweep → mop. Never break this sequence.
+
+10. TIDYING:
+Pre-check: Read full board state — note every object's current position.
+           {find(type=all)} to get complete inventory.
+ZONE MAP (always organize into these zones):
+  A1–D4:  Cleaning tools (broom, mop, bucket, brushes, disinfectant)
+  E1–H4:  Dining (plates, bowls, mugs, glasses, cutlery, napkins)
+  I1–L4:  Kitchen (stove, pot, pan, ingredient jars, cutting_board, knife)
+  M1–P4:  Laundry (washing_machine, basket, clothes, iron, ironing_board)
+  Q1–T4:  Pantry (bottles, boxes, vegetable_basket, shopping_bag)
+  A5–T11: Clear working area — nothing stored here permanently.
+SEQUENCE:
+  Step 1 — Heavy appliances first (drag, never pickup):
+    {drag_from_coordinate(FROM)_to_coordinate(TO)} for stove, sink,
+    washing_machine, oven to correct zones.
+  Step 2 — Medium objects (ironing_board, bucket):
+    {pickup} → {goto_coordinate = TARGET} → {keep}
+  Step 3 — Light objects in bulk, nearest-first:
+    Same-category items placed adjacent to each other.
+  Step 4 — Wipe all surfaces:
+    {Apply_cloth(ALL_SURFACE_CELLS)}
+  Step 5 — Final verification:
+    {check_state()} on 3–4 key objects to confirm positions.
+    Confirm working area A5–T11 is clear.
+GROUPING RULE: same category items must TOUCH each other.
+  All bottles adjacent. All mugs adjacent. Never mix categories.
 `;
 
-        window.sendTask = async function() {
+
+
+        function copyFullPrompt() {
+            const boardState = getBoardContext();
+
+            // Build a full object state table
+            const objLines = objects.map((o, i) => {
+                const x = Math.floor(o.position.x), z = Math.floor(o.position.z);
+                const name = objectNames.get(o) || objectTypes.get(o) || 'unknown';
+                const coord = `${String.fromCharCode(65 + x)}${z + 1}`;
+                const fp = objectFootprint.get(o) || { w: 1, h: 1 };
+                const st = objectState.get(o) || {};
+                const wt = objectWeight.get(o);
+                const cfg = getObjectConfig(objectTypes.get(o));
+                const touching = getTouchingCoordinates(x, z, fp.w, fp.h);
+                const stParts = [];
+                if ('isOpen' in st) stParts.push(st.isOpen ? 'open' : 'closed');
+                if ('power' in st) stParts.push(st.power ? 'power:ON' : 'power:OFF');
+                if ('temperature' in st) stParts.push(`temp:${st.temperature}`);
+                if ('fillLevel' in st) stParts.push(`fill:${Math.round(st.fillLevel * 100)}%`);
+                if ('capOn' in st) stParts.push(st.capOn ? 'cap:on' : 'cap:off');
+                if ('dirty' in st) stParts.push(`dirty:${Math.round(st.dirty * 100)}%`);
+                if (st.sliced) stParts.push(`sliced:${st.pieces}pcs`);
+                if ('wrinkled' in st) stParts.push(st.wrinkled ? 'wrinkled' : 'pressed');
+                if ('folded' in st) stParts.push(st.folded ? 'folded' : 'unfolded');
+                const fpStr = (fp.w > 1 || fp.h > 1) ? ` [${fp.w}x${fp.h}]` : '';
+                return `  • ${name} @ ${coord}${fpStr}  wt:${wt}  [${cfg.affordances.join(', ')}]  {${stParts.join(', ')}}  touching: ${touching.join(', ')}`;
+            });
+
+            const chatCtx = chatHistory.length
+                ? `\n\n— CONVERSATION HISTORY (last ${Math.min(chatHistory.length, 6)} turns) —\n` +
+                  chatHistory.slice(-6).map(m => `[${m.role.toUpperCase()}]: ${m.content.substring(0, 400)}${m.content.length > 400 ? '…' : ''}`).join('\n\n')
+                : '';
+
+            const full = `════════════════════════════════════════
+K3D ROBOT — FULL PROMPT EXPORT
+Exported: ${new Date().toLocaleString()}
+════════════════════════════════════════
+
+━━━ SYSTEM PROMPT (EXECUTION) ━━━
+${SYSTEM_PROMPT}
+
+━━━ PLANNING PROMPT ━━━
+${PLANNING_PROMPT}
+
+━━━ CURRENT BOARD STATE ━━━
+Gripper: ${boardState.split('.')[0]}.
+Holding: ${heldObject ? (objectNames.get(heldObject) || objectTypes.get(heldObject)) : 'nothing'}.
+Dragging: ${draggingObject ? (objectNames.get(draggingObject) || objectTypes.get(draggingObject)) : 'nothing'}.
+
+Objects on board (${objects.length} total):
+${objLines.join('\n') || '  (none)'}
+${chatCtx}
+
+━━━ HOW TO USE ━━━
+Paste the SYSTEM PROMPT into your AI's system/instruction field.
+Then send this as the user message:
+  "Task: [describe what you want the robot to do]
+   Current board state: [paste the BOARD STATE section above]"
+════════════════════════════════════════`;
+
+            navigator.clipboard.writeText(full).then(() => {
+                const btn = document.querySelector('button[onclick="copyFullPrompt()"]');
+                const orig = btn.textContent;
+                btn.textContent = '✅ COPIED!';
+                btn.classList.add('bg-emerald-700');
+                setTimeout(() => { btn.textContent = orig; btn.classList.remove('bg-emerald-700'); }, 2000);
+            }).catch(() => {
+                // Fallback: show in a textarea modal the user can manually copy
+                const modal = document.createElement('div');
+                modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;';
+                modal.innerHTML = `<div style="background:#18181b;border:1px solid #3f3f46;border-radius:12px;padding:20px;width:90%;max-width:700px;max-height:80vh;display:flex;flex-direction:column;gap:12px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <span style="color:#a1a1aa;font-size:12px;font-weight:bold;">📋 FULL PROMPT — select all and copy</span>
+                        <button onclick="this.closest('div[style]').remove()" style="color:#71717a;font-size:18px;background:none;border:none;cursor:pointer;">✕</button>
+                    </div>
+                    <textarea readonly style="flex:1;background:#09090b;color:#d4d4d8;font-size:11px;font-family:monospace;border:1px solid #3f3f46;border-radius:8px;padding:12px;resize:none;min-height:400px;outline:none;">${full.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+                    <div style="color:#71717a;font-size:11px;">Press Ctrl+A then Ctrl+C to copy everything</div>
+                </div>`;
+                document.body.appendChild(modal);
+                modal.querySelector('textarea').focus();
+                modal.querySelector('textarea').select();
+            });
+        }
+
+        function setInputLocked(locked) {
             const input = document.getElementById('chat-input');
             const btn = document.getElementById('chat-send-btn');
-            const text = input.value.trim();
-            if (!text || executionActive) return;
-            input.value = '';
-            input.disabled = true;
-            btn.disabled = true;
+            input.disabled = locked;
+            btn.disabled = locked;
+        }
+        function showPlanApproval(planText, meta) {
+            document.getElementById('plan-text').textContent = planText;
+            document.getElementById('plan-approval').classList.remove('hidden');
+        }
+        function hidePlanApproval() {
+            document.getElementById('plan-approval').classList.add('hidden');
+        }
+
+        window.approvePlan = async function() {
+            if (!pendingPlan) return;
+            hidePlanApproval();
+            setInputLocked(true);
             executionActive = true;
-            document.getElementById('ai-status-dot').className = 'ml-auto w-2 h-2 bg-blue-400 rounded-full animate-pulse';
-            appendMessage('user', text);
+            appendMessage('assistant', '✅ Plan approved — generating commands...');
             appendThinking();
-            const boardState = getBoardContext();
-            const userContent = `Task: ${text}\n\nCurrent board state: ${boardState}`;
-            chatHistory.push({ role: 'user', content: userContent });
+            document.getElementById('ai-status-dot').className = 'ml-auto w-2 h-2 bg-blue-400 rounded-full animate-pulse';
             try {
+                // Refresh board state at execution time (not stale planning-time snapshot)
+                const currentBoardState = getBoardContext();
+                const execPrompt = `Approved plan to execute:
+${pendingPlan}
+
+Current board state: ${currentBoardState}
+
+OUTPUT FORMAT: respond with ONLY a list of K3D commands, one per line, each wrapped in curly braces like {goto_coordinate = A, 1} or {pickup}. No explanation text, no markdown, no phase headers — just the raw commands in order. End with {Task_Completed}.`;
+                const execHistory = [...chatHistory, { role: 'user', content: execPrompt }];
                 const res = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ system: SYSTEM_PROMPT, messages: chatHistory })
+                    body: JSON.stringify({ system: SYSTEM_PROMPT + buildMemoryContext(), messages: execHistory, max_tokens: 4000 })
                 });
                 const data = await res.json();
                 const reply = data.reply || data.error || '';
+                chatHistory.push({ role: 'user', content: execPrompt });
                 chatHistory.push({ role: 'assistant', content: reply });
                 document.getElementById('thinking-bubble')?.remove();
-                
-                // Extract high-level reasoning/plan (text BEFORE the first command)
-                const commandsStartIdx = reply.indexOf('{');
-                let reasoning = '';
-                if (commandsStartIdx > 0) {
-                    reasoning = reply.substring(0, commandsStartIdx).trim();
-                }
-                
                 function extractCommands(text) {
                     const commands = [...text.matchAll(/\{([^}]+)\}/g)].map(m => m[1].trim());
                     if (commands.length > 0) return commands;
-                    const fallback = Array.from(text.matchAll(/(?:goto_coordinate\s*=\s*[A-T]\s*,\s*\d+|pickup|keep|pour|apply_soap\s*\([^)]*\)|apply_cloth\s*\([^)]*\)|drag_from_coordinate\s*\([^)]*\)\s*_to_coordinate\s*\([^)]*\)|change_orientation\s*(?:=|\()\s*[+-]?\s*[xyz]\s*-?\s*\d+|inspect_sides\s*(?:=|\()\s*[A-Za-z_][A-Za-z0-9_]*\)?|open\s*\([^)]*\)|close\s*\([^)]*\)|turn_on\s*\([^)]*\)|turn_off\s*\([^)]*\)|twist_cap\s*\([^)]*\)|fill\s*\([^)]*\)|pour_into\s*\([^)]*\)|slice\s*\([^)]*\)|set_state\s*\([^)]*\)|check_state\s*\([^)]*\)|wait_for\s*\([^)]*\)|find\s*\([^)]*\)|sweep\s*\([^)]*\)|mop\s*\([^)]*\)|scrub\s*\([^)]*\)|wash\s*\([^)]*\)|run_cycle\s*\([^)]*\)|iron\s*\([^)]*\)|fold\s*\([^)]*\)|task_completed)/gi), m => m[0].trim());
+                    const fallback = Array.from(text.matchAll(/(?:goto_coordinate\s*=\s*[A-T]\s*,\s*\d+|pickup|keep|pour|apply_soap\s*\([^)]*\)|apply_cloth\s*\([^)]*\)|drag_from_coordinate\s*\([^)]*\)\s*_to_coordinate\s*\([^)]*\)|change_orientation\s*(?:=|\()\s*[+-]?\s*[xyz]\s*-?\s*\d+|inspect_sides\s*(?:=|\()\s*[A-Za-z_][A-Za-z0-9_]*\)?|open\s*\([^)]*\)|close\s*\([^)]*\)|turn_on\s*\([^)]*\)|turn_off\s*\([^)]*\)|twist_cap\s*\([^)]*\)|fill\s*\([^)]*\)|pour_into\s*\([^)]*\)|slice\s*\([^)]*\)|set_state\s*\([^)]*\)|check_state\s*\([^)]*\)|wait_for\s*\([^)]*\)|find\s*\([^)]*\)|sweep\s*\([^)]*\)|mop\s*\([^)]*\)|scrub\s*\([^)]*\)|wash\s*\([^)]*\)|run_cycle\s*\([^)]*\)|iron\s*\([^)]*\)|fold\s*\([^)]*\)|rotate_object\s*\([^)]*\)|task_completed)/gi), m => m[0].trim());
                     return fallback;
                 }
                 const commands = extractCommands(reply);
                 if (commands.length === 0) {
-                    appendMessage('assistant', reply || 'No executable commands found in response.');
-                    executionActive = false;
-                    input.disabled = false;
-                    btn.disabled = false;
-                    document.getElementById('ai-status-dot').className = 'ml-auto w-2 h-2 bg-zinc-600 rounded-full';
-                    return;
+                    appendMessage('assistant', reply || '⚠️ No commands generated.');
+                } else {
+                    const planText = commands.map((c, i) => `${i + 1}. ${c}`).join('\n');
+                    appendMessage('assistant', `<div class="bg-zinc-700/50 border border-zinc-600 rounded-lg p-3">
+                        <div class="text-xs font-bold text-emerald-300 mb-2">🔧 EXECUTING ${commands.length} STEPS:</div>
+                        <pre class="text-xs text-emerald-400 overflow-x-auto font-mono">${planText}</pre>
+                    </div>`);
+                    setStatus(`<span class="w-2 h-2 bg-blue-400 rounded-full inline-block animate-pulse"></span>&nbsp;Executing...`);
+                    await executeCommands(commands);
+                    rememberTask(pendingUserText, pendingPlan, commands.length, true);
                 }
-                
-                // Show high-level plan/reasoning first if it exists
-                if (reasoning && reasoning.length > 10) {
-                    // Format the plan with better visual hierarchy
-                    const planHTML = `<div class="bg-zinc-700/50 border border-zinc-600 rounded-lg p-3 mb-2">
-                        <div class="text-xs font-bold text-blue-300 mb-1">📋 DETAILED STRATEGY:</div>
-                        <div class="text-xs text-zinc-200 leading-relaxed">${reasoning}</div>
-                    </div>`;
-                    appendMessage('assistant', planHTML);
-                    console.log('📋 STRATEGY:', reasoning);
-                }
-                
-                const planText = commands.map((c, i) => `${i + 1}. ${c}`).join('\n');
-                appendMessage('assistant', `<div class="bg-zinc-700/50 border border-zinc-600 rounded-lg p-3">
-                    <div class="text-xs font-bold text-emerald-300 mb-2">🔧 EXECUTION PLAN (${commands.length} steps):</div>
-                    <pre class="text-xs text-emerald-400 overflow-x-auto font-mono">${planText}</pre>
-                </div>`);
-                setStatus(`<span class="w-2 h-2 bg-blue-400 rounded-full inline-block animate-pulse"></span>&nbsp;Executing task...`);
-                await executeCommands(commands);
-            } catch (e) {
+            } catch(e) {
                 document.getElementById('thinking-bubble')?.remove();
-                appendMessage('assistant', '❌ Error: ' + e.message);
-                setStatus('⚠️ Error');
+                appendMessage('assistant', '❌ Command generation error: ' + e.message);
+                rememberTask(pendingUserText, pendingPlan, 0, false);
             }
+            pendingPlan = null;
             executionActive = false;
-            input.disabled = false;
-            btn.disabled = false;
-            input.focus();
+            setInputLocked(false);
+            document.getElementById('chat-input').focus();
             document.getElementById('ai-status-dot').className = 'ml-auto w-2 h-2 bg-emerald-400 rounded-full';
+        };
+
+        window.editPlan = function() {
+            hidePlanApproval();
+            const input = document.getElementById('chat-input');
+            input.value = pendingUserText;
+            input.disabled = false;
+            document.getElementById('chat-send-btn').disabled = false;
+            input.focus();
+            appendMessage('assistant', '✏️ Plan discarded — edit your request below and resend.');
+            pendingPlan = null;
+            executionActive = false;
+        };
+
+        window.rejectPlan = function() {
+            hidePlanApproval();
+            appendMessage('assistant', '✖ Plan cancelled.');
+            rememberTask(pendingUserText, pendingPlan || '', 0, false);
+            pendingPlan = null;
+            executionActive = false;
+            setInputLocked(false);
+        };
+
+        window.sendTask = async function() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text || executionActive) return;
+            // Handle special memory commands typed in chat
+            if (text.toLowerCase().startsWith('remember:')) {
+                const note = text.slice(9).trim();
+                input.value = '';
+                if (note) addMemoryNote(note);
+                return;
+            }
+            if (text.toLowerCase() === 'memory' || text.toLowerCase() === 'show memory') {
+                input.value = ''; showMemory(); return;
+            }
+            if (text.toLowerCase() === 'clear memory') {
+                input.value = ''; clearMemory(); return;
+            }
+            input.value = '';
+            setInputLocked(true);
+            executionActive = true;
+            document.getElementById('ai-status-dot').className = 'ml-auto w-2 h-2 bg-yellow-400 rounded-full animate-pulse';
+            appendMessage('user', text);
+            appendThinking();
+            pendingUserText = text;
+            pendingBoardState = getBoardContext();
+            const memCtx = buildMemoryContext();
+
+            // ── PHASE 1: Planning ────────────────────────────────────────────
+            try {
+                const planUserContent = `Task: "${text}"\n\nCurrent board state: ${pendingBoardState}${memCtx}`;
+                const planHistory = [{ role: 'user', content: planUserContent }];
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ system: PLANNING_PROMPT, messages: planHistory, max_tokens: 600 })
+                });
+                const data = await res.json();
+                const planReply = (data.reply || data.error || '').trim();
+                document.getElementById('thinking-bubble')?.remove();
+
+                // Extract just the plan text (strip "PLAN:" header if present)
+                const cleanPlan = planReply.replace(/^PLAN:\s*/i, '').trim();
+                pendingPlan = cleanPlan;
+
+                appendMessage('assistant', `<div class="bg-zinc-700/50 border border-blue-500/30 rounded-lg p-3">
+                    <div class="text-xs font-bold text-blue-300 mb-2">📋 PLAN</div>
+                    <pre class="text-xs text-zinc-200 whitespace-pre-wrap leading-relaxed">${cleanPlan}</pre>
+                </div>`);
+
+                showPlanApproval(cleanPlan, '');
+                chatHistory.push({ role: 'user', content: planUserContent });
+                chatHistory.push({ role: 'assistant', content: planReply });
+
+                // Unlock input so user can type while reviewing (but send btn stays
+                // pointing to the approval flow, not a new task)
+                document.getElementById('chat-input').disabled = false;
+                document.getElementById('ai-status-dot').className = 'ml-auto w-2 h-2 bg-yellow-400 rounded-full';
+                // Leave executionActive = true so sendTask won't fire again during review
+
+            } catch(e) {
+                document.getElementById('thinking-bubble')?.remove();
+                appendMessage('assistant', '❌ Planning error: ' + e.message);
+                pendingPlan = null;
+                executionActive = false;
+                setInputLocked(false);
+                document.getElementById('ai-status-dot').className = 'ml-auto w-2 h-2 bg-zinc-600 rounded-full';
+            }
         };
 
         window.onload = function() { initThree(); animate(); };
@@ -3961,11 +4225,12 @@ class Handler(BaseHTTPRequestHandler):
             body = json.loads(self.rfile.read(length))
             system_prompt = body.get("system", "")
             messages = body.get("messages", [])
+            max_tokens = body.get("max_tokens", 4000)
             oai_messages = [{"role": "system", "content": system_prompt}] + messages
             payload = json.dumps({
                 "model": "gpt-4o",
                 "messages": oai_messages,
-                "max_tokens": 1000,
+                "max_tokens": max_tokens,
                 "temperature": 0
             }).encode("utf-8")
             req = urllib.request.Request(

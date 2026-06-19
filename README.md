@@ -49,6 +49,31 @@ For non "keep, pickup, up, down" tasks, we also have something called as *specia
 
 ---
 
+## Simulators
+
+Before we make the real robot, our team at HOS developed a simulator simulating the LLMs planning and improving it, this makes the prototyping very easy and helps us debug in advance.
+
+Some of our simulators have already launched proving our innovation and technology is working and is even better than most big-tech giants.
+
+**Simulator models**
+
+- Pro (series) v[1, 2, 3, 4, 5, 6, 7, 7_cord & 8] *launched*
+this series was our initial prototying phase where we shaped our approach on LLMs, this mainly failed as it wasn't able to do many tasks and the accuracy was pretty bad.
+
+- K1 sim *Launched*
+The K1 2D simulator was when our first model started taking shape, this was an approach for the LLM to output 2D coordinates rather than controlling the robot with commands like (right, left, front, back etc.), the accuracy skyrocketed with this upgrade as well as the intellegence.
+
+- k1.5 sim *launched*
+The K1.5 simulator added a lot more task capibilities and longer multi-step tasks planning making this a huge upgrade.
+
+- K3D *launched*
+The launch of K3D made the robot look like a robot for the first time as the robot was now in 3D, it was also doing other tasks like pouring, cleaning dishes, dusting etc.
+
+- K3.5D *launched*
+the K3.5D is a remarkable upgrade with many more task capibilities and ability to plan longer tasks.
+
+- K5D *Under *
+
 ## **Upcoming Versions**
 
 

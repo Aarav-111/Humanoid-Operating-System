@@ -128,12 +128,12 @@ A Legged humanoid capable of navigating a whole house with major system-wide upg
 
 Developed by: Prolabs Robotics  
 Project Lead: Aarav J.
+Project Co-lead: Siyona Chiker
 
 Collaborators:
 - Vivan Rajpuria
-- Samvedh Narayanam
-- Siyona chicker
-- Sachin
+- Sachin Sai
+- Mathew tony
 
 Contact:  
 prolabsrobotics@gmail.com

@@ -1,4 +1,6 @@
-# **The Simulator(s) shall be tested on the below daily household tasks mainly along with simple tasks as written in the "eval" section.** 
+# **Simulator testing**
+
+**The Simulator(s) shall be tested on the below daily household tasks mainly along with simple tasks as written in the "eval" section.** 
 
 **Main household tasks for testing:**
 

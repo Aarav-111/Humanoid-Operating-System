@@ -72,9 +72,13 @@ The launch of K3D made the robot look like a robot for the first time as the rob
 - K3.5D *launched*
 the K3.5D is a remarkable upgrade with many more task capibilities and ability to plan longer tasks.
 
-- K5D *Under *
+- K5D *Under testing*
+The k5D simulator boosts task capability letting the robot do super complex tasks like cooking and lets it do pretty much every task possible. it also adds a plan & approve feature with memory for the user to correct the AI if needed and the AI learning. This simulator surpasses each and every general purpose robotic arm on planet earth! it can simple but also very complex perform tasks like sweeping the floor, mopping, washing dishes, dusting, cooking, cutting veggies, shopping, tidying, Ironing clothes, folding clothes, washing clothes, handling complex machines like washing machine and much more! this simulator is also truely 3D which means this can re-orient itself to approach an object from the side as well!
 
-## **Upcoming Versions**
+- K6D *not started*
+The K6D will be our last simulator which will be also able to do dextorous tasks and stacking tasks, also will have an AI to tell each feature of the object rather than just objects themselves making this more comprehensive. alongside this, the robot will upgrade to a 6 axis robot able to do very precison tasks as well.
+
+## **Upcoming Versions of physical robots**
 
 
 

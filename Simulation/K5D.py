@@ -7,7 +7,7 @@ HTML = r"""<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>K3D</title>
+    <title>K5D</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
     <style>
@@ -170,7 +170,7 @@ HTML = r"""<!DOCTYPE html>
         <div class="flex items-center gap-x-3">
             <div class="w-9 h-9 bg-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-xl">K</div>
             <div>
-                <h1 class="text-xl font-bold tracking-tight">K3D · Precision Cartesian Gantry</h1>
+                <h1 class="text-xl font-bold tracking-tight">K5D · Precision Cartesian Gantry</h1>
                 <p class="text-xs text-zinc-400 mono">Prolabs V12.2 · AI-Controlled · XYZ-Axis</p>
             </div>
         </div>
@@ -251,7 +251,7 @@ HTML = r"""<!DOCTYPE html>
             <div class="flex items-center gap-2 px-4 pt-3 pb-3 border-b border-zinc-700/60 shrink-0">
                 <div class="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">AI</div>
                 <div>
-                    <div class="text-xs font-bold text-zinc-200 tracking-widest uppercase">K3D Task Planner</div>
+                    <div class="text-xs font-bold text-zinc-200 tracking-widest uppercase">K5D Task Planner</div>
                     <div class="text-xs text-zinc-500 mono">Prolabs V12.2 · Claude</div>
                 </div>
                 <div id="ai-status-dot" class="ml-auto w-2 h-2 bg-zinc-600 rounded-full"></div>
@@ -263,7 +263,7 @@ HTML = r"""<!DOCTYPE html>
             <div id="chat-messages" class="flex-1 overflow-y-auto px-3 py-3 space-y-2 min-h-0">
                 <div class="flex gap-2">
                     <div class="w-5 h-5 bg-blue-600 rounded-md flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5">AI</div>
-                    <div class="bg-zinc-800 rounded-xl rounded-tl-sm px-3 py-2 text-xs text-zinc-300 leading-relaxed">Hi! I'm the K3D Task Planner. I'll <span class="text-yellow-300 font-bold">plan first</span> and wait for your approval before executing anything. Try: <span class="text-blue-400">"Sweep the floor"</span>, <span class="text-blue-400">"Wash the clothes"</span>, or <span class="text-blue-400">"Cook a meal"</span>. Type <span class="text-purple-300">memory</span> to see what I remember, or <span class="text-purple-300">remember: [note]</span> to teach me something.</div>
+                    <div class="bg-zinc-800 rounded-xl rounded-tl-sm px-3 py-2 text-xs text-zinc-300 leading-relaxed">Hi! I'm the K5D Task Planner. I'll <span class="text-yellow-300 font-bold">plan first</span> and wait for your approval before executing anything. Try: <span class="text-blue-400">"Sweep the floor"</span>, <span class="text-blue-400">"Wash the clothes"</span>, or <span class="text-blue-400">"Cook a meal"</span>. Type <span class="text-purple-300">memory</span> to see what I remember, or <span class="text-purple-300">remember: [note]</span> to teach me something.</div>
                 </div>
             </div>
             <div class="px-3 pb-3 pt-2 border-t border-zinc-800 shrink-0">
@@ -1364,10 +1364,29 @@ HTML = r"""<!DOCTYPE html>
             objectFootprint.set(obj, cfg.footprint);
             objectWeight.set(obj, cfg.weight);
             objectState.set(obj, JSON.parse(JSON.stringify(cfg.defaultState)));
-            const sprite = createNameLabel(type);
-            sprite.position.set(rx, 2.7, ry);
-            scene.add(sprite);
-            objectSprites.set(obj, sprite);
+            // Assign a unique name when multiple objects share the same type
+            const sameType = objects.filter(o => objectTypes.get(o) === type);
+            if (sameType.length > 1) {
+                // Retroactively rename the first instance if it has no custom name yet
+                const first = sameType[0];
+                if (!objectNames.has(first)) {
+                    objectNames.set(first, type + '_1');
+                    const firstSprite = objectSprites.get(first);
+                    if (firstSprite) { scene.remove(firstSprite); objectSprites.delete(first); }
+                    const fs = createNameLabel(type + '_1');
+                    fs.position.set(first.position.x, 2.7, first.position.z);
+                    scene.add(fs); objectSprites.set(first, fs);
+                }
+                const uniqueName = type + '_' + sameType.length;
+                objectNames.set(obj, uniqueName);
+                const sprite = createNameLabel(uniqueName);
+                sprite.position.set(rx, 2.7, ry);
+                scene.add(sprite); objectSprites.set(obj, sprite);
+            } else {
+                const sprite = createNameLabel(type);
+                sprite.position.set(rx, 2.7, ry);
+                scene.add(sprite); objectSprites.set(obj, sprite);
+            }
             updateObjectPositionsDisplay();
         }
         window.addObject = function(type) {
@@ -2284,7 +2303,7 @@ HTML = r"""<!DOCTYPE html>
                 ctx.strokeStyle = '#27272a'; ctx.lineWidth = 1;
                 ctx.beginPath(); ctx.moveTo(0, GRID_PX_H); ctx.lineTo(TOTAL_W, GRID_PX_H); ctx.stroke();
                 ctx.fillStyle = '#93c5fd'; ctx.font = 'bold 16px monospace';
-                ctx.fillText('K3D Prolabs V12.2 · Top-Down View · ' + new Date().toLocaleString(), 16, GRID_PX_H + 32);
+                ctx.fillText('K5D Prolabs V12.2 · Top-Down View · ' + new Date().toLocaleString(), 16, GRID_PX_H + 32);
                 ctx.fillStyle = '#52525b'; ctx.font = '12px monospace';
                 let summary = objects.map(o => {
                     const n = objectNames.get(o) || objectTypes.get(o) || '?';
@@ -2641,7 +2660,7 @@ HTML = r"""<!DOCTYPE html>
             if (!sinkFull) appendMessage('assistant', '⚠️ Sink is empty — use {fill(sink, 100)} first for soapy water. Washing anyway.');
             const name = objectNames.get(obj) || objectTypes.get(obj) || 'object';
             const ox = Math.floor(obj.position.x), oz = Math.floor(obj.position.z);
-            const col = String.fromCharCode(65 + ox), row = String.fromCharCode(49 + oz);
+            const col = String.fromCharCode(65 + ox), row = String(oz + 1);
             await moveTo(col, row);
             isAnimating = true;
             setStatus(`🚿 Washing ${name}...`);
@@ -2712,7 +2731,7 @@ HTML = r"""<!DOCTYPE html>
             if (ironSt.temperature !== 'hot') { appendMessage('assistant', '⚠️ Iron is not hot yet — use {wait_for(3)} to let it heat up.'); return; }
             const name = objectNames.get(obj) || objectTypes.get(obj) || 'item';
             const ox = Math.floor(obj.position.x), oz = Math.floor(obj.position.z);
-            const col = String.fromCharCode(65 + ox), row = String.fromCharCode(49 + oz);
+            const col = String.fromCharCode(65 + ox), row = String(oz + 1);
             await moveTo(col, row);
             isAnimating = true;
             setStatus(`🪄 Ironing ${name}...`);
@@ -2773,7 +2792,7 @@ HTML = r"""<!DOCTYPE html>
             if (st.wrinkled) appendMessage('assistant', `⚠️ "${m[1]}" is still wrinkled — iron it first for a crisp neat fold.`);
             const name = objectNames.get(obj) || objectTypes.get(obj) || 'item';
             const ox = Math.floor(obj.position.x), oz = Math.floor(obj.position.z);
-            const col = String.fromCharCode(65 + ox), row = String.fromCharCode(49 + oz);
+            const col = String.fromCharCode(65 + ox), row = String(oz + 1);
             await moveTo(col, row);
             setStatus(`👕 Folding ${name}...`);
             isAnimating = true;
@@ -3593,7 +3612,7 @@ HTML = r"""<!DOCTYPE html>
         };
 
         // ── PLANNING PROMPT ── high-level only, multi-task aware ──────────────
-        const PLANNING_PROMPT = `You are K3D — an intelligent household robot planner.
+        const PLANNING_PROMPT = `You are K5D — an intelligent household robot planner.
 
 Given a task request and the current board state, produce a HIGH-LEVEL plan that a human can read, understand, and approve in 5 seconds.
 
@@ -3622,7 +3641,7 @@ MISSING-OBJECTS EXAMPLE:
 ⚠️ NEEDS: broom (to sweep), detergent (for washing machine)`;
 
           // ── SYSTEM PROMPT ── master execution intelligence ─────────────────
-          const SYSTEM_PROMPT = `You are K3D — the intelligent controller of a Prolabs V12.2 Precision Cartesian Gantry robot. Given an approved plan and board state, generate the COMPLETE, CORRECT sequence of K3D commands to execute it.
+          const SYSTEM_PROMPT = `You are K5D — the intelligent controller of a Prolabs V12.2 Precision Cartesian Gantry robot. Given an approved plan and board state, generate the COMPLETE, CORRECT sequence of K5D commands to execute it.
 
 BOARD: columns A–T (20 cols, left→right), rows 1–11 (11 rows, front→back). Grid cell = ColRow e.g. A1, T11.
 Board state format: name at COORD [footprint] {state flags} (touching: adjacent cells).
@@ -3990,7 +4009,7 @@ GROUPING RULE: same category items must TOUCH each other.
                 : '';
 
             const full = `════════════════════════════════════════
-K3D ROBOT — FULL PROMPT EXPORT
+K5D ROBOT — FULL PROMPT EXPORT
 Exported: ${new Date().toLocaleString()}
 ════════════════════════════════════════
 
@@ -4070,7 +4089,7 @@ ${pendingPlan}
 
 Current board state: ${currentBoardState}
 
-OUTPUT FORMAT: respond with ONLY a list of K3D commands, one per line, each wrapped in curly braces like {goto_coordinate = A, 1} or {pickup}. No explanation text, no markdown, no phase headers — just the raw commands in order. End with {Task_Completed}.`;
+OUTPUT FORMAT: respond with ONLY a list of K5D commands, one per line, each wrapped in curly braces like {goto_coordinate = A, 1} or {pickup}. No explanation text, no markdown, no phase headers — just the raw commands in order. End with {Task_Completed}.`;
                 const execHistory = [...chatHistory, { role: 'user', content: execPrompt }];
                 const res = await fetch('/api/chat', {
                     method: 'POST',
@@ -4266,6 +4285,6 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     server = HTTPServer(("0.0.0.0", 8050), Handler)
-    print("K3D Simulator → http://localhost:8050")
+    print("K5D Simulator → http://localhost:8050")
     webbrowser.open("http://localhost:8050")
     server.serve_forever()

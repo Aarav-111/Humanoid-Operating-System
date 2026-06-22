@@ -12,7 +12,8 @@ HTML = r"""<!DOCTYPE html>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap');
-        body { font-family: 'Syne', sans-serif; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Syne', sans-serif; background: #020205; }
         #canvas-container {
             position: absolute;
             top: 0; left: 0;
@@ -20,10 +21,162 @@ HTML = r"""<!DOCTYPE html>
             z-index: 1;
             background: #000000;
         }
+        /* Scanline overlay */
+        #canvas-container::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px);
+            pointer-events: none; z-index: 2;
+        }
         .ui-overlay { position: absolute; z-index: 10; pointer-events: none; }
         .ui-overlay > * { pointer-events: auto; }
         .mono { font-family: 'JetBrains Mono', monospace; }
         select { appearance: none; -webkit-appearance: none; }
+
+        /* Panel glass style */
+        .hud-panel {
+            background: rgba(8,8,14,0.88);
+            border: 1px solid rgba(59,130,246,0.18);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04), 0 4px 32px rgba(0,0,0,0.6);
+        }
+        /* Corner bracket decoration */
+        .bracket::before, .bracket::after {
+            content: '';
+            position: absolute;
+            width: 10px; height: 10px;
+            border-color: rgba(59,130,246,0.5);
+            border-style: solid;
+        }
+        .bracket::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+        .bracket::after  { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+        /* Blinking cursor */
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+        .blink { animation: blink 1.1s step-end infinite; }
+
+        /* Scan sweep */
+        @keyframes sweep { 0%{top:-4px} 100%{top:100%} }
+        #scan-sweep {
+            position: fixed; left: 0; right: 0; height: 3px; z-index: 9;
+            background: linear-gradient(180deg, transparent 0%, rgba(59,130,246,0.18) 50%, transparent 100%);
+            pointer-events: none;
+            animation: sweep 6s linear infinite;
+        }
+
+
+        /* Pulse ring */
+        @keyframes pulse-ring { 0%{transform:scale(0.8);opacity:0.8} 100%{transform:scale(2.2);opacity:0} }
+        .pulse-ring {
+            position: absolute; inset: -4px;
+            border: 1px solid #22c55e;
+            border-radius: 50%;
+            animation: pulse-ring 1.8s ease-out infinite;
+        }
+
+        /* Value counter animation */
+        @keyframes flicker { 0%,100%{opacity:1} 92%{opacity:1} 93%{opacity:0.7} 94%{opacity:1} }
+        .flicker { animation: flicker 4s ease-in-out infinite; }
+
+        /* Dial */
+        .dial-track { stroke: rgba(59,130,246,0.15); }
+        .dial-fill  { stroke: #3b82f6; stroke-linecap: round; transition: stroke-dashoffset 0.5s ease; }
+
+        /* Minimap grid */
+        .minimap-cell { width:3px; height:3px; background:rgba(59,130,246,0.08); border-radius:0.5px; }
+        .minimap-cell.active { background:rgba(59,130,246,0.55); }
+        .minimap-cell.obj { background:#f59e0b; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.3); border-radius: 2px; }
+
+        /* Warning flash */
+        @keyframes warn { 0%,100%{border-color:rgba(251,191,36,0.3)} 50%{border-color:rgba(251,191,36,0.8)} }
+        .warn-border { animation: warn 1.4s ease-in-out infinite; }
+
+        /* Welcome modal */
+        #welcome-overlay {
+            position: fixed; inset: 0; z-index: 999999;
+            background: rgba(0,0,0,0.65);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            display: flex; align-items: center; justify-content: center;
+        }
+        #welcome-box {
+            background: rgba(12,12,22,0.72);
+            border: 1px solid rgba(99,130,246,0.28);
+            backdrop-filter: blur(32px) saturate(180%);
+            -webkit-backdrop-filter: blur(32px) saturate(180%);
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.4), 0 8px 64px rgba(59,130,246,0.18), inset 0 1px 0 rgba(255,255,255,0.07);
+            border-radius: 24px;
+            padding: 40px 44px 36px;
+            max-width: 560px;
+            width: calc(100% - 40px);
+            position: relative;
+        }
+        #welcome-box .wm-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.3);
+            border-radius: 999px; padding: 3px 12px;
+            font-size: 11px; font-family: 'JetBrains Mono', monospace;
+            color: #60a5fa; letter-spacing: 0.08em; margin-bottom: 18px;
+        }
+        #welcome-box h1 {
+            font-size: 1.6rem; font-weight: 800; line-height: 1.25;
+            background: linear-gradient(135deg, #e2e8ff 0%, #93b4fd 55%, #60a5fa 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+        #welcome-box .wm-sub {
+            font-size: 0.85rem; color: rgba(180,190,255,0.72); line-height: 1.6;
+            margin-bottom: 22px;
+        }
+        #welcome-box .wm-divider {
+            height: 1px; background: rgba(99,130,246,0.18); margin-bottom: 18px;
+        }
+        #welcome-box .wm-how-title {
+            font-size: 0.7rem; font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 0.12em; color: #60a5fa; margin-bottom: 12px;
+        }
+        #welcome-box ul {
+            list-style: none; padding: 0; margin: 0 0 28px;
+            display: flex; flex-direction: column; gap: 9px;
+        }
+        #welcome-box ul li {
+            font-size: 0.82rem; color: rgba(210,220,255,0.8);
+            display: flex; align-items: flex-start; gap: 10px; line-height: 1.5;
+        }
+        #welcome-box ul li::before {
+            content: '›'; color: #3b82f6; font-size: 1rem; flex-shrink: 0; margin-top: -1px;
+        }
+        #welcome-box .wm-footer {
+            display: flex; align-items: center; justify-content: space-between; gap: 16px;
+        }
+
+        #welcome-close-btn {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: #fff; border: none; cursor: pointer;
+            font-family: 'Syne', sans-serif; font-weight: 700;
+            font-size: 0.82rem; letter-spacing: 0.04em;
+            padding: 10px 24px; border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(59,130,246,0.35);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        #welcome-close-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(59,130,246,0.5); }
+
+        /* Light mode overrides */
+        body.light-mode { background: #f0f4ff !important; color: #1e1e2e !important; }
+        body.light-mode #canvas-container { background: #dce3f7 !important; }
+        body.light-mode .hud-panel { background: rgba(240,244,255,0.88) !important; border-color: rgba(59,130,246,0.25) !important; }
+        body.light-mode #welcome-box { background: rgba(235,240,255,0.85) !important; }
+        body.light-mode #welcome-box h1 { background: linear-gradient(135deg, #1e2060 0%, #2563eb 100%); -webkit-background-clip: text; background-clip: text; }
+        body.light-mode #welcome-box .wm-sub { color: rgba(30,40,100,0.65); }
+        body.light-mode #welcome-box ul li { color: rgba(20,30,80,0.85); }
+        body.light-mode #welcome-box .wm-theme-row { color: rgba(30,40,100,0.6); }
         #context-menu {
             position: fixed;
             z-index: 9999;
@@ -165,82 +318,244 @@ HTML = r"""<!DOCTYPE html>
         }
     </style>
 </head>
-<body class="bg-zinc-950 text-zinc-200 overflow-hidden">
-    <div class="ui-overlay top-0 left-0 right-0 bg-black/90 backdrop-blur border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
-        <div class="flex items-center gap-x-3">
-            <div class="w-9 h-9 bg-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-xl">K</div>
+<body class="bg-zinc-950 text-zinc-200 overflow-hidden light-mode">
+
+<!-- ═══ WELCOME MODAL ═══ -->
+<div id="welcome-overlay">
+  <div id="welcome-box">
+    <div class="wm-badge">&#9679; PROBLABS ROBOTICS &nbsp;·&nbsp; K5D HOS</div>
+    <h1>Welcome to K5D HOS Simulator</h1>
+    <p class="wm-sub">The world's most advanced LLM-powered robotic simulator surpassing even the most cutting-edge systems from tech giants like Google, Tesla, and beyond! Officially tested!</p>
+    <div class="wm-divider"></div>
+    <div class="wm-how-title">HOW TO USE</div>
+    <ul>
+      <li>Give detailed, descriptive prompts to the AI for richer and more accurate output.</li>
+      <li>Right-click any object in the scene to rename or delete it.</li>
+      <li>Import custom 3D objects using a <span style="font-family:'JetBrains Mono',monospace;color:#60a5fa">.stl</span> file via the Import button.</li>
+      <li>Use the object library on the left to select, move, rotate, and scale parts.</li>
+      <li>Chain multiple AI tasks in sequence for complex multi-step assembly.</li>
+      <li>Import any supported 3D model format using the Import .stl file button.</li>
+      <li>Approve/edit LLM's high level plan just by a single click</li>
+      <li>Find example super-difficult super-multi-step tasks on the top-left corner</li>
+      <li>Use the camera controls (scroll, drag, right-drag) to navigate the 3D scene freely.</li>
+    </ul>
+    <div class="wm-footer">
+      <button id="welcome-close-btn" onclick="launchWithSplash()">Launch Simulator &nbsp;›</button>
+    </div>
+  </div>
+</div>
+
+<!-- Splash screen -->
+<div id="splash-overlay" style="display:none;position:fixed;inset:0;z-index:1000000;background:rgba(2,2,5,0.97);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);align-items:center;justify-content:center;flex-direction:column;">
+  <div style="width:380px;max-width:calc(100% - 48px);display:flex;flex-direction:column;align-items:center;gap:28px;">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+      <div style="width:48px;height:48px;background:linear-gradient(135deg,#1d4ed8,#4f46e5);border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:22px;color:#fff;letter-spacing:-1px;">K5</div>
+      <div style="font-size:0.75rem;font-family:'JetBrains Mono',monospace;color:rgba(148,163,220,0.7);letter-spacing:0.12em;" id="splash-status-text">Initializing simulator…</div>
+    </div>
+    <div style="width:100%;display:flex;flex-direction:column;gap:10px;">
+      <div style="width:100%;height:3px;background:rgba(59,130,246,0.12);border-radius:2px;overflow:hidden;">
+        <div id="splash-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#2563eb,#60a5fa);border-radius:2px;transition:width 0.12s linear;"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:0.68rem;font-family:'JetBrains Mono',monospace;color:rgba(148,163,220,0.45);">K5D Drone Simulator</div>
+        <div id="splash-pct" style="font-size:0.68rem;font-family:'JetBrains Mono',monospace;color:rgba(148,163,220,0.55);">0%</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scan sweep line -->
+<div id="scan-sweep"></div>
+
+<!-- ═══ TOP HUD BAR ═══ -->
+<div class="ui-overlay top-0 left-0 right-0" style="background:rgba(4,4,10,0.96);border-bottom:1px solid rgba(59,130,246,0.2);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);z-index:20;">
+    <!-- Main header row -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 20px;">
+        <!-- Left: branding + live axis readout -->
+        <div style="display:flex;align-items:center;gap:16px;">
+            <div style="position:relative;width:38px;height:38px;flex-shrink:0;">
+                <div style="width:38px;height:38px;background:linear-gradient(135deg,#1d4ed8,#4f46e5);border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;color:#fff;letter-spacing:-1px;">K5</div>
+                <div class="pulse-ring" style="border-color:#3b82f6;animation-duration:2.4s;"></div>
+            </div>
             <div>
-                <h1 class="text-xl font-bold tracking-tight">K5D · Precision Cartesian Gantry</h1>
-                <p class="text-xs text-zinc-400 mono">Prolabs V12.2 · AI-Controlled · XYZ-Axis</p>
+                <div style="font-size:14px;font-weight:800;letter-spacing:-0.02em;color:#f4f4f5;">K5D <span style="color:rgba(59,130,246,0.7);font-weight:400;">·</span> Precision Cartesian Gantry</div>
+                <div class="mono" style="font-size:9px;color:#3f3f46;letter-spacing:0.08em;margin-top:1px;">PROLABS V12.2 &nbsp;·&nbsp; AI-CONTROLLED &nbsp;·&nbsp; 20×11 GRID &nbsp;·&nbsp; 3-AXIS &nbsp;·&nbsp; SN:PL-K5D-00A1</div>
+            </div>
+            <!-- Axis position pills -->
+            <div style="display:flex;gap:6px;margin-left:8px;">
+                <div class="mono" style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);border-radius:6px;padding:4px 10px;">
+                    <span style="font-size:8px;color:#52525b;display:block;letter-spacing:0.1em;">X-AXIS</span>
+                    <span id="hud-x" style="font-size:13px;color:#60a5fa;font-weight:700;">A</span>
+                </div>
+                <div class="mono" style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);border-radius:6px;padding:4px 10px;">
+                    <span style="font-size:8px;color:#52525b;display:block;letter-spacing:0.1em;">Y-AXIS</span>
+                    <span id="hud-y" style="font-size:13px;color:#60a5fa;font-weight:700;">1</span>
+                </div>
+                <div class="mono" style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);border-radius:6px;padding:4px 10px;">
+                    <span style="font-size:8px;color:#52525b;display:block;letter-spacing:0.1em;">Z-AXIS</span>
+                    <span id="hud-z" style="font-size:13px;color:#60a5fa;font-weight:700;">4.0</span>
+                </div>
+                <div class="mono" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:6px;padding:4px 10px;">
+                    <span style="font-size:8px;color:#52525b;display:block;letter-spacing:0.1em;">GRIPPER</span>
+                    <span id="hud-grip" style="font-size:11px;color:#34d399;font-weight:700;">OPEN</span>
+                </div>
+                <div class="mono" style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.18);border-radius:6px;padding:4px 10px;">
+                    <span style="font-size:8px;color:#52525b;display:block;letter-spacing:0.1em;">OBJECTS</span>
+                    <span id="hud-obj-count" style="font-size:13px;color:#94a3b8;font-weight:700;">0</span>
+                </div>
             </div>
         </div>
-        <div class="flex items-center gap-x-3">
-            <div id="status" class="px-5 py-2 bg-emerald-900/50 text-emerald-400 rounded-full text-xs font-semibold mono flex items-center gap-x-2">
-                <span class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
+
+        <!-- Center: main status + live clock -->
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div id="status" style="padding:5px 16px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);color:#34d399;border-radius:20px;font-size:10px;font-family:'JetBrains Mono',monospace;font-weight:700;display:flex;align-items:center;gap:6px;letter-spacing:0.08em;">
+                <span style="position:relative;width:6px;height:6px;flex-shrink:0;display:flex;">
+                    <span style="position:absolute;inset:0;background:#22c55e;border-radius:50%;animation:pulse-ring 1.4s ease-out infinite;transform:scale(0.8);opacity:0.8;"></span>
+                    <span style="width:6px;height:6px;background:#22c55e;border-radius:50%;position:relative;z-index:1;"></span>
+                </span>
                 READY
             </div>
-            <button onclick="takeTopDownScreenshot()"
-                    class="px-5 py-2 bg-violet-700 hover:bg-violet-600 transition-colors rounded-full text-xs font-semibold">
-                📸 SCREENSHOT (2D)
+            <div class="mono" id="live-clock" style="font-size:9px;color:#3f3f46;letter-spacing:0.12em;"></div>
+        </div>
+
+        <!-- Right: action buttons -->
+        <div style="display:flex;align-items:center;gap:8px;">
+            <button onclick="takeTopDownScreenshot()" style="padding:7px 14px;background:rgba(109,40,217,0.3);border:1px solid rgba(139,92,246,0.4);border-radius:8px;color:#c4b5fd;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:0.03em;transition:all 0.15s;" onmouseover="this.style.background='rgba(109,40,217,0.5)'" onmouseout="this.style.background='rgba(109,40,217,0.3)'">
+                📸 SCREENSHOT
             </button>
-            <button onclick="copyFullPrompt()"
-                    class="px-5 py-2 bg-zinc-700 hover:bg-zinc-600 transition-colors rounded-full text-xs font-semibold">
+            <button onclick="copyFullPrompt()" style="padding:7px 14px;background:rgba(39,39,42,0.8);border:1px solid rgba(63,63,70,0.8);border-radius:8px;color:#a1a1aa;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:0.03em;transition:all 0.15s;" onmouseover="this.style.background='rgba(63,63,70,0.8)'" onmouseout="this.style.background='rgba(39,39,42,0.8)'">
                 📋 COPY PROMPT
             </button>
-            <button onclick="resetToHome()"
-                    class="px-5 py-2 bg-zinc-800 hover:bg-zinc-700 transition-colors rounded-full text-xs font-semibold">
-                RESET HOME (A1)
+            <button onclick="resetToHome()" style="padding:7px 14px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:#fca5a5;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:0.03em;transition:all 0.15s;" onmouseover="this.style.background='rgba(239,68,68,0.25)'" onmouseout="this.style.background='rgba(239,68,68,0.12)'">
+                ⌂ RESET HOME
             </button>
+            <!-- System health indicators -->
+            <div style="display:flex;flex-direction:column;gap:3px;margin-left:6px;padding-left:12px;border-left:1px solid rgba(59,130,246,0.12);">
+                <div style="display:flex;align-items:center;gap:5px;">
+                    <span style="width:5px;height:5px;background:#22c55e;border-radius:50%;"></span>
+                    <span class="mono" style="font-size:8px;color:#3f3f46;letter-spacing:0.06em;">MOTOR</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:5px;">
+                    <span style="width:5px;height:5px;background:#22c55e;border-radius:50%;"></span>
+                    <span class="mono" style="font-size:8px;color:#3f3f46;letter-spacing:0.06em;">COMMS</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:5px;">
+                    <span id="ai-dot" style="width:5px;height:5px;background:#3f3f46;border-radius:50%;"></span>
+                    <span class="mono" style="font-size:8px;color:#3f3f46;letter-spacing:0.06em;">AI&nbsp;PLNR</span>
+                </div>
+            </div>
         </div>
     </div>
+</div>
+
+<!-- ═══ BOTTOM STATUS BAR ═══ -->
+<div class="ui-overlay bottom-0 left-0 right-0" style="background:rgba(4,4,10,0.95);border-top:1px solid rgba(59,130,246,0.15);padding:5px 20px;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(16px);">
+    <div style="display:flex;gap:20px;align-items:center;">
+        <span class="mono" style="font-size:9px;color:#27272a;letter-spacing:0.06em;">K5D CONTROL SYSTEM</span>
+        <span class="mono" style="font-size:9px;color:rgba(59,130,246,0.4);">FW v12.2.1-stable</span>
+        <span class="mono" style="font-size:9px;color:#27272a;">·</span>
+        <span class="mono" style="font-size:9px;color:#27272a;" id="bottom-pos">POS: A1 · Z:4.0</span>
+        <span class="mono" style="font-size:9px;color:#27272a;">·</span>
+        <span class="mono" style="font-size:9px;color:#27272a;">VEL: 0.0 mm/s</span>
+        <span class="mono" style="font-size:9px;color:#27272a;">·</span>
+        <span class="mono" style="font-size:9px;color:#27272a;">TORQUE: 0.00 Nm</span>
+        <span class="mono" style="font-size:9px;color:#27272a;">·</span>
+        <span class="mono" style="font-size:9px;color:rgba(251,191,36,0.5);" id="bottom-uptime">UPTIME: 00:00:00</span>
+    </div>
+    <div style="display:flex;gap:16px;align-items:center;">
+        <span class="mono" style="font-size:9px;color:#27272a;">CELL SIZE: 50×50mm</span>
+        <span class="mono" style="font-size:9px;color:#27272a;">·</span>
+        <span class="mono" style="font-size:9px;color:#27272a;">GRID: 20×11</span>
+        <span class="mono" style="font-size:9px;color:#27272a;">·</span>
+        <span class="mono" style="font-size:9px;color:#27272a;">MAX LIFT: 8kg</span>
+        <span class="mono" style="font-size:9px;color:#27272a;">·</span>
+        <span class="mono" style="font-size:9px;color:rgba(59,130,246,0.4);">© PROLABS 2025</span>
+    </div>
+</div>
     <div id="canvas-container"></div>
-    <div class="ui-overlay top-20 left-6 bg-zinc-900/95 backdrop-blur border border-zinc-700/60 rounded-2xl w-72 p-4" style="max-height: calc(100vh - 96px); overflow-y: auto;">
-        <h2 class="text-xs font-bold mb-3 text-zinc-300 tracking-widest uppercase">Target Coordinate</h2>
-        <div class="flex gap-2 mb-3">
-            <div class="flex-1">
-                <label class="text-xs text-zinc-500 mono mb-1 block">X AXIS</label>
-                <select id="x-letter" class="w-full bg-zinc-800 border border-zinc-700 focus:border-blue-500 rounded-xl px-3 py-2 text-lg font-bold text-center mono cursor-pointer"></select>
+    <!-- Hidden elements used by JS animations (not shown in UI) -->
+    <div style="display:none">
+        <select id="x-letter"></select>
+        <select id="y-number"></select>
+        <input type="range" id="z-slider" min="0.5" max="7" step="0.1" value="4.0">
+        <span id="z-label">4.0</span>
+        <div id="current-position">A1</div>
+        <div id="current-coords">(0.0, 0.0, 4.0)</div>
+        <div id="gripper-state">Gripper: OPEN</div>
+    </div>
+
+    <!-- Task List Panel — scrollable, height capped so it doesn't overlap the bottom library panel -->
+    <div class="ui-overlay top-20 left-6 bg-zinc-900/95 backdrop-blur border border-zinc-700/60 rounded-2xl w-64" style="max-height: calc(48vh - 10px); display:flex; flex-direction:column;">
+        <div class="px-4 pt-4 pb-2 shrink-0">
+            <h2 class="text-xs font-bold mb-0.5 text-zinc-300 tracking-widest uppercase">Quick Tasks</h2>
+            <p class="text-xs text-zinc-600 mono">Click a task to run with K5D AI</p>
+        </div>
+        <div class="overflow-y-auto px-4 pb-4" style="scrollbar-width:thin; scrollbar-color:#3f3f46 transparent;">
+            <div class="space-y-1.5 pt-1">
+                <button onclick="showTaskPopup('Sweeping','Sweep the entire floor of the board clean. Use the broom to sweep all cells and collect dust with the dustpan.')" class="w-full text-left px-3 py-2.5 bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/50 hover:border-blue-500/50 rounded-xl text-xs font-semibold text-zinc-200 transition-all flex items-center gap-2.5">
+                    <span class="text-base">&#x1F9F9;</span> Sweeping
+                </button>
+                <button onclick="showTaskPopup('Mopping','Mop the entire floor of the board. Fill the bucket with water and disinfectant, then mop all cells row by row.')" class="w-full text-left px-3 py-2.5 bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/50 hover:border-blue-500/50 rounded-xl text-xs font-semibold text-zinc-200 transition-all flex items-center gap-2.5">
+                    <span class="text-base">&#x1FAA3;</span> Mopping
+                </button>
+                <button onclick="showTaskPopup('Washing utensils','Wash all dirty utensils on the board. Apply soap to each utensil cell, then wipe clean with a cloth. Work through every dirty pot, pan, plate, bowl, mug, glass, and cutlery using Apply_soap and Apply_cloth commands.')" class="w-full text-left px-3 py-2.5 bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/50 hover:border-blue-500/50 rounded-xl text-xs font-semibold text-zinc-200 transition-all flex items-center gap-2.5">
+                    <span class="text-base">&#x1F37D;&#xFE0F;</span> Washing utensils
+                </button>
+                <button onclick="showTaskPopup('Cooking','Cook a meal. Follow this exact sequence with no extra steps: 1) Pick up the pot and place it on the stove cell. 2) Turn on the stove. 3) Pick up the vegetable(s) if present, if no vegitables then keep vegitable basket on the pot (same cell as stove). 4) Move gripper to A1. 5) Wait 4 seconds using wait_for(4). 6) Pick up the vegetable basket from the pot and place it on the plate. 7) Turn off the stove. Do not use a knife, cutting board, or any other objects.')" class="w-full text-left px-3 py-2.5 bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/50 hover:border-blue-500/50 rounded-xl text-xs font-semibold text-zinc-200 transition-all flex items-center gap-2.5">
+                    <span class="text-base">&#x1F373;</span> Cooking
+                </button>
+                <button onclick="showTaskPopup('Washing clothes','Wash all dirty clothes on the board. Load garments into the washing machine with detergent, run the wash cycle, then unload clean clothes.')" class="w-full text-left px-3 py-2.5 bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/50 hover:border-blue-500/50 rounded-xl text-xs font-semibold text-zinc-200 transition-all flex items-center gap-2.5">
+                    <span class="text-base">&#x1F455;</span> Washing clothes
+                </button>
+                <button onclick="showTaskPopup('Folding and ironing clothes','Iron and fold all wrinkled clothes on the board. Heat the iron, iron each garment on the ironing board to remove wrinkles, then fold them neatly. Turn off the iron when done.')" class="w-full text-left px-3 py-2.5 bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/50 hover:border-blue-500/50 rounded-xl text-xs font-semibold text-zinc-200 transition-all flex items-center gap-2.5">
+                    <span class="text-base">&#x1FA84;</span> Folding &amp; Ironing
+                </button>
+                <button onclick="showTaskPopup('Cutting vegetables','Bring the knife to the vegitable(s), slice the vegetable(s) into pieces for cooking prep., then keep the knife on A11')" class="w-full text-left px-3 py-2.5 bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/50 hover:border-blue-500/50 rounded-xl text-xs font-semibold text-zinc-200 transition-all flex items-center gap-2.5">
+                    <span class="text-base">&#x1F955;</span> Cutting vegetables
+                </button>
+                <button onclick="showTaskPopup('Cleaning the bathroom and toilet','Deep clean the bathroom area on the board. Scrub the toilet and sink with brushes, apply disinfectant to all surfaces, mop the floor tiles thoroughly, and clean all tools when done.')" class="w-full text-left px-3 py-2.5 bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/50 hover:border-blue-500/50 rounded-xl text-xs font-semibold text-zinc-200 transition-all flex items-center gap-2.5">
+                    <span class="text-base">&#x1F6BD;</span> Cleaning bathroom
+                </button>
+                <button onclick="showTaskPopup('Dusting furniture and surfaces','Dust all furniture and surfaces on the board from top to bottom. Use the duster on all objects, then sweep up the fallen dust.')" class="w-full text-left px-3 py-2.5 bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/50 hover:border-blue-500/50 rounded-xl text-xs font-semibold text-zinc-200 transition-all flex items-center gap-2.5">
+                    <span class="text-base">&#x1FAB6;</span> Dusting surfaces
+                </button>
+                <button onclick="showTaskPopup('Tidying up the board','Tidy and organise the entire board. Sort all objects into their correct zones: cleaning tools in A1-D4, dining items in E1-H4, kitchen in I1-L4, laundry in M1-P4, pantry in Q1-T4. Keep the working area clear.')" class="w-full text-left px-3 py-2.5 bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/50 hover:border-blue-500/50 rounded-xl text-xs font-semibold text-zinc-200 transition-all flex items-center gap-2.5">
+                    <span class="text-base">&#x1F4E6;</span> Tidying up the board
+                </button>
             </div>
-            <div class="flex items-end justify-center pb-2 text-xl text-zinc-600">×</div>
-            <div class="flex-1">
-                <label class="text-xs text-zinc-500 mono mb-1 block">Y AXIS</label>
-                <select id="y-number" class="w-full bg-zinc-800 border border-zinc-700 focus:border-blue-500 rounded-xl px-3 py-2 text-lg font-bold text-center mono cursor-pointer"></select>
-            </div>
-        </div>
-        <div class="mb-3">
-            <label class="text-xs text-zinc-500 mono mb-1 flex justify-between"><span>Z AXIS HEIGHT</span><span id="z-label" class="text-blue-400">4.0</span></label>
-            <input type="range" id="z-slider" min="0.5" max="7" step="0.1" value="4.0"
-                   class="w-full h-2 bg-zinc-700 rounded-full outline-none cursor-pointer accent-blue-500"
-                   oninput="onZSlider(this.value)">
-            <div class="flex justify-between text-xs mono text-zinc-600 mt-1"><span>LOW</span><span>HIGH</span></div>
-        </div>
-        <button onclick="moveGripper()"
-                class="w-full bg-blue-600 hover:bg-blue-500 py-2 rounded-xl text-white font-bold text-sm mb-2 transition-colors">
-            MOVE GRIPPER
-        </button>
-        <div class="grid grid-cols-3 gap-2 mb-3">
-            <button onclick="doPickup()"
-                    class="bg-amber-600 hover:bg-amber-500 py-2 rounded-xl text-white font-bold text-xs transition-colors">
-                PICKUP
-            </button>
-            <button onclick="doKeep()"
-                    class="bg-emerald-700 hover:bg-emerald-600 py-2 rounded-xl text-white font-bold text-xs transition-colors">
-                PLACE
-            </button>
-            <button onclick="doPour()"
-                    class="bg-violet-700 hover:bg-violet-600 py-2 rounded-xl text-white font-bold text-xs transition-colors">
-                POUR
-            </button>
-        </div>
-        <div class="bg-zinc-800/70 border border-zinc-700/40 rounded-xl p-3">
-            <div class="text-xs mono text-zinc-500 mb-1">POSITION</div>
-            <div id="current-position" class="mono text-2xl font-bold text-blue-400">A1</div>
-            <div id="current-coords" class="mono text-xs text-zinc-400 mt-1">(0.0, 0.0, 4.0)</div>
-            <div id="gripper-state" class="mono text-xs text-zinc-500 mt-1">Gripper: OPEN</div>
         </div>
     </div>
 
-    <div class="ui-overlay top-20 right-6 bottom-6 w-80 flex flex-col gap-0">
+    <!-- Glassmorphism Task Popup -->
+    <div id="task-popup" style="display:none; position:fixed; inset:0; z-index:99998; background:rgba(0,0,0,0.55); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); align-items:center; justify-content:center;">
+        <div style="background:rgba(18,18,20,0.82); backdrop-filter:blur(28px); -webkit-backdrop-filter:blur(28px); border:1px solid rgba(255,255,255,0.1); border-radius:24px; padding:28px 26px 24px; width:420px; max-width:92vw; max-height:88vh; overflow-y:auto; box-shadow:0 40px 100px rgba(0,0,0,0.8);">
+            <!-- Header -->
+            <div style="display:flex; align-items:center; gap:14px; margin-bottom:18px;">
+                <div style="width:44px; height:44px; background:linear-gradient(135deg,#3b82f6,#6366f1); border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">&#x1F916;</div>
+                <div>
+                    <div style="font-family:'Syne',sans-serif; font-size:15px; font-weight:700; color:#f4f4f5;" id="popup-title">Task Ready</div>
+                    <div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#52525b; margin-top:2px;">K5D AI · Add objects then continue</div>
+                </div>
+            </div>
+            <!-- Suggested objects -->
+            <div style="background:rgba(39,39,42,0.6); border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:14px 16px; margin-bottom:18px;">
+                <div style="font-family:'Syne',sans-serif; font-size:10px; font-weight:700; color:#71717a; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px;">Suggested objects to add</div>
+                <div id="popup-suggestions" style="display:flex; flex-direction:column; gap:7px;"></div>
+            </div>
+            <p style="font-family:'Syne',sans-serif; font-size:12px; color:#71717a; margin:0 0 20px 0; line-height:1.5;">Add these from the <strong style="color:#93c5fd;">Objects Library</strong> panel (bottom-left), then click <strong style="color:#a3e635;">Continue</strong> when ready.</p>
+            <!-- Buttons -->
+            <div style="display:flex; gap:10px;">
+                <button onclick="closeTaskPopup()" style="flex:1; padding:11px 0; background:rgba(39,39,42,0.9); border:1px solid rgba(255,255,255,0.08); border-radius:12px; color:#a1a1aa; font-family:'Syne',sans-serif; font-size:12px; font-weight:600; cursor:pointer;" onmouseover="this.style.background='rgba(63,63,70,0.95)'" onmouseout="this.style.background='rgba(39,39,42,0.9)'">
+                    Ok, adding objects&#x2026;
+                </button>
+                <button onclick="confirmTaskPopup()" style="flex:1; padding:11px 0; background:linear-gradient(135deg,#16a34a,#15803d); border:1px solid rgba(74,222,128,0.25); border-radius:12px; color:#fff; font-family:'Syne',sans-serif; font-size:12px; font-weight:700; cursor:pointer;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+                    &#x2713; Continue, already added
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="ui-overlay top-20 right-6 w-80 flex flex-col gap-0" style="bottom:34px;">
         <div class="bg-zinc-900/95 backdrop-blur border border-zinc-700/60 rounded-2xl p-4 mb-3 shrink-0" style="max-height: 28vh; overflow-y: auto;">
             <h2 class="text-xs font-bold mb-3 text-zinc-300 tracking-widest uppercase">Object Positions</h2>
             <div id="objects-list" class="space-y-2">
@@ -254,7 +569,7 @@ HTML = r"""<!DOCTYPE html>
                     <div class="text-xs font-bold text-zinc-200 tracking-widest uppercase">K5D Task Planner</div>
                     <div class="text-xs text-zinc-500 mono">Prolabs V12.2 · Claude</div>
                 </div>
-                <div id="ai-status-dot" class="ml-auto w-2 h-2 bg-zinc-600 rounded-full"></div>
+                <div id="ai-status-dot" class="ml-auto w-2 h-2 bg-zinc-600 rounded-full" style="transition:background 0.3s;"></div>
             </div>
             <div id="exec-log" class="shrink-0 px-3 pt-2 pb-1 border-b border-zinc-800/50 overflow-y-auto" style="max-height: 120px; display:none;">
                 <div class="text-xs mono text-zinc-500 mb-1 uppercase tracking-widest">Execution Plan</div>
@@ -299,39 +614,7 @@ HTML = r"""<!DOCTYPE html>
         </div>
     </div>
 
-    <div class="ui-overlay bottom-6 left-6 bg-zinc-900/95 backdrop-blur border border-zinc-700/60 rounded-2xl p-5 w-80" style="max-height: 48vh; overflow-y: auto;">
-        <div class="mb-4 rounded-2xl bg-zinc-800/80 border border-zinc-700/50 p-3">
-            <div class="flex items-center justify-between mb-2">
-                <div class="text-xs font-bold uppercase tracking-widest text-zinc-300">Change Orientation</div>
-                <div class="text-[10px] text-zinc-500 mono">All objects</div>
-            </div>
-            <div class="grid grid-cols-3 gap-2">
-                <button onclick="rotateAllObjects('x', 90)"
-                        class="bg-slate-700 hover:bg-slate-600 py-2 rounded-xl text-white font-bold text-xs transition-colors">
-                    X +90
-                </button>
-                <button onclick="rotateAllObjects('x', -90)"
-                        class="bg-slate-700 hover:bg-slate-600 py-2 rounded-xl text-white font-bold text-xs transition-colors">
-                    X -90
-                </button>
-                <button onclick="rotateAllObjects('y', 90)"
-                        class="bg-slate-700 hover:bg-slate-600 py-2 rounded-xl text-white font-bold text-xs transition-colors">
-                    Y +90
-                </button>
-                <button onclick="rotateAllObjects('y', -90)"
-                        class="bg-slate-700 hover:bg-slate-600 py-2 rounded-xl text-white font-bold text-xs transition-colors">
-                    Y -90
-                </button>
-                <button onclick="rotateAllObjects('z', 90)"
-                        class="bg-slate-700 hover:bg-slate-600 py-2 rounded-xl text-white font-bold text-xs transition-colors">
-                    Z +90
-                </button>
-                <button onclick="rotateAllObjects('z', -90)"
-                        class="bg-slate-700 hover:bg-slate-600 py-2 rounded-xl text-white font-bold text-xs transition-colors">
-                    Z -90
-                </button>
-            </div>
-        </div>
+    <div class="ui-overlay left-6 bg-zinc-900/95 backdrop-blur border border-zinc-700/60 rounded-2xl p-5 w-80" style="bottom:34px; max-height: 48vh; overflow-y: auto;">
         <h3 class="text-xs font-bold mb-1 tracking-widest text-zinc-400 uppercase">Objects Library</h3>
         <p class="text-xs text-zinc-600 mb-3 mono">Right-click any board object to rename or delete</p>
         <div class="lib-section-title">Basic</div>
@@ -566,6 +849,44 @@ HTML = r"""<!DOCTYPE html>
                 <div class="obj-lib-meta"><div class="font-bold text-zinc-200 mb-1">shopping_bag</div><div>Empty bag for market trips. Fill with produce.</div></div>
             </div>
         </div>
+        <div class="lib-section-title">🥕 Vegetables (Sliceable)</div>
+        <div class="grid grid-cols-5 gap-3 mb-2">
+            <div class="obj-lib-wrap obj-lib-entry" onclick="addObject('carrot')">
+                <div class="text-3xl mb-1">🥕</div>
+                <span class="text-xs text-zinc-400">Carrot</span>
+                <div class="obj-lib-meta"><div class="font-bold text-zinc-200 mb-1">carrot</div><div>Orange root vegetable. sliceable — bring knife to same cell first.</div></div>
+            </div>
+            <div class="obj-lib-wrap obj-lib-entry" onclick="addObject('cucumber')">
+                <div class="text-3xl mb-1">🥒</div>
+                <span class="text-xs text-zinc-400">Cucumber</span>
+                <div class="obj-lib-meta"><div class="font-bold text-zinc-200 mb-1">cucumber</div><div>Green cucumber. sliceable — bring knife to same cell first.</div></div>
+            </div>
+            <div class="obj-lib-wrap obj-lib-entry" onclick="addObject('tomato')">
+                <div class="text-3xl mb-1">🍅</div>
+                <span class="text-xs text-zinc-400">Tomato</span>
+                <div class="obj-lib-meta"><div class="font-bold text-zinc-200 mb-1">tomato</div><div>Red tomato. sliceable — squirts juice if cut fast.</div></div>
+            </div>
+            <div class="obj-lib-wrap obj-lib-entry" onclick="addObject('onion')">
+                <div class="text-3xl mb-1">🧅</div>
+                <span class="text-xs text-zinc-400">Onion</span>
+                <div class="obj-lib-meta"><div class="font-bold text-zinc-200 mb-1">onion</div><div>Layered onion. sliceable — handle with care.</div></div>
+            </div>
+            <div class="obj-lib-wrap obj-lib-entry" onclick="addObject('potato')">
+                <div class="text-3xl mb-1">🥔</div>
+                <span class="text-xs text-zinc-400">Potato</span>
+                <div class="obj-lib-meta"><div class="font-bold text-zinc-200 mb-1">potato</div><div>Brown potato. sliceable — needs firm grip.</div></div>
+            </div>
+            <div class="obj-lib-wrap obj-lib-entry" onclick="addObject('bell_pepper')">
+                <div class="text-3xl mb-1">🫑</div>
+                <span class="text-xs text-zinc-400">Bell Pepper</span>
+                <div class="obj-lib-meta"><div class="font-bold text-zinc-200 mb-1">bell_pepper</div><div>Green bell pepper. sliceable — hollow inside.</div></div>
+            </div>
+            <div class="obj-lib-wrap obj-lib-entry" onclick="addObject('broccoli')">
+                <div class="text-3xl mb-1">🥦</div>
+                <span class="text-xs text-zinc-400">Broccoli</span>
+                <div class="obj-lib-meta"><div class="font-bold text-zinc-200 mb-1">broccoli</div><div>Broccoli head. sliceable into florets.</div></div>
+            </div>
+        </div>
         <hr class="lib-divider">
         <div id="stl-drop-zone"
              onclick="document.getElementById('stl-upload').click()"
@@ -603,6 +924,48 @@ HTML = r"""<!DOCTYPE html>
     </div>
 
     <script>
+        function launchWithSplash() {
+          document.getElementById('welcome-overlay').style.display = 'none';
+          const splash = document.getElementById('splash-overlay');
+          splash.style.display = 'flex';
+
+          const bar = document.getElementById('splash-bar');
+          const pct = document.getElementById('splash-pct');
+          const statusEl = document.getElementById('splash-status-text');
+          const steps = [
+            { at: 10,  label: 'Loading 3D engine…' },
+            { at: 35,  label: 'Building scene graph…' },
+            { at: 58,  label: 'Configuring model…' },
+            { at: 78,  label: 'Calibrating k5D…' },
+            { at: 92,  label: 'Configuring trigonometry…' },
+            { at: 100, label: 'Ready.' },
+          ];
+          const duration = 5000;
+          const start = performance.now();
+
+          function tick() {
+            const elapsed = performance.now() - start;
+            const progress = Math.min(elapsed / duration, 1);
+            const pctVal = Math.round(progress * 100);
+            bar.style.width = pctVal + '%';
+            pct.textContent = pctVal + '%';
+
+            for (let i = steps.length - 1; i >= 0; i--) {
+              if (pctVal >= steps[i].at) {
+                statusEl.textContent = steps[i].label;
+                break;
+              }
+            }
+
+            if (progress < 1) {
+              requestAnimationFrame(tick);
+            } else {
+              setTimeout(() => { splash.style.display = 'none'; }, 180);
+            }
+          }
+          requestAnimationFrame(tick);
+        }
+
         let scene, camera, renderer;
         let xRail, yCarriage, zRailGroup, zCarriage, gripperMount;
         let gripperLeftJaw, gripperRightJaw;
@@ -633,7 +996,28 @@ HTML = r"""<!DOCTYPE html>
         let completedCommands = 0;
 
         function setStatus(html) { document.getElementById('status').innerHTML = html; }
-        function setGripperState(s) { document.getElementById('gripper-state').textContent = 'Gripper: ' + s; }
+        function setGripperState(s) {
+            document.getElementById('gripper-state').textContent = 'Gripper: ' + s;
+            const el = document.getElementById('hud-grip');
+            if (el) { el.textContent = s; el.style.color = s === 'OPEN' ? '#34d399' : '#f59e0b'; }
+            const aidot = document.getElementById('ai-status-dot');
+            function syncAiDot(color) { const d = document.getElementById('ai-dot'); if(d) d.style.background = color; }
+        }
+
+        // Live clock + uptime
+        const _startTime = Date.now();
+        function _padTwo(n) { return String(n).padStart(2,'0'); }
+        function _tickClock() {
+            const now = new Date();
+            const cl = document.getElementById('live-clock');
+            if (cl) cl.textContent = now.toLocaleTimeString('en-GB', { hour12: false }) + '  UTC+' + (-(now.getTimezoneOffset()/60));
+            const elapsed = Math.floor((Date.now() - _startTime) / 1000);
+            const h = Math.floor(elapsed/3600), m = Math.floor((elapsed%3600)/60), s = elapsed%60;
+            const ut = document.getElementById('bottom-uptime');
+            if (ut) ut.textContent = `UPTIME: ${_padTwo(h)}:${_padTwo(m)}:${_padTwo(s)}`;
+        }
+        setInterval(_tickClock, 1000);
+        _tickClock();
 
         function colLetterToX(col) {
             const letter = col.trim().toUpperCase();
@@ -792,6 +1176,27 @@ HTML = r"""<!DOCTYPE html>
             } else if (t.includes('chopping_board') || t.includes('chopping')) {
                 cfg.affordances = ['liftable', 'sliceable_surface']; cfg.weight = 2; cfg.defaultState = { dirty: 0 };
             // --- Shopping ---
+            } else if (t === 'carrot') {
+                cfg.affordances = ['liftable', 'sliceable']; cfg.weight = 1;
+                cfg.defaultState = { sliced: false, pieces: 1, dirty: 0 };
+            } else if (t === 'cucumber') {
+                cfg.affordances = ['liftable', 'sliceable']; cfg.weight = 1;
+                cfg.defaultState = { sliced: false, pieces: 1, dirty: 0 };
+            } else if (t === 'tomato') {
+                cfg.affordances = ['liftable', 'sliceable']; cfg.weight = 1;
+                cfg.defaultState = { sliced: false, pieces: 1, dirty: 0 };
+            } else if (t === 'onion') {
+                cfg.affordances = ['liftable', 'sliceable']; cfg.weight = 1;
+                cfg.defaultState = { sliced: false, pieces: 1, dirty: 0 };
+            } else if (t === 'potato') {
+                cfg.affordances = ['liftable', 'sliceable']; cfg.weight = 1;
+                cfg.defaultState = { sliced: false, pieces: 1, dirty: 0 };
+            } else if (t === 'bell_pepper') {
+                cfg.affordances = ['liftable', 'sliceable']; cfg.weight = 1;
+                cfg.defaultState = { sliced: false, pieces: 1, dirty: 0 };
+            } else if (t === 'broccoli') {
+                cfg.affordances = ['liftable', 'sliceable']; cfg.weight = 1;
+                cfg.defaultState = { sliced: false, pieces: 1, dirty: 0 };
             } else if (t.includes('vegetable_basket') || t.includes('veggie')) {
                 cfg.affordances = ['liftable', 'openable']; cfg.weight = 4;
                 cfg.defaultState = { isOpen: true, dirty: 0, filled: true };
@@ -1219,6 +1624,11 @@ HTML = r"""<!DOCTYPE html>
             const letter = String.fromCharCode(65 + Math.round(x)), num = Math.round(y) + 1;
             document.getElementById('current-position').textContent = letter + num;
             document.getElementById('current-coords').textContent = `(${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)})`;
+            // Update HUD pills
+            const hx = document.getElementById('hud-x'); if (hx) hx.textContent = letter;
+            const hy = document.getElementById('hud-y'); if (hy) hy.textContent = num;
+            const hz = document.getElementById('hud-z'); if (hz) hz.textContent = z.toFixed(1);
+            const bp = document.getElementById('bottom-pos'); if (bp) bp.textContent = `POS: ${letter}${num} · Z:${z.toFixed(1)}`;
         }
         function animateZ(fromZ, toZ, duration, onDone) {
             const steps = Math.round(duration / 16); let step = 0;
@@ -1246,12 +1656,17 @@ HTML = r"""<!DOCTYPE html>
         }
         function getObjectAtCurrentCell() {
             const cx = Math.floor(currentX), cz = Math.floor(currentY);
+            let fallback = null;
             for (const obj of objects) {
                 const ox = Math.floor(obj.position.x), oz = Math.floor(obj.position.z);
                 const fp = objectFootprint.get(obj) || { w: 1, h: 1 };
-                if (cx >= ox && cx < ox + fp.w && cz >= oz && cz < oz + fp.h) return obj;
+                if (cx >= ox && cx < ox + fp.w && cz >= oz && cz < oz + fp.h) {
+                    // Prefer objects that are NOT inside a container — containers themselves take priority
+                    if (!(objectState.get(obj) || {}).inContainer) return obj;
+                    if (!fallback) fallback = obj;
+                }
             }
-            return null;
+            return fallback; // only reached if everything at the cell is inside a container
         }
 
         window.onZSlider = function(val) {
@@ -1433,6 +1848,13 @@ HTML = r"""<!DOCTYPE html>
             else if (type === 'ingredient_jar') obj = createIngredientJar();
             else if (type === 'vegetable_basket') obj = createVegetableBasket();
             else if (type === 'shopping_bag') obj = createShoppingBag();
+            else if (type === 'carrot') obj = createCarrot();
+            else if (type === 'cucumber') obj = createCucumber();
+            else if (type === 'tomato') obj = createTomato();
+            else if (type === 'onion') obj = createOnion();
+            else if (type === 'potato') obj = createPotato();
+            else if (type === 'bell_pepper') obj = createBellPepper();
+            else if (type === 'broccoli') obj = createBroccoli();
             if (obj) { spawnObject(obj, type); setStatus(`✅ Added ${type}`); }
         };
 
@@ -2142,8 +2564,110 @@ HTML = r"""<!DOCTYPE html>
             return g;
         }
 
+        // ── Vegetable geometry creators ─────────────────────────────────────
+        function createCarrot() {
+            const g = new THREE.Group();
+            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.22, 1.1, 10), new THREE.MeshPhongMaterial({ color: 0xf97316 }));
+            body.position.y = 0.55; g.add(body);
+            for (let i = 0; i < 3; i++) {
+                const tip = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.05, 0.22, 6), new THREE.MeshPhongMaterial({ color: 0xf97316 }));
+                tip.position.set((i-1)*0.04, 0.04, 0); g.add(tip);
+            }
+            const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.38, 5), new THREE.MeshPhongMaterial({ color: 0x16a34a }));
+            leaf.position.y = 1.28; g.add(leaf);
+            return g;
+        }
+        function createCucumber() {
+            const g = new THREE.Group();
+            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.20, 1.4, 14), new THREE.MeshPhongMaterial({ color: 0x4ade80 }));
+            body.position.y = 0.7; g.add(body);
+            const cap = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), new THREE.MeshPhongMaterial({ color: 0x4ade80 }));
+            cap.position.y = 1.42; g.add(cap);
+            const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.18, 8), new THREE.MeshPhongMaterial({ color: 0x15803d }));
+            stem.position.y = 0.1; g.add(stem);
+            for (let i = 0; i < 6; i++) {
+                const bump = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 5), new THREE.MeshPhongMaterial({ color: 0x22c55e }));
+                const a = (i/6)*Math.PI*2;
+                bump.position.set(Math.cos(a)*0.22, 0.5 + i*0.15, Math.sin(a)*0.22); g.add(bump);
+            }
+            return g;
+        }
+        function createTomato() {
+            const g = new THREE.Group();
+            const body = new THREE.Mesh(new THREE.SphereGeometry(0.42, 16, 14), new THREE.MeshPhongMaterial({ color: 0xef4444, shininess: 80 }));
+            body.scale.y = 0.82; body.position.y = 0.38; g.add(body);
+            const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.22, 8), new THREE.MeshPhongMaterial({ color: 0x4d7c0f }));
+            stem.position.y = 0.74; g.add(stem);
+            for (let i = 0; i < 5; i++) {
+                const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.04, 0.08), new THREE.MeshPhongMaterial({ color: 0x65a30d }));
+                leaf.rotation.y = (i/5)*Math.PI*2; leaf.position.set(Math.cos((i/5)*Math.PI*2)*0.18, 0.73, Math.sin((i/5)*Math.PI*2)*0.18); g.add(leaf);
+            }
+            return g;
+        }
+        function createOnion() {
+            const g = new THREE.Group();
+            const body = new THREE.Mesh(new THREE.SphereGeometry(0.40, 14, 12), new THREE.MeshPhongMaterial({ color: 0xd97706 }));
+            body.scale.y = 0.9; body.position.y = 0.38; g.add(body);
+            const skin = new THREE.Mesh(new THREE.SphereGeometry(0.41, 14, 12), new THREE.MeshPhongMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.35 }));
+            skin.scale.y = 0.9; skin.position.y = 0.38; g.add(skin);
+            const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.05, 0.3, 8), new THREE.MeshPhongMaterial({ color: 0x92400e }));
+            stem.position.y = 0.8; g.add(stem);
+            const root = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.02, 0.12, 8), new THREE.MeshPhongMaterial({ color: 0x78350f }));
+            root.position.y = 0.05; g.add(root);
+            return g;
+        }
+        function createPotato() {
+            const g = new THREE.Group();
+            const body = new THREE.Mesh(new THREE.SphereGeometry(0.38, 10, 8), new THREE.MeshPhongMaterial({ color: 0x92400e }));
+            body.scale.set(1.25, 0.85, 1.0); body.position.y = 0.34; g.add(body);
+            const skin = new THREE.Mesh(new THREE.SphereGeometry(0.39, 10, 8), new THREE.MeshPhongMaterial({ color: 0xa16207, transparent: true, opacity: 0.25 }));
+            skin.scale.set(1.25, 0.85, 1.0); skin.position.y = 0.34; g.add(skin);
+            for (let i = 0; i < 4; i++) {
+                const eye = new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 5), new THREE.MeshPhongMaterial({ color: 0x78350f }));
+                eye.position.set((Math.random()-0.5)*0.45, 0.32+(Math.random()-0.5)*0.2, (Math.random()-0.5)*0.35); g.add(eye);
+            }
+            return g;
+        }
+        function createBellPepper() {
+            const g = new THREE.Group();
+            const colors = [0x22c55e, 0xef4444, 0xf59e0b, 0xf97316];
+            const c = colors[Math.floor(Math.random()*colors.length)];
+            const mat = new THREE.MeshPhongMaterial({ color: c, shininess: 90 });
+            for (let i = 0; i < 3; i++) {
+                const lobe = new THREE.Mesh(new THREE.SphereGeometry(0.28, 10, 9), mat);
+                lobe.scale.set(0.9, 0.85, 0.95);
+                const a = (i/3)*Math.PI*2;
+                lobe.position.set(Math.cos(a)*0.14, 0.3, Math.sin(a)*0.14); g.add(lobe);
+            }
+            const top = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.30, 0.12, 14), mat);
+            top.position.y = 0.58; g.add(top);
+            const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 0.26, 8), new THREE.MeshPhongMaterial({ color: 0x4d7c0f }));
+            stem.position.y = 0.78; g.add(stem);
+            return g;
+        }
+        function createBroccoli() {
+            const g = new THREE.Group();
+            const stalkMat = new THREE.MeshPhongMaterial({ color: 0x65a30d });
+            const headMat  = new THREE.MeshPhongMaterial({ color: 0x15803d });
+            const stalk = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 0.9, 10), stalkMat);
+            stalk.position.y = 0.45; g.add(stalk);
+            const headData = [
+                { x:0,    y:1.02, z:0,    r:0.34 },
+                { x:0.24, y:0.88, z:0.1,  r:0.22 },
+                { x:-0.2, y:0.88, z:0.12, r:0.20 },
+                { x:0.1,  y:0.88, z:-0.22,r:0.21 },
+                { x:-0.12,y:0.88, z:-0.2, r:0.19 },
+            ];
+            headData.forEach(h => {
+                const head = new THREE.Mesh(new THREE.SphereGeometry(h.r, 8, 7), headMat);
+                head.position.set(h.x, h.y, h.z); g.add(head);
+            });
+            return g;
+        }
+
         function updateObjectPositionsDisplay() {
             const list = document.getElementById('objects-list');
+            const oc = document.getElementById('hud-obj-count'); if (oc) oc.textContent = objects.length;
             if (objects.length === 0) {
                 list.innerHTML = '<div class="text-xs text-zinc-500 italic">No objects on board</div>';
                 return;
@@ -2452,6 +2976,23 @@ HTML = r"""<!DOCTYPE html>
                     appendMessage('assistant', `⚠️ "${label}" is too heavy to lift directly (weight ${weight}, limit ${MAX_LIFT_WEIGHT}). Use {drag_from_coordinate(...)_to_coordinate(...)} to slide it instead.`);
                     resolve(); return;
                 }
+                // If this object was inside a container, remove it from that container
+                const srcState = objectState.get(obj) || {};
+                if (srcState.inContainer) {
+                    const containerName = srcState.inContainer;
+                    const container = findObjectByKey(containerName);
+                    if (container) {
+                        const cState = objectState.get(container) || {};
+                        const label = objectNames.get(obj) || objectTypes.get(obj) || 'object';
+                        if (cState.contents) {
+                            const items = cState.contents.split(', ').filter(s => s !== label);
+                            cState.contents = items.join(', ') || null;
+                        }
+                        objectState.set(container, cState);
+                    }
+                    delete srcState.inContainer;
+                    objectState.set(obj, srcState);
+                }
                 isAnimating = true; setStatus('Picking up...');
                 animateGripper(true, 200, () => {
                     animateZ(currentZ, 5.8, 600, () => {
@@ -2551,6 +3092,7 @@ HTML = r"""<!DOCTYPE html>
         const TWIST_CAP_RE = /^twist_cap\s*\(\s*([^,]+?)\s*,\s*(on|off)\s*\)$/i;
         const FILL_RE = /^fill\s*\(\s*([^,]+?)\s*,\s*(\d+)\s*\)$/i;
         const POUR_INTO_RE = /^pour_into\s*\(\s*([^)]+?)\s*\)$/i;
+        const PLACE_INTO_RE = /^place_into\s*\(\s*([^)]+?)\s*\)$/i;
         const SLICE_RE = /^slice\s*\(\s*([^,]+?)\s*,\s*(\d+)\s*\)$/i;
         const SET_STATE_RE = /^set_state\s*\(\s*([^,]+?)\s*,\s*([^,]+?)\s*,\s*([^)]+?)\s*\)$/i;
         const CHECK_STATE_RE = /^check_state\s*\(\s*([^)]+?)\s*\)$/i;
@@ -2948,6 +3490,54 @@ HTML = r"""<!DOCTYPE html>
             });
         }
 
+        function placeInto(targetName) {
+            return new Promise(resolve => {
+                const source = heldObject;
+                if (!source) { appendMessage('assistant', '⚠️ Nothing to place — pick up an object first.'); resolve(); return; }
+                const target = findObjectByKey(targetName);
+                if (!target) { appendMessage('assistant', `⚠️ No object named "${targetName}" found.`); resolve(); return; }
+                const tgtCfg = getObjectConfig(objectTypes.get(target));
+                if (!tgtCfg.affordances.includes('fillable')) { appendMessage('assistant', `⚠️ "${targetName}" cannot hold contents.`); resolve(); return; }
+
+                const srcLabel = objectNames.get(source) || objectTypes.get(source) || 'object';
+                const tgtState = objectState.get(target) || {};
+
+                // Count items already inside to stack them visually
+                const itemsInside = objects.filter(o => (objectState.get(o) || {}).inContainer === targetName).length;
+                const stackY = target.position.y + 0.15 + itemsInside * 0.12;
+
+                const contents = tgtState.contents ? `${tgtState.contents}, ${srcLabel}` : srcLabel;
+                tgtState.contents = contents;
+                objectState.set(target, tgtState);
+
+                const srcState = objectState.get(source) || {};
+                srcState.inContainer = targetName;
+                objectState.set(source, srcState);
+
+                // Physically lower item into container
+                isAnimating = true;
+                setStatus(`📥 Placing ${srcLabel} into ${targetName}...`);
+                const destX = target.position.x, destZ = target.position.z;
+                animateXY(destX - 0.5, destZ - 0.5, 300, () => {
+                    animateZ(currentZ, 5.5, 400, () => {
+                        source.position.set(destX, stackY, destZ);
+                        const sprite = objectSprites.get(source);
+                        if (sprite) { sprite.position.x = destX; sprite.position.z = destZ; sprite.position.y = stackY + 2.2; }
+                        animateGripper(true, 200, () => {
+                            heldObject = null;
+                            animateZ(currentZ, 2.5, 400, () => {
+                                isAnimating = false;
+                                appendMessage('assistant', `✅ Placed ${srcLabel} into ${targetName}. Contents: ${contents}`);
+                                updateObjectPositionsDisplay();
+                                setStatus('✅ Place complete');
+                                resolve();
+                            });
+                        });
+                    });
+                });
+            });
+        }
+
         // Mutates an object's actual 3D geometry into N visibly separate flat pieces,
         // so slicing is a real visual change rather than only a state flag.
         function visualSlice(obj, n) {
@@ -3008,6 +3598,55 @@ HTML = r"""<!DOCTYPE html>
             const st = objectState.get(obj) || {};
             st[key] = value;
             objectState.set(obj, st);
+
+            // Auto-eject: when a pot/pan's contents are marked "ready", teleport all
+            // solid items to a fixed cell adjacent to the stove (right side, or fallback
+            // cells if that cell is off-grid). Items land stacked with a small offset.
+            if (key === 'contents' && value === 'ready') {
+                const objType = (objectTypes.get(obj) || '').toLowerCase();
+                if (objType.includes('pot') || objType.includes('pan')) {
+                    const containerName = objectNames.get(obj) || objectTypes.get(obj);
+                    const inside = objects.filter(o => (objectState.get(o) || {}).inContainer === containerName
+                                                    || (objectState.get(o) || {}).inContainer === m[1].trim());
+                    if (inside.length) {
+                        appendMessage('assistant', `🍽️ Cooking done — teleporting ${inside.length} item(s) from ${containerName}`);
+
+                        // Determine target: cell to the right of the stove, else right of pot
+                        const stoveObj = objects.find(o => (objectTypes.get(o) || '').toLowerCase().includes('stove'));
+                        let baseX, baseZ;
+                        if (stoveObj) {
+                            // stoves are 2 wide; place items one cell to the right of the stove's right edge
+                            const fp = objectFootprint.get(stoveObj) || { w: 2, h: 1 };
+                            baseX = Math.max(0, Math.min(19, Math.round(stoveObj.position.x) + fp.w));
+                            baseZ = Math.max(0, Math.min(10, Math.round(stoveObj.position.z)));
+                        } else {
+                            baseX = Math.max(0, Math.min(19, Math.round(obj.position.x) + 1));
+                            baseZ = Math.max(0, Math.min(10, Math.round(obj.position.z)));
+                        }
+
+                        const cState = objectState.get(obj) || {};
+                        cState.contents = 'ready';
+                        objectState.set(obj, cState);
+                        for (let i = 0; i < inside.length; i++) {
+                            const item = inside[i];
+                            // Stack items on the same cell with slight vertical separation
+                            item.position.set(baseX + 0.5, 0.5 + i * 0.15, baseZ + 0.5);
+                            const sprite = objectSprites.get(item);
+                            if (sprite) { sprite.position.x = item.position.x; sprite.position.z = item.position.z; sprite.position.y = item.position.y + 2.2; }
+                            const ist = objectState.get(item) || {};
+                            ist.cooked = true;
+                            delete ist.inContainer;
+                            objectState.set(item, ist);
+                            const col = String.fromCharCode(65 + baseX);
+                            const label = objectNames.get(item) || objectTypes.get(item) || 'item';
+                            appendMessage('assistant', `  ↳ ${label} → ${col}${baseZ + 1}`);
+                            await new Promise(res => setTimeout(res, 100));
+                        }
+                        updateObjectPositionsDisplay();
+                    }
+                }
+            }
+
             updateObjectPositionsDisplay();
             setStatus(`✅ Set ${m[1]}.${key} = ${value}`);
         }
@@ -3219,6 +3858,9 @@ HTML = r"""<!DOCTYPE html>
             } else if (rawLower.startsWith('pour_into(')) {
                 const m = raw.match(POUR_INTO_RE);
                 return m ? `💧 Pour into ${m[1]}` : `💧 Pour into object`;
+            } else if (rawLower.startsWith('place_into(')) {
+                const m = raw.match(PLACE_INTO_RE);
+                return m ? `🥕 Place into ${m[1]}` : `🥕 Place into container`;
             } else if (rawLower.startsWith('slice(')) {
                 const m = raw.match(SLICE_RE);
                 return m ? `🔪 Slice ${m[1]} into ${m[2]} pieces` : `🔪 Slice object`;
@@ -3469,6 +4111,9 @@ HTML = r"""<!DOCTYPE html>
                 } else if (rawLower.startsWith('pour_into(')) {
                     const m = raw.match(POUR_INTO_RE);
                     if (m) { await pourInto(m[1]); } else { setStatus('⚠️ Invalid pour_into command'); }
+                } else if (rawLower.startsWith('place_into(')) {
+                    const m = raw.match(PLACE_INTO_RE);
+                    if (m) { await placeInto(m[1]); } else { setStatus('⚠️ Invalid place_into command'); }
                 } else if (rawLower.startsWith('slice(')) {
                     await runSlice(raw);
                 } else if (rawLower.startsWith('set_state(')) {
@@ -3614,28 +4259,37 @@ HTML = r"""<!DOCTYPE html>
         // ── PLANNING PROMPT ── high-level only, multi-task aware ──────────────
         const PLANNING_PROMPT = `You are K5D — an intelligent household robot planner.
 
-Given a task request and the current board state, produce a HIGH-LEVEL plan that a human can read, understand, and approve in 5 seconds.
+Given a task request and the current board state, produce a HIGH-LEVEL plan that a human can read, understand, and approve in 10 seconds.
 
 OUTPUT FORMAT:
 - If the task is simple (1 thing): 3–4 bullet points max.
 - If the task is multi-step or multi-task: use PHASES. Each phase is a bold label followed by 2–3 bullets. Max 3 phases.
-- If an appliance wait is involved (washing machine, oven, iron heating): note what happens in parallel during the wait.
 - End with one line: ⚠️ NEEDS: [list any objects missing from board] — or omit this line if everything is present.
 - NO commands, NO coordinates, NO curly braces. Plain human English only.
 - Total length: under 12 lines.
 
 MULTI-TASK EXAMPLE for "do the laundry then sweep the floor":
 PHASE 1 — Laundry
-• Tilt machine open, load clothes, add detergent, close and run cycle
-• While machine runs → sweep entire floor with broom
+• Tilt machine open
+• load clothes
+• add detergent
+• close and run cycle
+
 PHASE 2 — Retrieve & Finish
 • Unload washed clothes into basket
-• Iron and fold each item, stack neatly
+• Iron each item
+• fold each item
+• stack all clothes neatly
 
 SINGLE-TASK EXAMPLE for "cook dinner":
-• Heat stove, place pot, add water and ingredients
-• Simmer until cooked, plate the food
-• Turn off stove and clean up
+• Heat stove
+• place pot
+• Put vegetables into pot
+• Simmer until cooked
+• plate the food
+
+Knife Rule:
+When using knife is over, keep knife on A11 until next needed to minimize unnecessary movements.
 
 MISSING-OBJECTS EXAMPLE:
 ⚠️ NEEDS: broom (to sweep), detergent (for washing machine)`;
@@ -3652,7 +4306,8 @@ Gripper approaches from above; Z-axis lowers to pick/interact. Path planner auto
 {pickup}                                    lift object at cell (weight ≤ 8 only)
 {keep}                                      place held object at current cell
 {pour}                                      tilt animation (no volume tracking)
-{pour_into(NAME)}                           real volume transfer held→named target
+{pour_into(NAME)}                           real volume transfer held→named target (liquids only)
+{place_into(NAME)}                          place held solid item (vegetable, ingredient, etc.) into container — tracks contents
 {drag_from_coordinate(C,R)_to_coordinate(C,R)}  slide heavy object (no weight limit)
 {change_orientation = TOKEN}                rotate ALL objects — tokens: +x90 -x90 +y90 -y90 +z90 -z90
 {rotate_object(NAME, TOKEN)}                rotate ONE named object (same tokens)
@@ -3696,7 +4351,9 @@ DEPENDENCY ORDER (never break these):
   preheat → cook → plate → turn_off  (always turn off stove/oven/iron at end)
   fill(sink,100) → wash(object)  (sink must have water)
   fill(bucket,100) + disinfectant → mop  (bucket must have solution)
-  twist_cap(off) → pour_into() → twist_cap(on)  (if cap is on)
+  twist_cap(off) → pour_into() → twist_cap(on)  (if cap is on, liquids only)
+  place_into(pot/pan) for solid items (vegetables, ingredients) — no cap needed; call once per item to stack multiple items
+  at a container's coordinate, {pickup} always grabs the container first (not its contents); to retrieve an item from inside, first move the container away, then {pickup} the item
   turn_on(iron) → wait_for(4) → check_state(iron) confirms hot → iron()
 
 SLICING: bring knife to SAME CELL as target first. After {keep}, knife is AT TARGET cell.
@@ -3742,6 +4399,13 @@ ironing_board       wt:5  liftable 2×1 footprint
 ingredient_jar      wt:1  pourable fillable twistable_cap
 vegetable_basket    wt:4  openable
 shopping_bag        wt:2  openable
+carrot              wt:1  liftable sliceable  (use knife at same cell: {slice(carrot,N)})
+cucumber            wt:1  liftable sliceable  (use knife at same cell: {slice(cucumber,N)})
+tomato              wt:1  liftable sliceable  (use knife at same cell: {slice(tomato,N)})
+onion               wt:1  liftable sliceable  (use knife at same cell: {slice(onion,N)})
+potato              wt:1  liftable sliceable  (use knife at same cell: {slice(potato,N)})
+bell_pepper         wt:1  liftable sliceable  (use knife at same cell: {slice(bell_pepper,N)})
+broccoli            wt:1  liftable sliceable  (use knife at same cell: {slice(broccoli,N)})
 box/wooden_box      wt:3  openable (isOpen:false)
 oven                wt:25 openable switchable heatable 2×2 footprint
 stove               wt:20 switchable heatable 2×1 footprint
@@ -3819,8 +4483,10 @@ COOK:
   {goto_coordinate = POT_COL, POT_ROW}, {pickup}
   {goto_coordinate = STOVE_COL, STOVE_ROW}, {keep}
   {fill(pot, 60)}
-  {goto_coordinate = CUTTING_BOARD_COL, CUTTING_BOARD_ROW}, {pickup}
-  {goto_coordinate = STOVE_COL, STOVE_ROW}, {pour_into(pot)}
+  {goto_coordinate = VEGETABLE1_COL, VEGETABLE1_ROW}, {pickup}
+  {goto_coordinate = STOVE_COL, STOVE_ROW}, {place_into(pot)}
+  {goto_coordinate = VEGETABLE2_COL, VEGETABLE2_ROW}, {pickup}
+  {goto_coordinate = STOVE_COL, STOVE_ROW}, {place_into(pot)}
   {twist_cap(ingredient_jar, off)}
   {goto_coordinate = JAR_COL, JAR_ROW}, {pickup}
   {goto_coordinate = STOVE_COL, STOVE_ROW}, {pour_into(pot)}
@@ -3828,8 +4494,10 @@ COOK:
   {set_state(pot, contents, cooking)}, {wait_for(8)}
   {set_state(pot, contents, ready)}
 PLATE:
+  {set_state(pot, contents, ready)}         ← AUTO-EJECTS all solid items (vegetables etc.) from inside the pot to surrounding
+                                               cells automatically — no manual pickup loop needed; items marked cooked:true
   {goto_coordinate = PLATE_COL, PLATE_ROW}, {pickup}
-  {goto_coordinate = STOVE_COL, STOVE_ROW}, {pour_into(plate)}
+  {goto_coordinate = STOVE_COL, STOVE_ROW}, {pour_into(plate)}   ← for liquid/sauce only
   Move plated food to serving area.
 SHUTDOWN:
   {turn_off(stove)} — MANDATORY before Task_Completed.
@@ -3894,7 +4562,7 @@ SEQUENCE:
     {goto_coordinate = UNPACK_COL, UNPACK_ROW}, {keep}
   Step 4 — Unpack:
     {goto_coordinate = BAG_COL, BAG_ROW}, {pickup}
-    {goto_coordinate = BASKET_COL, BASKET_ROW}, {pour_into(vegetable_basket)}
+    {goto_coordinate = BASKET_COL, BASKET_ROW}, {place_into(vegetable_basket)}
     {set_state(vegetable_basket, filled, true)}
   Step 5 — {close(shopping_bag)}, return bag to storage.
   Step 6 — {check_state(vegetable_basket)} — confirm filled:true.
@@ -4104,7 +4772,7 @@ OUTPUT FORMAT: respond with ONLY a list of K5D commands, one per line, each wrap
                 function extractCommands(text) {
                     const commands = [...text.matchAll(/\{([^}]+)\}/g)].map(m => m[1].trim());
                     if (commands.length > 0) return commands;
-                    const fallback = Array.from(text.matchAll(/(?:goto_coordinate\s*=\s*[A-T]\s*,\s*\d+|pickup|keep|pour|apply_soap\s*\([^)]*\)|apply_cloth\s*\([^)]*\)|drag_from_coordinate\s*\([^)]*\)\s*_to_coordinate\s*\([^)]*\)|change_orientation\s*(?:=|\()\s*[+-]?\s*[xyz]\s*-?\s*\d+|inspect_sides\s*(?:=|\()\s*[A-Za-z_][A-Za-z0-9_]*\)?|open\s*\([^)]*\)|close\s*\([^)]*\)|turn_on\s*\([^)]*\)|turn_off\s*\([^)]*\)|twist_cap\s*\([^)]*\)|fill\s*\([^)]*\)|pour_into\s*\([^)]*\)|slice\s*\([^)]*\)|set_state\s*\([^)]*\)|check_state\s*\([^)]*\)|wait_for\s*\([^)]*\)|find\s*\([^)]*\)|sweep\s*\([^)]*\)|mop\s*\([^)]*\)|scrub\s*\([^)]*\)|wash\s*\([^)]*\)|run_cycle\s*\([^)]*\)|iron\s*\([^)]*\)|fold\s*\([^)]*\)|rotate_object\s*\([^)]*\)|task_completed)/gi), m => m[0].trim());
+                    const fallback = Array.from(text.matchAll(/(?:goto_coordinate\s*=\s*[A-T]\s*,\s*\d+|pickup|keep|pour|apply_soap\s*\([^)]*\)|apply_cloth\s*\([^)]*\)|drag_from_coordinate\s*\([^)]*\)\s*_to_coordinate\s*\([^)]*\)|change_orientation\s*(?:=|\()\s*[+-]?\s*[xyz]\s*-?\s*\d+|inspect_sides\s*(?:=|\()\s*[A-Za-z_][A-Za-z0-9_]*\)?|open\s*\([^)]*\)|close\s*\([^)]*\)|turn_on\s*\([^)]*\)|turn_off\s*\([^)]*\)|twist_cap\s*\([^)]*\)|fill\s*\([^)]*\)|pour_into\s*\([^)]*\)|place_into\s*\([^)]*\)|slice\s*\([^)]*\)|set_state\s*\([^)]*\)|check_state\s*\([^)]*\)|wait_for\s*\([^)]*\)|find\s*\([^)]*\)|sweep\s*\([^)]*\)|mop\s*\([^)]*\)|scrub\s*\([^)]*\)|wash\s*\([^)]*\)|run_cycle\s*\([^)]*\)|iron\s*\([^)]*\)|fold\s*\([^)]*\)|rotate_object\s*\([^)]*\)|task_completed)/gi), m => m[0].trim());
                     return fallback;
                 }
                 const commands = extractCommands(reply);
@@ -4222,6 +4890,117 @@ OUTPUT FORMAT: respond with ONLY a list of K5D commands, one per line, each wrap
             }
         };
 
+        // ── Quick Task Popup ─────────────────────────────────────────────────
+        const TASK_SUGGESTIONS = {
+            'Sweeping': [
+                { emoji: '🧹', name: 'Broom', note: 'required — sweeps the floor' },
+                { emoji: '🗑️', name: 'Dustpan', note: 'optional — collects swept dust' },
+            ],
+            'Mopping': [
+                { emoji: '🧻', name: 'Mop', note: 'required — wet-mops the floor' },
+                { emoji: '🪣', name: 'Bucket', note: 'required — holds cleaning solution' },
+                { emoji: '💜', name: 'Disinfectant', note: 'recommended — add to bucket' },
+                { emoji: '🧹', name: 'Broom', note: 'recommended — sweep before mopping' },
+            ],
+            'Washing utensils': [
+                { emoji: '🧼', name: 'Soap Bottle', note: 'required — apply soap to each utensil' },
+                { emoji: '🧽', name: 'Cloth', note: 'recommended — wipe clean after soaping' },
+                { emoji: '🍽️', name: 'Plate', note: 'add dirty utensils to wash' },
+                { emoji: '🥣', name: 'Bowl', note: 'add dirty utensils to wash' },
+                { emoji: '☕', name: 'Mug', note: 'add dirty utensils to wash' },
+                { emoji: '🍲', name: 'Pot', note: 'add dirty utensils to wash' },
+                { emoji: '🍳', name: 'Pan', note: 'add dirty utensils to wash' },
+            ],
+            'Cooking': [
+                { emoji: '🔥', name: 'Stove / Hob', note: 'required — heat source' },
+                { emoji: '🍲', name: 'Pot', note: 'required — place on stove' },
+                { emoji: '🧺', name: 'Veg Basket', note: 'required — goes into the pot' },
+                { emoji: '🍽️', name: 'Plate', note: 'required — cooked food plated here' },
+            ],
+            'Washing clothes': [
+                { emoji: '🫧', name: 'Washing Machine', note: 'required — runs the wash cycle' },
+                { emoji: '🧴', name: 'Detergent', note: 'required — add before cycle' },
+                { emoji: '👕', name: 'Clothes Pile', note: 'add dirty clothes to wash' },
+                { emoji: '👕', name: 'Shirt', note: 'optional — individual garment' },
+                { emoji: '👖', name: 'Pants', note: 'optional — individual garment' },
+            ],
+            'Folding and ironing clothes': [
+                { emoji: '🪄', name: 'Iron', note: 'required — must heat to hot' },
+                { emoji: '📐', name: 'Ironing Board', note: 'required — ironing surface' },
+                { emoji: '👕', name: 'Clothes Pile', note: 'add wrinkled clothes to iron' },
+                { emoji: '👕', name: 'Shirt', note: 'optional — individual garment' },
+                { emoji: '👖', name: 'Pants', note: 'optional — individual garment' },
+            ],
+            'Cutting vegetables': [
+                { emoji: '🗡️', name: 'Knife', note: 'required — the cutting tool' },
+                { emoji: '🔪', name: 'Cutting Board', note: 'required — prep surface' },
+                { emoji: '🥕', name: 'Carrot', note: 'sliceable vegetable' },
+                { emoji: '🥒', name: 'Cucumber', note: 'sliceable vegetable' },
+                { emoji: '🍅', name: 'Tomato', note: 'sliceable vegetable' },
+                { emoji: '🧅', name: 'Onion', note: 'sliceable vegetable' },
+                { emoji: '🥔', name: 'Potato', note: 'sliceable vegetable' },
+                { emoji: '🫑', name: 'Bell Pepper', note: 'sliceable vegetable' },
+                { emoji: '🥦', name: 'Broccoli', note: 'sliceable vegetable' },
+            ],
+            'Cleaning the bathroom and toilet': [
+                { emoji: '🚽', name: 'Toilet Brush', note: 'required — scrubs toilet' },
+                { emoji: '🪥', name: 'Scrub Brush', note: 'required — scrubs tiles/sink' },
+                { emoji: '💜', name: 'Disinfectant', note: 'required — sanitises surfaces' },
+                { emoji: '🪣', name: 'Bucket', note: 'required — mopping solution' },
+                { emoji: '🧻', name: 'Mop', note: 'recommended — mops the floor' },
+                { emoji: '🚰', name: 'Sink', note: 'optional — represents bathroom sink' },
+            ],
+            'Dusting furniture and surfaces': [
+                { emoji: '🪶', name: 'Duster', note: 'required — dusts all surfaces' },
+                { emoji: '🧹', name: 'Broom', note: 'recommended — sweeps fallen dust' },
+                { emoji: '📦', name: 'Box', note: 'add furniture/objects to dust' },
+                { emoji: '🪵', name: 'Wooden Box', note: 'add furniture/objects to dust' },
+            ],
+            'Tidying up the board': [
+                { emoji: '📦', name: 'Box', note: 'add any objects you want tidied' },
+                { emoji: '🍼', name: 'Bottle', note: 'add objects from any category' },
+                { emoji: '🧹', name: 'Broom', note: 'add cleaning tools to sort' },
+                { emoji: '🔥', name: 'Stove / Hob', note: 'add appliances to zone' },
+                { emoji: '🫧', name: 'Washing Machine', note: 'add laundry items to zone' },
+            ],
+        };
+
+        let pendingTaskPrompt = '';
+        window.showTaskPopup = function(name, prompt) {
+            pendingTaskPrompt = prompt;
+            document.getElementById('popup-title').textContent = name;
+
+            // Build suggestions list
+            const suggestions = TASK_SUGGESTIONS[name] || [];
+            const container = document.getElementById('popup-suggestions');
+            if (suggestions.length === 0) {
+                container.innerHTML = '<div style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:#52525b;">No specific requirements — add relevant objects from the library.</div>';
+            } else {
+                container.innerHTML = suggestions.map(s =>
+                    `<div style="display:flex;align-items:center;gap:10px;">
+                        <span style="font-size:16px;width:22px;text-align:center;">${s.emoji}</span>
+                        <div style="flex:1;">
+                            <span style="font-family:'Syne',sans-serif;font-size:12px;font-weight:600;color:#e4e4e7;">${s.name}</span>
+                            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#52525b;margin-left:6px;">${s.note}</span>
+                        </div>
+                    </div>`
+                ).join('');
+            }
+
+            const popup = document.getElementById('task-popup');
+            popup.style.display = 'flex';
+        };
+        window.closeTaskPopup = function() {
+            document.getElementById('task-popup').style.display = 'none';
+        };
+        window.confirmTaskPopup = function() {
+            document.getElementById('task-popup').style.display = 'none';
+            if (!pendingTaskPrompt) return;
+            const input = document.getElementById('chat-input');
+            input.value = pendingTaskPrompt;
+            sendTask();
+        };
+
         window.onload = function() { initThree(); animate(); };
     </script>
 </body>
@@ -4284,7 +5063,7 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 if __name__ == "__main__":
-    server = HTTPServer(("0.0.0.0", 8050), Handler)
-    print("K5D Simulator → http://localhost:8050")
-    webbrowser.open("http://localhost:8050")
+    server = HTTPServer(("0.0.0.0", 8080), Handler)
+    print("K5D Simulator → http://localhost:8080")
+    webbrowser.open("http://localhost:8080")
     server.serve_forever()

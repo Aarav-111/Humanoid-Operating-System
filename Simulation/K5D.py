@@ -1405,22 +1405,14 @@ HTML = r"""<!DOCTYPE html>
             fillLight.position.set(-10, 5, -5); scene.add(fillLight);
             const floor = new THREE.Mesh(new THREE.PlaneGeometry(55, 40), new THREE.MeshPhongMaterial({ color: 0x0a0a0a }));
             floor.rotation.x = -Math.PI / 2; scene.add(floor);
-            const lineMat = new THREE.LineBasicMaterial({ color: 0xef4444 });
-            for (let x = 0; x <= GRID_WIDTH; x++) {
-                const pts = [new THREE.Vector3(x, 0.06, 0), new THREE.Vector3(x, 0.06, GRID_HEIGHT)];
-                scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), lineMat));
-            }
-            for (let y = 0; y <= GRID_HEIGHT; y++) {
-                const pts = [new THREE.Vector3(0, 0.06, y), new THREE.Vector3(GRID_WIDTH, 0.06, y)];
-                scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), lineMat));
-            }
-            for (let x = 0; x < GRID_WIDTH; x++) {
-                for (let y = 0; y < GRID_HEIGHT; y++) {
-                    const label = createFlatLabel(String.fromCharCode(65 + x) + (y + 1));
-                    label.position.set(x + 0.5, 0.08, y + 0.5); label.rotation.x = -Math.PI / 2;
-                    scene.add(label);
-                }
-            }
+            const workPlane = new THREE.Mesh(
+                new THREE.PlaneGeometry(GRID_WIDTH, GRID_HEIGHT),
+                new THREE.MeshPhongMaterial({ color: 0x1a1a2e, side: THREE.DoubleSide })
+            );
+            workPlane.rotation.x = -Math.PI / 2;
+            workPlane.position.set(GRID_WIDTH / 2, 0.06, GRID_HEIGHT / 2);
+            scene.add(workPlane);
+            // Grid coordinate labels hidden from 3D view (coordinate system unchanged)
             const xBeamMat = new THREE.MeshPhongMaterial({ color: 0x555566 });
             const xBeam1 = new THREE.Mesh(new THREE.BoxGeometry(GRID_WIDTH + 6, 0.8, 0.9), xBeamMat);
             xBeam1.position.set(GRID_WIDTH / 2, RAIL_TOP_Y + 0.1, -1.2); scene.add(xBeam1);

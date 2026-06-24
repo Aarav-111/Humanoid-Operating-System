@@ -297,6 +297,24 @@ HTML = r"""<!DOCTYPE html>
             border-color: #3b82f6;
             background: rgba(59,130,246,0.06);
         }
+        .bench-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-family: 'Syne', sans-serif;
+            font-weight: 600;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: #d4d4d8;
+            text-align: left;
+            transition: background 0.15s;
+        }
+        .bench-item:hover { background: rgba(59,130,246,0.12); color: #93c5fd; }
         #stl-progress {
             display: none;
             margin-top: 8px;
@@ -335,8 +353,8 @@ HTML = r"""<!DOCTYPE html>
       <li>Use the object library on the left to select, move, rotate, and scale parts.</li>
       <li>Chain multiple AI tasks in sequence for complex multi-step assembly.</li>
       <li>Import any supported 3D model format using the Import .stl file button.</li>
-      <li>Approve/edit LLM's high level plan just by a single click</li>
-      <li>Find example super-difficult super-multi-step tasks on the top-left corner</li>
+      <li>AI directly generates and executes precise command plans (no high-level plan step).</li>
+      <li>Find example benchmarking tasks in the <strong style="color:#60a5fa">Benchmarking TASKS</strong> dropdown in the top bar</li>
       <li>Use the camera controls (scroll, drag, right-drag) to navigate the 3D scene freely.</li>
     </ul>
     <div class="wm-footer">
@@ -349,7 +367,7 @@ HTML = r"""<!DOCTYPE html>
 <div id="splash-overlay" style="display:none;position:fixed;inset:0;z-index:1000000;background:rgba(2,2,5,0.97);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);align-items:center;justify-content:center;flex-direction:column;">
   <div style="width:380px;max-width:calc(100% - 48px);display:flex;flex-direction:column;align-items:center;gap:28px;">
     <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
-      <div style="width:48px;height:48px;background:linear-gradient(135deg,#1d4ed8,#4f46e5);border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:22px;color:#fff;letter-spacing:-1px;">K5</div>
+      <div style="width:48px;height:48px;background:linear-gradient(135deg,#1d4ed8,#4f46e5);border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#fff;letter-spacing:-1px;">K5D</div>
       <div style="font-size:0.75rem;font-family:'JetBrains Mono',monospace;color:rgba(148,163,220,0.7);letter-spacing:0.12em;" id="splash-status-text">Initializing simulator…</div>
     </div>
     <div style="width:100%;display:flex;flex-direction:column;gap:10px;">
@@ -357,7 +375,7 @@ HTML = r"""<!DOCTYPE html>
         <div id="splash-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#2563eb,#60a5fa);border-radius:2px;transition:width 0.12s linear;"></div>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-size:0.68rem;font-family:'JetBrains Mono',monospace;color:rgba(148,163,220,0.45);">K5D Drone Simulator</div>
+        <div style="font-size:0.68rem;font-family:'JetBrains Mono',monospace;color:rgba(148,163,220,0.45);">K5D Humanoid Simulator</div>
         <div id="splash-pct" style="font-size:0.68rem;font-family:'JetBrains Mono',monospace;color:rgba(148,163,220,0.55);">0%</div>
       </div>
     </div>
@@ -374,7 +392,7 @@ HTML = r"""<!DOCTYPE html>
         <!-- Left: branding + live axis readout -->
         <div style="display:flex;align-items:center;gap:16px;">
             <div style="position:relative;width:38px;height:38px;flex-shrink:0;">
-                <div style="width:38px;height:38px;background:linear-gradient(135deg,#1d4ed8,#4f46e5);border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;color:#fff;letter-spacing:-1px;">K5</div>
+                <div style="width:38px;height:38px;background:linear-gradient(135deg,#1d4ed8,#4f46e5);border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;color:#fff;letter-spacing:-1px;">K5D</div>
                 <div class="pulse-ring" style="border-color:#3b82f6;animation-duration:2.4s;"></div>
             </div>
             <div>
@@ -420,12 +438,24 @@ HTML = r"""<!DOCTYPE html>
 
         <!-- Right: action buttons -->
         <div style="display:flex;align-items:center;gap:8px;">
-            <button onclick="takeTopDownScreenshot()" style="padding:7px 14px;background:rgba(109,40,217,0.3);border:1px solid rgba(139,92,246,0.4);border-radius:8px;color:#c4b5fd;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:0.03em;transition:all 0.15s;" onmouseover="this.style.background='rgba(109,40,217,0.5)'" onmouseout="this.style.background='rgba(109,40,217,0.3)'">
-                📸 SCREENSHOT
-            </button>
-            <button onclick="copyFullPrompt()" style="padding:7px 14px;background:rgba(39,39,42,0.8);border:1px solid rgba(63,63,70,0.8);border-radius:8px;color:#a1a1aa;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:0.03em;transition:all 0.15s;" onmouseover="this.style.background='rgba(63,63,70,0.8)'" onmouseout="this.style.background='rgba(39,39,42,0.8)'">
-                📋 COPY PROMPT
-            </button>
+            <!-- Benchmarking Tasks dropdown -->
+            <div style="position:relative;" id="bench-dropdown-wrap">
+                <button onclick="toggleBenchDropdown()" style="padding:7px 14px;background:rgba(39,39,42,0.8);border:1px solid rgba(63,63,70,0.8);border-radius:8px;color:#a1a1aa;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:0.03em;transition:all 0.15s;display:flex;align-items:center;gap:6px;" onmouseover="this.style.background='rgba(63,63,70,0.8)'" onmouseout="this.style.background='rgba(39,39,42,0.8)'">
+                    Benchmarking TASKS <span style="font-size:8px;opacity:0.6;">▾</span>
+                </button>
+                <div id="bench-dropdown" style="display:none;position:absolute;top:calc(100% + 6px);right:0;z-index:200;background:rgba(14,14,22,0.97);border:1px solid rgba(59,130,246,0.2);border-radius:14px;padding:6px;min-width:220px;box-shadow:0 8px 40px rgba(0,0,0,0.7);backdrop-filter:blur(20px);">
+                    <button onclick="showTaskPopup('Sweeping','Sweep the entire floor of the board clean. Use the broom to sweep all cells and collect dust with the dustpan.');toggleBenchDropdown()" class="bench-item">🧹 Sweeping</button>
+                    <button onclick="showTaskPopup('Mopping','Mop the entire floor of the board. Fill the bucket with water and disinfectant, then mop all cells row by row.');toggleBenchDropdown()" class="bench-item">🪣 Mopping</button>
+                    <button onclick="showTaskPopup('Washing utensils','Wash all dirty utensils on the board. Apply soap to each utensil cell, then wipe clean with a cloth. Work through every dirty pot, pan, plate, bowl, mug, glass, and cutlery using Apply_soap and Apply_cloth commands.');toggleBenchDropdown()" class="bench-item">🍽️ Washing Utensils</button>
+                    <button onclick="showTaskPopup('Cooking','Cook a meal. Follow this exact sequence with no extra steps: 1) Pick up the pot and place it on the stove cell. 2) Turn on the stove. 3) Pick up the vegetable(s) if present, if no vegitables then keep vegitable basket on the pot (same cell as stove). 4) Move gripper to A1. 5) Wait 4 seconds using wait_for(4). 6) spread all the objects (including pot, stove, all vegitables inside) on different different cordinates far away from each other Do not use a knife, cutting board, or any other objects.');toggleBenchDropdown()" class="bench-item">🍳 Cooking</button>
+                    <button onclick="showTaskPopup('Washing clothes','Wash all dirty clothes on the board. Load garments into the washing machine with detergent, run the wash cycle, then unload clean clothes.');toggleBenchDropdown()" class="bench-item">👕 Washing Clothes</button>
+                    <button onclick="showTaskPopup('Folding and ironing clothes','Iron and fold all wrinkled clothes on the board. Heat the iron, iron each garment on the ironing board to remove wrinkles, then fold them neatly. Turn off the iron when done.');toggleBenchDropdown()" class="bench-item">🪄 Folding & Ironing</button>
+                    <button onclick="showTaskPopup('Cutting vegetables','Bring the knife to the vegitable(s), slice the vegetable(s) into pieces for cooking prep., then keep the knife on A11');toggleBenchDropdown()" class="bench-item">🥕 Cutting Vegetables</button>
+                    <button onclick="showTaskPopup('Cleaning the bathroom and toilet','Deep clean the bathroom area on the board. Scrub the toilet and sink with brushes, apply disinfectant to all surfaces, mop the floor tiles thoroughly, and clean all tools when done.');toggleBenchDropdown()" class="bench-item">🚽 Cleaning Bathroom</button>
+                    <button onclick="showTaskPopup('Dusting furniture and surfaces','Dust all furniture and surfaces on the board from top to bottom. Use the duster on all objects, then sweep up the fallen dust.');toggleBenchDropdown()" class="bench-item">🪶 Dusting Surfaces</button>
+                    <button onclick="showTaskPopup('Tidying up the board','Tidy and organise the entire board. Sort all objects into their correct zones: cleaning tools in A1-D4, dining items in E1-H4, kitchen in I1-L4, laundry in M1-P4, pantry in Q1-T4. Keep the working area clear.');toggleBenchDropdown()" class="bench-item">📦 Tidying Up</button>
+                </div>
+            </div>
             <button onclick="resetToHome()" style="padding:7px 14px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:#fca5a5;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:0.03em;transition:all 0.15s;" onmouseover="this.style.background='rgba(239,68,68,0.25)'" onmouseout="this.style.background='rgba(239,68,68,0.12)'">
                 ⌂ RESET HOME
             </button>
@@ -484,48 +514,6 @@ HTML = r"""<!DOCTYPE html>
         <div id="gripper-state">Gripper: OPEN</div>
     </div>
 
-    <!-- Task List Panel — scrollable, height capped so it doesn't overlap the bottom library panel -->
-    <div class="ui-overlay top-20 left-6 bg-zinc-900/95 backdrop-blur border border-zinc-700/60 rounded-2xl w-64" style="max-height: calc(48vh - 10px); display:flex; flex-direction:column;">
-        <div class="px-4 pt-4 pb-2 shrink-0">
-            <h2 class="text-xs font-bold mb-0.5 text-zinc-300 tracking-widest uppercase">Quick Tasks</h2>
-            <p class="text-xs text-zinc-600 mono">Click a task to run with K5D AI</p>
-        </div>
-        <div class="overflow-y-auto px-4 pb-4" style="scrollbar-width:thin; scrollbar-color:#3f3f46 transparent;">
-            <div class="space-y-1.5 pt-1">
-                <button onclick="showTaskPopup('Sweeping','Sweep the entire floor of the board clean. Use the broom to sweep all cells and collect dust with the dustpan.')" class="w-full text-left px-3 py-2.5 bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/50 hover:border-blue-500/50 rounded-xl text-xs font-semibold text-zinc-200 transition-all flex items-center gap-2.5">
-                    <span class="text-base">&#x1F9F9;</span> Sweeping
-                </button>
-                <button onclick="showTaskPopup('Mopping','Mop the entire floor of the board. Fill the bucket with water and disinfectant, then mop all cells row by row.')" class="w-full text-left px-3 py-2.5 bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/50 hover:border-blue-500/50 rounded-xl text-xs font-semibold text-zinc-200 transition-all flex items-center gap-2.5">
-                    <span class="text-base">&#x1FAA3;</span> Mopping
-                </button>
-                <button onclick="showTaskPopup('Washing utensils','Wash all dirty utensils on the board. Apply soap to each utensil cell, then wipe clean with a cloth. Work through every dirty pot, pan, plate, bowl, mug, glass, and cutlery using Apply_soap and Apply_cloth commands.')" class="w-full text-left px-3 py-2.5 bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/50 hover:border-blue-500/50 rounded-xl text-xs font-semibold text-zinc-200 transition-all flex items-center gap-2.5">
-                    <span class="text-base">&#x1F37D;&#xFE0F;</span> Washing utensils
-                </button>
-                <button onclick="showTaskPopup('Cooking','Cook a meal. Follow this exact sequence with no extra steps: 1) Pick up the pot and place it on the stove cell. 2) Turn on the stove. 3) Pick up the vegetable(s) if present, if no vegitables then keep vegitable basket on the pot (same cell as stove). 4) Move gripper to A1. 5) Wait 4 seconds using wait_for(4). 6) Pick up the vegetable basket from the pot and place it on the plate. 7) Turn off the stove. Do not use a knife, cutting board, or any other objects.')" class="w-full text-left px-3 py-2.5 bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/50 hover:border-blue-500/50 rounded-xl text-xs font-semibold text-zinc-200 transition-all flex items-center gap-2.5">
-                    <span class="text-base">&#x1F373;</span> Cooking
-                </button>
-                <button onclick="showTaskPopup('Washing clothes','Wash all dirty clothes on the board. Load garments into the washing machine with detergent, run the wash cycle, then unload clean clothes.')" class="w-full text-left px-3 py-2.5 bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/50 hover:border-blue-500/50 rounded-xl text-xs font-semibold text-zinc-200 transition-all flex items-center gap-2.5">
-                    <span class="text-base">&#x1F455;</span> Washing clothes
-                </button>
-                <button onclick="showTaskPopup('Folding and ironing clothes','Iron and fold all wrinkled clothes on the board. Heat the iron, iron each garment on the ironing board to remove wrinkles, then fold them neatly. Turn off the iron when done.')" class="w-full text-left px-3 py-2.5 bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/50 hover:border-blue-500/50 rounded-xl text-xs font-semibold text-zinc-200 transition-all flex items-center gap-2.5">
-                    <span class="text-base">&#x1FA84;</span> Folding &amp; Ironing
-                </button>
-                <button onclick="showTaskPopup('Cutting vegetables','Bring the knife to the vegitable(s), slice the vegetable(s) into pieces for cooking prep., then keep the knife on A11')" class="w-full text-left px-3 py-2.5 bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/50 hover:border-blue-500/50 rounded-xl text-xs font-semibold text-zinc-200 transition-all flex items-center gap-2.5">
-                    <span class="text-base">&#x1F955;</span> Cutting vegetables
-                </button>
-                <button onclick="showTaskPopup('Cleaning the bathroom and toilet','Deep clean the bathroom area on the board. Scrub the toilet and sink with brushes, apply disinfectant to all surfaces, mop the floor tiles thoroughly, and clean all tools when done.')" class="w-full text-left px-3 py-2.5 bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/50 hover:border-blue-500/50 rounded-xl text-xs font-semibold text-zinc-200 transition-all flex items-center gap-2.5">
-                    <span class="text-base">&#x1F6BD;</span> Cleaning bathroom
-                </button>
-                <button onclick="showTaskPopup('Dusting furniture and surfaces','Dust all furniture and surfaces on the board from top to bottom. Use the duster on all objects, then sweep up the fallen dust.')" class="w-full text-left px-3 py-2.5 bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/50 hover:border-blue-500/50 rounded-xl text-xs font-semibold text-zinc-200 transition-all flex items-center gap-2.5">
-                    <span class="text-base">&#x1FAB6;</span> Dusting surfaces
-                </button>
-                <button onclick="showTaskPopup('Tidying up the board','Tidy and organise the entire board. Sort all objects into their correct zones: cleaning tools in A1-D4, dining items in E1-H4, kitchen in I1-L4, laundry in M1-P4, pantry in Q1-T4. Keep the working area clear.')" class="w-full text-left px-3 py-2.5 bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/50 hover:border-blue-500/50 rounded-xl text-xs font-semibold text-zinc-200 transition-all flex items-center gap-2.5">
-                    <span class="text-base">&#x1F4E6;</span> Tidying up the board
-                </button>
-            </div>
-        </div>
-    </div>
-
     <!-- Glassmorphism Task Popup -->
     <div id="task-popup" style="display:none; position:fixed; inset:0; z-index:99998; background:rgba(0,0,0,0.55); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); align-items:center; justify-content:center;">
         <div style="background:rgba(18,18,20,0.82); backdrop-filter:blur(28px); -webkit-backdrop-filter:blur(28px); border:1px solid rgba(255,255,255,0.1); border-radius:24px; padding:28px 26px 24px; width:420px; max-width:92vw; max-height:88vh; overflow-y:auto; box-shadow:0 40px 100px rgba(0,0,0,0.8);">
@@ -555,21 +543,23 @@ HTML = r"""<!DOCTYPE html>
         </div>
     </div>
 
-    <div class="ui-overlay top-20 right-6 w-80 flex flex-col gap-0" style="bottom:34px;">
-        <div class="bg-zinc-900/95 backdrop-blur border border-zinc-700/60 rounded-2xl p-4 mb-3 shrink-0" style="max-height: 28vh; overflow-y: auto;">
-            <h2 class="text-xs font-bold mb-3 text-zinc-300 tracking-widest uppercase">Object Positions</h2>
-            <div id="objects-list" class="space-y-2">
-                <div class="text-xs text-zinc-500 italic">No objects on board</div>
-            </div>
+    <!-- Objects list flyout (toggled by button in AI header) -->
+    <div id="objects-panel" style="display:none; position:fixed; top:56px; right:320px; z-index:25; width:220px; max-height:calc(100vh - 90px); overflow-y:auto;" class="bg-zinc-900/98 backdrop-blur border border-zinc-700/60 rounded-2xl p-4">
+        <h2 class="text-xs font-bold mb-3 text-zinc-300 tracking-widest uppercase">Object Positions</h2>
+        <div id="objects-list" class="space-y-2">
+            <div class="text-xs text-zinc-500 italic">No objects on board</div>
         </div>
-        <div class="bg-zinc-900/95 backdrop-blur border border-zinc-700/60 rounded-2xl flex flex-col flex-1 min-h-0">
+    </div>
+
+    <div class="ui-overlay right-0 w-80 flex flex-col gap-0" style="top:56px; bottom:30px;">
+        <div class="bg-zinc-900/95 backdrop-blur border-l border-zinc-700/60 flex flex-col flex-1 min-h-0" style="height:100%;">
             <div class="flex items-center gap-2 px-4 pt-3 pb-3 border-b border-zinc-700/60 shrink-0">
                 <div class="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">AI</div>
                 <div>
                     <div class="text-xs font-bold text-zinc-200 tracking-widest uppercase">K5D Task Planner</div>
-                    <div class="text-xs text-zinc-500 mono">Prolabs V12.2 · Claude</div>
                 </div>
                 <div id="ai-status-dot" class="ml-auto w-2 h-2 bg-zinc-600 rounded-full" style="transition:background 0.3s;"></div>
+                <button onclick="toggleObjectsPanel()" title="Toggle object positions" class="w-6 h-6 bg-zinc-700 hover:bg-zinc-600 transition-colors rounded-md flex items-center justify-center text-zinc-300 text-xs ml-1" id="objects-toggle-btn">📦</button>
             </div>
             <div id="exec-log" class="shrink-0 px-3 pt-2 pb-1 border-b border-zinc-800/50 overflow-y-auto" style="max-height: 120px; display:none;">
                 <div class="text-xs mono text-zinc-500 mb-1 uppercase tracking-widest">Execution Plan</div>
@@ -578,22 +568,10 @@ HTML = r"""<!DOCTYPE html>
             <div id="chat-messages" class="flex-1 overflow-y-auto px-3 py-3 space-y-2 min-h-0">
                 <div class="flex gap-2">
                     <div class="w-5 h-5 bg-blue-600 rounded-md flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5">AI</div>
-                    <div class="bg-zinc-800 rounded-xl rounded-tl-sm px-3 py-2 text-xs text-zinc-300 leading-relaxed">Hi! I'm the K5D Task Planner. I'll <span class="text-yellow-300 font-bold">plan first</span> and wait for your approval before executing anything. Try: <span class="text-blue-400">"Sweep the floor"</span>, <span class="text-blue-400">"Wash the clothes"</span>, or <span class="text-blue-400">"Cook a meal"</span>. Type <span class="text-purple-300">memory</span> to see what I remember, or <span class="text-purple-300">remember: [note]</span> to teach me something.</div>
+                    <div class="bg-zinc-800 rounded-xl rounded-tl-sm px-3 py-2 text-xs text-zinc-300 leading-relaxed">Hi! I'm the K5D Task Planner. I'll directly generate and execute the command plan. Try: <span class="text-blue-400">"Sweep the floor"</span>, <span class="text-blue-400">"Wash the clothes"</span>, or <span class="text-blue-400">"Cook a meal"</span>. Type <span class="text-purple-300">memory</span> to see what I remember, or <span class="text-purple-300">remember: [note]</span> to teach me something.</div>
                 </div>
             </div>
             <div class="px-3 pb-3 pt-2 border-t border-zinc-800 shrink-0">
-                <!-- Plan approval panel (hidden until a plan is ready) -->
-                <div id="plan-approval" class="hidden mb-2">
-                    <div class="bg-zinc-700/60 border border-blue-500/40 rounded-xl p-3 mb-2">
-                        <div class="text-xs font-bold text-blue-300 mb-2">📋 PLAN — approve to execute</div>
-                        <pre id="plan-text" class="text-xs text-zinc-200 whitespace-pre-wrap leading-relaxed max-h-36 overflow-y-auto"></pre>
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="approvePlan()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2 px-3 rounded-lg transition-colors">✅ Approve & Execute</button>
-                        <button onclick="editPlan()" class="bg-zinc-700 hover:bg-zinc-600 text-zinc-200 text-xs font-bold py-2 px-3 rounded-lg transition-colors">✏️ Edit</button>
-                        <button onclick="rejectPlan()" class="bg-red-900/60 hover:bg-red-800 text-red-300 text-xs font-bold py-2 px-3 rounded-lg transition-colors">✖ Cancel</button>
-                    </div>
-                </div>
                 <div class="flex gap-2">
                     <input id="chat-input" type="text" placeholder="Describe a task to execute..."
                         class="flex-1 bg-zinc-800 border border-zinc-700 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-zinc-200 outline-none mono placeholder-zinc-600"
@@ -614,7 +592,7 @@ HTML = r"""<!DOCTYPE html>
         </div>
     </div>
 
-    <div class="ui-overlay left-6 bg-zinc-900/95 backdrop-blur border border-zinc-700/60 rounded-2xl p-5 w-80" style="bottom:34px; max-height: 48vh; overflow-y: auto;">
+    <div class="ui-overlay left-6 bg-zinc-900/95 backdrop-blur border border-zinc-700/60 rounded-2xl p-5 w-80" style="top:62px; bottom:34px; overflow-y: auto;">
         <h3 class="text-xs font-bold mb-1 tracking-widest text-zinc-400 uppercase">Objects Library</h3>
         <p class="text-xs text-zinc-600 mb-3 mono">Right-click any board object to rename or delete</p>
         <div class="lib-section-title">Basic</div>
@@ -792,7 +770,7 @@ HTML = r"""<!DOCTYPE html>
             <div class="obj-lib-wrap obj-lib-entry" onclick="addObject('washing_machine')">
                 <div class="text-3xl mb-1">🫧</div>
                 <span class="text-xs text-zinc-400">Washing Machine</span>
-                <div class="obj-lib-meta"><div class="font-bold text-zinc-200 mb-1">washing_machine</div><div>Open door, load clothes, add detergent, run_cycle. Too heavy to lift.</div></div>
+                <div class="obj-lib-meta"><div class="font-bold text-zinc-200 mb-1">washing_machine</div><div>Open door, load clothes, add detergent, run_cycle. Can be picked up and moved.</div></div>
             </div>
             <div class="obj-lib-wrap obj-lib-entry" onclick="addObject('clothes_pile')">
                 <div class="text-3xl mb-1">👕</div>
@@ -831,7 +809,7 @@ HTML = r"""<!DOCTYPE html>
             <div class="obj-lib-wrap obj-lib-entry" onclick="addObject('stove')">
                 <div class="text-3xl mb-1">🔥</div>
                 <span class="text-xs text-zinc-400">Stove / Hob</span>
-                <div class="obj-lib-meta"><div class="font-bold text-zinc-200 mb-1">stove</div><div>2x1 cooking surface with 4 burners. turn_on to heat. Too heavy to lift.</div></div>
+                <div class="obj-lib-meta"><div class="font-bold text-zinc-200 mb-1">stove</div><div>2x1 cooking surface with 4 burners. turn_on to heat.</div></div>
             </div>
             <div class="obj-lib-wrap obj-lib-entry" onclick="addObject('ingredient_jar')">
                 <div class="text-3xl mb-1">🫙</div>
@@ -924,6 +902,17 @@ HTML = r"""<!DOCTYPE html>
     </div>
 
     <script>
+        function toggleBenchDropdown() {
+            const dd = document.getElementById('bench-dropdown');
+            dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+        }
+        document.addEventListener('click', function(e) {
+            const wrap = document.getElementById('bench-dropdown-wrap');
+            if (wrap && !wrap.contains(e.target)) {
+                const dd = document.getElementById('bench-dropdown');
+                if (dd) dd.style.display = 'none';
+            }
+        });
         function launchWithSplash() {
           document.getElementById('welcome-overlay').style.display = 'none';
           const splash = document.getElementById('splash-overlay');
@@ -1091,7 +1080,7 @@ HTML = r"""<!DOCTYPE html>
                 cfg.weight = 3; cfg.capacity = t.includes('pot') ? 2.0 : 1.0;
                 cfg.defaultState = { fillLevel: 0, dirty: 0, temperature: 'room' };
             } else if (t.includes('plate')) {
-                cfg.affordances = ['liftable']; cfg.weight = 1; cfg.defaultState = { dirty: 0 };
+                cfg.affordances = ['liftable', 'fillable', 'pourable']; cfg.weight = 1; cfg.capacity = 1.0; cfg.defaultState = { fillLevel: 0, dirty: 0 };
             } else if (t.includes('cutting_board')) {
                 cfg.affordances = ['liftable', 'sliceable_surface']; cfg.weight = 2; cfg.defaultState = { dirty: 0 };
             } else if (t.includes('knife')) {
@@ -1147,7 +1136,7 @@ HTML = r"""<!DOCTYPE html>
                 cfg.defaultState = { fillLevel: 0, dirty: 0, contents: 'empty' };
             // --- Laundry ---
             } else if (t.includes('washing_machine')) {
-                cfg.affordances = ['openable', 'switchable']; cfg.weight = 40;
+                cfg.affordances = ['openable', 'switchable']; cfg.weight = 8;
                 cfg.defaultState = { isOpen: false, power: false, cycleRunning: false, cycleComplete: false };
             } else if (t.includes('clothes_pile') || t.includes('clothes')) {
                 cfg.affordances = ['liftable', 'foldable', 'ironable']; cfg.weight = 2;
@@ -1168,7 +1157,7 @@ HTML = r"""<!DOCTYPE html>
                 cfg.defaultState = { fillLevel: 1.0, dirty: 0 };
             // --- Cooking ---
             } else if (t.includes('stove')) {
-                cfg.affordances = ['switchable', 'heatable']; cfg.footprint = { w: 2, h: 1 }; cfg.weight = 20;
+                cfg.affordances = ['liftable', 'switchable', 'heatable']; cfg.footprint = { w: 2, h: 1 }; cfg.weight = 7;
                 cfg.defaultState = { power: false, temperature: 'room' };
             } else if (t.includes('ingredient_jar') || t.includes('spice')) {
                 cfg.affordances = ['liftable', 'pourable', 'fillable', 'twistable_cap']; cfg.weight = 1; cfg.capacity = 0.5;
@@ -2903,7 +2892,7 @@ HTML = r"""<!DOCTYPE html>
             wrap.id = 'thinking-bubble';
             wrap.className = 'flex gap-2';
             wrap.innerHTML = '<div class="w-5 h-5 bg-blue-600 rounded-md flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5">AI</div>' +
-                '<div class="bg-zinc-800 rounded-xl rounded-tl-sm px-3 py-2 text-xs text-zinc-500 italic">Planning task...</div>';
+                '<div class="bg-zinc-800 rounded-xl rounded-tl-sm px-3 py-2 text-xs text-zinc-500 italic">Generating command plan...</div>';
             box.appendChild(wrap);
             box.scrollTop = box.scrollHeight;
         }
@@ -2970,12 +2959,6 @@ HTML = r"""<!DOCTYPE html>
                     resolve(); return;
                 }
                 const weight = objectWeight.get(obj) ?? 2;
-                if (weight > MAX_LIFT_WEIGHT) {
-                    const label = objectNames.get(obj) || objectTypes.get(obj) || 'object';
-                    setStatus(`⚠️ Too heavy to lift (weight ${weight})`);
-                    appendMessage('assistant', `⚠️ "${label}" is too heavy to lift directly (weight ${weight}, limit ${MAX_LIFT_WEIGHT}). Use {drag_from_coordinate(...)_to_coordinate(...)} to slide it instead.`);
-                    resolve(); return;
-                }
                 // If this object was inside a container, remove it from that container
                 const srcState = objectState.get(obj) || {};
                 if (srcState.inContainer) {
@@ -3269,8 +3252,6 @@ HTML = r"""<!DOCTYPE html>
             const ironObj = objects.find(o => (objectTypes.get(o) || '').toLowerCase() === 'iron');
             if (!ironObj) { appendMessage('assistant', '⚠️ No iron on board — add one first.'); return; }
             const ironSt = objectState.get(ironObj) || {};
-            if (!ironSt.power) { appendMessage('assistant', '⚠️ Iron is not powered on — use {turn_on(iron)} and wait for it to heat first.'); return; }
-            if (ironSt.temperature !== 'hot') { appendMessage('assistant', '⚠️ Iron is not hot yet — use {wait_for(3)} to let it heat up.'); return; }
             const name = objectNames.get(obj) || objectTypes.get(obj) || 'item';
             const ox = Math.floor(obj.position.x), oz = Math.floor(obj.position.z);
             const col = String.fromCharCode(65 + ox), row = String(oz + 1);
@@ -3397,7 +3378,6 @@ HTML = r"""<!DOCTYPE html>
             const obj = findObjectByKey(m[1]);
             if (!obj) { appendMessage('assistant', `⚠️ No object named "${m[1]}" found.`); return; }
             const cfg = getObjectConfig(objectTypes.get(obj));
-            if (!cfg.affordances.includes('switchable')) { appendMessage('assistant', `⚠️ "${m[1]}" has no power switch.`); return; }
             const st = objectState.get(obj) || {};
             st.power = on;
             if (on && cfg.affordances.includes('heatable')) {
@@ -3425,7 +3405,6 @@ HTML = r"""<!DOCTYPE html>
             const obj = findObjectByKey(m[1]);
             if (!obj) { appendMessage('assistant', `⚠️ No object named "${m[1]}" found.`); return; }
             const cfg = getObjectConfig(objectTypes.get(obj));
-            if (!cfg.affordances.includes('twistable_cap')) { appendMessage('assistant', `⚠️ "${m[1]}" has no twist-cap.`); return; }
             const st = objectState.get(obj) || {};
             st.capOn = (m[2].toLowerCase() === 'on');
             objectState.set(obj, st);
@@ -3439,7 +3418,6 @@ HTML = r"""<!DOCTYPE html>
             const obj = findObjectByKey(m[1]);
             if (!obj) { appendMessage('assistant', `⚠️ No object named "${m[1]}" found.`); return; }
             const cfg = getObjectConfig(objectTypes.get(obj));
-            if (!cfg.affordances.includes('fillable')) { appendMessage('assistant', `⚠️ "${m[1]}" cannot hold contents.`); return; }
             const pct = Math.max(0, Math.min(100, parseInt(m[2], 10)));
             const st = objectState.get(obj) || {};
             st.fillLevel = pct / 100;
@@ -3456,8 +3434,6 @@ HTML = r"""<!DOCTYPE html>
                 if (!target) { appendMessage('assistant', `⚠️ No object named "${targetName}" found to pour into.`); resolve(); return; }
                 const srcCfg = getObjectConfig(objectTypes.get(source));
                 const tgtCfg = getObjectConfig(objectTypes.get(target));
-                if (!srcCfg.affordances.includes('pourable')) { appendMessage('assistant', '⚠️ The held/current object cannot be poured.'); resolve(); return; }
-                if (!tgtCfg.affordances.includes('fillable')) { appendMessage('assistant', `⚠️ "${targetName}" cannot receive contents.`); resolve(); return; }
                 const srcState = objectState.get(source) || {};
                 const tgtState = objectState.get(target) || {};
                 if (srcCfg.affordances.includes('twistable_cap') && srcState.capOn) {
@@ -3497,7 +3473,6 @@ HTML = r"""<!DOCTYPE html>
                 const target = findObjectByKey(targetName);
                 if (!target) { appendMessage('assistant', `⚠️ No object named "${targetName}" found.`); resolve(); return; }
                 const tgtCfg = getObjectConfig(objectTypes.get(target));
-                if (!tgtCfg.affordances.includes('fillable')) { appendMessage('assistant', `⚠️ "${targetName}" cannot hold contents.`); resolve(); return; }
 
                 const srcLabel = objectNames.get(source) || objectTypes.get(source) || 'object';
                 const tgtState = objectState.get(target) || {};
@@ -3568,7 +3543,6 @@ HTML = r"""<!DOCTYPE html>
             const obj = findObjectByKey(m[1]);
             if (!obj) { appendMessage('assistant', `⚠️ No object named "${m[1]}" found.`); return; }
             const cfg = getObjectConfig(objectTypes.get(obj));
-            if (!cfg.affordances.includes('sliceable')) { appendMessage('assistant', `⚠️ "${m[1]}" cannot be sliced.`); return; }
             const ox = Math.floor(obj.position.x), oz = Math.floor(obj.position.z);
             const hasKnifeNearby = objects.some(o => {
                 const t = (objectTypes.get(o) || '').toLowerCase();
@@ -3599,53 +3573,6 @@ HTML = r"""<!DOCTYPE html>
             st[key] = value;
             objectState.set(obj, st);
 
-            // Auto-eject: when a pot/pan's contents are marked "ready", teleport all
-            // solid items to a fixed cell adjacent to the stove (right side, or fallback
-            // cells if that cell is off-grid). Items land stacked with a small offset.
-            if (key === 'contents' && value === 'ready') {
-                const objType = (objectTypes.get(obj) || '').toLowerCase();
-                if (objType.includes('pot') || objType.includes('pan')) {
-                    const containerName = objectNames.get(obj) || objectTypes.get(obj);
-                    const inside = objects.filter(o => (objectState.get(o) || {}).inContainer === containerName
-                                                    || (objectState.get(o) || {}).inContainer === m[1].trim());
-                    if (inside.length) {
-                        appendMessage('assistant', `🍽️ Cooking done — teleporting ${inside.length} item(s) from ${containerName}`);
-
-                        // Determine target: cell to the right of the stove, else right of pot
-                        const stoveObj = objects.find(o => (objectTypes.get(o) || '').toLowerCase().includes('stove'));
-                        let baseX, baseZ;
-                        if (stoveObj) {
-                            // stoves are 2 wide; place items one cell to the right of the stove's right edge
-                            const fp = objectFootprint.get(stoveObj) || { w: 2, h: 1 };
-                            baseX = Math.max(0, Math.min(19, Math.round(stoveObj.position.x) + fp.w));
-                            baseZ = Math.max(0, Math.min(10, Math.round(stoveObj.position.z)));
-                        } else {
-                            baseX = Math.max(0, Math.min(19, Math.round(obj.position.x) + 1));
-                            baseZ = Math.max(0, Math.min(10, Math.round(obj.position.z)));
-                        }
-
-                        const cState = objectState.get(obj) || {};
-                        cState.contents = 'ready';
-                        objectState.set(obj, cState);
-                        for (let i = 0; i < inside.length; i++) {
-                            const item = inside[i];
-                            // Stack items on the same cell with slight vertical separation
-                            item.position.set(baseX + 0.5, 0.5 + i * 0.15, baseZ + 0.5);
-                            const sprite = objectSprites.get(item);
-                            if (sprite) { sprite.position.x = item.position.x; sprite.position.z = item.position.z; sprite.position.y = item.position.y + 2.2; }
-                            const ist = objectState.get(item) || {};
-                            ist.cooked = true;
-                            delete ist.inContainer;
-                            objectState.set(item, ist);
-                            const col = String.fromCharCode(65 + baseX);
-                            const label = objectNames.get(item) || objectTypes.get(item) || 'item';
-                            appendMessage('assistant', `  ↳ ${label} → ${col}${baseZ + 1}`);
-                            await new Promise(res => setTimeout(res, 100));
-                        }
-                        updateObjectPositionsDisplay();
-                    }
-                }
-            }
 
             updateObjectPositionsDisplay();
             setStatus(`✅ Set ${m[1]}.${key} = ${value}`);
@@ -4173,7 +4100,6 @@ HTML = r"""<!DOCTYPE html>
         }
 
         const chatHistory = [];
-        let pendingPlan = null;
         let pendingBoardState = '';
         let pendingUserText = '';
 
@@ -4236,6 +4162,14 @@ HTML = r"""<!DOCTYPE html>
             saveMemory(mem);
             appendMessage('assistant', `🧠 Noted: "${note}"`);
         };
+        window.toggleObjectsPanel = function() {
+            const panel = document.getElementById('objects-panel');
+            const btn = document.getElementById('objects-toggle-btn');
+            const visible = panel.style.display !== 'none';
+            panel.style.display = visible ? 'none' : 'block';
+            btn.style.background = visible ? '' : 'rgba(59,130,246,0.3)';
+        };
+
         window.showMemory = function() {
             const mem = getMemory();
             const lines = [];
@@ -4256,46 +4190,8 @@ HTML = r"""<!DOCTYPE html>
             </div>`);
         };
 
-        // ── PLANNING PROMPT ── high-level only, multi-task aware ──────────────
-        const PLANNING_PROMPT = `You are K5D — an intelligent household robot planner.
-
-Given a task request and the current board state, produce a HIGH-LEVEL plan that a human can read, understand, and approve in 10 seconds.
-
-OUTPUT FORMAT:
-- If the task is simple (1 thing): 3–4 bullet points max.
-- If the task is multi-step or multi-task: use PHASES. Each phase is a bold label followed by 2–3 bullets. Max 3 phases.
-- End with one line: ⚠️ NEEDS: [list any objects missing from board] — or omit this line if everything is present.
-- NO commands, NO coordinates, NO curly braces. Plain human English only.
-- Total length: under 12 lines.
-
-MULTI-TASK EXAMPLE for "do the laundry then sweep the floor":
-PHASE 1 — Laundry
-• Tilt machine open
-• load clothes
-• add detergent
-• close and run cycle
-
-PHASE 2 — Retrieve & Finish
-• Unload washed clothes into basket
-• Iron each item
-• fold each item
-• stack all clothes neatly
-
-SINGLE-TASK EXAMPLE for "cook dinner":
-• Heat stove
-• place pot
-• Put vegetables into pot
-• Simmer until cooked
-• plate the food
-
-Knife Rule:
-When using knife is over, keep knife on A11 until next needed to minimize unnecessary movements.
-
-MISSING-OBJECTS EXAMPLE:
-⚠️ NEEDS: broom (to sweep), detergent (for washing machine)`;
-
-          // ── SYSTEM PROMPT ── master execution intelligence ─────────────────
-          const SYSTEM_PROMPT = `You are K5D — the intelligent controller of a Prolabs V12.2 Precision Cartesian Gantry robot. Given an approved plan and board state, generate the COMPLETE, CORRECT sequence of K5D commands to execute it.
+        // ── SYSTEM PROMPT (direct execution command plan) ──────────────
+        const PLANNING_PROMPT = `You are K5D — the intelligent controller of a Prolabs V12.2 Precision Cartesian Gantry robot. Given a user task and the current board state, directly generate the COMPLETE, CORRECT sequence of K5D commands to execute the task (no high-level summary — output commands immediately).
 
 BOARD: columns A–T (20 cols, left→right), rows 1–11 (11 rows, front→back). Grid cell = ColRow e.g. A1, T11.
 Board state format: name at COORD [footprint] {state flags} (touching: adjacent cells).
@@ -4310,7 +4206,7 @@ Gripper approaches from above; Z-axis lowers to pick/interact. Path planner auto
 {place_into(NAME)}                          place held solid item (vegetable, ingredient, etc.) into container — tracks contents
 {drag_from_coordinate(C,R)_to_coordinate(C,R)}  slide heavy object (no weight limit)
 {change_orientation = TOKEN}                rotate ALL objects — tokens: +x90 -x90 +y90 -y90 +z90 -z90
-{rotate_object(NAME, TOKEN)}                rotate ONE named object (same tokens)
+{rotate_object(NAME, TOKEN)}                rotate ONE named object — tokens must be exactly: +x90 -x90 +y90 -y90 +z90 -z90
 {open(NAME)} / {close(NAME)}               toggle openable objects
 {turn_on(NAME)} / {turn_off(NAME)}         toggle switchable appliances
 {twist_cap(NAME, on|off)}                  twist bottle/jar cap
@@ -4325,7 +4221,7 @@ Gripper approaches from above; Z-axis lowers to pick/interact. Path planner auto
 {Apply_cloth(X1,X2,...)}                   wipe cells
 {wash(NAME)}                               wash object clean dirty→0 (needs filled sink)
 {run_cycle(NAME)}                          run washing machine (door MUST be closed first)
-{iron(NAME)}                               iron cloth item (iron MUST be hot)
+{iron(NAME)}                               iron cloth item (iron MUST be at temperature:hot)
 {fold(NAME)}                               fold item (iron FIRST — never fold wrinkled)
 {inspect_sides(NAME)}                      report what's adjacent to all 6 faces
 {find(KEY=VALUE)}                          find objects by attribute
@@ -4333,105 +4229,159 @@ Gripper approaches from above; Z-axis lowers to pick/interact. Path planner auto
 {Task_Completed}                           always last
 
 ━━━ NON-NEGOTIABLE RULES ━━━
-WEIGHT: objects with weight > 8 CANNOT be picked up. Use drag or rotate_object instead.
-  Too heavy: oven(25), stove(20), sink(30), washing_machine(40)
+WEIGHT: objects with weight > 8 CANNOT be picked up. Use drag instead.
+  Too heavy: oven(25), sink(30), stove(7 — use drag to reposition)
+
+DIRTY STATE IS A FLOAT, NOT A BOOLEAN:
+  dirty is stored as a decimal e.g. 0.6, not true/false.
+  NEVER use {find(dirty=true)} — it will always return empty results.
+  Instead: use {check_state(OBJECT_NAME)} on each individual object to read its dirty level.
+  Or: use {find(wrinkled=true)} for garments, which IS a boolean and works correctly.
+  To mark an object dirty before a task: {set_state(OBJECT_NAME, dirty, 0.6)}
+
+UTENSILS START CLEAN (dirty:0 by default):
+  Plates, mugs, pots, pans, glasses, bowls all spawn with dirty:0.
+  Before running a washing utensils task, you MUST mark items dirty first:
+  {set_state(plate, dirty, 0.8)}, {set_state(mug, dirty, 0.6)}, etc.
+  Then use {wash(NAME)} — NOT apply_soap/apply_cloth — to clean them.
+  wash() is the ONLY command that resets dirty to 0 on utensils.
+  apply_soap and apply_cloth only reduce floor/surface dirt and must NEVER be used on utensil objects.
 
 WASHING MACHINE DOOR is on the +z face (front). To access:
   1. {rotate_object(washing_machine, -x90)}  ← tilts door face upward
   2. {open(washing_machine)}
   3. load / unload clothes
   4. {close(washing_machine)}
-  5. {rotate_object(washing_machine, +x90)}  ← restore upright
+  5. {rotate_object(washing_machine, +x90)}  ← restore upright before cycle
   6. {run_cycle(washing_machine)}
-  NEVER run_cycle with door open. NEVER skip the rotation steps.
+  NEVER run_cycle with door open. NEVER skip rotation steps.
+  rotate_object tokens are STRICT — only these exact strings work: +x90 -x90 +y90 -y90 +z90 -z90
+
+AFTER run_cycle — MANUAL STATE UPDATE REQUIRED:
+  run_cycle automatically cleans clothes_pile and towel objects near the machine.
+  For shirt and pants objects, you MUST manually update state after cycle completes:
+  {set_state(shirt, dirty, 0)}
+  {set_state(shirt, wrinkled, true)}
+  {set_state(pants, dirty, 0)}
+  {set_state(pants, wrinkled, true)}
+  Repeat for each individual shirt/pants on the board. Never skip this.
+
+IRON TEMPERATURE GATE — MANDATORY:
+  The iron heats up asynchronously after turn_on. You MUST wait and confirm before ironing:
+  {turn_on(iron)}
+  {wait_for(4)}
+  {check_state(iron)}   ← read the response; temperature must show 'hot'
+  If temperature is still 'preheating': {wait_for(3)}, {check_state(iron)} again.
+  NEVER call {iron(NAME)} until check_state confirms temperature:hot.
+  NEVER fold before ironing. NEVER leave iron powered on at Task_Completed.
+
+COOKING — PLATING IS MANUAL (no auto-eject):
+  After cooking, vegetables and ingredients placed into the pot with place_into() remain inside.
+  There is NO auto-eject. You must retrieve each item manually:
+  {set_state(pot, contents, ready)}
+  {goto_coordinate = POT_COL, POT_ROW}, {pickup}   ← picks up pot first
+  {goto_coordinate = PLATE_COL, PLATE_ROW}, {keep}
+  Then retrieve each vegetable that was placed inside:
+  {goto_coordinate = POT_COL, POT_ROW}, {pickup}   ← picks up vegetable/basket
+  {goto_coordinate = PLATE_COL, PLATE_ROW}, {keep}
+  Repeat until all contents are plated.
+  For liquid sauce only: {goto_coordinate = POT_COL, POT_ROW}, {pickup}, 
+  {goto_coordinate = PLATE_COL, PLATE_ROW}, {pour}
 
 DEPENDENCY ORDER (never break these):
   sweep → mop  (always sweep before wet mopping)
-  wash clothes → iron → fold  (never skip or reorder)
-  preheat → cook → plate → turn_off  (always turn off stove/oven/iron at end)
+  set dirty state → wash()  (objects must have dirty > 0 to need washing)
+  wash clothes → set_state shirt/pants dirty=0 wrinkled=true → iron → fold
+  preheat → confirm hot → cook → plate → turn_off
   fill(sink,100) → wash(object)  (sink must have water)
   fill(bucket,100) + disinfectant → mop  (bucket must have solution)
   twist_cap(off) → pour_into() → twist_cap(on)  (if cap is on, liquids only)
-  place_into(pot/pan) for solid items (vegetables, ingredients) — no cap needed; call once per item to stack multiple items
-  at a container's coordinate, {pickup} always grabs the container first (not its contents); to retrieve an item from inside, first move the container away, then {pickup} the item
-  turn_on(iron) → wait_for(4) → check_state(iron) confirms hot → iron()
+  place_into(pot/pan) for solid items — call once per item
+  at a container's coordinate, {pickup} always grabs the container first;
+  to retrieve contents, move container away first, then pickup the item
 
-SLICING: bring knife to SAME CELL as target first. After {keep}, knife is AT TARGET cell.
-  To return knife: {pickup} from TARGET (you're already there) → goto origin → {keep}.
+POURING / WATERING: use {pour} to physically tilt the held object at current cell.
+  Water a plant:   {pickup} → {goto_coordinate = PLANT_COL, PLANT_ROW} → {pour}
+  Fill a pot:      {pickup} bottle → {goto_coordinate = POT_COL, POT_ROW} → {pour}
+  Use {pour_into(NAME)} only for measured liquid volume transfer into a named container.
+
+SLICING: bring knife to SAME CELL as target first.
+  {goto_coordinate = KNIFE_COL, KNIFE_ROW}, {pickup}
+  {goto_coordinate = VEG_COL, VEG_ROW}, {keep}
+  {slice(vegetable_name, N)}
+  After slicing, return knife: {pickup}, {goto_coordinate = A, 11}, {keep}
 
 APPLIANCES — ALWAYS turn off before Task_Completed:
-  stove, oven, iron must be powered OFF at end. Washing machine door must be closed and upright.
+  stove, oven, iron must be powered OFF. Washing machine door closed and upright.
+
+━━━ POST-TASK TIDY — always do this before Task_Completed ━━━
+After every task, separate any objects sharing the same coordinate.
+Move each to its own distinct cell — at least 1 cell apart.
+Priority: appliances (pot/pan) → food items → tools → small items.
+Use {pickup} → {goto_coordinate = COL, ROW} → {keep}.
+Stove stays fixed unless user asks to move it.
+
+━━━ PICKUP ORDER when multiple objects share a coordinate ━━━
+{pickup} takes the last-placed object first (insertion order).
+To get a specific object from a stack: temporarily set aside objects above it first.
+Common cooking priority: pot/pan first, then basket, then loose vegetables.
+Common sink priority: largest utensil first, then smaller ones.
 
 ━━━ EFFICIENCY ━━━
-- BATCH surface ops: one {sweep(A1,B1,C1,...,T1)} per row, not 20 individual calls
-- EXPLOIT WAITS: start other work immediately after run_cycle / turn_on — return later
-- ZONE-FIRST: finish one area before moving to another
-- RETURN ON THE WAY: carry next needed object when returning from a delivery
-- VERIFY KEY RESULTS: use {check_state()} on important outputs before Task_Completed
-
-━━━ MULTI-TASK: when plan has multiple phases ━━━
-Execute in dependency order. Exploit machine wait times for parallel work:
-  After run_cycle → immediately sweep/dust → come back to retrieve clothes
-  After turn_on(oven) → prep other ingredients → return to check temp
-Sequence commands as one continuous list — don't repeat moves already made.
+- BATCH surface ops: {sweep(A1,B1,...,T1)} per row — not 20 individual calls
+- EXPLOIT WAITS: after run_cycle or turn_on, do other work; return later
+- ZONE-FIRST: finish one area completely before moving to another
+- VERIFY KEY RESULTS: {check_state()} on important objects before Task_Completed
 
 ━━━ OBJECTS QUICK REFERENCE ━━━
 bottle/soap_bottle  wt:1  pourable fillable twistable_cap  (fill:100% cap:on)
-mug/glass/bowl      wt:1  pourable fillable
-pot/pan             wt:3  pourable fillable heatable
-plate/spoon/book    wt:1  liftable
+mug/glass/bowl      wt:1  pourable fillable  (dirty:0 by default — set dirty before washing)
+pot/pan             wt:3  pourable fillable heatable  (dirty:0 by default)
+plate/spoon/book    wt:1  liftable  (dirty:0 by default)
 cookies             wt:1  sliceable
 knife               wt:1  cutting_tool (must be at same cell as sliceable target)
 broom               wt:1  sweeping_tool — needed for sweep()
 dustpan             wt:1  collecting_tool
 mop                 wt:2  mopping_tool — needed for mop()
 bucket              wt:2  fillable pourable capacity:2.0
-scrub_brush         wt:1  scrubbing_tool — needed for scrub()
-toilet_brush        wt:1  scrubbing_tool — needed for scrub()
+scrub_brush         wt:1  scrubbing_tool
+toilet_brush        wt:1  scrubbing_tool
 duster              wt:1  dusting_tool
 disinfectant        wt:1  pourable spray_tool (fill:100% cap:on)
 detergent           wt:2  pourable (pour into washing_machine before cycle)
-clothes_pile        wt:2  foldable ironable (dirty:60% wrinkled:true)
-shirt/pants         wt:1  foldable ironable (dirty:0% wrinkled:true)
-towel               wt:1  foldable ironable cleaning_tool
-iron                wt:2  switchable heatable (must reach temp:hot before iron())
+clothes_pile        wt:2  foldable ironable (dirty:0.6 wrinkled:true) — auto-cleaned by run_cycle
+shirt               wt:1  foldable ironable (dirty:0 wrinkled:true) — MUST manually set dirty=0 after run_cycle
+pants               wt:1  foldable ironable (dirty:0 wrinkled:true) — MUST manually set dirty=0 after run_cycle
+towel               wt:1  foldable ironable cleaning_tool — auto-cleaned by run_cycle
+iron                wt:2  switchable heatable (MUST confirm temperature:hot before iron())
 ironing_board       wt:5  liftable 2×1 footprint
 ingredient_jar      wt:1  pourable fillable twistable_cap
 vegetable_basket    wt:4  openable
 shopping_bag        wt:2  openable
-carrot              wt:1  liftable sliceable  (use knife at same cell: {slice(carrot,N)})
-cucumber            wt:1  liftable sliceable  (use knife at same cell: {slice(cucumber,N)})
-tomato              wt:1  liftable sliceable  (use knife at same cell: {slice(tomato,N)})
-onion               wt:1  liftable sliceable  (use knife at same cell: {slice(onion,N)})
-potato              wt:1  liftable sliceable  (use knife at same cell: {slice(potato,N)})
-bell_pepper         wt:1  liftable sliceable  (use knife at same cell: {slice(bell_pepper,N)})
-broccoli            wt:1  liftable sliceable  (use knife at same cell: {slice(broccoli,N)})
-box/wooden_box      wt:3  openable (isOpen:false)
-oven                wt:25 openable switchable heatable 2×2 footprint
-stove               wt:20 switchable heatable 2×1 footprint
-sink                wt:30 fillable drainable 2×1 footprint
-washing_machine     wt:40 openable switchable (door on +z — rotate -x90 to open from above)
+carrot/cucumber/tomato/onion/potato/bell_pepper/broccoli  wt:1  liftable sliceable
+box/wooden_box      wt:3  openable
+oven                wt:25 openable switchable heatable 2×2 footprint — TOO HEAVY, drag only
+stove               wt:7  switchable heatable 2×1 footprint — drag to reposition
+sink                wt:30 fillable drainable 2×1 footprint — TOO HEAVY, drag only
+washing_machine     wt:8  openable switchable (rotate -x90 to open door; pickup/keep to move)
 
 ━━━ TASK PLAYBOOKS ━━━
 
 1. SWEEPING:
-Pre-check: {find(type=broom)} — if no broom on board, report and stop.
-           {find(dirty=true)} — identify which cells/objects need sweeping.
-Zone: if user specifies area, resolve to cell list. If not, full board A1–T11.
+Pre-check: {check_state(broom)} — confirm broom exists. If not, report and stop.
+  DO NOT use find(dirty=true) — dirty is a float and that query returns nothing.
+  Instead, sweep the full board regardless; sweep() reduces dirt on any objects at each cell.
 Step 1 — Sweep row by row, one call per row:
   {sweep(A1,B1,C1,D1,E1,F1,G1,H1,I1,J1,K1,L1,M1,N1,O1,P1,Q1,R1,S1,T1)}
   Repeat for rows 2–11.
-Step 2 — Second pass on any cell still showing dirty > 40%:
-  {check_state(OBJECT)} on objects in those cells, re-sweep if needed.
-Step 3 — Collect: {goto_coordinate = DUSTPAN_COL, DUSTPAN_ROW},
-  simulate collecting by moving gripper over dustpan.
-Step 4 — {check_state(broom)} — if dirty > 60%, {wash(broom)}.
+Step 2 — {check_state(broom)} — if dirty > 0.6, {wash(broom)}.
+Step 3 — Collect with dustpan if present:
+  {goto_coordinate = DUSTPAN_COL, DUSTPAN_ROW} — move gripper over dustpan.
 NEVER mop before sweeping is fully complete.
 
 2. MOPPING:
-Pre-check: {find(type=mop)} — if missing, report and stop.
-           {find(type=bucket)} — if missing, report and stop.
-           Sweeping MUST be complete before mopping begins.
+Pre-check: confirm mop and bucket exist via check_state.
+  Sweeping MUST be complete first.
 Step 1 — Prepare solution:
   {fill(bucket, 100)}
   {goto_coordinate = DISINFECTANT_COL, DISINFECTANT_ROW}, {pickup}
@@ -4439,209 +4389,165 @@ Step 1 — Prepare solution:
   {goto_coordinate = BUCKET_COL, BUCKET_ROW}, {pour_into(bucket)}
   {twist_cap(disinfectant, on)}, return disinfectant, {keep}
 Step 2 — {set_state(mop, wet, true)}
-Step 3 — Mop row by row:
-  {mop(A1,B1,C1,...,T1)} — one call per row, all 20 columns.
-  Repeat rows 2–11.
-Step 4 — Monitor bucket: {check_state(bucket)} every 3 rows.
-  If fillLevel < 20%: refill before continuing.
-Step 5 — Return mop. Empty bucket:
-  {goto_coordinate = SINK_COL, SINK_ROW}, {pour_into(sink)}, {fill(sink, 0)}.
-Step 6 — {check_state(mop)} — confirm dirty level reduced.
+Step 3 — Mop row by row, one call per row covering all 20 columns.
+  {check_state(bucket)} every 3 rows — if fillLevel < 0.2, refill.
+Step 4 — Return mop. Empty bucket:
+  {goto_coordinate = SINK_COL, SINK_ROW}, {pour_into(sink)}, {fill(sink, 0)}
 
 3. WASHING UTENSILS:
-Pre-check: {find(type=sink)} — must exist.
-           {find(dirty=true)} — list all dirty utensils.
-           Object priority order: pot/pan → plate/bowl → mug/glass → cutlery/spoon.
-Step 1 — Fill sink: {fill(sink, 100)}
+CRITICAL: wash() is the ONLY valid command for cleaning utensils.
+  apply_soap and apply_cloth do NOT reset dirty to 0 on objects — never use them for utensils.
+Pre-check: confirm sink exists via {check_state(sink)}.
+  Utensils start with dirty:0. Mark them dirty first:
+  {set_state(plate, dirty, 0.8)}, {set_state(mug, dirty, 0.7)}, etc. for each utensil to wash.
+Step 1 — {fill(sink, 100)}
 Step 2 — Add soap:
   {goto_coordinate = SOAP_COL, SOAP_ROW}, {pickup}
   {twist_cap(soap_bottle, off)}
   {goto_coordinate = SINK_COL, SINK_ROW}, {pour_into(sink)}
-  {twist_cap(soap_bottle, on)}, return soap bottle, {keep}
-Step 3 — For each dirty utensil (largest first):
+  {twist_cap(soap_bottle, on)}, return soap, {keep}
+Step 3 — For each utensil (largest first: pot → pan → plate → bowl → mug → glass → spoon):
   {goto_coordinate = UTENSIL_COL, UTENSIL_ROW}, {pickup}
   {goto_coordinate = SINK_COL, SINK_ROW}, {keep}
   {wash(UTENSIL_NAME)}
   {goto_coordinate = DRYING_COL, DRYING_ROW}, {pickup}, {keep}
-Step 4 — Repeat Step 3 for all dirty utensils.
-Step 5 — {fill(sink, 0)} — drain sink.
-Step 6 — {check_state(plate)}, {check_state(mug)} etc. — confirm dirty:0.
-NEVER use apply_soap/apply_cloth for utensils — use wash() which properly resets dirty state.
+Step 4 — {fill(sink, 0)} — drain.
+Step 5 — {check_state(plate)}, {check_state(mug)} — confirm dirty:0.
 
 4. COOKING:
-Pre-check: {find(type=stove)} or {find(type=oven)} — identify heat source.
-           {find(type=pot)} or {find(type=pan)} — identify cookware.
-           {find(type=ingredient_jar)} or {find(type=vegetable_basket)}.
-PREP (always before heat):
-  {goto_coordinate = KNIFE_COL, KNIFE_ROW}, {pickup}
-  {goto_coordinate = CUTTING_BOARD_COL, CUTTING_BOARD_ROW}, {keep}
-  {slice(vegetable_basket, 4)}
-  {twist_cap(ingredient_jar, off)}, measure spices ready to add.
+Pre-check: confirm stove or oven, pot or pan, and ingredients exist.
 HEAT:
-  {turn_on(stove)}, {wait_for(3)}, {check_state(stove)} — confirm temp:hot.
+  {turn_on(stove)}, {wait_for(4)}, {check_state(stove)} — confirm temperature:hot.
 COOK:
   {goto_coordinate = POT_COL, POT_ROW}, {pickup}
   {goto_coordinate = STOVE_COL, STOVE_ROW}, {keep}
   {fill(pot, 60)}
-  {goto_coordinate = VEGETABLE1_COL, VEGETABLE1_ROW}, {pickup}
-  {goto_coordinate = STOVE_COL, STOVE_ROW}, {place_into(pot)}
-  {goto_coordinate = VEGETABLE2_COL, VEGETABLE2_ROW}, {pickup}
-  {goto_coordinate = STOVE_COL, STOVE_ROW}, {place_into(pot)}
-  {twist_cap(ingredient_jar, off)}
-  {goto_coordinate = JAR_COL, JAR_ROW}, {pickup}
-  {goto_coordinate = STOVE_COL, STOVE_ROW}, {pour_into(pot)}
-  {twist_cap(ingredient_jar, on)}, return jar, {keep}
-  {set_state(pot, contents, cooking)}, {wait_for(8)}
-  {set_state(pot, contents, ready)}
-PLATE:
-  {set_state(pot, contents, ready)}         ← AUTO-EJECTS all solid items (vegetables etc.) from inside the pot to surrounding
-                                               cells automatically — no manual pickup loop needed; items marked cooked:true
+  For each vegetable:
+    {goto_coordinate = VEG_COL, VEG_ROW}, {pickup}
+    {goto_coordinate = STOVE_COL, STOVE_ROW}, {place_into(pot)}
+  For ingredient jar:
+    {twist_cap(ingredient_jar, off)}
+    {goto_coordinate = JAR_COL, JAR_ROW}, {pickup}
+    {goto_coordinate = STOVE_COL, STOVE_ROW}, {pour_into(pot)}
+    {twist_cap(ingredient_jar, on)}, return jar, {keep}
+  {set_state(pot, contents, cooking)}, {wait_for(8)}, {set_state(pot, contents, ready)}
+PLATE (manual — there is NO auto-eject):
   {goto_coordinate = PLATE_COL, PLATE_ROW}, {pickup}
-  {goto_coordinate = STOVE_COL, STOVE_ROW}, {pour_into(plate)}   ← for liquid/sauce only
-  Move plated food to serving area.
+  {goto_coordinate = STOVE_COL, STOVE_ROW}, {keep}   ← plate now at stove cell
+  For each item inside pot (retrieve one at a time):
+    {goto_coordinate = POT_COL, POT_ROW}, {pickup}   ← picks up pot or contents
+    (if pot comes up: {goto_coordinate = TEMP_COL, TEMP_ROW}, {keep}, then pickup contents)
+    {goto_coordinate = PLATE_COL, PLATE_ROW}, {keep}
+  For liquid: {pickup} pot → {goto_coordinate = PLATE_COL, PLATE_ROW} → {pour}
 SHUTDOWN:
-  {turn_off(stove)} — MANDATORY before Task_Completed.
-  Return pot to storage. Return knife to rack.
-
+  {turn_off(stove)} — MANDATORY.
+  Return pot. Return knife to A11.
 
 5. WASHING CLOTHES:
-Pre-check: {find(dirty=true)} filtered to foldable+ironable objects only.
-           If nothing dirty → report "all clothes already clean", skip.
-           {find(type=detergent)} — if missing, report ⚠️ NEEDS: detergent.
-MACHINE WASH SEQUENCE (exact order, never deviate):
-  1. {rotate_object(washing_machine, -x90)} ← door tilts upward
+Pre-check: Use {check_state()} on each garment individually to read dirty level.
+  DO NOT use find(dirty=true) — returns nothing. Check each object by name.
+  If nothing has dirty > 0 and wrinkled:true → report all clean, skip.
+  Confirm detergent exists via {check_state(detergent)}.
+MACHINE WASH SEQUENCE:
+  1. {rotate_object(washing_machine, -x90)}
   2. {open(washing_machine)}
-  3. For each dirty garment (shirt/pants/clothes_pile/towel) not anything apart from garments:
+  3. For each dirty garment (clothes_pile/shirt/pants/towel):
      {goto_coordinate = GARMENT_COL, GARMENT_ROW}, {pickup}
      {goto_coordinate = MACHINE_COL, MACHINE_ROW}, {keep}
   4. {goto_coordinate = DETERGENT_COL, DETERGENT_ROW}, {pickup}
      {goto_coordinate = MACHINE_COL, MACHINE_ROW}, {pour_into(washing_machine)}
      {goto_coordinate = DETERGENT_COL, DETERGENT_ROW}, {keep}
   5. {close(washing_machine)}
-  6. {rotate_object(washing_machine, +x90)} ← MUST restore upright before cycle
-  7. {run_cycle(washing_machine)} ← wait for cycle to complete fully
-  8. {rotate_object(washing_machine, -x90)}, {open(washing_machine)}
-  10. {close(washing_machine)}, {rotate_object(washing_machine, +x90)}
-  11. {check_state(washing_machine)} — confirm door closed, upright.
+  6. {rotate_object(washing_machine, +x90)}
+  7. {run_cycle(washing_machine)}
+  8. AFTER CYCLE — manually update shirt/pants state (clothes_pile and towel update automatically):
+     For each shirt on board: {set_state(shirt, dirty, 0)}, {set_state(shirt, wrinkled, true)}
+     For each pants on board: {set_state(pants, dirty, 0)}, {set_state(pants, wrinkled, true)}
+     Use the actual object names e.g. shirt_1, shirt_2 if multiple exist.
+  9. {rotate_object(washing_machine, -x90)}, {open(washing_machine)}
+  10. Unload each garment:
+     {goto_coordinate = MACHINE_COL, MACHINE_ROW}, {pickup}
+     {goto_coordinate = LAUNDRY_COL, LAUNDRY_ROW}, {keep}
+     Repeat for each garment loaded.
+  11. {close(washing_machine)}, {rotate_object(washing_machine, +x90)}
+  12. {check_state(washing_machine)} — confirm closed and upright.
 
 6. IRONING & FOLDING:
-Pre-check: {find(wrinkled=true)} — only process wrinkled items.
-           {find(dirty=true)} on same objects — if still dirty, wash first.
-           {find(type=iron)} — must exist on board.
+Pre-check: use {check_state(GARMENT_NAME)} on each garment — look for wrinkled:true.
+  DO NOT use find(wrinkled=true) as a shortcut if garments aren't named yet — use check_state per item.
+  If still dirty: wash first before ironing.
+  Confirm iron exists: {check_state(iron)}.
 SETUP:
-  Position ironing_board on a clear cell.
   {turn_on(iron)}, {wait_for(4)}
-  {check_state(iron)} — MUST confirm temperature:hot before proceeding.
-  If not hot: {wait_for(3)}, {check_state(iron)} again.
-PER GARMENT (one at a time):
+  {check_state(iron)} — MUST show temperature:hot before proceeding.
+  If still preheating: {wait_for(3)}, {check_state(iron)} again. Do not proceed until hot.
+PER GARMENT:
   {goto_coordinate = GARMENT_COL, GARMENT_ROW}, {pickup}
   {goto_coordinate = BOARD_COL, BOARD_ROW}, {keep}
-  {iron(GARMENT_NAME)} ← sets wrinkled:false, ironed:true
-  {fold(GARMENT_NAME)} ← sets folded:true
+  {iron(GARMENT_NAME)}
+  {fold(GARMENT_NAME)}
   {goto_coordinate = BOARD_COL, BOARD_ROW}, {pickup}
   {goto_coordinate = STACK_COL, STACK_ROW}, {keep}
-  Repeat for all wrinkled garments.
 SHUTDOWN:
-  {turn_off(iron)} — MANDATORY, never skip.
-  {check_state(iron)} — confirm power:false before Task_Completed.
-NEVER fold before ironing. NEVER iron with cold iron. NEVER leave iron on.
+  {turn_off(iron)} — MANDATORY.
+  {check_state(iron)} — confirm power:false and temperature returning to room.
 
-7. BUYING VEGETABLES:
-Pre-check: {find(type=shopping_bag)} — if missing, report ⚠️ NEEDS: shopping_bag.
-           {check_state(vegetable_basket)} — if filled:true, skip and report
-           "vegetable_basket already stocked".
-SEQUENCE:
-  Step 1 — {goto_coordinate = BAG_COL, BAG_ROW}, {pickup}
-  Step 2 — Simulate market trip:
-    {goto_coordinate = T, 11}, {keep}
-    {open(shopping_bag)}
-    {set_state(shopping_bag, contents, fresh_vegetables)}
-    {set_state(shopping_bag, filled, true)}
-  Step 3 — Return:
-    {goto_coordinate = T, 11}, {pickup}
-    {goto_coordinate = UNPACK_COL, UNPACK_ROW}, {keep}
-  Step 4 — Unpack:
-    {goto_coordinate = BAG_COL, BAG_ROW}, {pickup}
-    {goto_coordinate = BASKET_COL, BASKET_ROW}, {place_into(vegetable_basket)}
-    {set_state(vegetable_basket, filled, true)}
-  Step 5 — {close(shopping_bag)}, return bag to storage.
-  Step 6 — {check_state(vegetable_basket)} — confirm filled:true.
-After buying → vegetables ready for COOKING task.
+7. CUTTING VEGETABLES:
+  {goto_coordinate = KNIFE_COL, KNIFE_ROW}, {pickup}
+  For each vegetable:
+    {goto_coordinate = VEG_COL, VEG_ROW}, {keep}   ← knife now at veg cell
+    {slice(VEGETABLE_NAME, 4)}
+    {pickup}   ← pick knife back up
+  After all vegetables sliced:
+    {goto_coordinate = A, 11}, {keep}   ← return knife to A11
 
 8. BATHROOM CLEANING:
-Pre-check: {find(type=toilet_brush)} — if missing, report ⚠️ NEEDS: toilet_brush.
-           {find(type=scrub_brush)} — if missing, report ⚠️ NEEDS: scrub_brush.
-           {find(type=disinfectant)} — check fillLevel > 0.
-           {find(type=bucket)} — needed for mopping solution.
-SEQUENCE (strict order):
-  Step 1 — Prepare solution:
-    {fill(bucket, 100)}
-    {goto_coordinate = DISINFECTANT_COL, DISINFECTANT_ROW}, {pickup}
-    {twist_cap(disinfectant, off)}
-    {goto_coordinate = BUCKET_COL, BUCKET_ROW}, {pour_into(bucket)}
-    {twist_cap(disinfectant, on)}, return disinfectant, {keep}
-  Step 2 — Toilet scrub (2 passes minimum):
-    {scrub(TOILET_COORD)}
-    {scrub(TOILET_COORD)}
-  Step 3 — Sink area:
-    {scrub(SINK_COORD)}
-  Step 4 — Tiles and floor:
-    {Apply_soap(FLOOR_CELLS)}
-    {scrub(FLOOR_CELLS)}
-    {mop(FLOOR_CELLS)}
-  Step 5 — Clean tools:
-    {wash(toilet_brush)}, {wash(scrub_brush)}
-    {check_state(toilet_brush)}, {check_state(scrub_brush)} — confirm dirty:0
-  Step 6 — Dispose dirty water:
-    {goto_coordinate = SINK_COL, SINK_ROW}, {pour_into(sink)}, {fill(sink, 0)}
-NEVER skip tool cleaning — dirty tools spread contamination.
+Pre-check: confirm toilet_brush, scrub_brush, disinfectant via check_state.
+Step 1 — Prepare solution:
+  {fill(bucket, 100)}
+  {goto_coordinate = DISINFECTANT_COL, DISINFECTANT_ROW}, {pickup}
+  {twist_cap(disinfectant, off)}
+  {goto_coordinate = BUCKET_COL, BUCKET_ROW}, {pour_into(bucket)}
+  {twist_cap(disinfectant, on)}, return, {keep}
+Step 2 — Toilet: {scrub(TOILET_COORD)}, {scrub(TOILET_COORD)}
+Step 3 — Sink: {scrub(SINK_COORD)}
+Step 4 — Floor tiles:
+  {Apply_soap(FLOOR_CELLS)}, {scrub(FLOOR_CELLS)}, {mop(FLOOR_CELLS)}
+Step 5 — Clean tools:
+  {wash(toilet_brush)}, {wash(scrub_brush)}
+  {check_state(toilet_brush)}, {check_state(scrub_brush)} — confirm dirty:0
+Step 6 — {pour_into(sink)}, {fill(sink, 0)} — drain dirty water.
 
 9. DUSTING:
-Pre-check: {find(type=duster)} — if missing, report ⚠️ NEEDS: duster.
-           {find(dirty=true)} — identify objects/surfaces needing dusting.
-SEQUENCE (always high-to-low — dust falls downward):
-  Step 1 — Large/heavy objects first (oven, stove, sink, washing_machine):
-    {Apply_cloth(OBJ_COORD)}
-    If dirty > 60%: second pass immediately.
-  Step 2 — Medium objects (boxes, baskets):
-    {Apply_cloth(OBJ_COORD)}
-  Step 3 — Small objects (plates, mugs, bottles, jars):
-    {Apply_cloth(OBJ_COORD)}
-  Step 4 — Open surfaces and empty cells:
-    {Apply_cloth(A1,B1,...)} for each surface row.
-  Step 5 — {check_state(duster)} — if dirty > 50%:
-    {wash(duster)}, {check_state(duster)} confirm clean.
-  Step 6 — Follow with sweep pass to catch fallen dust:
-    {sweep(ALL_CELLS)}
-FULL CLEAN ORDER: dust → sweep → mop. Never break this sequence.
+Pre-check: confirm duster exists via check_state. DO NOT use find(dirty=true).
+  Dust all objects regardless — apply_cloth handles them all.
+SEQUENCE (high to low — dust falls down):
+  Step 1 — Heavy appliances: {Apply_cloth(STOVE_COORD)}, {Apply_cloth(OVEN_COORD)}, etc.
+  Step 2 — Medium objects: boxes, baskets.
+  Step 3 — Small objects: plates, mugs, bottles.
+  Step 4 — Open surfaces row by row: {Apply_cloth(A1,B1,...,T1)} per row.
+  Step 5 — {check_state(duster)} — if dirty > 0.5: {wash(duster)}.
+  Step 6 — Follow-up sweep: {sweep(ALL_CELLS)} to catch fallen dust.
+Order: dust → sweep → mop. Never break this sequence.
 
 10. TIDYING:
-Pre-check: Read full board state — note every object's current position.
-           {find(type=all)} to get complete inventory.
-ZONE MAP (always organize into these zones):
+ZONE MAP:
   A1–D4:  Cleaning tools (broom, mop, bucket, brushes, disinfectant)
   E1–H4:  Dining (plates, bowls, mugs, glasses, cutlery, napkins)
   I1–L4:  Kitchen (stove, pot, pan, ingredient jars, cutting_board, knife)
-  M1–P4:  Laundry (washing_machine, basket, clothes, iron, ironing_board)
+  M1–P4:  Laundry (washing_machine, clothes, iron, ironing_board)
   Q1–T4:  Pantry (bottles, boxes, vegetable_basket, shopping_bag)
-  A5–T11: Clear working area — nothing stored here permanently.
+  A5–T11: Clear working area.
 SEQUENCE:
-  Step 1 — Heavy appliances first (drag, never pickup):
-    {drag_from_coordinate(FROM)_to_coordinate(TO)} for stove, sink,
-    washing_machine, oven to correct zones.
-  Step 2 — Medium objects (ironing_board, bucket):
-    {pickup} → {goto_coordinate = TARGET} → {keep}
-  Step 3 — Light objects in bulk, nearest-first:
-    Same-category items placed adjacent to each other.
-  Step 4 — Wipe all surfaces:
-    {Apply_cloth(ALL_SURFACE_CELLS)}
-  Step 5 — Final verification:
-    {check_state()} on 3–4 key objects to confirm positions.
-    Confirm working area A5–T11 is clear.
-GROUPING RULE: same category items must TOUCH each other.
-  All bottles adjacent. All mugs adjacent. Never mix categories.
-`;
+  Step 1 — Heavy appliances via drag (never pickup for oven/sink):
+    {drag_from_coordinate(FROM_COL, FROM_ROW)_to_coordinate(TO_COL, TO_ROW)}
+  Step 2 — Medium objects via pickup/keep.
+  Step 3 — Light objects, nearest-first, same-category adjacent.
+  Step 4 — {Apply_cloth(ALL_SURFACE_CELLS)}
+  Step 5 — {check_state()} on 3–4 key objects to confirm positions.
+GROUPING RULE: same-category items must touch each other. Never mix categories.`;
 
+        const SYSTEM_PROMPT = PLANNING_PROMPT;
 
 
         function copyFullPrompt() {
@@ -4681,10 +4587,10 @@ K5D ROBOT — FULL PROMPT EXPORT
 Exported: ${new Date().toLocaleString()}
 ════════════════════════════════════════
 
-━━━ SYSTEM PROMPT (EXECUTION) ━━━
+━━━ SYSTEM PROMPT (DIRECT EXECUTION) ━━━
 ${SYSTEM_PROMPT}
 
-━━━ PLANNING PROMPT ━━━
+━━━ PLANNING_PROMPT (same) ━━━
 ${PLANNING_PROMPT}
 
 ━━━ CURRENT BOARD STATE ━━━
@@ -4733,42 +4639,53 @@ Then send this as the user message:
             input.disabled = locked;
             btn.disabled = locked;
         }
-        function showPlanApproval(planText, meta) {
-            document.getElementById('plan-text').textContent = planText;
-            document.getElementById('plan-approval').classList.remove('hidden');
+
+        function hasPlatePresent() {
+            for (const o of objects) {
+                const nm = (objectNames.get(o) || objectTypes.get(o) || '').toLowerCase();
+                if (nm.includes('plate')) return true;
+            }
+            return false;
         }
-        function hidePlanApproval() {
-            document.getElementById('plan-approval').classList.add('hidden');
+        function isCookingPrompt(text) {
+            if (!text) return false;
+            const t = text.toLowerCase();
+            return t.includes('cook a meal') || t.includes('🍳 cooking') || t.startsWith('cook ');
         }
 
-        window.approvePlan = async function() {
-            if (!pendingPlan) return;
-            hidePlanApproval();
+        async function runDirectExecution(userText, isAutoFollowup = false) {
             setInputLocked(true);
             executionActive = true;
-            appendMessage('assistant', '✅ Plan approved — generating commands...');
+            document.getElementById('ai-status-dot').className = 'ml-auto w-2 h-2 bg-yellow-400 rounded-full animate-pulse';
+            if (!isAutoFollowup) {
+                appendMessage('user', userText);
+            } else {
+                appendMessage('assistant', `➡️ Auto-followup: ${userText}`);
+            }
             appendThinking();
-            document.getElementById('ai-status-dot').className = 'ml-auto w-2 h-2 bg-blue-400 rounded-full animate-pulse';
-            try {
-                // Refresh board state at execution time (not stale planning-time snapshot)
-                const currentBoardState = getBoardContext();
-                const execPrompt = `Approved plan to execute:
-${pendingPlan}
+            pendingUserText = userText;
+            pendingBoardState = getBoardContext();
+            const memCtx = buildMemoryContext();
 
-Current board state: ${currentBoardState}
+            const userContent = `Task: "${userText}"
+
+Current board state: ${pendingBoardState}${memCtx}
 
 OUTPUT FORMAT: respond with ONLY a list of K5D commands, one per line, each wrapped in curly braces like {goto_coordinate = A, 1} or {pickup}. No explanation text, no markdown, no phase headers — just the raw commands in order. End with {Task_Completed}.`;
-                const execHistory = [...chatHistory, { role: 'user', content: execPrompt }];
+            const historyForCall = [...chatHistory, { role: 'user', content: userContent }];
+
+            try {
                 const res = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ system: SYSTEM_PROMPT + buildMemoryContext(), messages: execHistory, max_tokens: 4000 })
+                    body: JSON.stringify({ system: SYSTEM_PROMPT + buildMemoryContext(), messages: historyForCall, max_tokens: 4000 })
                 });
                 const data = await res.json();
                 const reply = data.reply || data.error || '';
-                chatHistory.push({ role: 'user', content: execPrompt });
+                chatHistory.push({ role: 'user', content: userContent });
                 chatHistory.push({ role: 'assistant', content: reply });
                 document.getElementById('thinking-bubble')?.remove();
+
                 function extractCommands(text) {
                     const commands = [...text.matchAll(/\{([^}]+)\}/g)].map(m => m[1].trim());
                     if (commands.length > 0) return commands;
@@ -4786,40 +4703,24 @@ OUTPUT FORMAT: respond with ONLY a list of K5D commands, one per line, each wrap
                     </div>`);
                     setStatus(`<span class="w-2 h-2 bg-blue-400 rounded-full inline-block animate-pulse"></span>&nbsp;Executing...`);
                     await executeCommands(commands);
-                    rememberTask(pendingUserText, pendingPlan, commands.length, true);
+                    rememberTask(userText, userText, commands.length, true);
+
+                    // Special cooking followup (only for the initial cooking prompt, not the followup itself)
+                    if (!isAutoFollowup && isCookingPrompt(userText) && hasPlatePresent()) {
+                        appendMessage('assistant', '🍳 Cooking sequence finished. Plate detected — auto-prompting next step.');
+                        await runDirectExecution("Keep all the COOKED vegitables on the plate", true);
+                    }
                 }
             } catch(e) {
                 document.getElementById('thinking-bubble')?.remove();
-                appendMessage('assistant', '❌ Command generation error: ' + e.message);
-                rememberTask(pendingUserText, pendingPlan, 0, false);
+                appendMessage('assistant', '❌ Execution error: ' + e.message);
+                rememberTask(userText, userText, 0, false);
             }
-            pendingPlan = null;
             executionActive = false;
             setInputLocked(false);
             document.getElementById('chat-input').focus();
             document.getElementById('ai-status-dot').className = 'ml-auto w-2 h-2 bg-emerald-400 rounded-full';
-        };
-
-        window.editPlan = function() {
-            hidePlanApproval();
-            const input = document.getElementById('chat-input');
-            input.value = pendingUserText;
-            input.disabled = false;
-            document.getElementById('chat-send-btn').disabled = false;
-            input.focus();
-            appendMessage('assistant', '✏️ Plan discarded — edit your request below and resend.');
-            pendingPlan = null;
-            executionActive = false;
-        };
-
-        window.rejectPlan = function() {
-            hidePlanApproval();
-            appendMessage('assistant', '✖ Plan cancelled.');
-            rememberTask(pendingUserText, pendingPlan || '', 0, false);
-            pendingPlan = null;
-            executionActive = false;
-            setInputLocked(false);
-        };
+        }
 
         window.sendTask = async function() {
             const input = document.getElementById('chat-input');
@@ -4839,55 +4740,8 @@ OUTPUT FORMAT: respond with ONLY a list of K5D commands, one per line, each wrap
                 input.value = ''; clearMemory(); return;
             }
             input.value = '';
-            setInputLocked(true);
-            executionActive = true;
-            document.getElementById('ai-status-dot').className = 'ml-auto w-2 h-2 bg-yellow-400 rounded-full animate-pulse';
-            appendMessage('user', text);
-            appendThinking();
-            pendingUserText = text;
-            pendingBoardState = getBoardContext();
-            const memCtx = buildMemoryContext();
-
-            // ── PHASE 1: Planning ────────────────────────────────────────────
-            try {
-                const planUserContent = `Task: "${text}"\n\nCurrent board state: ${pendingBoardState}${memCtx}`;
-                const planHistory = [{ role: 'user', content: planUserContent }];
-                const res = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ system: PLANNING_PROMPT, messages: planHistory, max_tokens: 600 })
-                });
-                const data = await res.json();
-                const planReply = (data.reply || data.error || '').trim();
-                document.getElementById('thinking-bubble')?.remove();
-
-                // Extract just the plan text (strip "PLAN:" header if present)
-                const cleanPlan = planReply.replace(/^PLAN:\s*/i, '').trim();
-                pendingPlan = cleanPlan;
-
-                appendMessage('assistant', `<div class="bg-zinc-700/50 border border-blue-500/30 rounded-lg p-3">
-                    <div class="text-xs font-bold text-blue-300 mb-2">📋 PLAN</div>
-                    <pre class="text-xs text-zinc-200 whitespace-pre-wrap leading-relaxed">${cleanPlan}</pre>
-                </div>`);
-
-                showPlanApproval(cleanPlan, '');
-                chatHistory.push({ role: 'user', content: planUserContent });
-                chatHistory.push({ role: 'assistant', content: planReply });
-
-                // Unlock input so user can type while reviewing (but send btn stays
-                // pointing to the approval flow, not a new task)
-                document.getElementById('chat-input').disabled = false;
-                document.getElementById('ai-status-dot').className = 'ml-auto w-2 h-2 bg-yellow-400 rounded-full';
-                // Leave executionActive = true so sendTask won't fire again during review
-
-            } catch(e) {
-                document.getElementById('thinking-bubble')?.remove();
-                appendMessage('assistant', '❌ Planning error: ' + e.message);
-                pendingPlan = null;
-                executionActive = false;
-                setInputLocked(false);
-                document.getElementById('ai-status-dot').className = 'ml-auto w-2 h-2 bg-zinc-600 rounded-full';
-            }
+            // Directly run execution command plan (no high-level plan / approval)
+            await runDirectExecution(text, false);
         };
 
         // ── Quick Task Popup ─────────────────────────────────────────────────
@@ -5029,7 +4883,7 @@ class Handler(BaseHTTPRequestHandler):
                 "model": "gpt-4o",
                 "messages": oai_messages,
                 "max_tokens": max_tokens,
-                "temperature": 0
+                "temperature": 0.7
             }).encode("utf-8")
             req = urllib.request.Request(
                 "https://api.openai.com/v1/chat/completions",
@@ -5062,8 +4916,10 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         pass
 
+port = 8080
+
 if __name__ == "__main__":
-    server = HTTPServer(("0.0.0.0", 8080), Handler)
-    print("K5D Simulator → http://localhost:8080")
-    webbrowser.open("http://localhost:8080")
+    server = HTTPServer(("0.0.0.0", port), Handler)
+    print(f"K5D Simulator → http://localhost:{port}")
+    webbrowser.open(f"http://localhost:{port}")
     server.serve_forever()

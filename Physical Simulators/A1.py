@@ -32,9 +32,7 @@ from PySide6.QtGui   import (QImage, QPixmap, QFont, QColor, QPalette,
 
 # ─────────────────────────────────────────────────────────────────────────────
 OPENAI_API_KEY = (
-    "sk-proj-vFVeJD0s4A4mfZGLCBUDPCOaQcNj7vQLPcNvHvhQXuWfFoR6OiW1X5gf9jyX"
-    "yyJet33N-dsL_QT3BlbkFJ_hbcfH-O03UxhkANXi4VPepseIX2SkNSYQyX3sGZAn7vax"
-    "8HYBseymYc-ExEV_nnNk0ZiCgXsA"
+    "OPENAI API"
 )
 
 COLS         = 20

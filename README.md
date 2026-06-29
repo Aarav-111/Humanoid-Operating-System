@@ -72,15 +72,24 @@ The launch of K3D made the robot look like a robot for the first time as the rob
 - K3.5D *launched*
 the K3.5D is a remarkable upgrade with many more task capibilities and ability to plan longer tasks.
 
-- K5D *Under testing*
-The k5D simulator boosts task capability letting the robot do super complex tasks like cooking and lets it do pretty much every task possible. it also adds a plan & approve feature with memory for the user to correct the AI if needed and the AI learning. This simulator surpasses each and every general purpose robotic arm on planet earth! it can simple but also very complex perform tasks like sweeping the floor, mopping, washing dishes, dusting, cooking, cutting veggies, shopping, tidying, Ironing clothes, folding clothes, washing clothes, handling complex machines like washing machine and much more! this simulator is also truely 3D which means this can re-orient itself to approach an object from the side as well!
+- K5D *Launched*
+The k5D simulator is our last simulator. It boosts task capability letting the robot do super complex tasks like cooking and lets it do pretty much every task possible. it also adds a plan & approve feature with memory for the user to correct the AI if needed and the AI learning. This simulator surpasses each and every general purpose robotic arm on planet earth! it can simple but also very complex perform tasks like sweeping the floor, mopping, washing dishes, dusting, cooking, cutting veggies, shopping, tidying, Ironing clothes, folding clothes, washing clothes, handling complex machines like washing machine and much more! this simulator is also truely 3D which means this can re-orient itself to approach an object from the side as well!
 
-- K6D *not started*
-The K6D will be our last simulator which will be also able to do dextorous tasks and stacking tasks, also will have an AI to tell each feature of the object rather than just objects themselves making this more comprehensive. alongside this, the robot will upgrade to a 6 axis robot able to do very precison tasks as well.
+## **Physical Simulators**
+Before building the Actual Prototype, we build Physical Simulators which openup a live picture, plan coordinates but an **augmented** arm does the task actions. this helps us understand the problems before-hand itself and correct it.
+
+The Hardware_connector is now integrated into the Physical Simulator so there is no need for external extensions!
+
+**Versions of Physical Simulators**
+- A1 *under testing*
+
+The A1 simulator is our first Physical Simulator which is 2D.
+
+- A2 *not started*
+
+The A2 simulator is a proper 3D task planner as owerfulas the K5D virtual simulator but A2 simulator is physical.
 
 ## **Upcoming Versions of physical robots**
-
-
 
 ---
 

@@ -32,7 +32,7 @@ from PySide6.QtGui   import (QImage, QPixmap, QFont, QColor, QPalette,
 
 # ─────────────────────────────────────────────────────────────────────────────
 OPENAI_API_KEY = (
-    "OPENAI API"
+    "ADD YOUR OPENAI API KEY"
 )
 
 COLS         = 20
@@ -77,11 +77,11 @@ CMD_STATES = {
 # ─────────────────────────────────────────────────────────────────────────────
 VISION_PROMPT = (
     """
-# Industrial Robot Vision Prompt
-
 You are the computer vision system for an industrial Cartesian pick-and-place robot.
 
 The camera image is divided into a 20-column (A-T) by 11-row (1-11) reference grid.
+
+You Job is to detect and report every distinct physical object with the below rules and output EXACT CORRECT COORDINATES (DOUBLE CHECK IF NEEDED).
 
 ## PRIMARY RULE — DETECT EVERYTHING ON THE BOARD
 
@@ -142,17 +142,7 @@ Do not guess.
 
 For every detected object output exactly one line in this format:
 
-OBJECT: <snake_case_name>  CENTER: <ColRow>  TOUCHES: <ColRow,ColRow,...>  COLOR: <primary_colour>  SIZE: <small|medium|large>  DESC: <one sentence describing the object's appearance and any notable features>  ALSO_KNOWN_AS: <comma-separated list of 2-4 alternative names or common synonyms for this object>
-
-Where:
-
-* OBJECT is the complete object name in snake_case.
-* CENTER is the single grid cell that is closest to the centre of the object. This is the cell the robot will move to when picking up the object.
-* TOUCHES is a comma-separated list of ALL grid cells that the object physically overlaps or rests upon — including the centre cell. List every cell the object's footprint covers, even partially. If the object fits entirely within one cell, list only that one cell.
-* COLOR is the dominant visible colour.
-* SIZE is the approximate size relative to the image.
-* DESC is a detailed description of the object — minimum 50 words. Cover: overall shape and form, material and texture, dominant and secondary colours, any visible text, logos, labels, markings or branding, surface condition (clean, worn, damaged, shiny, matte), notable features such as caps, nozzles, handles, buttons, wires, ports, or lids, approximate orientation (upright, lying flat, tilted), and anything else a robot operator would find useful to identify and interact with the object.
-* ALSO_KNOWN_AS is a comma-separated list of 2 to 4 alternative names, synonyms, or common terms for the same object (e.g. for "mug": cup, coffee cup, tumbler, drinking vessel).
+Also give perfect coordinates, STRICTLY NO WRONG COORDINATES, DOUBLE CHECK IF NEEDED.
 
 Examples:
 
@@ -506,25 +496,22 @@ def draw_grid(frame):
     overlay = frame.copy()
     col_w = w / COLS
     row_h = h / ROWS
-    font, fs, th = cv2.FONT_HERSHEY_SIMPLEX, 0.38, 1
+    font, fs, th = cv2.FONT_HERSHEY_SIMPLEX, 0.55, 1
     for i in range(COLS + 1):
         x = int(round(i * col_w))
         cv2.line(overlay, (x, 0), (x, h), GRID_COLOR, 1, cv2.LINE_AA)
-        if i < COLS:
-            tx = int(x + col_w / 2 - 5)
-            cv2.putText(overlay, COL_LABELS[i], (tx, 14),    font, fs, GRID_COLOR, th, cv2.LINE_AA)
-            cv2.putText(overlay, COL_LABELS[i], (tx, h - 4), font, fs, GRID_COLOR, th, cv2.LINE_AA)
     for j in range(ROWS + 1):
         y = int(round(j * row_h))
         cv2.line(overlay, (0, y), (w, y), GRID_COLOR, 1, cv2.LINE_AA)
-        if j < ROWS:
-            ty = int(y + row_h / 2 + 5)
-            cv2.putText(overlay, ROW_LABELS[j], (3,      ty), font, fs, GRID_COLOR, th, cv2.LINE_AA)
-            cv2.putText(overlay, ROW_LABELS[j], (w - 14, ty), font, fs, GRID_COLOR, th, cv2.LINE_AA)
+    # Per-cell coordinate labels in each cell's top-left corner
+    cell_fs, cell_th = 0.75, 2
+    for i in range(COLS):
+        for j in range(ROWS):
+            lbl = f'{COL_LABELS[i]}{ROW_LABELS[j]}'
+            cx = int(round(i * col_w)) + 2
+            cy = int(round(j * row_h)) + 11
+            cv2.putText(overlay, lbl, (cx, cy), font, cell_fs, GRID_COLOR, cell_th, cv2.LINE_AA)
     frame = cv2.addWeighted(overlay, ALPHA, frame, 1 - ALPHA, 0)
-    for label, pos in [("A1", (4, 18)), ("T1", (w-38, 18)),
-                        ("A11", (4, h-6)), ("T11", (w-44, h-6))]:
-        cv2.putText(frame, label, pos, font, 0.50, CORNER_COLOR, 1, cv2.LINE_AA)
     return frame
 
 
@@ -738,7 +725,7 @@ class GridOverlay(QWidget):
 
         RED         = QColor(255, 30, 30, 220)
         RED_BRIGHT  = QColor(255, 90, 90, 255)
-        font        = QFont('Segoe UI', 7, QFont.Bold)
+        font        = QFont('Segoe UI', 9, QFont.Bold)
         painter.setFont(font)
         fm          = painter.fontMetrics()
 
@@ -750,77 +737,66 @@ class GridOverlay(QWidget):
             y = round(gy + j * gh / ROWS)
             painter.drawLine(round(gx), y, round(gx + gw), y)
 
-        painter.setPen(RED)
         cw = gw / COLS
-        for i in range(COLS):
-            lbl = COL_LABELS[i]
-            tx  = round(gx + i * cw + cw / 2 - fm.horizontalAdvance(lbl) / 2)
-            painter.drawText(tx, round(gy + fm.ascent() + 2),        lbl)
-            painter.drawText(tx, round(gy + gh - fm.descent() - 2),  lbl)
-
         rh = gh / ROWS
-        for j in range(ROWS):
-            lbl = ROW_LABELS[j]
-            ty  = round(gy + j * rh + rh / 2 + fm.ascent() / 2)
-            painter.drawText(round(gx + 3),                                   ty, lbl)
-            painter.drawText(round(gx + gw - fm.horizontalAdvance(lbl) - 3), ty, lbl)
 
-        corner_font = QFont('Segoe UI', 8, QFont.Bold)
-        painter.setFont(corner_font)
-        cfm = painter.fontMetrics()
-        painter.setPen(RED_BRIGHT)
-        for lbl, cx, cy in [
-            ('A1',  gx + 3,                            gy + cfm.ascent() + 2),
-            ('T1',  gx + gw - cfm.horizontalAdvance('T1')  - 3, gy + cfm.ascent() + 2),
-            ('A11', gx + 3,                            gy + gh - cfm.descent() - 2),
-            ('T11', gx + gw - cfm.horizontalAdvance('T11') - 3, gy + gh - cfm.descent() - 2),
-        ]:
-            painter.drawText(round(cx), round(cy), lbl)
+        # Per-cell coordinate label in each cell's top-left corner
+        cell_font = QFont('Segoe UI', 13, QFont.Bold)
+        painter.setFont(cell_font)
+        cfm2 = painter.fontMetrics()
+        painter.setPen(QColor(255, 30, 30, 160))
+        for i in range(COLS):
+            for j in range(ROWS):
+                lbl = f'{COL_LABELS[i]}{ROW_LABELS[j]}'
+                cx  = round(gx + i * cw + 2)
+                cy  = round(gy + j * rh + cfm2.ascent() + 1)
+                painter.drawText(cx, cy, lbl)
+
 
     def _paint_highlight(self, painter: QPainter):
-        rect   = self._cell_rect(self._cur_col, self._cur_row)
-        px, py = self._to_px(self._cur_col, self._cur_row)
+        area   = self._grid_area()
+        # Compute pixel position by interpolating directly on the fractional col/row
+        px = area.x() + (self._cur_col + 0.5) * area.width()  / COLS
+        py = area.y() + (self._cur_row + 0.5) * area.height() / ROWS
+
+        cell_w = area.width()  / COLS
+        cell_h = area.height() / ROWS
+        r      = min(cell_w, cell_h) * 0.42   # slightly larger dot
+
         color  = self._dot_color
-        alpha_pulse = int(55 + 45 * math.sin(self._pulse))
+        pulse  = math.sin(self._pulse)
 
-        fill_c = QColor(color); fill_c.setAlpha(int(28 + 18 * math.sin(self._pulse)))
-        painter.setBrush(QBrush(fill_c)); painter.setPen(Qt.NoPen)
-        painter.drawRect(rect)
-
-        glow_r = max(rect.width(), rect.height()) * 0.85
+        # Outer glow ring
+        glow_r = r * (1.9 + 0.25 * pulse)
         grad   = QRadialGradient(px, py, glow_r)
-        glow_c = QColor(color); glow_c.setAlpha(int(55 + 35 * math.sin(self._pulse)))
-        grad.setColorAt(0.0, glow_c); grad.setColorAt(1.0, QColor(0, 0, 0, 0))
+        glow_c = QColor(color); glow_c.setAlpha(int(60 + 30 * pulse))
+        grad.setColorAt(0.0, glow_c)
+        grad.setColorAt(1.0, QColor(color.red(), color.green(), color.blue(), 0))
         painter.setBrush(QBrush(grad)); painter.setPen(Qt.NoPen)
-        painter.drawRect(rect)
+        painter.drawEllipse(QPointF(px, py), glow_r, glow_r)
 
-        border_c = QColor(color); border_c.setAlpha(alpha_pulse + 80)
-        painter.setPen(QPen(border_c, 1.5 + math.sin(self._pulse)))
-        painter.setBrush(Qt.NoBrush)
-        painter.drawRect(rect)
+        # Main filled dot
+        dot_c = QColor(color); dot_c.setAlpha(220)
+        painter.setBrush(QBrush(dot_c)); painter.setPen(Qt.NoPen)
+        painter.drawEllipse(QPointF(px, py), r, r)
 
-        acc_c = QColor(color); acc_c.setAlpha(200)
-        painter.setPen(QPen(acc_c, 2.0))
-        tick = min(rect.width(), rect.height()) * 0.22
-        for cx, cy, dx, dy in [
-            (rect.left(),  rect.top(),     1,  1),
-            (rect.right(), rect.top(),    -1,  1),
-            (rect.left(),  rect.bottom(),  1, -1),
-            (rect.right(), rect.bottom(), -1, -1),
-        ]:
-            painter.drawLine(QPointF(cx, cy), QPointF(cx + dx * tick, cy))
-            painter.drawLine(QPointF(cx, cy), QPointF(cx, cy + dy * tick))
+        # Bright centre highlight
+        hi_r = r * 0.38
+        hi_c = QColor(255, 255, 255, int(160 + 60 * pulse))
+        painter.setBrush(QBrush(hi_c)); painter.setPen(Qt.NoPen)
+        painter.drawEllipse(QPointF(px - r * 0.18, py - r * 0.18), hi_r, hi_r)
 
+        # Cell label just below the dot
         if self._cell_lbl:
             font = QFont('Segoe UI', 9, QFont.Bold)
             painter.setFont(font)
             fm = painter.fontMetrics()
             tw = fm.horizontalAdvance(self._cell_lbl)
             tx = px - tw / 2
-            ty = py + fm.ascent() / 2 - 1
-            painter.setPen(QColor(0, 0, 0, 160))
+            ty = py + r + fm.ascent() + 2
+            painter.setPen(QColor(0, 0, 0, 140))
             painter.drawText(QPointF(tx + 1, ty + 1), self._cell_lbl)
-            painter.setPen(QColor(255, 255, 255, 240))
+            painter.setPen(color)
             painter.drawText(QPointF(tx, ty), self._cell_lbl)
 
     def _draw_status_pill(self, painter: QPainter):
@@ -836,8 +812,8 @@ class GridOverlay(QWidget):
         by    = h - bar_h - 18.0
         rect  = QRectF(bx, by, bar_w, bar_h)
 
-        # Dark semi-transparent background
-        painter.setBrush(QBrush(QColor(10, 12, 18, 200)))
+        # Light semi-transparent background
+        painter.setBrush(QBrush(QColor(255, 255, 255, 220)))
         border_c = QColor(self._dot_color)
         border_c.setAlpha(200)
         painter.setPen(QPen(border_c, 1.5))
@@ -1152,7 +1128,7 @@ class VideoLabel(QLabel):
 def _divider():
     line = QFrame()
     line.setFrameShape(QFrame.HLine)
-    line.setStyleSheet("color:#2a2d36;")
+    line.setStyleSheet("color:#d0d4de;")
     return line
 
 
@@ -1172,7 +1148,7 @@ class AISidebar(QWidget):
         self._command_worker : CommandWorker | None = None
         self.setMinimumWidth(360)
         self.setMaximumWidth(460)
-        self.setStyleSheet("background:#16181f;")
+        self.setStyleSheet("background:#f0f2f7;")
         self._build_ui()
 
     def _build_ui(self):
@@ -1182,15 +1158,15 @@ class AISidebar(QWidget):
 
         # Header
         hdr = QWidget(); hdr.setFixedHeight(54)
-        hdr.setStyleSheet("background:#0d0f14;border-bottom:1px solid #2a2d36;")
+        hdr.setStyleSheet("background:#e8eaf0;border-bottom:1px solid #d0d4de;")
         hl = QHBoxLayout(hdr); hl.setContentsMargins(14, 0, 14, 0); hl.setSpacing(8)
         ico = QLabel("🤖"); ico.setFont(QFont("Segoe UI", 17))
         ttl = QLabel("ProLabs  ·  Vision K5D")
         ttl.setFont(QFont("Segoe UI Semibold", 11))
-        ttl.setStyleSheet("color:#e8e8e8;")
+        ttl.setStyleSheet("color:#1a1a2e;")
         sub = QLabel("GPT-4o")
         sub.setFont(QFont("Segoe UI", 9))
-        sub.setStyleSheet("color:#3b82f6;")
+        sub.setStyleSheet("color:#2563eb;")
         hl.addWidget(ico); hl.addWidget(ttl); hl.addWidget(sub); hl.addStretch()
         root.addWidget(hdr)
 
@@ -1200,8 +1176,8 @@ class AISidebar(QWidget):
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         scroll.setStyleSheet("""
             QScrollArea{border:none;background:transparent;}
-            QScrollBar:vertical{background:#1a1c24;width:5px;margin:0;}
-            QScrollBar::handle:vertical{background:#3a3d4a;border-radius:2px;}
+            QScrollBar:vertical{background:#e0e2ea;width:5px;margin:0;}
+            QScrollBar::handle:vertical{background:#b0b4c0;border-radius:2px;}
         """)
         body = QWidget(); body.setStyleSheet("background:transparent;")
         bl = QVBoxLayout(body); bl.setContentsMargins(12, 14, 12, 14); bl.setSpacing(10)
@@ -1219,7 +1195,7 @@ class AISidebar(QWidget):
                         font-family:'Segoe UI';font-weight:700;font-size:12px;border:none;}
             QPushButton:hover{background:#2a7fe0;}
             QPushButton:pressed{background:#1558b0;}
-            QPushButton:disabled{background:#252830;color:#444;}
+            QPushButton:disabled{background:#e2e8f0;color:#9ca3af;}
         """)
         self._capture_btn.clicked.connect(self._on_capture)
         bl.addWidget(self._capture_btn)
@@ -1238,8 +1214,8 @@ class AISidebar(QWidget):
         self._task_input.setFont(QFont("Segoe UI", 10))
         self._task_input.setFixedHeight(88)
         self._task_input.setStyleSheet("""
-            QPlainTextEdit{background:#1e2130;color:#e8e8e8;
-                           border:1px solid #2e3348;border-radius:10px;padding:8px;}
+            QPlainTextEdit{background:#ffffff;color:#1a1a2e;
+                           border:1px solid #d0d4de;border-radius:10px;padding:8px;}
             QPlainTextEdit:focus{border-color:#3b82f6;}
         """)
         bl.addWidget(self._task_input)
@@ -1254,7 +1230,7 @@ class AISidebar(QWidget):
                         font-family:'Segoe UI';font-weight:700;font-size:12px;border:none;}
             QPushButton:hover{background:#22c55e;color:#000;}
             QPushButton:pressed{background:#14532d;}
-            QPushButton:disabled{background:#252830;color:#444;}
+            QPushButton:disabled{background:#e2e8f0;color:#9ca3af;}
         """)
         self._run_btn.setEnabled(False)
         self._run_btn.clicked.connect(self._on_run)
@@ -1264,7 +1240,7 @@ class AISidebar(QWidget):
         self._stage_lbl = QLabel("")
         self._stage_lbl.setAlignment(Qt.AlignCenter)
         self._stage_lbl.setFont(QFont("Segoe UI", 9))
-        self._stage_lbl.setStyleSheet("color:#60a5fa;padding:2px 0;")
+        self._stage_lbl.setStyleSheet("color:#2563eb;padding:2px 0;")
         self._stage_lbl.setVisible(False)
         bl.addWidget(self._stage_lbl)
 
@@ -1277,10 +1253,10 @@ class AISidebar(QWidget):
         self._scene_box.setReadOnly(True)
         self._scene_box.setFixedHeight(320)
         self._scene_box.setStyleSheet("""
-            QTextEdit{background:#0d0f14;color:#94a3b8;
-                      border:1px solid #2a2d36;border-radius:8px;padding:6px;}
-            QScrollBar:vertical{background:#1a1c24;width:5px;margin:0;}
-            QScrollBar::handle:vertical{background:#3a3d4a;border-radius:2px;}
+            QTextEdit{background:#f8fafc;color:#374151;
+                      border:1px solid #d0d4de;border-radius:8px;padding:6px;}
+            QScrollBar:vertical{background:#e0e2ea;width:5px;margin:0;}
+            QScrollBar::handle:vertical{background:#b0b4c0;border-radius:2px;}
         """)
         self._scene_box.setPlaceholderText("Detected objects will appear here after analysis…")
         bl.addWidget(self._scene_box)
@@ -1295,16 +1271,16 @@ class AISidebar(QWidget):
         self._cmd_box.setFont(QFont("Consolas", 10))
         self._cmd_box.setFixedHeight(210)
         self._cmd_box.setStyleSheet("""
-            QPlainTextEdit{background:#060e06;color:#4ade80;
-                           border:1px solid #22543d;border-radius:8px;padding:5px;}
+            QPlainTextEdit{background:#f0fdf4;color:#166534;
+                           border:1px solid #86efac;border-radius:8px;padding:5px;}
         """)
         self._cmd_box.setPlaceholderText("Numbered command sequence will stream here…")
         bl.addWidget(self._cmd_box)
 
         # Copy / Clear row
         copy_row = QHBoxLayout(); copy_row.setSpacing(8)
-        copy_btn  = self._mini_btn("📋  Copy",  "#1a2a1a", "#4ade80", "#22543d")
-        clear_btn = self._mini_btn("🗑️  Clear", "#1e1010", "#ff0000", "#7f1d1d")
+        copy_btn  = self._mini_btn("📋  Copy",  "#f0fdf4", "#166534", "#86efac")
+        clear_btn = self._mini_btn("🗑️  Clear", "#fff1f2", "#dc2626", "#fca5a5")
         copy_btn.clicked.connect(
             lambda: QApplication.clipboard().setText(self._cmd_box.toPlainText()))
         clear_btn.clicked.connect(self._clear_all)
@@ -1324,12 +1300,12 @@ class AISidebar(QWidget):
         self._play_btn.setEnabled(False)
         self._play_btn.setCursor(Qt.PointingHandCursor)
         self._play_btn.setStyleSheet("""
-            QPushButton{background:#0f2a4a;color:#60a5fa;
-                        border:1px solid #1e40af;border-radius:9px;
+            QPushButton{background:#dbeafe;color:#1d4ed8;
+                        border:1px solid #93c5fd;border-radius:9px;
                         font-family:'Segoe UI';font-weight:700;font-size:11px;}
-            QPushButton:hover{background:#1e40af;color:#fff;}
+            QPushButton:hover{background:#2563eb;color:#fff;}
             QPushButton:pressed{background:#1e3a8a;}
-            QPushButton:disabled{background:#181a22;color:#444;border-color:#2a2d36;}
+            QPushButton:disabled{background:#f1f5f9;color:#9ca3af;border-color:#d0d4de;}
         """)
         self._play_btn.clicked.connect(self._on_play)
 
@@ -1339,12 +1315,12 @@ class AISidebar(QWidget):
         self._stop_btn.setEnabled(False)
         self._stop_btn.setCursor(Qt.PointingHandCursor)
         self._stop_btn.setStyleSheet("""
-            QPushButton{background:#2d0f0f;color:#f87171;
-                        border:1px solid #7f1d1d;border-radius:9px;
+            QPushButton{background:#fee2e2;color:#dc2626;
+                        border:1px solid #fca5a5;border-radius:9px;
                         font-family:'Segoe UI';font-weight:700;font-size:11px;}
-            QPushButton:hover{background:#7f1d1d;color:#fff;}
-            QPushButton:pressed{background:#450a0a;}
-            QPushButton:disabled{background:#181a22;color:#444;border-color:#2a2d36;}
+            QPushButton:hover{background:#dc2626;color:#fff;}
+            QPushButton:pressed{background:#7f1d1d;}
+            QPushButton:disabled{background:#f1f5f9;color:#9ca3af;border-color:#d0d4de;}
         """)
         self._stop_btn.clicked.connect(self._on_stop)
 
@@ -1356,7 +1332,7 @@ class AISidebar(QWidget):
         self._step_lbl = QLabel("")
         self._step_lbl.setAlignment(Qt.AlignCenter)
         self._step_lbl.setFont(QFont("Segoe UI", 8))
-        self._step_lbl.setStyleSheet("color:#4b5563;padding:2px 0;")
+        self._step_lbl.setStyleSheet("color:#6b7280;padding:2px 0;")
         bl.addWidget(self._step_lbl)
 
         # ── Colour legend ─────────────────────────────────────────────────────
@@ -1391,7 +1367,7 @@ class AISidebar(QWidget):
                 f"background:{hex_c};border-radius:5px;")
             txt = QLabel(label)
             txt.setFont(QFont("Consolas", 8))
-            txt.setStyleSheet("color:#52525b;")
+            txt.setStyleSheet("color:#4b5563;")
             row.addWidget(dot)
             row.addWidget(txt)
             row.addStretch()
@@ -1403,7 +1379,7 @@ class AISidebar(QWidget):
     def _sec(text):
         lbl = QLabel(text)
         lbl.setFont(QFont("Segoe UI", 8))
-        lbl.setStyleSheet("color:#52525b;letter-spacing:0.1em;")
+        lbl.setStyleSheet("color:#6b7280;letter-spacing:0.1em;")
         return lbl
 
     @staticmethod
@@ -1454,7 +1430,7 @@ class AISidebar(QWidget):
             return
         self._set_stage("🔍  Step 1/2  ·  GPT-4o Vision detecting objects…")
         self._scene_box.setHtml(
-            '<div style="color:#60a5fa;font-family:\'Segoe UI\';font-size:10px;padding:8px;">'
+            '<div style="color:#2563eb;font-family:\'Segoe UI\';font-size:10px;padding:8px;">'
             '🔍&nbsp;&nbsp;Detecting objects in the scene…</div>'
         )
         self._vision_worker = VisionWorker(bgr)
@@ -1465,7 +1441,7 @@ class AISidebar(QWidget):
     # ── vision output formatter ───────────────────────────────────────────────
     @staticmethod
     def _format_vision_html(obj_list: str) -> str:
-        SIZE_COLOR  = {'small': '#64748b', 'medium': '#3b82f6', 'large': '#8b5cf6'}
+        SIZE_COLOR  = {'small': '#6b7280', 'medium': '#2563eb', 'large': '#7c3aed'}
         cards = []
         for line in obj_list.strip().splitlines():
             line = line.strip()
@@ -1486,49 +1462,49 @@ class AISidebar(QWidget):
             aka_html   = ''
             if aka:
                 tags = ''.join(
-                    f'<span style="background:#1e2130;color:#64748b;'
-                    f'border:1px solid #2e3348;border-radius:3px;'
+                    f'<span style="background:#f1f5f9;color:#475569;'
+                    f'border:1px solid #cbd5e1;border-radius:3px;'
                     f'padding:1px 5px;margin-right:4px;font-size:9px;">'
                     f'{t.strip()}</span>'
                     for t in aka.split(',') if t.strip()
                 )
                 aka_html = f'<div style="margin-top:4px;">{tags}</div>'
             cards.append(
-                f'<div style="background:#131720;border:1px solid #1e2a3a;'
+                f'<div style="background:#ffffff;border:1px solid #e2e8f0;'
                 f'border-left:3px solid #3b82f6;border-radius:6px;'
                 f'padding:8px 10px;margin-bottom:6px;">'
                 f'<div style="display:flex;justify-content:space-between;align-items:center;">'
-                f'<span style="color:#e2e8f0;font-weight:700;font-size:11px;'
+                f'<span style="color:#1e293b;font-weight:700;font-size:11px;'
                 f'font-family:\'Segoe UI\';">{name}</span>'
                 f'<span style="color:#64748b;font-size:9px;font-family:Consolas;">'
                 f'{raw_name}</span>'
                 f'</div>'
                 f'<div style="margin-top:3px;">'
-                f'<span style="background:#0f2a4a;color:#60a5fa;border-radius:3px;'
+                f'<span style="background:#dbeafe;color:#1d4ed8;border-radius:3px;'
                 f'padding:1px 6px;font-size:9px;font-family:Consolas;margin-right:6px;">'
                 f'&#127919; {center}</span>'
-                f'<span style="background:#1a1208;color:#fbbf24;border-radius:3px;'
+                f'<span style="background:#fef3c7;color:#92400e;border-radius:3px;'
                 f'padding:1px 6px;font-size:9px;font-family:Consolas;margin-right:6px;">'
                 f'&#9632; {color}</span>'
-                f'<span style="background:#0f0f1a;color:{size_clr};border-radius:3px;'
+                f'<span style="background:#f3f4f6;color:{size_clr};border-radius:3px;'
                 f'padding:1px 6px;font-size:9px;font-family:Consolas;">'
                 f'{size}</span>'
                 f'</div>'
-                + (f'<div style="color:#4a5568;font-size:9px;font-family:Consolas;'
+                + (f'<div style="color:#64748b;font-size:9px;font-family:Consolas;'
                    f'margin-top:3px;">&#128205; touches: {touches}</div>' if touches else '')
-                + (f'<div style="color:#64748b;font-size:9px;font-family:\'Segoe UI\';'
+                + (f'<div style="color:#6b7280;font-size:9px;font-family:\'Segoe UI\';'
                    f'margin-top:4px;line-height:1.4;">{desc}</div>' if desc else '')
                 + aka_html
                 + '</div>'
             )
         if not cards:
             return (
-                '<div style="color:#4b5563;font-family:\'Segoe UI\';font-size:10px;'
+                '<div style="color:#6b7280;font-family:\'Segoe UI\';font-size:10px;'
                 'padding:10px;">No objects detected.</div>'
             )
         count = len(cards)
         header = (
-            f'<div style="color:#3b82f6;font-family:\'Segoe UI\';font-size:9px;'
+            f'<div style="color:#2563eb;font-family:\'Segoe UI\';font-size:9px;'
             f'letter-spacing:0.05em;margin-bottom:8px;">'
             f'{count} OBJECT{"S" if count != 1 else ""} DETECTED</div>'
         )
@@ -1572,7 +1548,7 @@ class AISidebar(QWidget):
         self._lock(False)
         self._set_stage("⚠️  Error")
         self._scene_box.setHtml(
-            f'<div style="color:#f87171;font-family:\'Segoe UI\';font-size:10px;padding:8px;">'
+            f'<div style="color:#dc2626;font-family:\'Segoe UI\';font-size:10px;padding:8px;">'
             f'⚠️&nbsp;&nbsp;{err}</div>'
         )
 
@@ -1618,34 +1594,34 @@ class CameraPanel(QWidget):
         super().__init__(parent)
         self._sidebar   = sidebar
         self._raw_image = None          # BGR numpy array of the loaded image
-        self.setStyleSheet("background:#0a0c10;")
+        self.setStyleSheet("background:#f5f7fa;")
         lay = QVBoxLayout(self); lay.setContentsMargins(0,0,0,0); lay.setSpacing(0)
 
         # ── Top bar ───────────────────────────────────────────────────────────
         bar = QWidget(); bar.setFixedHeight(38)
-        bar.setStyleSheet("background:#0d0f14;border-bottom:1px solid #1e2130;")
+        bar.setStyleSheet("background:#e8eaf0;border-bottom:1px solid #d0d4de;")
         bl = QHBoxLayout(bar); bl.setContentsMargins(12,0,12,0); bl.setSpacing(10)
 
         brand = QLabel("🔴  ProLabs Robotics  –  Vision Grid  [A1 → T11]")
         brand.setFont(QFont("Segoe UI Semibold", 10))
-        brand.setStyleSheet("color:#e8e8e8;")
+        brand.setStyleSheet("color:#1a1a2e;")
 
         # Import button lives in the top bar
         self._import_btn = QPushButton("📁  Import Image")
         self._import_btn.setFixedHeight(26)
         self._import_btn.setCursor(Qt.PointingHandCursor)
         self._import_btn.setStyleSheet("""
-            QPushButton{background:#1e2a3a;color:#60a5fa;
-                        border:1px solid #1e40af;border-radius:6px;
+            QPushButton{background:#dbeafe;color:#1d4ed8;
+                        border:1px solid #93c5fd;border-radius:6px;
                         font-family:'Segoe UI';font-weight:700;font-size:10px;padding:0 10px;}
-            QPushButton:hover{background:#1e40af;color:#fff;}
+            QPushButton:hover{background:#2563eb;color:#fff;}
             QPushButton:pressed{background:#1e3a8a;}
         """)
         self._import_btn.clicked.connect(self._import_image)
 
         self._status = QLabel("● No image loaded")
         self._status.setFont(QFont("Segoe UI", 9))
-        self._status.setStyleSheet("color:#6b7280;")
+        self._status.setStyleSheet("color:#9ca3af;")
 
         bl.addWidget(brand)
         bl.addStretch()
@@ -1657,7 +1633,7 @@ class CameraPanel(QWidget):
         self._overlay = GridOverlay()
         self._video   = VideoLabel()
         self._video.setAlignment(Qt.AlignCenter)
-        self._video.setStyleSheet("background:#0a0c10;")
+        self._video.setStyleSheet("background:#f5f7fa;")
         self._video.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self._video.attach_overlay(self._overlay)
         lay.addWidget(self._video, 1)
@@ -1667,7 +1643,7 @@ class CameraPanel(QWidget):
             "📁   Click  Import Image  to load a photo\n\n"
             "Supports  JPG · PNG · BMP · TIFF · WEBP")
         self._video.setFont(QFont("Segoe UI", 13))
-        self._video.setStyleSheet("background:#0a0c10; color:#2a2d36;")
+        self._video.setStyleSheet("background:#f5f7fa; color:#c0c4d0;")
         # No image yet — overlay grid covers full panel as placeholder
         self._overlay.set_image_rect(None)
 
@@ -1724,7 +1700,7 @@ class CameraPanel(QWidget):
         oy = (lh - pix.height()) / 2.0
         self._overlay.set_image_rect(QRectF(ox, oy, pix.width(), pix.height()))
         self._video.setText("")
-        self._video.setStyleSheet("background:#0a0c10;")
+        self._video.setStyleSheet("background:#f5f7fa;")
         self._video.setPixmap(pix)
 
     def resizeEvent(self, event):
@@ -1762,12 +1738,12 @@ class MainWindow(QMainWindow):
         self.resize(1440, 840)
         self.setMinimumSize(960, 600)
         pal = QPalette()
-        pal.setColor(QPalette.Window, QColor("#16181f"))
+        pal.setColor(QPalette.Window, QColor("#f0f2f7"))
         self.setPalette(pal)
 
         splitter = QSplitter(Qt.Horizontal)
         splitter.setHandleWidth(2)
-        splitter.setStyleSheet("QSplitter::handle{background:#2a2d36;}")
+        splitter.setStyleSheet("QSplitter::handle{background:#d0d4de;}")
 
         self._sidebar   = AISidebar()
         self._cam_panel = CameraPanel(self._sidebar)

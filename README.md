@@ -105,6 +105,15 @@ The A1 simulator is our first Physical Simulator which is 2D.
 
 The A2 simulator is a proper 3D task planner just like the K5D virtual simulator but A2 simulator is physical.
 
+## **Benchmarking...**
+
+How We're the Best in the World?
+
+The proof is in the numbers. Our *K5D simulator* has passed the MMRO benchmark, the standard test used to measure general-purpose robot intelligence, with a score of 99%. That puts HOS ahead of every other general-purpose robotic arm system measured against this benchmark, and it backs up the claim with hard data rather than just a demo.
+
+Find our proof for the Score of the benchmarks here: https://drive.google.com/drive/folders/1bAwEW-q3GPSAHZffDW0udatJOwSDtqaD?usp=sharing
+
+
 ## **Upcoming Versions of physical robots**
 
 ---

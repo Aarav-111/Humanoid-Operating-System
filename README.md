@@ -45,7 +45,23 @@ For non "keep, pickup, up, down" tasks, we also have something called as *specia
 
 - [x] HOS Concept Design
 - [x] Navigation Logic and System Prompting
+
 - [ ] Arm integration (in progress)
+    - [x] Vrtual Simulator
+      - [x] Pro series
+      - [x] K3D
+      - [x] K5D
+    - [ ] Physical Simulator (In progress)
+      - [x] A1
+      - [ ] A2
+    - [ ] Physical Robot
+      - [ ] S1
+      - [ ] S1.1
+      - [ ] S2
+    - [ ] Integrated robot
+      - [ ] AS2
+      - [ ] AS3
+      - [ ] AS4
 
 ---
 

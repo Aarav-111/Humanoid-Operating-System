@@ -97,13 +97,13 @@ Before building the Actual Prototype, we build Physical Simulators which openup 
 The Hardware_connector is now integrated into the Physical Simulator so there is no need for external extensions!
 
 **Versions of Physical Simulators**
-- A1 *under testing*
+- A1 *Launched*
 
 The A1 simulator is our first Physical Simulator which is 2D.
 
-- A2 *not started*
+- A2 *Under Testing*
 
-The A2 simulator is a proper 3D task planner as owerfulas the K5D virtual simulator but A2 simulator is physical.
+The A2 simulator is a proper 3D task planner just like the K5D virtual simulator but A2 simulator is physical.
 
 ## **Upcoming Versions of physical robots**
 

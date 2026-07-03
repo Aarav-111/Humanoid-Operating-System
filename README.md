@@ -195,7 +195,7 @@ Project Co-lead: Siyona Chiker
 
 Collaborators:
 - Vivan Rajpuria
-- Sachin Sai
+- Ray 
 - Mathew tony
 
 Contact:  

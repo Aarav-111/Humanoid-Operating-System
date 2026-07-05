@@ -1,4 +1,4 @@
-import sys, base64, re, math
+import sys, base64, re, math, json
 import cv2
 import numpy as np
 from openai import OpenAI
@@ -14,7 +14,9 @@ from PySide6.QtGui   import (QImage, QPixmap, QFont, QColor, QPalette,
 
 # ─────────────────────────────────────────────────────────────────────────────
 OPENAI_API_KEY = (
-    "ADD YOUR OPENAI API KEY HERE"
+    "sk-proj-vFVeJD0s4A4mfZGLCBUDPCOaQcNj7vQLPcNvHvhQXuWfFoR6OiW1X5gf9jyX"
+    "yyJet33N-dsL_QT3BlbkFJ_hbcfH-O03UxhkANXi4VPepseIX2SkNSYQyX3sGZAn7vax"
+    "8HYBseymYc-ExEV_nnNk0ZiCgXsA"
 )
 
 COLS         = 20
@@ -25,13 +27,16 @@ GRID_COLOR   = (0,  60, 255)
 CORNER_COLOR = (0, 255, 255)
 ALPHA        = 0.75
 
+# BBox vision: a cell counts as TOUCHES only if the object's bounding box
+# covers at least this fraction of the cell's area. Fixed by design.
+TOUCH_THRESHOLD = 0.80
+
 # ── Per-command dot colour + status text ──────────────────────────────────────
 CMD_STATES = {
     # Movement / manipulation
     'goto':               ('#60a5fa', 'Moving…'),
     'pickup':             ('#22c55e', 'Picking up…'),
     'keep':               ('#facc15', 'Placing…'),
-    'place_into':         ('#4ade80', 'Placing into container…'),
     'drag':               ('#d97706', 'Dragging heavy object…'),
     'rotate':             ('#06b6d4', 'Rotating object…'),
     'change_orientation': ('#6366f1', 'Changing orientation…'),
@@ -62,7 +67,6 @@ CMD_STATES = {
     'close':              ('#2dd4bf', 'Closing…'),
     'turn_on':            ('#fde68a', 'Turning on…'),
     'turn_off':           ('#9ca3af', 'Turning off…'),
-    'twist_cap':          ('#a78bfa', 'Twisting cap…'),
     # State & query
     'find':               ('#fdba74', 'Searching…'),
     'wait_for':           ('#6b7280', 'Waiting…'),
@@ -72,495 +76,465 @@ CMD_STATES = {
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Vision prompt
+# Vision prompt  (BBOX version — model returns boxes, Python computes cells)
 # ─────────────────────────────────────────────────────────────────────────────
 VISION_PROMPT = (
     """
-You are the computer vision system for an industrial Cartesian pick-and-place robot.
+You are the vision system for a robot. Identify every physical object in this image.
 
-The camera image is divided into a 20-column (A-T) by 11-row (1-11) reference grid.
+Report EVERY physical thing, including:
+- small objects (bottles, clothes, tools, food)
+- large 3D items: appliances (washing machine, dryer, oven), furniture, shelves, bins
+- anything a robot could touch, open, load, or operate — even if large or built-in
 
-You Job is to detect and report every distinct physical object with the below rules and output EXACT CORRECT COORDINATES (DOUBLE CHECK IF NEEDED).
+A big appliance or fixture is an OBJECT, not background. When unsure, REPORT it.
+Do NOT report: the floor/table surface itself, shadows, or flat printed markings.
 
-## PRIMARY RULE — DETECT EVERYTHING ON THE BOARD
+For each object, give its bounding box in NORMALIZED coordinates: the image is
+1000 units wide and 1000 units tall. (0,0) is top-left, (1000,1000) is bottom-right.
+The box must tightly enclose the object's visible extent where it meets the
+floor/surface — for tall objects (appliances, furniture), box the BASE region,
+not the full height.
 
-The robot's workspace is the flat surface covered by the red grid overlay.
+Output STRICT JSON only — no markdown, no code fences, no commentary:
 
-Your job is to find and report EVERY distinct physical object that is resting ON that board surface, no matter how ordinary, small, or unusual it looks.
+{"objects": [
+  {"name": "washing machine",
+   "box": [x0, y0, x1, y1],
+   "color": "white",
+   "size": "large",
+   "desc": "Front-loading washing machine with a round door.",
+   "aka": ["washer", "laundry machine", "appliance"]}
+]}
 
-Do not skip any object. Do not filter by category. Do not require objects to be "common" household items. If it is sitting on the board and the robot could pick it up or interact with it, report it.
-
-This includes (but is not limited to):
-
-* clothing items: sock, glove, shirt, cloth, fabric, garment, rag, towel
-* containers: box, tray, wooden_tray, bowl, cup, mug, bottle, bin, basket, drawer
-* tools: screwdriver, wrench, pliers, hammer, cutter, ruler, tape
-* electronics: circuit_board, pcb, arduino, raspberry_pi, microcontroller, breadboard, cable, charger, sensor, motor, battery
-* stationery: pen, pencil, scissors, notebook, book, paper_stack, folder
-* food items: apple, banana, cup, bottle
-* everyday objects: phone, remote, keys, wallet, toy, sponge, brush
-* any other object resting on the board surface
-
-Report complete objects only — not parts of objects.
-
-Correct:
-* wooden_tray
-* sock
-* circuit_board
-* bottle
-
-Wrong:
-* tray_handle
-* sock_toe
-* circuit_board_chip
-* bottle_cap
-
-If multiple identical objects exist, output each one separately.
-
-## IGNORE — NOT ON THE BOARD
-
-Ignore anything that is NOT a discrete physical object resting on the board:
-
-* the board surface itself, the white paper, the mat
-* the grid lines and markings drawn on the paper
-* walls, floors, ceilings, background scenery outside the board
-* the robot's structural frame, rails, rods, brackets, gantry parts
-* shadows, reflections, glare, lighting artefacts
-* stains, smudges, splatter, scratches on the surface
-* printed text, handwriting, labels, logos, icons, QR codes on the board paper
-* dotted lines, dashed lines, measurement markings drawn on the paper
-* empty space or coloured patches
-
-## PARTIALLY VISIBLE OBJECTS
-
-If an object is partially visible at the edge of the board but clearly identifiable, report it.
-
-If an object is ambiguous, do not report it.
-
-Do not guess.
-
-For every detected object output exactly one line in this format:
-
-Also give perfect coordinates, STRICTLY NO WRONG COORDINATES, DOUBLE CHECK IF NEEDED.
-
-Examples:
-
-OBJECT: bottle  CENTER: H6  TOUCHES: H5,H6,H7  COLOR: green  SIZE: medium  DESC: A tall cylindrical glass bottle standing upright with a narrow neck and a dark screw-on metal cap. The glass is a translucent dark green colour with a smooth surface. A paper label is wrapped around the lower half showing white printed text and a logo. The base is slightly wider than the body. No visible damage or scratches. Appears to be a beverage bottle, likely containing liquid given its weight distribution.  ALSO_KNOWN_AS: flask, container, vessel, jug
-OBJECT: glue_bottle  CENTER: K7  TOUCHES: K7  COLOR: blue  SIZE: small  DESC: A small upright plastic glue bottle with a pointed black applicator nozzle at the top. The body is predominantly blue with red and white printed label text visible on the front face showing a product number or brand name. The plastic body appears slightly squeezable. The nozzle tip is narrow and black, designed for precision application. The base is flat and circular. No cap visible on the nozzle — the nozzle appears open or has a built-in seal.  ALSO_KNOWN_AS: adhesive bottle, glue tube, glue applicator, superglue
-
-Scan the image from the top-left corner to the bottom-right corner.
-
-Output each object only once.
-
-Output ONLY the OBJECT lines.
-
-Do not include:
-
-* explanations
-* reasoning
-* confidence scores
-* headings
-* numbering
-* markdown
-* summaries
-* introductory text
-* concluding text
-
-Return nothing except the OBJECT lines.
+Rules:
+- box values are integers 0-1000, x0 < x1, y0 < y1.
+- One physical object = exactly one entry. Two similar items in different
+  places are two entries.
+- name: lowercase, short. desc: one sentence. aka: 2-3 synonyms.
 """
 )
+
+# ─────────────────────────────────────────────────────────────────────────────
+# BBox → cell math  (deterministic — replaces everything the VLM used to guess)
+# ─────────────────────────────────────────────────────────────────────────────
+def bbox_to_cells(box, thr=TOUCH_THRESHOLD):
+    """Return (center_cell, touches_list) from a normalized [x0,y0,x1,y1] box."""
+    try:
+        x0, y0, x1, y1 = [max(0.0, min(1000.0, float(v))) for v in box]
+    except (TypeError, ValueError):
+        return None, []
+    if x1 <= x0 or y1 <= y0:
+        return None, []
+
+    cell_w = 1000.0 / COLS
+    cell_h = 1000.0 / ROWS
+
+    touches = []
+    for ci in range(COLS):
+        for ri in range(ROWS):
+            cx0, cy0 = ci * cell_w, ri * cell_h
+            ow = max(0.0, min(x1, cx0 + cell_w) - max(x0, cx0))
+            oh = max(0.0, min(y1, cy0 + cell_h) - max(y0, cy0))
+            if (ow * oh) / (cell_w * cell_h) >= thr:
+                touches.append((ci, ri))
+
+    # CENTER = cell containing the bbox centroid; always part of TOUCHES.
+    mx, my = (x0 + x1) / 2.0, (y0 + y1) / 2.0
+    cc = min(COLS - 1, int(mx / cell_w))
+    cr = min(ROWS - 1, int(my / cell_h))
+    if (cc, cr) not in touches:
+        touches.append((cc, cr))
+    touches.sort(key=lambda t: (t[1], t[0]))
+    return (cc, cr), touches
+
+
+def cell_name(c):
+    return f"{COL_LABELS[c[0]]}{c[1] + 1}"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # A2 system prompt
 # ─────────────────────────────────────────────────────────────────────────────
 A2_SYSTEM = (
     """
-# A2 Vision System Prompt
+You are A2, the controller of a ProLabs V12.2 Precision Cartesian Gantry robot.
 
----
-
-You are A2, the intelligent controller of a ProLabs V12.2 Precision Cartesian Gantry robot.
-
-You receive:
-
-* An OBJECT LIST produced by the vision system. Each line contains: the object's canonical name, its centre grid cell (CENTER), all cells it touches (TOUCHES), its colour, its size, a short description of its appearance, and a list of alternative names it is also commonly called (ALSO_KNOWN_AS).
-* A USER TASK describing what the operator wants.
-
-Your job is to generate the complete sequence of A2 commands needed to perform the task.
-
-When the user refers to an object, match it by meaning — using the name, synonyms, description, colour, and size — not just by exact text. A user saying "superglue" means the glue bottle. A user saying "the box" may mean a tray. A user saying "the blue one" means the blue-coloured object. Resolve these naturally and silently.
-
-Do not explain your reasoning.
-
-Generate commands immediately.
+You receive an OBJECT LIST (name, CENTER cell, TOUCHES cells, color, size, description, ALSO_KNOWN_AS) and a Task. Output the shortest correct command sequence.
 
 ---
 
 ## BOARD
 
-The workspace is a 20-column by 11-row grid.
+20 columns (A–T) × 11 rows (1–11). CENTER is the cell to move above for pick-up. The robot approaches all objects from above.
 
-Columns: A-T
+---
 
-Rows: 1-11
+## COMMANDS
 
-Each object's CENTER field gives the cell the robot should move to for pick-up. The TOUCHES field lists every cell the object's footprint covers.
+### Movement & Placement
+goto_coordinate = COL, ROW       move above a cell (required before pickup or keep)
+pickup                           pick up the object at the current cell
+keep                             place the held object at the current cell
 
-The robot moves freely above the board and approaches objects from above.
+### Liquid
+pour       pour from the held source object into the container at the current cell
 
-Every object in the OBJECT LIST is a real physical object that can be manipulated unless the task requires otherwise.
+### Surface Work
+sweep(CELL1, CELL2, ...)         sweep across listed cells in order
+mop(CELL1, CELL2, ...)           mop across listed cells in order
+apply_soap(CELL1, CELL2, ...)    apply soap to listed cells
+apply_cloth(CELL1, CELL2, ...)   wipe listed cells with a cloth
+
+### Object Operations
+drag(NAME, COL, ROW)             slide an object across the surface to a new cell (no lift)
+slice(NAME, N)                   slice object N times; robot must be above the object first
+fold(NAME)                       fold an object; robot must be above the object first
+
+### Appliance Control
+open(NAME)                       open an object or container
+close(NAME)                      close an object or container
+turn_on(NAME)                    turn on an appliance
+turn_off(NAME)                   turn off an appliance
+
+---
+
+## RULES
+
+**Coordinates** — always use the exact CENTER from the OBJECT LIST. Never invent a coordinate.
+
+**Coordinate format** — every move must be written exactly as: goto_coordinate = X, N (letter, comma, space, number). Never fuse the coordinate (H6), never omit the "=". No other spelling is valid.
+
+**Placement** — `keep` is the only way to place a held object. Never use drop, put, insert, release, or move.
+
+**Order** — always goto before pickup or keep. Finish one object's full sequence before starting another.
+
+**Held-object rule** — the robot holds at most ONE object. Every pickup must be followed by exactly one keep (or pour, then a keep to return the source) before the next pickup. Before writing Task_Completed, check: is anything still held? If yes, goto its home cell and keep it FIRST.
+
+**Efficiency** — choose the shortest sequence. No redundant moves.
+
+**Object matching** — match user words to objects using name, ALSO_KNOWN_AS, description, color, and size. Resolve silently. Only flag missing if no reasonable match exists after checking all fields.
+
+**Missing objects** — before planning, verify every object/tool/appliance the task requires exists in the OBJECT LIST. If one is missing, output exactly:
+MISSING: <object needed> — sub-task skipped
+then plan all remaining feasible sub-tasks normally. NEVER invent a coordinate. NEVER assume an object exists. Using any coordinate not present in the OBJECT LIST is a critical error.
+
+---
+
+## TASK PATTERNS
+
+**Move / Stack / Collect**
+goto object → pickup → goto destination → keep
+
+**Swap A ↔ B**
+Move A to a free temp cell → move B to A's original cell → move A from temp to B's original cell
+
+**Pour liquid**
+goto source → pickup → goto destination → pour → goto source home → keep
+
+**Slice**
+goto object → slice(NAME, N)
+
+**Drag**
+drag(NAME, COL, ROW)  — use when sliding is more appropriate than lifting (heavy or flat objects)
+
+**Fold**
+goto object → fold(NAME)
+
+**Clean surface**
+apply_soap(cells) → apply_cloth(cells) → sweep or mop(cells) as needed
+
+**Appliance**
+open(NAME) / close(NAME) / turn_on(NAME) / turn_off(NAME)
+
+---
+
+# A2 Task Playbooks
+
+Substitute real CENTER/TOUCHES coordinates from the OBJECT LIST wherever COL/ROW/NAME placeholders appear below.
+
+---
+
+## 1. Sweep a Room
+
+Requires a broom-type object (match via ALSO_KNOWN_AS/description if not literally named "broom"). If no broom-type object exists, output the MISSING line and skip.
+
+goto_coordinate = BROOM_COL, BROOM_ROW
+pickup
+sweep(ROW1_CELLS...)      # one call per row, all 20 columns left→right
+sweep(ROW2_CELLS...)
+...repeat for every row that has debris or was specified by the user
+goto_coordinate = BROOM_COL, BROOM_ROW
+keep                       # return broom to its original cell
+
+## 2. Mop a Floor (after sweeping)
+
+Requires a mop object. If none exists, output the MISSING line and skip. A2 has no fill/bucket-solution tracking — mop directly. If the same task also asks for sweeping, list that step first.
+
+goto_coordinate = MOP_COL, MOP_ROW
+pickup
+mop(ROW1_CELLS...)         # one call per row
+mop(ROW2_CELLS...)
+...
+goto_coordinate = MOP_COL, MOP_ROW
+keep
+
+## 3. Clean a Surface / Countertop (wipe)
+
+goto_coordinate = CLOTH_COL, CLOTH_ROW
+pickup
+apply_cloth(CELL1, CELL2, ...)     # all the coordinates the object is touching
+goto_coordinate = CLOTH_COL, CLOTH_ROW
+keep
+
+## 4. Cut / Slice Vegetables
+
+Knife must be at the same cell as the target before slicing.
+
+goto_coordinate = KNIFE_COL, KNIFE_ROW
+pickup
+goto_coordinate = VEG1_COL, VEG1_ROW
+keep                        # knife now sits at the vegetable's cell
+slice(VEG1_NAME, N)
+pickup                      # pick the knife back up
+goto_coordinate = VEG2_COL, VEG2_ROW
+keep
+slice(VEG2_NAME, N)
+pickup
+...repeat per vegetable
+goto_coordinate = KNIFE_HOME_COL, KNIFE_HOME_ROW
+keep                        # return knife to its original cell
+
+## 5. Fold Laundry
+
+fold() requires the robot positioned above the garment first. Fold only garments that are not already folded (check DESC).
+
+goto_coordinate = GARMENT1_COL, GARMENT1_ROW
+fold(GARMENT1_NAME)
+goto_coordinate = GARMENT2_COL, GARMENT2_ROW
+fold(GARMENT2_NAME)
+...repeat per garment
+# optionally stack folded garments: pickup → goto STACK_COL, STACK_ROW → keep
+
+## 6. Open Appliance → Load → Close → Run
+
+For any openable+switchable appliance (e.g. a washing machine, oven, box):
+
+goto_coordinate = APPLIANCE_COL, APPLIANCE_ROW
+open(APPLIANCE_NAME)
+goto_coordinate = ITEM1_COL, ITEM1_ROW
+pickup
+goto_coordinate = APPLIANCE_COL, APPLIANCE_ROW
+keep
+...repeat per item to load
+goto_coordinate = APPLIANCE_COL, APPLIANCE_ROW
+close(APPLIANCE_NAME)
+turn_on(APPLIANCE_NAME)
+# always end the full task by turning appliances back off:
+turn_off(APPLIANCE_NAME)
+
+Note: this sequence is best-effort — the robot starts the appliance and moves on; it cannot verify the operation finished.
+
+Washing machine + detergent: if a detergent object is present in the OBJECT LIST, add it after loading the laundry items and before close(APPLIANCE_NAME). Applies to washing machines only. If no detergent object is present, skip this step entirely — do not invent one.
+
+goto_coordinate = DETERGENT_COL, DETERGENT_ROW
+pickup
+goto_coordinate = APPLIANCE_COL, APPLIANCE_ROW
+pour            # or keep if the detergent is a pod/solid, not a liquid
+goto_coordinate = DETERGENT_COL, DETERGENT_ROW
+keep            # return the detergent bottle before continuing
+
+## 7. Pour Liquid (bottle/jar → container)
+
+goto_coordinate = SOURCE_COL, SOURCE_ROW
+pickup
+goto_coordinate = DEST_COL, DEST_ROW
+pour
+goto_coordinate = SOURCE_COL, SOURCE_ROW
+keep
+
+## 8. Collect / Stack Multiple Objects at One Cell
+
+goto_coordinate = OBJECT1_COL, OBJECT1_ROW
+pickup
+goto_coordinate = TARGET_COL, TARGET_ROW
+keep
+goto_coordinate = OBJECT2_COL, OBJECT2_ROW
+pickup
+goto_coordinate = TARGET_COL, TARGET_ROW
+keep
+...repeat per object, finishing one object's move fully before starting the next
+
+## 9. Tidy / Reset a Zone
+
+Group same-category items together using pickup/keep only. Move objects into the zone one at a time, finishing each object's move before starting the next, then finish with a surface wipe. Do not move appliances during this step — only loose objects.
+
+goto_coordinate = OBJECT1_COL, OBJECT1_ROW
+pickup
+goto_coordinate = ZONE_COL, ZONE_ROW
+keep
+goto_coordinate = OBJECT2_COL, OBJECT2_ROW
+pickup
+goto_coordinate = ZONE_COL, ZONE_ROW
+keep                                                # repeat per object
+apply_cloth(ZONE_CELLS...)                          # final wipe-down
+
+## 10. Swap Two Objects' Positions
+
+No holding-cell command exists, so route through a temporary free cell.
+
+goto_coordinate = A_COL, A_ROW
+pickup
+goto_coordinate = TEMP_COL, TEMP_ROW
+keep
+goto_coordinate = B_COL, B_ROW
+pickup
+goto_coordinate = A_COL, A_ROW
+keep
+goto_coordinate = TEMP_COL, TEMP_ROW
+pickup
+goto_coordinate = B_COL, B_ROW
+keep
+
+## 11. Cook (stovetop, pot/pan)
+
+Turn on the stove, move the pot onto it, load each solid ingredient into the pot with goto+keep, then pour in any liquid ingredient from a jar. Once cooking is done, plate the contents one item at a time only if a plate is present and plating was requested, then shut the stove off. There is no auto-eject — each item must be retrieved from the pot/pan individually.
+
+goto_coordinate = STOVE_COL, STOVE_ROW
+turn_on(STOVE_NAME)
+goto_coordinate = POT_COL, POT_ROW
+pickup
+goto_coordinate = STOVE_COL, STOVE_ROW
+keep                              # pot now sits on the stove
+goto_coordinate = VEG1_COL, VEG1_ROW
+pickup
+goto_coordinate = STOVE_COL, STOVE_ROW
+keep                              # ingredient placed into the pot
+...repeat per ingredient
+goto_coordinate = JAR_COL, JAR_ROW
+pickup
+goto_coordinate = STOVE_COL, STOVE_ROW
+pour                              # pour liquid ingredient into the pot
+goto_coordinate = JAR_COL, JAR_ROW
+keep
+
+Plating (only if a plate object is present in the OBJECT LIST and the user asked to plate/serve the food — otherwise skip this step entirely and go straight to shutdown):
+
+goto_coordinate = PLATE_COL, PLATE_ROW
+pickup
+goto_coordinate = STOVE_COL, STOVE_ROW
+keep                              # plate now sits at the stove cell
+goto_coordinate = POT_COL, POT_ROW
+pickup                            # picks up pot (or its contents, last-placed first)
+goto_coordinate = TEMP_COL, TEMP_ROW
+keep                              # set pot aside if it came up instead of an ingredient
+goto_coordinate = POT_COL, POT_ROW
+pickup                            # now pick up the ingredient
+goto_coordinate = PLATE_COL, PLATE_ROW
+keep
+...repeat until all contents are plated
+
+Shutdown (mandatory):
+
+turn_off(STOVE_NAME)
+goto_coordinate = POT_COL, POT_ROW
+pickup
+goto_coordinate = POT_HOME_COL, POT_HOME_ROW
+keep                              # return pot to its original cell
+
+---
+
+## WORKED EXAMPLE — infeasible sub-task
+
+OBJECT LIST contains only: sock (CENTER D7) and shirt (CENTER J3).
+Task: "Sweep row 5, then stack all clothes at A10."
+
+PLAN:
+- sweep row 5: MISSING broom
+- stack clothes: sock, shirt | after: holding nothing
+
+# stack clothes at A10 (sweep skipped)
+MISSING: broom — sub-task skipped
+1. goto_coordinate = D, 7
+2. pickup
+3. goto_coordinate = A, 10
+4. keep
+5. goto_coordinate = J, 3
+6. pickup
+7. goto_coordinate = A, 10
+8. keep
+Task_Completed
+
+---
+
+## WORKED EXAMPLE — rotation mapping
+
+OBJECT LIST contains: red pen (CENTER B2), blue pen (CENTER B5).
+Task: "Swap them: red goes where blue is, blue goes where red was."
+
+PLAN:
+- swap pens via temp cell | after: holding nothing
+
+DESTINATIONS:
+- red pen → B5    (blue's current cell)
+- blue pen → B2   (red's current cell)
+
+# swap the pens
+1. goto_coordinate = B, 2
+2. pickup
+3. goto_coordinate = T, 11
+4. keep
+5. goto_coordinate = B, 5
+6. pickup
+7. goto_coordinate = B, 2
+8. keep
+9. goto_coordinate = T, 11
+10. pickup
+11. goto_coordinate = B, 5
+12. keep
+Task_Completed
 
 ---
 
 ## OUTPUT FORMAT
 
-Output plain text only.
+First output a PLAN header, one line per sub-task, tracking held state:
 
-No JSON.
+PLAN:
+- <sub-task>: <objects used> | after: holding nothing
+(any missing required object → write its MISSING line instead)
 
-No Markdown.
+For ANY task that moves, swaps, rotates, or repositions objects, the PLAN must
+also include a DESTINATIONS block — this is REQUIRED, do not write any command
+without it:
 
-No bullets.
+DESTINATIONS:
+- <object> → <final cell>     (one line per moved object)
 
-First line:
+CHECK: "X goes where Y is" means X's final cell is Y's CURRENT cell (Y's CENTER
+in the OBJECT LIST). It does NOT mean Y moves to X's cell. Verify every
+DESTINATIONS line against this rule before writing commands.
 
-# One short sentence describing the plan.
+Then the commands:
 
-Remaining lines:
-
+# brief task description
 1. command
 2. command
-3. command
-
 ...
-
-Final line:
-
 Task_Completed
 
-Example:
-
-# Move the bottle to A2.
-
-1. goto_coordinate = H, 6
-2. pickup
-3. goto_coordinate = A, 1
-4. keep
-5. Task_Completed
-
----
-
-## AVAILABLE COMMANDS
-
-### Movement / Object Manipulation
-goto_coordinate = COL, ROW
-pickup
-keep
-place_into(NAME, CONTAINER)
-drag(NAME, COL, ROW)
-rotate(NAME, AXIS, DEGREES)
-change_orientation(AXIS, DEGREES)
-inspect_sides(NAME)
-
-### Floor Cleaning
-sweep(CELL1,CELL2,...)
-mop(CELL1,CELL2,...)
-scrub(CELL1,CELL2,...)
-Apply_soap(CELL1,CELL2,...)
-Apply_cloth(CELL1,CELL2,...)
-
-### Kitchen
-cook(NAME)
-pour
-fill(NAME, PERCENT)
-slice(NAME, N)
-wash(NAME)
-
-### Laundry
-iron(NAME)
-fold(NAME)
-run_cycle(NAME)
-
-### Bathroom
-clean_bathroom(CELL1,CELL2,...)
-
-### Organisation
-tidy_up(CELL1,CELL2,...)
-dust_surfaces(CELL1,CELL2,...)
-
-### Appliance Control
-open(NAME)
-close(NAME)
-turn_on(NAME)
-turn_off(NAME)
-twist_cap(NAME, on|off)
-
-### State & Query
-find(KEY=VALUE)
-check_state(NAME)
-set_state(NAME, KEY, VALUE)
-wait_for(SECONDS)
-
-Task_Completed
-
----
-
-## COMMAND RULES
-
-goto_coordinate moves above a cell.
-
-pickup picks up the object at the current location.
-
-keep places the currently held object at the current location.
-
-keep is the ONLY placement command.
-
-Never use:
-
-* pour_into(...)
-* drop(...)
-* insert(...)
-* put(...)
-* move(...)
-* release(...)
-* any other placement command
-
-Whenever an object must be moved into another object (bowl, cup, drawer, sink, washing machine, box, basket), you may use either:
-
-place_into(NAME, CONTAINER)
-
-or simply goto the container's coordinate and execute:
-
-keep
-
-Both are valid. The simulator handles containment automatically.
-
-Example:
-
-Move apple into bowl.
-
-1. goto_coordinate = C, 4
-2. pickup
-3. goto_coordinate = G, 8
-4. keep
-
----
-
-## OBJECT RULES
-
-Always use the EXACT CENTER coordinate from the OBJECT LIST for goto_coordinate commands.
-
-Never invent coordinates.
-
-### Matching task words to detected objects
-
-The user will describe objects using everyday language that may not exactly match the OBJECT LIST names.
-Your job is to figure out which detected object the user is referring to.
-
-Use ALL available information to find the best match:
-- The OBJECT name
-- The ALSO_KNOWN_AS synonyms
-- The DESC description
-- The COLOR and SIZE fields
-
-Examples of semantic matching you must perform:
-
-* User says "superglue" → matches `glue_bottle` (it is a glue bottle, superglue is a type of glue)
-* User says "the box" → matches `wooden_tray` (a tray is a type of open box)
-* User says "the blue thing" → matches any object whose COLOR is blue
-* User says "the small bottle" → matches any bottle with SIZE: small
-* User says "the sock" → matches `cloth` or `garment` if no exact sock is listed
-* User says "move the electronics" → matches `circuit_board`, `pcb`, `arduino`, etc.
-* User says "the glue" → matches `glue_bottle`, `adhesive_bottle`, `glue_tube`, etc.
-* User says "pick up the container" → matches any box, tray, bowl, bin, or container-like object
-
-If you find a reasonable semantic match, use that object's name and coordinates silently — do not mention the name discrepancy.
-
-Only report an object as missing if after careful consideration of all fields (name, synonyms, description, color, size) you genuinely cannot identify any object in the OBJECT LIST that the user could plausibly be referring to.
-
----
-
-## MOVEMENT RULES
-
-Always move before interacting.
-
-pickup must always be preceded by goto_coordinate.
-
-keep must always be preceded by goto_coordinate.
-
-To move an object:
-
-goto object
-
-pickup
-
-goto destination
-
-keep
-
-Complete one object before starting another unless the task explicitly requires simultaneous interaction.
-
----
-
-## TASK RULES
-
-Stack
-
-Move every object to the same destination cell.
-
-Collect
-
-Move every object to one destination cell.
-
-Scatter
-
-Move objects to different cells.
-
-Swap
-
-Move the first object to a temporary free cell, move the second object, then move the first object into the second's original location.
-
-Clean surface
-
-Use Apply_soap, scrub or Apply_cloth when appropriate.
-
-Pour liquid
-
-Pick up the source container. Move above the destination container. Execute: pour
-
-Cook
-
-goto the stove, turn_on(stove), goto ingredients, pickup each, keep at pot, cook(pot), wait_for as needed, then plate.
-
-Slice vegetables
-
-goto the vegetable, pickup, goto the cutting board, keep, slice(NAME, N).
-
-Wash utensils
-
-fill(sink, 100), goto each utensil, pickup, keep at sink, wash(NAME).
-
-Clean bathroom
-
-Use clean_bathroom(CELL1,...) for toilet/sink/tiles cells. Apply disinfectant with Apply_soap first if needed.
-
-Tidy up / Organise
-
-Use tidy_up(CELL1,...) to sort a zone, or pickup/keep each object to move it to its correct zone.
-
-Dust surfaces
-
-Use dust_surfaces(CELL1,...) top-to-bottom across all object cells, then sweep the fallen dust.
-
-Drag heavy object
-
-Use drag(NAME, COL, ROW) to slide an object that cannot be lifted (oven, sink).
-
-Rotate object
-
-Use rotate(NAME, AXIS, DEGREES) for ±90° rotation of one named object.
-
-Change orientation of all objects
-
-Use change_orientation(AXIS, DEGREES) to rotate everything on the board.
-
-Place object into container
-
-Use place_into(NAME, CONTAINER) or simply goto the container coordinate and execute keep — the simulator handles containment.
-
-Inspect sides
-
-Use inspect_sides(NAME) to report what is adjacent to all 6 faces of an object.
-
-Open or close
-
-Use open(NAME) or close(NAME).
-
-Turn appliance on or off
-
-Use turn_on(NAME) or turn_off(NAME).
-
-Iron clothing
-
-Iron before folding.
-
-Run washing machine
-
-Close the door before run_cycle(NAME).
-
----
-
-## PLANNING RULES
-
-Choose the shortest reasonable sequence.
-
-Avoid unnecessary movements.
-
-Finish one object before beginning another whenever possible.
-
-Group cleaning operations together.
-
-Never perform redundant commands.
-
----
-
-## OUTPUT RULES
-
-Output only:
-
-* one opening comment beginning with #
-* numbered commands
-* Task_Completed
-
-Do not output explanations.
-
-Do not output Markdown.
-
-Do not output code fences.
-
-Do not output JSON.
-
-Do not output confidence scores.
-
-Do not output reasoning.
-
+Strict: numbered lines contain ONLY commands. No Markdown, no JSON, no explanations, no confidence scores. Task_Completed is always the final line.
 """
 )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Grid drawing  (standalone function, no camera thread needed)
-# ─────────────────────────────────────────────────────────────────────────────
-def draw_grid(frame):
-    """Draw A2→T11 reference grid on a BGR numpy frame and return it."""
-    h, w = frame.shape[:2]
-    overlay = frame.copy()
-    col_w = w / COLS
-    row_h = h / ROWS
-    font, fs, th = cv2.FONT_HERSHEY_SIMPLEX, 0.55, 1
-    for i in range(COLS + 1):
-        x = int(round(i * col_w))
-        cv2.line(overlay, (x, 0), (x, h), GRID_COLOR, 1, cv2.LINE_AA)
-    for j in range(ROWS + 1):
-        y = int(round(j * row_h))
-        cv2.line(overlay, (0, y), (w, y), GRID_COLOR, 1, cv2.LINE_AA)
-    # Per-cell coordinate labels in each cell's top-left corner
-    cell_fs, cell_th = 0.75, 2
-    for i in range(COLS):
-        for j in range(ROWS):
-            lbl = f'{COL_LABELS[i]}{ROW_LABELS[j]}'
-            cx = int(round(i * col_w)) + 2
-            cy = int(round(j * row_h)) + 11
-            cv2.putText(overlay, lbl, (cx, cy), font, cell_fs, GRID_COLOR, cell_th, cv2.LINE_AA)
-    frame = cv2.addWeighted(overlay, ALPHA, frame, 1 - ALPHA, 0)
-    return frame
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-#  Vision worker  (GPT-4o Vision → flat object list)
+#  Vision worker  (BBOX system: VLM returns boxes on the CLEAN image,
+#  Python computes CENTER/TOUCHES deterministically, emits the same
+#  OBJECT-line string format the sidebar and planner already consume.)
 # ─────────────────────────────────────────────────────────────────────────────
 class VisionWorker(QThread):
     done  = Signal(str)
+    boxes = Signal(list)   # raw parsed objects (with 'box') for on-screen drawing
     error = Signal(str)
 
     def __init__(self, bgr):
@@ -569,33 +543,57 @@ class VisionWorker(QThread):
 
     def run(self):
         try:
-            import os
-            # Grid is drawn on the native image. GPT-4o coordinates are fractional
-            # cell positions within that image — independent of display panel size.
-            annotated = draw_grid(self._bgr.copy())
-            save_path = os.path.expanduser("~/Downloads/ffpeg.jpeg")
-            cv2.imwrite(save_path, annotated, [cv2.IMWRITE_JPEG_QUALITY, 97])
-            ret, buf = cv2.imencode(".jpg", annotated, [cv2.IMWRITE_JPEG_QUALITY, 97])
+            # Clean image — no grid overlay needed; cells are computed in Python.
+            ret, buf = cv2.imencode(".jpg", self._bgr, [cv2.IMWRITE_JPEG_QUALITY, 95])
             if not ret:
                 self.error.emit("Frame encode failed"); return
             b64 = base64.b64encode(buf.tobytes()).decode()
             client = OpenAI(api_key=OPENAI_API_KEY)
             resp = client.chat.completions.create(
-                model="gpt-4o",
+                model="gpt-5.4",
                 messages=[{"role": "user", "content": [
                     {"type": "text",      "text": VISION_PROMPT},
                     {"type": "image_url", "image_url": {
                         "url": f"data:image/jpeg;base64,{b64}", "detail": "high"}},
                 ]}],
-                max_tokens=3000,
+                max_completion_tokens=3000,
             )
-            self.done.emit(resp.choices[0].message.content)
+            raw = (resp.choices[0].message.content or "").strip()
+            raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw)
+            try:
+                data = json.loads(raw)
+            except json.JSONDecodeError as e:
+                self.error.emit(
+                    f"Vision model returned invalid JSON: {e}\n\nRaw output:\n{raw[:800]}")
+                return
+
+            lines = []
+            for obj in data.get("objects", []):
+                center, touches = bbox_to_cells(obj.get("box"))
+                if center is None:
+                    continue   # degenerate box — skip
+                touch_str = ",".join(cell_name(t) for t in touches)
+                aka = ", ".join(obj.get("aka", []))
+                lines.append(
+                    f"OBJECT: {obj.get('name','object')}  "
+                    f"CENTER: {cell_name(center)}  "
+                    f"TOUCHES: {touch_str}  "
+                    f"COLOR: {obj.get('color','?')}  "
+                    f"SIZE: {obj.get('size','?')}  "
+                    f"DESC: {obj.get('desc','')}  "
+                    f"ALSO_KNOWN_AS: {aka}"
+                )
+            if not lines:
+                self.error.emit("Vision returned no usable objects.")
+                return
+            self.boxes.emit(data.get("objects", []))
+            self.done.emit("\n".join(lines))
         except Exception as e:
             self.error.emit(str(e))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Command worker  (GPT-4o text → numbered command sequence, streamed)
+#  Command worker  (planner → numbered command sequence, streamed)
 # ─────────────────────────────────────────────────────────────────────────────
 class CommandWorker(QThread):
     chunk = Signal(str)
@@ -612,15 +610,18 @@ class CommandWorker(QThread):
             client = OpenAI(api_key=OPENAI_API_KEY)
             user_msg = (
                 f"OBJECT LIST:\n{self._objects}\n\n"
-                f"USER TASK: {self._task}"
+                f"Task: {self._task}"
             )
+            print("=== PLANNER INPUT ===")
+            print(user_msg)
+            print("=== END ===")
             stream = client.chat.completions.create(
-                model="gpt-4o",
+                model="gpt-5.4",
                 messages=[
                     {"role": "system", "content": A2_SYSTEM},
                     {"role": "user",   "content": user_msg},
                 ],
-                max_tokens=1500,
+                max_completion_tokens=4500,
                 stream=True,
             )
             full = ""
@@ -656,6 +657,7 @@ class GridOverlay(QWidget):
         # Where the image currently sits inside this widget (letterbox rect).
         # None = no image loaded → draw placeholder grid over the full widget.
         self._img_rect: 'QRectF | None' = None
+        self._bboxes  : list = []   # detected objects with normalized 'box' [x0,y0,x1,y1]
 
         self._cur_col: float = 0.0
         self._cur_row: float = 0.0
@@ -676,6 +678,11 @@ class GridOverlay(QWidget):
     def set_image_rect(self, rect: 'QRectF | None'):
         """Called by CameraPanel whenever the image letterbox position changes."""
         self._img_rect = rect
+        self.update()
+
+    def set_bboxes(self, objects: list):
+        """Store detected objects (normalized 0-1000 boxes) to draw over the image."""
+        self._bboxes = objects or []
         self.update()
 
     def set_image_size(self, w: int, h: int):
@@ -750,6 +757,12 @@ class GridOverlay(QWidget):
         # ── always draw the red grid ──────────────────────────────────────────
         self._paint_grid(painter)
 
+        # ── detected bounding boxes (after analysis) ──────────────────────────
+        if self._bboxes:
+            painter.setRenderHint(QPainter.Antialiasing, True)
+            self._paint_bboxes(painter)
+            painter.setRenderHint(QPainter.Antialiasing, False)
+
         # ── cell highlight (only while playback is active) ────────────────────
         if self._visible:
             painter.setRenderHint(QPainter.Antialiasing, True)
@@ -793,6 +806,63 @@ class GridOverlay(QWidget):
                 cy  = round(gy + j * rh + cfm2.ascent() + 1)
                 painter.drawText(cx, cy, lbl)
 
+    # Distinct colors cycled per detected object
+    BBOX_COLORS = [
+        QColor(34, 197, 94),  QColor(59, 130, 246), QColor(245, 158, 11),
+        QColor(168, 85, 247), QColor(236, 72, 153), QColor(20, 184, 166),
+        QColor(249, 115, 22), QColor(99, 102, 241),
+    ]
+
+    def _paint_bboxes(self, painter: QPainter):
+        """Draw each detected object's bounding box + name/CENTER label,
+        mapping normalized 0-1000 coords onto the image letterbox area."""
+        area = self._grid_area()
+        gx, gy, gw, gh = area.x(), area.y(), area.width(), area.height()
+        if gw == 0 or gh == 0:
+            return
+        font = QFont('Segoe UI', 9, QFont.Bold)
+        painter.setFont(font)
+        fm = painter.fontMetrics()
+
+        for idx, obj in enumerate(self._bboxes):
+            box = obj.get('box')
+            if not (isinstance(box, list) and len(box) == 4):
+                continue
+            try:
+                x0, y0, x1, y1 = [max(0.0, min(1000.0, float(v))) for v in box]
+            except (TypeError, ValueError):
+                continue
+            if x1 <= x0 or y1 <= y0:
+                continue
+
+            color = self.BBOX_COLORS[idx % len(self.BBOX_COLORS)]
+            rx0 = gx + x0 / 1000.0 * gw
+            ry0 = gy + y0 / 1000.0 * gh
+            rx1 = gx + x1 / 1000.0 * gw
+            ry1 = gy + y1 / 1000.0 * gh
+            rect = QRectF(rx0, ry0, rx1 - rx0, ry1 - ry0)
+
+            # Faint fill + solid border
+            fill = QColor(color); fill.setAlpha(30)
+            painter.setBrush(QBrush(fill))
+            painter.setPen(QPen(color, 2))
+            painter.drawRect(rect)
+
+            # Label: "name @ CENTER" on a pill above the box
+            center, _ = bbox_to_cells(box)
+            lbl = obj.get('name', 'object')
+            if center is not None:
+                lbl += f"  @ {cell_name(center)}"
+            tw = fm.horizontalAdvance(lbl)
+            th = fm.height()
+            lx = rx0
+            ly = max(gy, ry0 - th - 4)
+            bg = QColor(255, 255, 255, 215)
+            painter.setBrush(QBrush(bg))
+            painter.setPen(QPen(color, 1))
+            painter.drawRoundedRect(QRectF(lx, ly, tw + 10, th + 4), 4, 4)
+            painter.setPen(color)
+            painter.drawText(QPointF(lx + 5, ly + 2 + fm.ascent()), lbl)
 
     def _paint_highlight(self, painter: QPainter):
         area   = self._grid_area()
@@ -895,7 +965,6 @@ class CommandRunner(QObject):
         'goto':               1300,
         'pickup':              950,
         'keep':                950,
-        'place_into':          950,
         'drag':               1800,
         'rotate':              900,
         'change_orientation': 1100,
@@ -917,7 +986,6 @@ class CommandRunner(QObject):
         'run_cycle':          1600,
         'slice':              1100,
         'fill':               1300,
-        'twist_cap':           800,
         'clean_bathroom':     2200,
         'tidy_up':            1500,
         'dust_surfaces':      1200,
@@ -990,10 +1058,20 @@ class CommandRunner(QObject):
     @staticmethod
     def _parse(text: str) -> list[str]:
         cmds = []
+        started = False
         for line in text.splitlines():
             line = line.strip()
+            if not line:
+                continue
+            if not started:
+                if re.match(r'^(\d+\.|#)', line):
+                    started = True
+                else:
+                    continue   # skip PLAN / DESTINATIONS / CHECK preamble
+            if line.startswith('#') or line.upper().startswith('MISSING:'):
+                continue       # titles and MISSING lines aren't executable
             line = re.sub(r'^\d+\.\s*', '', line)   # strip "12. "
-            if line and not line.startswith('#'):
+            if line:
                 cmds.append(line)
         return cmds
 
@@ -1012,8 +1090,12 @@ class CommandRunner(QObject):
         """Execute one command; return the dwell time in ms."""
         raw = cmd.strip()
 
-        # ── goto_coordinate = A, 1 ────────────────────────────────────────────
-        m = re.match(r'goto_coordinate\s*=\s*([A-Ta-t])\s*,\s*(\d+)', raw)
+        # ── goto_coordinate: tolerate fused/split coords, optional '=' and ',' ──
+        m = re.match(
+            r'goto_coordinate\s*[:=]?\s*([A-Ta-t])\s*,?\s*(\d{1,2})\b',
+            raw,
+            re.IGNORECASE,
+        )
         if m:
             col = ord(m.group(1).upper()) - ord('A')
             row = int(m.group(2)) - 1
@@ -1022,6 +1104,8 @@ class CommandRunner(QObject):
             self.move_to.emit(col, row)
             self.state_changed.emit(*CMD_STATES['goto'])
             return self.DELAY['goto']
+        if raw.lower().startswith('goto_coordinate'):
+            print(f"[CommandRunner] Unparsed goto_coordinate command: {raw!r}")
 
         lc = raw.lower().split('(')[0].strip()   # base keyword, no args
 
@@ -1117,14 +1201,6 @@ class CommandRunner(QObject):
             self.state_changed.emit(*CMD_STATES['fill'])
             return self.DELAY['fill']
 
-        if lc.startswith('twist_cap'):
-            self.state_changed.emit(*CMD_STATES['twist_cap'])
-            return self.DELAY['twist_cap']
-
-        if lc.startswith('place_into'):
-            self.state_changed.emit(*CMD_STATES['place_into'])
-            return self.DELAY['place_into']
-
         if lc.startswith('drag'):
             self.state_changed.emit(*CMD_STATES['drag'])
             # drag(NAME, COL, ROW) — move dot to destination cell if parseable
@@ -1201,7 +1277,8 @@ class CommandRunner(QObject):
             QTimer.singleShot(2500, lambda: self.finished.emit())
             return 0
 
-        # Unknown command – short pause and continue
+        # Unknown command – log it so silent drops are visible, then pause and continue
+        print(f"[CommandRunner] Unparsed command (no handler matched): {raw!r}")
         return self.DELAY['default']
 
 
@@ -1244,6 +1321,7 @@ class AISidebar(QWidget):
     request_unfreeze = Signal()
     play_commands    = Signal(str)   # text → CameraPanel.run_commands
     stop_commands    = Signal()      # → CameraPanel.stop_commands
+    boxes_ready      = Signal(list)  # detected bboxes → CameraPanel overlay
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -1268,7 +1346,7 @@ class AISidebar(QWidget):
         ttl = QLabel("ProLabs  ·  Vision A2")
         ttl.setFont(QFont("Segoe UI Semibold", 11))
         ttl.setStyleSheet("color:#1A2a2e;")
-        sub = QLabel("GPT-4o")
+        sub = QLabel("BBox Vision")
         sub.setFont(QFont("Segoe UI", 9))
         sub.setStyleSheet("color:#2563eb;")
         hl.addWidget(ico); hl.addWidget(ttl); hl.addWidget(sub); hl.addStretch()
@@ -1351,7 +1429,7 @@ class AISidebar(QWidget):
         bl.addWidget(_divider())
 
         # ── Object list output ────────────────────────────────────────────────
-        bl.addWidget(self._sec("DETECTED OBJECTS  (GPT-4o Vision)"))
+        bl.addWidget(self._sec("DETECTED OBJECTS  (BBox → Python cells)"))
 
         self._scene_box = QTextEdit()
         self._scene_box.setReadOnly(True)
@@ -1516,13 +1594,14 @@ class AISidebar(QWidget):
         self._stop_btn.setEnabled(False)
         self._set_stage("")
         self._step_lbl.setText("")
+        self.boxes_ready.emit([])      # remove drawn boxes from the image
         self.stop_commands.emit()
 
     # ── analyse ───────────────────────────────────────────────────────────────
     def _on_capture(self):
         self._lock(True)
         self._play_btn.setEnabled(False)
-        self._set_stage("🔍  Sending image to GPT-4o Vision…")
+        self._set_stage("🔍  Sending image for bbox detection…")
         self._scene_box.clear()
         self._cmd_box.clear()
         self.request_frame.emit()
@@ -1532,13 +1611,14 @@ class AISidebar(QWidget):
             self._lock(False)
             self._set_stage("⚠️  No image loaded — click  📁 Import Image  first")
             return
-        self._set_stage("🔍  Step 1/2  ·  GPT-4o Vision detecting objects…")
+        self._set_stage("🔍  Step 1/2  ·  Detecting objects (bbox)…")
         self._scene_box.setHtml(
             '<div style="color:#2563eb;font-family:\'Segoe UI\';font-size:10px;padding:8px;">'
             '🔍&nbsp;&nbsp;Detecting objects in the scene…</div>'
         )
         self._vision_worker = VisionWorker(bgr)
         self._vision_worker.done.connect(self._on_vision_done)
+        self._vision_worker.boxes.connect(self.boxes_ready.emit)
         self._vision_worker.error.connect(self._on_error)
         self._vision_worker.start()
 
@@ -1610,7 +1690,7 @@ class AISidebar(QWidget):
         header = (
             f'<div style="color:#2563eb;font-family:\'Segoe UI\';font-size:9px;'
             f'letter-spacing:0.05em;margin-bottom:8px;">'
-            f'{count} OBJECT{"S" if count != 1 else ""} DETECTED</div>'
+            f'{count} OBJECT{"S" if count != 1 else ""} DETECTED  ·  cells computed in Python</div>'
         )
         return header + ''.join(cards)
 
@@ -1689,7 +1769,7 @@ class AISidebar(QWidget):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Image panel  (replaces camera — loads a static image from disk)
+#  Image panel  (loads a static image from disk)
 # ─────────────────────────────────────────────────────────────────────────────
 class CameraPanel(QWidget):
     runner_finished = Signal()   # forwarded to sidebar
@@ -1764,6 +1844,7 @@ class CameraPanel(QWidget):
         sidebar.request_unfreeze.connect(self._on_unfreeze)   # no-op for static image
         sidebar.play_commands.connect(self.run_commands)
         sidebar.stop_commands.connect(self.stop_commands)
+        sidebar.boxes_ready.connect(self._overlay.set_bboxes)
 
     # ── image import ──────────────────────────────────────────────────────────
     def _import_image(self):
@@ -1783,6 +1864,7 @@ class CameraPanel(QWidget):
             return
 
         self._raw_image = bgr
+        self._overlay.set_bboxes([])   # stale boxes from a previous image are wrong
         self._show_image(bgr)
 
         import os
@@ -1792,7 +1874,7 @@ class CameraPanel(QWidget):
 
     def _show_image(self, bgr):
         """Display image with KeepAspectRatio. Tell the overlay the exact letterbox rect
-        so its grid cells map 1-to-1 with the grid drawn on the native image for GPT-4o."""
+        so its grid cells map 1-to-1 with the normalized bbox space used by the VLM."""
         rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
         h, w = rgb.shape[:2]
         qi   = QImage(rgb.data, w, h, w * 3, QImage.Format_RGB888).copy()
@@ -1837,7 +1919,7 @@ class CameraPanel(QWidget):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Humanoid Opearting System – A2 Physical Simulator")
+        self.setWindowTitle("Humanoid Operating System – A2 Physical Simulator")
         self.resize(1440, 840)
         self.setMinimumSize(960, 600)
         pal = QPalette()

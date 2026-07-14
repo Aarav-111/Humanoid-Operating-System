@@ -53,7 +53,7 @@ For non "keep, pickup, up, down" tasks, we also have something called as *specia
       - [x] K5D
     - [ ] Physical Simulator (In progress)
       - [x] A1
-      - [ ] A2
+      - [ ] A2.3
     - [ ] Physical Robot
       - [ ] S1
       - [ ] S1.1
@@ -101,9 +101,9 @@ The Hardware_connector is now integrated into the Physical Simulator so there is
 
 The A1 simulator is our first Physical Simulator which is 2D.
 
-- A2 *Under Testing*
+- A2.3 *Under Testing*
 
-The A2 simulator is a proper 3D task planner just like the K5D virtual simulator but A2 simulator is physical.
+The A2.3 simulator is a proper 3D task planner just like the K5D virtual simulator but A2.3 simulator is physical.
 
 ## **Benchmarking...**
 

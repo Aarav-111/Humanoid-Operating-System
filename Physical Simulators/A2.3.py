@@ -17,11 +17,12 @@ from PySide6.QtGui   import (QImage, QPixmap, QFont, QColor, QPalette,
 
 # ─────────────────────────────────────────────────────────────────────────────
 OPENAI_API_KEY = (
-    "ADD YOUR OPENAI API KEY HERE"
+    "sk-proj-vFVeJD0s4A4mfZGLCBUDPCOaQcNj7vQLPcNvHvhQXuWfFoR6OiW1X5gf9jyX"
+    "yyJet33N-dsL_QT3BlbkFJ_hbcfH-O03UxhkANXi4VPepseIX2SkNSYQyX3sGZAn7vax"
+    "8HYBseymYc-ExEV_nnNk0ZiCgXsA"
 )
 
 INSTRUCTIONS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ai_instructions.json")
-MANUAL_OBJ_FILE   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "manual_objects.json")
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  Cross-platform fonts  (Segoe UI / Consolas are Windows-only — on macOS they
@@ -788,11 +789,14 @@ CHECK: "X goes where Y is" means X's final cell is Y's CURRENT cell (Y's CENTER
 in the OBJECT LIST). It does NOT mean Y moves to X's cell. Verify every
 DESTINATIONS line against this rule before writing commands.
 
-Then the commands:
+Then the commands. The FIRST numbered command of every task must be
+invoke(Alpha_2D_unstacker) — a fixed initialization step, always written exactly
+like that, before any goto_coordinate/pickup/etc:
 
 # brief task description
-1. command
+1. invoke(Alpha_2D_unstacker)
 2. command
+3. command
 ...
 Task_Completed
 
@@ -913,9 +917,6 @@ class CommandWorker(QThread):
 #  GridOverlay
 # ─────────────────────────────────────────────────────────────────────────────
 class GridOverlay(QWidget):
-    # Emitted while/after the user draws a box or toggles cells in draw mode.
-    selection_changed = Signal(list, object)   # (cells[(c,r)…], box[x0,y0,x1,y1] | None)
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setAttribute(Qt.WA_TransparentForMouseEvents)
@@ -923,13 +924,6 @@ class GridOverlay(QWidget):
 
         self._img_rect: 'QRectF | None' = None
         self._bboxes  : list = []
-
-        # ── Draw / select mode ────────────────────────────────────────────────
-        self._draw_mode : bool = False
-        self._drag_from : 'QPointF | None' = None
-        self._drag_to   : 'QPointF | None' = None
-        self._sel_cells : list = []          # [(col,row), …] currently selected
-        self._sel_box   : list = None        # normalized 0-1000 box from the drag
 
         self._cur_col: float = 0.0
         self._cur_row: float = 0.0
@@ -959,96 +953,6 @@ class GridOverlay(QWidget):
     def set_bboxes(self, objects: list):
         self._bboxes = objects or []
         self.update()
-
-    # ── draw / select mode ────────────────────────────────────────────────────
-    def set_draw_mode(self, on: bool):
-        """When on, the overlay captures the mouse: drag = draw a bbox,
-        click = toggle a single cell in/out of the selection."""
-        self._draw_mode = bool(on)
-        self.setAttribute(Qt.WA_TransparentForMouseEvents, not self._draw_mode)
-        self.setCursor(Qt.CrossCursor if self._draw_mode else Qt.ArrowCursor)
-        if not self._draw_mode:
-            self._drag_from = self._drag_to = None
-        self.update()
-
-    def clear_selection(self):
-        self._sel_cells = []
-        self._sel_box   = None
-        self._drag_from = self._drag_to = None
-        self.update()
-        self.selection_changed.emit([], None)
-
-    def _pt_to_cell(self, pt: QPointF):
-        """Widget pixel → (col,row), or None if outside the image area."""
-        a = self._grid_area()
-        if a.width() <= 0 or a.height() <= 0:
-            return None
-        if not a.contains(pt):
-            return None
-        col = int((pt.x() - a.x()) / (a.width()  / COLS))
-        row = int((pt.y() - a.y()) / (a.height() / ROWS))
-        return (max(0, min(COLS - 1, col)), max(0, min(ROWS - 1, row)))
-
-    def _pt_to_norm(self, pt: QPointF):
-        """Widget pixel → normalized 0-1000 coords inside the image area."""
-        a = self._grid_area()
-        x = (pt.x() - a.x()) / max(1.0, a.width())  * 1000.0
-        y = (pt.y() - a.y()) / max(1.0, a.height()) * 1000.0
-        return (max(0.0, min(1000.0, x)), max(0.0, min(1000.0, y)))
-
-    def mousePressEvent(self, ev):
-        if not self._draw_mode:
-            return super().mousePressEvent(ev)
-        if ev.button() == Qt.RightButton:
-            self.clear_selection()
-            return
-        self._drag_from = QPointF(ev.position())
-        self._drag_to   = QPointF(ev.position())
-        self.update()
-
-    def mouseMoveEvent(self, ev):
-        if not self._draw_mode or self._drag_from is None:
-            return super().mouseMoveEvent(ev)
-        self._drag_to = QPointF(ev.position())
-        self.update()
-
-    def mouseReleaseEvent(self, ev):
-        if not self._draw_mode or self._drag_from is None:
-            return super().mouseReleaseEvent(ev)
-        start, end = self._drag_from, QPointF(ev.position())
-        self._drag_from = self._drag_to = None
-
-        dist = math.hypot(end.x() - start.x(), end.y() - start.y())
-        if dist < 6:
-            # Treated as a click: toggle that one cell in/out of the selection.
-            cell = self._pt_to_cell(end)
-            if cell is not None:
-                if cell in self._sel_cells:
-                    self._sel_cells.remove(cell)
-                else:
-                    self._sel_cells.append(cell)
-                self._sel_cells.sort(key=lambda t: (t[1], t[0]))
-                # Hand-toggled cells invalidate the drawn box; rebuild it to
-                # enclose whatever is now selected.
-                self._sel_box = cells_to_bbox(self._sel_cells) if self._sel_cells else None
-                self.update()
-                self.selection_changed.emit(list(self._sel_cells), self._sel_box)
-            return
-
-        # Real drag → build a normalized bbox and derive its cells.
-        x0, y0 = self._pt_to_norm(start)
-        x1, y1 = self._pt_to_norm(end)
-        box = [round(min(x0, x1)), round(min(y0, y1)),
-               round(max(x0, x1)), round(max(y0, y1))]
-        if box[2] - box[0] < 2 or box[3] - box[1] < 2:
-            return
-        center, touches = bbox_to_cells(box)
-        if center is None:
-            return
-        self._sel_box   = box
-        self._sel_cells = list(touches)
-        self.update()
-        self.selection_changed.emit(list(self._sel_cells), self._sel_box)
 
     # ── public API ────────────────────────────────────────────────────────────
     def show_dot(self, col: int = 0, row: int = 0):
@@ -1117,77 +1021,12 @@ class GridOverlay(QWidget):
             p.setRenderHint(QPainter.Antialiasing, True)
             self._paint_bboxes(p)
             p.setRenderHint(QPainter.Antialiasing, False)
-        if self._sel_cells or self._sel_box or self._drag_from:
-            p.setRenderHint(QPainter.Antialiasing, True)
-            self._paint_selection(p)
-            p.setRenderHint(QPainter.Antialiasing, False)
-        if self._draw_mode:
-            p.setRenderHint(QPainter.Antialiasing, True)
-            self._paint_draw_banner(p)
         if self._visible:
             p.setRenderHint(QPainter.Antialiasing, True)
             self._paint_trail(p)
             self._paint_highlight(p)
             if self._status_txt:
                 self._draw_status_pill(p)
-
-    def _paint_selection(self, painter: QPainter):
-        """Amber highlight over every selected cell + the drawn/derived box."""
-        a = self._grid_area()
-        cw = a.width()  / COLS
-        ch = a.height() / ROWS
-        SEL = QColor('#facc15')
-
-        # Selected cells
-        fill = QColor(SEL); fill.setAlpha(70)
-        painter.setBrush(QBrush(fill))
-        painter.setPen(QPen(QColor(250, 204, 21, 190), 1))
-        for (c, r) in self._sel_cells:
-            painter.drawRect(QRectF(a.x() + c * cw, a.y() + r * ch, cw, ch))
-
-        # Cell names on the selection
-        painter.setFont(QFont(UI_FONT, 9, QFont.Bold))
-        painter.setPen(QColor(255, 255, 255, 235))
-        fm = painter.fontMetrics()
-        for (c, r) in self._sel_cells:
-            lbl = cell_name((c, r))
-            tw  = fm.horizontalAdvance(lbl)
-            painter.drawText(
-                QPointF(a.x() + c * cw + (cw - tw) / 2,
-                        a.y() + r * ch + ch / 2 + fm.ascent() / 2 - 2), lbl)
-
-        # The committed box
-        if self._sel_box:
-            x0, y0, x1, y1 = self._sel_box
-            rect = QRectF(a.x() + x0 / 1000.0 * a.width(),
-                          a.y() + y0 / 1000.0 * a.height(),
-                          (x1 - x0) / 1000.0 * a.width(),
-                          (y1 - y0) / 1000.0 * a.height())
-            painter.setBrush(Qt.NoBrush)
-            painter.setPen(QPen(SEL, 2, Qt.DashLine))
-            painter.drawRect(rect)
-
-        # Live drag rectangle
-        if self._drag_from is not None and self._drag_to is not None:
-            painter.setBrush(QBrush(QColor(250, 204, 21, 40)))
-            painter.setPen(QPen(QColor('#fde68a'), 2))
-            painter.drawRect(QRectF(self._drag_from, self._drag_to).normalized())
-
-    def _paint_draw_banner(self, painter: QPainter):
-        txt = "✏️  DRAW MODE — drag a box · click a cell to toggle · right-click clears"
-        if self._sel_cells:
-            txt = f"✏️  {len(self._sel_cells)} cells selected — drag/click to adjust"
-        painter.setFont(QFont(UI_FONT_B, 11))
-        fm = painter.fontMetrics()
-        tw = fm.horizontalAdvance(txt)
-        bw, bh = tw + 34, fm.height() + 14
-        bx = (self.width() - bw) / 2.0
-        by = 14.0
-        painter.setBrush(QBrush(QColor(20, 14, 4, 240)))
-        painter.setPen(QPen(QColor('#facc15'), 2))
-        painter.drawRoundedRect(QRectF(bx, by, bw, bh), bh / 2, bh / 2)
-        painter.setPen(QColor('#fde68a'))
-        painter.drawText(QPointF(bx + 17, by + 7 + fm.ascent()), txt)
 
     def _paint_grid(self, painter: QPainter):
         area = self._grid_area()
@@ -1387,6 +1226,8 @@ class CommandRunner(QObject):
     hide_dot      = Signal()
     step_info     = Signal(int, int, str)
     finished      = Signal()
+    popup_show    = Signal(str)
+    popup_hide    = Signal()
 
     DELAY = {
         'goto': 1300, 'pickup': 950, 'keep': 950, 'drag': 1800, 'rotate': 900,
@@ -1495,6 +1336,30 @@ class CommandRunner(QObject):
         if self._running and delay > 0:
             self._timer.start(self._scaled(delay))
 
+    # ── invoke(...) — cosmetic no-op popup sequence ──────────────────────────
+    def _invoke_sequence(self):
+        if not self._running:
+            return
+        self.popup_show.emit('Invoking Alpha 2D unstacker')
+        QTimer.singleShot(self._scaled(1000), self._invoke_stage2)
+
+    def _invoke_stage2(self):
+        if not self._running:
+            return
+        self.popup_show.emit('Alpha 2D stacker is unstacking')
+        QTimer.singleShot(self._scaled(1000), self._invoke_stage3)
+
+    def _invoke_stage3(self):
+        if not self._running:
+            return
+        self.popup_show.emit('Unstaking is done...')
+        QTimer.singleShot(self._scaled(1000), self._invoke_finish)
+
+    def _invoke_finish(self):
+        self.popup_hide.emit()
+        if self._running:
+            self._step()
+
     def _cells_cmd(self, key: str, raw: str) -> int:
         self.state_changed.emit(*CMD_STATES[key])
         cells = self._parse_cells(raw)
@@ -1518,6 +1383,10 @@ class CommandRunner(QObject):
             print(f"[CommandRunner] Unparsed goto_coordinate: {raw!r}")
 
         lc = raw.lower().split('(')[0].strip()
+
+        if lc.startswith('invoke'):
+            self._invoke_sequence()
+            return 0
 
         if lc in ('pickup', 'keep', 'pour'):
             self.state_changed.emit(*CMD_STATES[lc])
@@ -1708,16 +1577,12 @@ class AISidebar(QWidget):
     stop_commands = Signal()
     boxes_ready   = Signal(list)
     speed_changed = Signal(float)
-    draw_mode     = Signal(bool)    # → GridOverlay.set_draw_mode
-    clear_draw    = Signal()        # → GridOverlay.clear_selection
 
     SPEEDS = [0.5, 1.0, 1.5, 2.0, 3.0, 4.0]
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._vision_objs : list = []
-        self._manual_objs : list = self._load_manual()
-        self._drawn_box   : list = None
         self._vision_worker  = None
         self._command_worker = None
         self.setMinimumWidth(340)
@@ -1726,10 +1591,10 @@ class AISidebar(QWidget):
         self._build_ui()
         self._refresh_objects()
 
-    # ── object list (vision + manual, single source of truth) ─────────────────
+    # ── object list ──────────────────────────────────────────────────────────
     @property
     def _all_objs(self):
-        return self._vision_objs + self._manual_objs
+        return self._vision_objs
 
     @property
     def _object_list(self) -> str:
@@ -1814,109 +1679,12 @@ class AISidebar(QWidget):
         self._capture_btn = _grad_btn("🔍   ANALYSE IMAGE  (VISION AI)", "#0891b2", "#22d3ee", h=38, fs=11)
         self._capture_btn.clicked.connect(self._on_capture)
         c_vis.add(self._capture_btn)
-        note = QLabel("Detects objects automatically. Optional — you can skip this and "
-                      "define objects by hand below, or mix both.")
+        note = QLabel("Detects every object in the image automatically.")
         note.setWordWrap(True)
         note.setFont(QFont(UI_FONT, 8))
         note.setStyleSheet(f"color:{C_TEXT_DIM};background:transparent;border:none;")
         c_vis.add(note)
         bl.addWidget(c_vis)
-
-        # ── STEP 1B · Manual entry ────────────────────────────────────────────
-        c_man = SectionCard("STEP 1B · MANUAL OBJECT ENTRY", C_AMBER)
-
-        # Draw-on-image toggle — the primary way to define a bbox by hand.
-        self._draw_btn = QPushButton("✏️   DRAW BBOX ON IMAGE")
-        self._draw_btn.setFixedHeight(34)
-        self._draw_btn.setCheckable(True)
-        self._draw_btn.setCursor(Qt.PointingHandCursor)
-        self._draw_btn.setStyleSheet(f"""
-            QPushButton {{
-                background: qlineargradient(x1:0,y1:0,x2:1,y2:1,
-                    stop:0 #78350f, stop:1 #b45309);
-                color:#fde68a; border:1px solid {C_AMBER}; border-radius:11px;
-                font-family:'{UI_FONT}'; font-weight:800; font-size:11px;
-                letter-spacing:0.05em;
-            }}
-            QPushButton:hover {{ background:{C_AMBER}; color:#0b0f1c; }}
-            QPushButton:checked {{
-                background: qlineargradient(x1:0,y1:0,x2:1,y2:1,
-                    stop:0 #f59e0b, stop:1 #fde047);
-                color:#0b0f1c; border:2px solid #fde047;
-            }}
-        """)
-        self._draw_btn.toggled.connect(self._on_draw_toggle)
-        c_man.add(self._draw_btn)
-
-        self._draw_hint = QLabel(
-            "Drag a box over the object → CENTER + TOUCHES fill in below. "
-            "Click a cell to add/remove it. Right-click clears.")
-        self._draw_hint.setWordWrap(True)
-        self._draw_hint.setFont(QFont(UI_FONT, 8))
-        self._draw_hint.setStyleSheet(
-            f"color:{C_TEXT_DIM};background:transparent;border:none;")
-        c_man.add(self._draw_hint)
-
-        r1 = QHBoxLayout(); r1.setSpacing(6)
-        self._m_name  = QLineEdit(); self._m_name.setPlaceholderText("name  e.g. plate")
-        self._m_color = QLineEdit(); self._m_color.setPlaceholderText("colour")
-        self._m_size  = QComboBox(); self._m_size.addItems(["small", "medium", "large"])
-        r1.addWidget(self._m_name, 3); r1.addWidget(self._m_color, 2); r1.addWidget(self._m_size, 2)
-        c_man.add(r1)
-
-        r2 = QHBoxLayout(); r2.setSpacing(6)
-        self._m_center  = QLineEdit(); self._m_center.setPlaceholderText("CENTER  e.g. F6")
-        self._m_touches = QLineEdit(); self._m_touches.setPlaceholderText("TOUCHES  e.g. F6,G6,F7,G7")
-        r2.addWidget(self._m_center, 2); r2.addWidget(self._m_touches, 4)
-        c_man.add(r2)
-
-        self._m_desc = QLineEdit(); self._m_desc.setPlaceholderText("short description (optional)")
-        c_man.add(self._m_desc)
-        self._m_aka  = QLineEdit(); self._m_aka.setPlaceholderText("also-known-as, comma separated (optional)")
-        c_man.add(self._m_aka)
-
-        for w in (self._m_name, self._m_color, self._m_center,
-                  self._m_touches, self._m_desc, self._m_aka):
-            w.setFixedHeight(28)
-            w.setMinimumWidth(0)
-            w.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
-            w.setStyleSheet(_field_css(C_AMBER))
-        self._m_size.setFixedHeight(28)
-        self._m_size.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
-        self._m_size.setMinimumContentsLength(4)
-        self._m_size.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
-        self._m_size.setStyleSheet(_field_css(C_AMBER))
-
-        self._m_add = _grad_btn("➕   ADD OBJECT TO LIST", "#b45309", "#f59e0b", h=34, fs=10)
-        self._m_add.clicked.connect(self._on_add_manual_object)
-        c_man.add(self._m_add)
-
-        self._m_list = QListWidget()
-        self._m_list.setFixedHeight(78)
-        self._m_list.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self._m_list.setTextElideMode(Qt.ElideRight)
-        self._m_list.setWordWrap(False)
-        self._m_list.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
-        self._m_list.setStyleSheet(f"""
-            QListWidget{{background:{C_PANEL_2};color:{C_TEXT};
-                border:1px solid {C_BORDER};border-radius:9px;
-                font-family:{MONO_FONT};font-size:10px;padding:3px;}}
-            QListWidget::item{{padding:3px 5px;border-radius:5px;}}
-            QListWidget::item:selected{{background:{C_AMBER};color:#0b0f1c;}}
-        """)
-        c_man.add(self._m_list)
-
-        del_btn = _ghost_btn("🗑  Delete selected object", C_RED, h=26, fs=9)
-        del_btn.clicked.connect(self._on_delete_manual)
-        c_man.add(del_btn)
-
-        mhint = QLabel("Manual objects persist between sessions and merge with vision "
-                       "results. Leave TOUCHES blank to use CENTER only.")
-        mhint.setWordWrap(True)
-        mhint.setFont(QFont(UI_FONT, 8))
-        mhint.setStyleSheet(f"color:{C_TEXT_DIM};background:transparent;border:none;")
-        c_man.add(mhint)
-        bl.addWidget(c_man)
 
         # ── STEP 2 · Task ─────────────────────────────────────────────────────
         c_task = SectionCard("STEP 2 · DESCRIBE YOUR TASK", C_GREEN)
@@ -2184,147 +1952,8 @@ class AISidebar(QWidget):
             self._save_instructions()
             self._refresh_instr_combo()
 
-    # ── draw-on-image ─────────────────────────────────────────────────────────
-    def _on_draw_toggle(self, on: bool):
-        self.draw_mode.emit(on)
-        if on:
-            self._draw_btn.setText("✏️   DRAWING…  (click to finish)")
-            self._set_stage("✏️  Drag a box on the image to define the object", C_AMBER)
-        else:
-            self._draw_btn.setText("✏️   DRAW BBOX ON IMAGE")
-            self._set_stage("")
-
-    def on_selection(self, cells: list, box):
-        """GridOverlay hands back the cells the user drew/clicked."""
-        self._drawn_box = list(box) if box else None
-        if not cells:
-            self._m_center.clear()
-            self._m_touches.clear()
-            self._draw_hint.setText(
-                "Drag a box over the object → CENTER + TOUCHES fill in below. "
-                "Click a cell to add/remove it. Right-click clears.")
-            return
-
-        # CENTER = the cell at the centroid of the drawn box, else the middle
-        # of whatever cells are hand-selected.
-        center = None
-        if box:
-            c, _ = bbox_to_cells(box)
-            center = c
-        if center is None or center not in cells:
-            center = cells[len(cells) // 2]
-
-        self._m_center.setText(cell_name(center))
-        self._m_touches.setText(",".join(cell_name(c) for c in cells))
-        self._draw_hint.setText(
-            f"✅  {len(cells)} cells captured — name it and hit ADD OBJECT. "
-            f"Keep clicking cells to fine-tune the footprint.")
-        if not self._m_name.text().strip():
-            self._m_name.setFocus()
-
-    # ── manual objects ────────────────────────────────────────────────────────
-    @staticmethod
-    def _load_manual() -> list:
-        try:
-            with open(MANUAL_OBJ_FILE, "r") as f:
-                data = json.load(f)
-            out = []
-            for o in data:
-                if isinstance(o, dict) and o.get('name') and o.get('center'):
-                    o['source'] = 'manual'
-                    out.append(o)
-            return out
-        except (FileNotFoundError, json.JSONDecodeError, OSError):
-            return []
-
-    def _save_manual(self):
-        try:
-            with open(MANUAL_OBJ_FILE, "w") as f:
-                json.dump(self._manual_objs, f, indent=2)
-        except OSError:
-            pass
-
-    def _on_add_manual_object(self):
-        name   = self._m_name.text().strip().lower()
-        color  = self._m_color.text().strip() or "?"
-        size   = self._m_size.currentText()
-        center = self._m_center.text().strip().upper()
-        desc   = self._m_desc.text().strip()
-        aka    = [a.strip() for a in self._m_aka.text().split(',') if a.strip()]
-
-        if not name:
-            self._set_stage("⚠️  Manual entry needs a name", C_RED); return
-        c_cell = parse_cell(center)
-        if c_cell is None:
-            self._set_stage("⚠️  CENTER must be a valid cell A1–T11 (e.g. F6)", C_RED); return
-
-        raw_touch = [t.strip().upper() for t in self._m_touches.text().split(',') if t.strip()]
-        bad = [t for t in raw_touch if parse_cell(t) is None]
-        if bad:
-            self._set_stage(f"⚠️  Invalid TOUCHES cell(s): {', '.join(bad)}", C_RED); return
-
-        cells = [parse_cell(t) for t in raw_touch] or [c_cell]
-        if c_cell not in cells:
-            cells.insert(0, c_cell)
-        cells = sorted(set(cells), key=lambda t: (t[1], t[0]))
-
-        obj = {
-            'name':    name,
-            'center':  cell_name(c_cell),
-            'touches': ",".join(cell_name(c) for c in cells),
-            'color':   color,
-            'size':    size,
-            'desc':    desc,
-            'aka':     aka,
-            # Prefer the exact box the user drew with the mouse; fall back to a
-            # box synthesised from the typed cells.
-            'box':     self._drawn_box or cells_to_bbox(cells),
-            'source':  'manual',
-        }
-        self._manual_objs.append(obj)
-        self._save_manual()
-        self._refresh_objects()
-        self._set_stage(f"✅  Added '{name}'  ({len(cells)} cells)", C_GREEN)
-
-        self._drawn_box = None
-        self.clear_draw.emit()
-        self._draw_hint.setText(
-            "Drag a box over the object → CENTER + TOUCHES fill in below. "
-            "Click a cell to add/remove it. Right-click clears.")
-        for w in (self._m_name, self._m_color, self._m_center,
-                  self._m_touches, self._m_desc, self._m_aka):
-            w.clear()
-        self._m_size.setCurrentIndex(0)
-
-    def _on_delete_manual(self):
-        row = self._m_list.currentRow()
-        if row < 0 or row >= len(self._manual_objs):
-            self._set_stage("⚠️  Select a manual object to delete", C_RED); return
-        name = self._manual_objs[row]['name']
-        if QMessageBox.question(
-            self, "Delete Object", f'Remove manual object "{name}"?',
-            QMessageBox.Yes | QMessageBox.No, QMessageBox.No,
-        ) == QMessageBox.Yes:
-            del self._manual_objs[row]
-            self._save_manual()
-            self._refresh_objects()
-            self._set_stage(f"🗑  Removed '{name}'", C_TEXT_DIM)
-
-    def _refresh_manual_list(self):
-        self._m_list.clear()
-        if not self._manual_objs:
-            it = QListWidgetItem("— no manual objects —")
-            it.setFlags(Qt.NoItemFlags)
-            it.setForeground(QColor(C_TEXT_DIM))
-            self._m_list.addItem(it)
-            return
-        for o in self._manual_objs:
-            n = len(o['touches'].split(',')) if o.get('touches') else 1
-            self._m_list.addItem(f"✎ {o['name']}  @ {o['center']}   ({n} cells)")
-
     # ── unified object refresh ────────────────────────────────────────────────
     def _refresh_objects(self):
-        self._refresh_manual_list()
         self._scene_box.setHtml(self._format_objects_html(self._all_objs))
         self._run_btn.setEnabled(bool(self._all_objs))
         self.boxes_ready.emit([o for o in self._all_objs if o.get('box')])
@@ -2333,8 +1962,7 @@ class AISidebar(QWidget):
     def _format_objects_html(objs: list) -> str:
         if not objs:
             return (f'<div style="color:{C_TEXT_DIM};font-family:\'{UI_FONT}\';font-size:10px;'
-                    f'padding:10px;">No objects yet — run the vision analyser or add one '
-                    f'manually.</div>')
+                    f'padding:10px;">No objects yet — run the vision analyser.</div>')
         SIZE_COLOR = {'small': '#94a3b8', 'medium': '#60a5fa', 'large': '#c084fc'}
         cards = []
         for o in objs:
@@ -2542,6 +2170,24 @@ class CameraPanel(QWidget):
         self._video.setStyleSheet(f"background:{C_BG};color:#44507a;")
         self._overlay.set_image_rect(None)
 
+        # ── Big invoke popup (floats over the video area) ───────────────────────
+        self._popup = QLabel(self)
+        self._popup.setAlignment(Qt.AlignCenter)
+        self._popup.setWordWrap(True)
+        self._popup.setFont(QFont(UI_FONT_B, 18))
+        self._popup.setStyleSheet(f"""
+            QLabel {{
+                background: qlineargradient(x1:0,y1:0,x2:1,y2:1,
+                    stop:0 #2e1065, stop:1 #4c1d95);
+                color:#f5f3ff;
+                border: 2px solid {C_VIOLET};
+                border-radius: 18px;
+                padding: 26px 40px;
+            }}
+        """)
+        self._popup.hide()
+        self._popup.raise_()
+
         # ── Runner ────────────────────────────────────────────────────────────
         self._runner = CommandRunner()
         self._runner.move_to.connect(self._overlay.set_target)
@@ -2549,6 +2195,8 @@ class CameraPanel(QWidget):
         self._runner.show_dot.connect(self._overlay.show_dot)
         self._runner.hide_dot.connect(self._overlay.hide_dot)
         self._runner.finished.connect(self.runner_finished.emit)
+        self._runner.popup_show.connect(self._show_popup)
+        self._runner.popup_hide.connect(self._popup.hide)
 
         # ── Sidebar wiring ────────────────────────────────────────────────────
         sidebar.request_frame.connect(self._deliver_frame)
@@ -2556,9 +2204,6 @@ class CameraPanel(QWidget):
         sidebar.stop_commands.connect(self.stop_commands)
         sidebar.boxes_ready.connect(self._overlay.set_bboxes)
         sidebar.speed_changed.connect(self._on_speed)
-        sidebar.draw_mode.connect(self._overlay.set_draw_mode)
-        sidebar.clear_draw.connect(self._overlay.clear_selection)
-        self._overlay.selection_changed.connect(sidebar.on_selection)
 
     def _on_speed(self, mult: float):
         self._runner.set_speed(mult)
@@ -2601,6 +2246,21 @@ class CameraPanel(QWidget):
         super().resizeEvent(event)
         if self._raw_image is not None:
             self._show_image(self._raw_image)
+        if self._popup.isVisible():
+            self._center_popup()
+
+    def _show_popup(self, text: str):
+        self._popup.setText(text)
+        self._popup.adjustSize()
+        self._center_popup()
+        self._popup.show()
+        self._popup.raise_()
+
+    def _center_popup(self):
+        w = max(self._popup.width(),  int(self.width()  * 0.4))
+        h = max(self._popup.height(), 90)
+        self._popup.resize(w, h)
+        self._popup.move((self.width() - w) // 2, (self.height() - h) // 2)
 
     def _deliver_frame(self):
         self._sidebar.feed_frame(self._raw_image)

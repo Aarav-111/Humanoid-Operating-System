@@ -1,233 +1,142 @@
 # Humanoid Operating System (HOS)
 
-World’s first LLM-powered humanoid robot and a modular operating system for All humanoids
+An LLM-powered control layer and modular operating system for humanoid robots.
 
 ---
 
 ## Overview
 
-The CEO of NVIDIA said that "We need a breakthrough & come up with a fully general purpose robot, only then can we make a humanoid and revelutionise robotics". And this is what our team at the Humanoid Operating System is working on. The Humanoid Operating System (HOS) is a foundational software and hardware framework designed to give humanoid robots a generalized, reasoning-driven “mind”. 
+NVIDIA's CEO has spoken about the need for a general-purpose robot breakthrough before humanoids can scale. HOS is our team's attempt at that: a foundational software and hardware framework that gives humanoid robots a generalized, reasoning-driven "mind."
 
-Instead of training isolated models for each task like other VLA models (Including Gemini robotics, π0.5 etc.), HOS enables multi-modal decision-making through an LLM-driven control layer. This repository focuses on the Whole HOS System, the mobile base that enables humanoid locomotion and spatial movement & The Robotic arm which gives it hands to do stuff.
-
----
+Instead of training isolated models per task (the approach used by most VLA models, including Gemini Robotics and π0.5), HOS uses an LLM-driven control layer for multi-modal decision-making. This repository covers the full HOS system: the mobile base for locomotion and spatial movement, and the robotic arm for manipulation.
 
 ---
 
 ## HOS Architecture
 
-A complete HOS humanoid consists of two primary hardware integrations:
+A complete HOS humanoid has two primary hardware components:
 
 | Component | Role | Description |
-|----------|------|-------------|
-| Robotic Arm | Worker | Manipulation and task execution|
-| Mobile Arm | Mover | Mobile base providing locomotion and orientation |
+|---|---|---|
+| Robotic Arm | Worker | Manipulation and task execution |
+| Mobile Base | Mover | Locomotion and orientation |
+
 ---
 
-## HOS Working
+## How HOS Works
 
-The Humanoid Operating system (HOS) version 2.0 uses a 2D coordinate system and an LLM. The screenshot/image of the 2D base is taken from the top and sent to the LLM for processing, the LLM then outputs json-like code for further Function calling.
+HOS v2.0 uses a 2D coordinate system paired with an LLM. A top-down image of the workspace is sent to the LLM, which returns structured commands for function calling.
 
 Example output:
-
+```
 {goto_coordinate = T,8}
 {pickup}
 {goto_coordinate = K,8}
 {keep}
 {Task_Completed}
+```
 
-
-
-For non "keep, pickup, up, down" tasks, we also have something called as *special functions* which inlcudes functions like {Pour}, {pick_up_from_spoon} etc. these special functions are used rearely as most tasks just involve "keep, pickup, up, down" motions apart from the x & y axis motions.
+For tasks outside the core "keep, pickup, up, down" set, HOS supports special functions such as `{pour}` and `{pick_up_from_spoon}`. These are used less often since most tasks reduce to X/Y movement plus keep, pickup, up, down.
 
 ---
 
+## Roadmap
 
-- [x] HOS Concept Design
-- [x] Navigation Logic and System Prompting
-
+- [x] HOS concept design
+- [x] Navigation logic and system prompting
 - [ ] Arm integration (in progress)
-    - [x] Vrtual Simulator
-      - [x] Pro series
-      - [x] K3D
-      - [x] K5D
-    - [] Physical Simulator (In progress)
-      - [x] A1
-      - [x] A2
-      - [x] A2.3
-      - [x] A2.4
-      - [x] A2.5
-      - [x] A2.5.5
-      - [x] A2.6-Sol
-      - [ ] A3-Terra
-    - [ ] Physical Robot
-      - [ ] S1
-      - [ ] S1.1
-      - [ ] S2
-    - [ ] Integrated robot
-      - [ ] AS2
-      - [ ] AS3
-      - [ ] AS4
+  - [x] Virtual simulator: Pro series, K3D, K5D
+  - [ ] Physical simulator (in progress): A1, A2, A2.3–A2.6-Sol done; A3-Terra in progress
+  - [ ] Physical robot: S1, S1.1, S2
+  - [ ] Integrated robot: AS2, AS3, AS4
 
 ---
 
 ## Simulators
 
-Before we make the real robot, our team at HOS developed a simulator simulating the LLMs planning and improving it, this makes the prototyping very easy and helps us debug in advance.
+Before building the physical robot, we build simulators to test and improve the LLM's planning. This speeds up prototyping and lets us debug issues in advance.
 
-Some of our simulators have already launched proving our innovation and technology is working and is even better than most big-tech giants.
+**Virtual simulator series**
 
-**Simulator models**
+- **Pro (v1–v8)** — Initial prototyping phase exploring different LLM control approaches. Accuracy was low; this series established what didn't work.
+- **K1** — First shift to 2D coordinate output instead of directional commands (left, right, forward, back). This significantly improved accuracy and task planning.
+- **K1.5** — Added more task types and longer multi-step planning.
+- **K3D** — First 3D version. Added tasks like pouring, dishwashing, and dusting.
+- **K3.5D** — Expanded task range and longer-horizon planning.
+- **K5D** — Current simulator. Supports complex multi-step tasks (cooking, sweeping, mopping, dishwashing, dusting, cutting, laundry, machine operation) and adds a plan-and-approve workflow with memory, so the user can correct the AI and the system can learn from that. Fully 3D, including re-orienting to approach objects from the side.
 
-- Pro (series) v[1, 2, 3, 4, 5, 6, 7, 7_cord & 8] *launched*
-this series was our initial prototying phase where we shaped our approach on LLMs, this mainly failed as it wasn't able to do many tasks and the accuracy was pretty bad.
+**Physical simulators**
 
-- K1 sim *Launched*
-The K1 2D simulator was when our first model started taking shape, this was an approach for the LLM to output 2D coordinates rather than controlling the robot with commands like (right, left, front, back etc.), the accuracy skyrocketed with this upgrade as well as the intellegence.
+Physical simulators combine a live camera feed and coordinate planning with an actual actuated arm carrying out the actions. This surfaces real-world problems before we commit to a final robot design. The hardware connector is now built into the physical simulator, so no external extensions are needed.
 
-- k1.5 sim *launched*
-The K1.5 simulator added a lot more task capibilities and longer multi-step tasks planning making this a huge upgrade.
-
-- K3D *launched*
-The launch of K3D made the robot look like a robot for the first time as the robot was now in 3D, it was also doing other tasks like pouring, cleaning dishes, dusting etc.
-
-- K3.5D *launched*
-the K3.5D is a remarkable upgrade with many more task capibilities and ability to plan longer tasks.
-
-- K5D *Launched*
-The k5D simulator is our last simulator. It boosts task capability letting the robot do super complex tasks like cooking and lets it do pretty much every task possible. it also adds a plan & approve feature with memory for the user to correct the AI if needed and the AI learning. This simulator surpasses each and every general purpose robotic arm on planet earth! it can simple but also very complex perform tasks like sweeping the floor, mopping, washing dishes, dusting, cooking, cutting veggies, shopping, tidying, Ironing clothes, folding clothes, washing clothes, handling complex machines like washing machine and much more! this simulator is also truely 3D which means this can re-orient itself to approach an object from the side as well!
-
-## **Physical Simulators**
-Before building the Actual Prototype, we build Physical Simulators which openup a live picture, plan coordinates but an **augmented** arm does the task actions. this helps us understand the problems before-hand itself and correct it.
-
-The Hardware_connector is now integrated into the Physical Simulator so there is no need for external extensions!
-
-**Versions of Physical Simulators**
-- A1 *Launched*
-
-The A1 simulator is our first Physical Simulator which is 2D.
-
-- A2 *launched*
-
-The A2 simulator is slightly enhanced compared to A1, also having the vision prompt AI.
-
-- A2.6-Sol *Launched*
-
-The A2.6-Sol simulator is a proper 3D task planner just like the K5D virtual simulator but A2.6-Sol simulator is physical.
-
-- A3-terra *Under Development*
-The A3 terra will be one of our most intelligent Physical simulators having the below features more than A2.6-Sol:
-1)) Component wise detection like how it would do in the physical world (eg: not start the washing machine by clicking on the washing machine but on the “start” button)
-2) Adding gripper AI
-3) better hardware compatibility
-4) custom-build mode
-5) Improving task planner & be 10x better at doing tasks
-6) Much much better Vision prompt AI
-7) be completely FREE to use powered by AI scraping
-8) increased task compatibility
-
-- A3-Sol *not started*
-
-the A3-Sol simulator will be our final and Best simulator being the best!
-
-## **Benchmarking...**
-
-How We're the Best in the World?
-
-The proof is in the numbers. Our *K5D simulator* has passed the MMRO benchmark, the standard test used to measure general-purpose robot intelligence, with a score of 99%. That puts HOS ahead of every other general-purpose robotic arm system measured against this benchmark, and it backs up the claim with hard data rather than just a demo.
-
-Find our proof for the Score of the benchmarks here: https://drive.google.com/drive/folders/1bAwEW-q3GPSAHZffDW0udatJOwSDtqaD?usp=sharing
-
-
-## **Upcoming Versions of physical robots**
+- **A1** — First physical simulator, 2D.
+- **A2** — Enhanced version of A1, adds vision-prompt AI.
+- **A2.6-Sol** — Full 3D task planning in a physical rig, mirroring K5D's capability.
+- **A3-Terra** *(in development)* — Planned improvements over A2.6-Sol:
+  1. Component-level detection (e.g., targeting the washing machine's start button rather than the machine itself)
+  2. Gripper AI
+  3. Broader hardware compatibility
+  4. Custom-build mode
+  5. Stronger task planner
+  6. Improved vision-prompt AI
+  7. Free to use, powered by AI scraping
+  8. Expanded task compatibility
+- **A3-Sol** *(not started)* — Planned as our most capable simulator to date.
 
 ---
 
+## Benchmarking
 
-## **Version 2.0**
-****Full Cartesian system**** *(In progress)*
+Our K5D simulator scored 99% on the MMRO benchmark, a self-administered benchmark for general-purpose robot intelligence, as no independent MMRO evaluation body currently exists. We're publishing our methodology and scoring so others can review and reproduce it: https://drive.google.com/drive/folders/1bAwEW-q3GPSAHZffDW0udatJOwSDtqaD?usp=sharing
 
-A powerful 3D Cartesian setup capable of doing any task on the table.
-
-****Example Tasks****
-- Cut vegetables and put them into a pan for sautéing
-- Grab water from the refrigerator
-- Sort clothes and load the washing machine
+We want to be upfront that this is a self-reported result, not third-party verified. We see this as a strong internal benchmark and a starting point for external validation, not a final claim of superiority.
 
 ---
 
-## **Version 3.0**
-****Advanced intelligence****
+## Planned Physical Robot Versions
 
-Includes a major upgrade:
-- Improved high-level planners, ER systems, and contextual planning
+**v2.0 — Full Cartesian system** *(in progress)*
+A 3D Cartesian setup capable of general tabletop tasks.
+- Cut vegetables and add to a pan for sautéing
+- Retrieve water from the refrigerator
+- Sort and load laundry into the washing machine
 
-****Example Tasks****
-- Cook a complete meal including vegetables, dal-rice, and cucumber salad
-- Perform all tasks from previous versions
+**v3.0 — Advanced intelligence**
+Improved high-level planners, error-recovery systems, and contextual planning.
+- Cook a full meal (vegetables, dal-rice, cucumber salad)
+- All tasks from v2.0
 
----
+**v4.0 — Wheeled humanoid navigation**
+Adds wheels, LiDAR, and cameras for navigating a controlled mini-room environment.
+- Brings the system meaningfully closer to a true humanoid robot
 
-## **Version 4.0**
-****Wheeled humanoid navigation****
-
-- Adds wheels.  
-- Uses LiDAR and cameras to navigate a controlled mini-room environment.
-
-****Outcome****
-- Brings the system significantly closer to a true humanoid robot
-
----
-
-## **Version 5.0**
-****Full-room humanoid autonomy****
-
-A Legged humanoid capable of navigating a full-sized bedroom with major system-wide upgrades.
-
-****Key Improvements****
-- Advanced error correction mechanisms
-- More capable LLMs and vision systems
-- Major high-level planner upgrade
-
-****Example Tasks****
+**v5.0 — Full-room humanoid autonomy**
+Legged humanoid navigating a full-sized bedroom, with upgraded error correction, LLMs, and vision systems.
 - Mop the room
 - Clean the toilet
-- Perform all tasks from previous versions
+- All tasks from previous versions
 
----
-
-## **Version 6.0**
-****Full humanoid autonomy****
-
-A Legged humanoid capable of navigating a whole house with major system-wide upgrades.
-
-****Key Improvements****
-- 1.5x stronger ER systems
-- Advanced error correction mechanisms
-- Better high-level planner for each scinario
-
-****Example Tasks****
+**v6.0 — Full humanoid autonomy**
+Legged humanoid navigating a whole house, with 1.5x stronger error-recovery systems and scenario-specific planning.
 - Mop the whole house
-- Call my dad here from his room
+- Retrieve a family member from another room
+- All tasks from previous versions
 
 ---
 
 ## Credits and Contact
 
-Developed by: Prolabs Robotics  
-Project Lead: Aarav J.
-Project Co-lead: Siyona Chiker
+Developed by Prolabs Robotics.
 
-Collaborators:
-- Vivan Rajpuria
-- Ray 
-- Mathew tony
+**Project Lead:** Aarav Jaisingh
+**Project Co-lead:** Siyona Chicker
 
-Contact:  
-prolabsrobotics@gmail.com
+**Collaborators:** Vivan Rajpuria, Ray, Mathew Tony
+
+**Contact:** prolabsrobotics@gmail.com
 
 ---
 
 ## About
 
-This project is part of the Humanoid Operating System (HOS) initiative, focused on building scalable, LLM-driven humanoid intelligence and control systems.
+Part of the Humanoid Operating System (HOS) initiative, building scalable, LLM-driven humanoid intelligence and control systems.

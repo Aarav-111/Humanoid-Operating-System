@@ -48,7 +48,6 @@ For tasks outside the core "keep, pickup, up, down" set, HOS supports special fu
   - [x] Virtual simulator: Pro series, K3D, K5D
   - [ ] Physical simulator (in progress): A1, A2, A2.3–A2.6-Sol done; A3-Terra in progress
   - [ ] Physical robot: S1, S1.1, S2
-  - [ ] Integrated robot: AS2, AS3, AS4
 
 ---
 

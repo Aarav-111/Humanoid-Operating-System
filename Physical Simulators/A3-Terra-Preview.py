@@ -45,19 +45,22 @@ PLANNER_MODEL   = "gpt-5.6-terra"
 VOICE_TIDY_MODEL = "gpt-5.4-nano"
 SPEECH_MODEL     = "gpt-4o-transcribe"
 
-# Everything the app ships alongside its own code (app icon, example scenes)
-# lives in "HOS data" next to this script, so assets can be swapped without
-# touching the source.
+# Everything the app ships alongside its own code (app icon, example scenes,
+# every file it reads or writes at runtime) lives in "HOS data" next to this
+# script - A3-Terra.py is the only file that stays outside it - so assets and
+# saved state can be swapped or inspected without touching the source.
 HOS_DATA_DIR   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "HOS data")
 APP_ICON_PATH  = os.path.join(HOS_DATA_DIR, "app icon.png")
-CUSTOM_INSTRUCTIONS_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "custom_instructions.json")
-BUILD_CONFIG_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "build_config.json")
+CUSTOM_INSTRUCTIONS_PATH = os.path.join(HOS_DATA_DIR, "custom_instructions.json")
+BUILD_CONFIG_PATH        = os.path.join(HOS_DATA_DIR, "build_config.json")
 
 # Custom instructions default to these two, but the running set is loaded
-# from / saved to custom_instructions.json beside this script (see
-# CUSTOM_INSTRUCTIONS_PATH) rather than being rewritten into the source.
+# from / saved to custom_instructions.json in HOS data (see
+# CUSTOM_INSTRUCTIONS_PATH) rather than being rewritten into the source. The
+# CURRENT set (as of this prompt revision) is also hardcoded verbatim into
+# A2_SYSTEM's RULES section below, so they hold even before this file loads
+# on disk; edits made through the Custom Instructions UI still layer on top
+# of that at runtime exactly as before (see _launch_planner).
 AI_INSTRUCTIONS = [
     "If you have more than one plate in the frame where you have to apply soap, apply soap one by one to each.",
     "while boiling, always add water before the thing which has to get boiled",
@@ -2491,19 +2494,20 @@ CLARITY_SYSTEM = (
     """
 You are the Clarity Checker for a household robot. You are given a board's OBJECT LIST and the operator's task. You decide ONE thing: can the task planner act on this task as written, without guessing at something that would change the plan?
 
-Your job is NOT to make the task nicer. It is to catch the small number of tasks that are genuinely unactionable, and ask the fewest questions that make them actionable.
+Your job is NOT to make the task nicer. It is to catch tasks that leave the planner guessing at something real, and ask the fewest questions that make them actionable.
 
-## DEFAULT TO CLEAR
+## WHEN IN DOUBT, ASK
 
-Most tasks are clear. Short is not the same as unclear - "mop the floor" is three words and perfectly actionable. Only ask when you must.
+Short is not the same as unclear - "mop the floor" is three words and perfectly actionable, because there is nothing left to decide. But when something IS left to decide, ask - even if the confusion is small, even if a wrong guess would be cheap to live with. A small ambiguity resolved by asking costs one short question; the same ambiguity resolved by guessing costs a plan built on an assumption the operator never actually made. Prefer the question.
 
-Before asking anything, a candidate question must pass ALL THREE of these tests. If it fails even one, do not ask it:
+Before asking anything, a candidate question must pass BOTH of these tests. If it fails either, do not ask it - this is a floor, not a bar to clear beyond:
 
 1. **The board does not already answer it.** If only one bowl is in the OBJECT LIST, "move the bowl" is unambiguous - do not ask which bowl. Check names, ALSO_KNOWN_AS, descriptions, colours, sizes and COMPONENTS before deciding something is ambiguous.
 2. **The answers lead to genuinely different plans.** If every option produces the same sequence of robot commands, the question is pointless. Ask only when the answer changes what the robot actually does.
-3. **Guessing wrong is not cheap.** Moving a mug to a slightly different free cell - just pick one. Putting food in the bin instead of the fridge, or throwing out something the operator wanted kept - ask.
 
-If a task is under-scoped but the board settles it ("tidy up" with three obvious out-of-place items), that is CLEAR. Resolve it silently and let the planner work.
+Do NOT gate on how costly a wrong guess would be. That used to be a third test here ("is guessing wrong cheap? then just pick one") and it is deliberately gone: it was suppressing exactly the small-but-real ambiguities that are cheapest to just ask about. If a genuine fork in the plan exists and the board doesn't resolve it, ask, regardless of how minor the consequence of guessing wrong would be.
+
+If a task is under-scoped but the board settles it ("tidy up" with three obvious out-of-place items and nothing else it could plausibly mean), that is CLEAR. Resolve it silently and let the planner work. The bar here is "the board removes the ambiguity," not "the ambiguity seems small."
 
 ## WHEN YOU DO ASK
 
@@ -2778,6 +2782,24 @@ then plan all remaining feasible sub-tasks normally. NEVER invent a coordinate. 
 
 # bring the bin back in once it has been emptied - separate task
 Task_Completed
+
+---
+
+## CUSTOM INSTRUCTIONS
+
+These apply on every task, the same as any other rule in this prompt. They
+also arrive per-task appended to the task text under "ADDITIONAL AI
+INSTRUCTIONS" (see custom_instructions.json in HOS data, editable from the
+Custom Instructions button) - that mechanism is how new ones get added
+without a prompt edit, but the set below is never conditional on it being
+present, so these three hold even if that file is ever missing or emptied.
+
+- If there is more than one plate in the frame that needs soap applied, apply
+  soap to them one at a time - not with a single pass across all of them.
+- While boiling something, always add the water before the thing that has to
+  be boiled.
+- While cleaning a table, go to ALL of its cells and use the cloth on each one
+  - never stop partway through the TOUCHES list.
 
 ---
 
@@ -6129,6 +6151,16 @@ class GlassDialog(QDialog):
         self.body.setSpacing(12)
         outer.addLayout(self.body, 1)
 
+    def showEvent(self, ev):
+        """Frameless (Qt.FramelessWindowHint) windows on macOS can render on
+        top and look fully interactive while never actually becoming the OS
+        key window - every click then gets swallowed or passed through to
+        whatever's behind, with no error anywhere, since nothing in Qt itself
+        failed. Forcing activation on show is the standard fix."""
+        super().showEvent(ev)
+        self.raise_()
+        self.activateWindow()
+
     # ── frameless window needs its own drag handling ────────────────────────
     def mousePressEvent(self, ev):
         if ev.button() == Qt.LeftButton:
@@ -6476,6 +6508,7 @@ class AISidebar(QWidget):
     boxes_ready   = Signal(list)
     speed_changed = Signal(float)
     view_chosen   = Signal(str, object)   # kind, bgr — CameraPanel puts it on the board
+    board_cleared = Signal()              # CameraPanel wipes the on-screen canvas
 
     SPEEDS = [0.5, 1.0, 1.5, 2.0, 3.0, 4.0]
 
@@ -7186,6 +7219,25 @@ class AISidebar(QWidget):
         self._refresh_objects()
         self.stop_commands.emit()
 
+    def clear_board(self):
+        """Reset every bit of state tied to the current board photo so the
+        next Import Image is a genuinely clean start, not a re-analysis on
+        top of a stale scene/vision/task history. CameraPanel.clear_board
+        calls this for the sidebar half and handles the on-screen image
+        reset itself; board_cleared lets this method also be the entry
+        point (e.g. from the Views pop-up, right before a new upload) and
+        still get the canvas wiped even though CameraPanel owns the pixmap."""
+        self._clear_all()
+        self._last_frame       = None
+        self._views_by_kind    = {}
+        self._scene_id         = None
+        self._chosen_view_kind = None
+        self._chain_task       = None
+        # Not "busy" - just nothing to run yet. _lock's own check on
+        # _last_frame keeps the run button disabled until a board exists again.
+        self._lock(False)
+        self.board_cleared.emit()
+
     def _on_speed_change(self, idx: int):
         mult = self.SPEEDS[idx]
         self._speed_lbl.setText(f"{mult:g}×")
@@ -7223,7 +7275,7 @@ class AISidebar(QWidget):
         return [s for s in AI_INSTRUCTIONS if isinstance(s, str)]
 
     def _save_instructions(self):
-        """Persist to custom_instructions.json beside this script.
+        """Persist to custom_instructions.json in HOS data.
 
         The write goes through a temporary copy swapped in with os.replace,
         so an interrupted save can never leave the file truncated.
@@ -7468,8 +7520,16 @@ class AISidebar(QWidget):
         pop-up's own per-tab file pickers are now the only way a photo gets
         onto the board.
         """
-        popup = ViewsUploadPopup(self, self)
-        popup.exec()
+        try:
+            popup = ViewsUploadPopup(self, self)
+            popup.exec()
+        except Exception:
+            import traceback
+            tb = traceback.format_exc()
+            print(f"[views] open_views_popup failed:\n{tb}", file=sys.stderr)
+            self._set_stage(
+                f"⚠️  Could not open Views: {tb.strip().splitlines()[-1][:160]}", C_RED)
+            return
 
         ready = sum(1 for k in VIEW_KINDS if k in self._views_by_kind)
         if self._last_frame is None:
@@ -8593,19 +8653,56 @@ class ViewsUploadPopup(GlassDialog):
                 self._hints[kind].setText("Saved")
 
     def _update_view(self, kind: str):
-        title = VIEW_KINDS[kind]["title"]
-        downloads = os.path.join(os.path.expanduser("~"), "Downloads")
-        start_dir = downloads if os.path.isdir(downloads) else os.path.expanduser("~")
-        path, _ = QFileDialog.getOpenFileName(
-            self, f"Upload {title}", start_dir,
-            "Images (*.jpg *.jpeg *.png *.bmp *.tiff *.tif *.webp);;All Files (*)")
-        if not path:
-            return
-        bgr = imread_any(path)
-        if bgr is None:
-            self._hints[kind].setText("Could not read that file")
-            return
-        self._save_view(kind, bgr)
+        # Whatever goes wrong in here must end up on screen in self._hints[kind]
+        # - a click that silently does nothing, with no error anywhere, is a bug
+        # in its own right regardless of what the underlying cause turns out to
+        # be. Anything unexpected is now visible instead of vanishing.
+        try:
+            title = VIEW_KINDS[kind]["title"]
+            downloads = os.path.join(os.path.expanduser("~"), "Downloads")
+            start_dir = downloads if os.path.isdir(downloads) else os.path.expanduser("~")
+            # Parented on None, not self: self is a frameless/translucent
+            # GlassDialog (Qt.FramelessWindowHint + WA_TranslucentBackground).
+            # macOS tries to attach the native Finder panel as a sheet on the
+            # parent's real NSWindow, and a borderless/translucent window
+            # doesn't give it one to attach to correctly - the panel can open
+            # but never become interactive. No parent makes it its own
+            # independent native window instead, sidestepping that attachment
+            # bug while keeping the real Finder dialog.
+            #
+            # Deliberately opened BEFORE any clearing happens: doing a full
+            # canvas teardown (clear_board -> board_cleared -> a repaint
+            # cascade across the main window) immediately before asking macOS
+            # to establish a native modal panel is exactly the kind of timing
+            # that makes that panel fail to attach/activate. Nothing on
+            # screen gets touched until AFTER a file is actually chosen.
+            path, _ = QFileDialog.getOpenFileName(
+                None, f"Upload {title}", start_dir,
+                "Images (*.jpg *.jpeg *.png *.bmp *.tiff *.tif *.webp);;All Files (*)")
+            if not path:
+                return
+            bgr = imread_any(path)
+            if bgr is None:
+                self._hints[kind].setText("Could not read that file")
+                return
+            # NOW clear the whole canvas - the same reset the toolbar Clear
+            # Image button does - before the newly-picked photo lands, so
+            # the old board photo and every other collected angle are gone
+            # first rather than the new upload landing on top of them.
+            self._sidebar.clear_board()
+            for k in VIEWS_TAB_ORDER:
+                self._previews[k].setPixmap(QPixmap())
+                self._previews[k].setText("No image uploaded")
+                self._hints[k].setText("")
+            self._update_requirement()
+            self._save_view(kind, bgr)
+        except Exception:
+            import traceback
+            tb = traceback.format_exc()
+            print(f"[views] _update_view({kind!r}) failed:\n{tb}", file=sys.stderr)
+            self._hints[kind].setText(
+                f"Error: {tb.strip().splitlines()[-1][:120]} (see terminal for details)")
+            self._hints[kind].setStyleSheet(f"color:{C_RED};background:transparent;")
 
     def _save_view(self, kind: str, bgr) -> None:
         """Land the image in the sidebar's map, persist it, and refresh that
@@ -8958,12 +9055,33 @@ class BuildPanel(QWidget):
                 overrides[entry["key"]] = text
 
         presets = []
+        incomplete = False
         for _frame, name_edit, grip_combo, notes_edit in self._preset_rows:
             name = name_edit.text().strip()
+            base_style = (f"QLineEdit{{background:rgba(255,255,255,0.18);color:{C_TEXT};"
+                          f"border:1px solid {C_BORDER};border-radius:12px;padding:3px 6px;}}")
             if not name:
+                # A row with notes/grip filled in but no name used to vanish
+                # silently on save - the planner keys grip strategy off the
+                # name, so a nameless row can never apply and must be flagged
+                # instead of dropped.
+                if notes_edit.text().strip() or grip_combo.currentIndex() > 0:
+                    incomplete = True
+                    name_edit.setStyleSheet(
+                        f"QLineEdit{{background:rgba(255,255,255,0.18);color:{C_TEXT};"
+                        f"border:1.5px solid {C_RED};border-radius:12px;padding:3px 6px;}}")
+                else:
+                    name_edit.setStyleSheet(base_style)
                 continue
+            name_edit.setStyleSheet(base_style)
             presets.append({"name": name, "grip": grip_combo.currentText(),
                             "notes": notes_edit.text().strip()})
+        if incomplete:
+            self._status.setText(
+                "Every gripper preset needs an object name — fill in the "
+                "highlighted field(s) or clear their notes/grip before saving.")
+            self._status.setStyleSheet(f"color:{C_RED};background:transparent;")
+            return
 
         save_build_config({"prompt_overrides": overrides, "gripper_presets": presets})
         self._status.setText("Saved — applies to the next task.")
@@ -9048,6 +9166,12 @@ class GripperAIDialog(GlassDialog):
         row = QHBoxLayout(); row.addWidget(add); row.addStretch(1)
         self.body.addLayout(row)
 
+        self._status = QLabel("")
+        self._status.setFont(QFont(UI_FONT, 9))
+        self._status.setStyleSheet(f"color:{C_TEXT_DIM};background:transparent;")
+        self._status.setWordWrap(True)
+        self.body.addWidget(self._status)
+
         save = pill_button("Save", primary=True, height=30)
         save.clicked.connect(self._save)
         foot = QHBoxLayout(); foot.addStretch(1); foot.addWidget(save)
@@ -9103,12 +9227,33 @@ class GripperAIDialog(GlassDialog):
 
     def _save(self):
         presets = []
+        incomplete = []
         for _frame, name_edit, grip_combo, notes_edit in self._preset_rows:
             name = name_edit.text().strip()
+            base_style = (f"QLineEdit{{background:rgba(255,255,255,0.18);color:{C_TEXT};"
+                          f"border:1px solid {C_BORDER};border-radius:12px;padding:3px 6px;}}")
             if not name:
+                # A row with notes/grip typed in but no name silently vanished
+                # before - the object name is what the planner keys the grip
+                # strategy off of, so a nameless row can never be applied and
+                # must not be dropped without telling the operator why.
+                if notes_edit.text().strip() or grip_combo.currentIndex() > 0:
+                    incomplete.append(name_edit)
+                    name_edit.setStyleSheet(
+                        f"QLineEdit{{background:rgba(255,255,255,0.18);color:{C_TEXT};"
+                        f"border:1.5px solid {C_RED};border-radius:12px;padding:3px 6px;}}")
+                else:
+                    name_edit.setStyleSheet(base_style)
                 continue
+            name_edit.setStyleSheet(base_style)
             presets.append({"name": name, "grip": grip_combo.currentText(),
                             "notes": notes_edit.text().strip()})
+        if incomplete:
+            self._status.setText(
+                "Every preset needs an object name — fill in the highlighted "
+                "field(s) or clear their notes/grip before saving.")
+            self._status.setStyleSheet(f"color:{C_RED};background:transparent;")
+            return
         cfg = load_build_config()
         save_build_config({
             "prompt_overrides": cfg.get("prompt_overrides") or {},
@@ -9244,11 +9389,21 @@ def save_captured_view(sidebar, kind: str, bgr) -> None:
     Connect, Connect Camera for Views, the Views pop-up): land the frame in
     the sidebar's map, adopt it as the board photo if none exists yet, and
     persist it to disk."""
-    if sidebar._last_frame is None:
+    had_board = sidebar._last_frame is not None
+    if not had_board:
         sidebar._adopt_view_as_board(kind, bgr)
     sidebar._views_by_kind[kind] = bgr
     if sidebar._scene_id:
         save_scene_image(sidebar._scene_id, kind, bgr)
+    if had_board:
+        # _adopt_view_as_board (above) already clears these for a brand-new
+        # board photo. This is the other case - REPLACING one angle on a
+        # board that was already analysed. Without invalidating here, the
+        # next task silently reuses vision results computed before this
+        # angle was overwritten, so the new photo is never actually looked at.
+        sidebar._vision_objs      = []
+        sidebar._chosen_view_kind = None
+        sidebar._refresh_objects()
 
 
 def load_scene_original(scene_id: str):
@@ -9590,8 +9745,11 @@ class ExampleCard(QFrame):
         """
         downloads = os.path.join(os.path.expanduser("~"), "Downloads")
         start = downloads if os.path.isdir(downloads) else os.path.expanduser("~")
+        # None, not self - self's top-level window is a frameless/translucent
+        # GlassDialog, and macOS can't attach the native panel as a sheet to a
+        # borderless window correctly (see _update_view above for the same fix).
         src, _ = QFileDialog.getOpenFileName(
-            self, f"Choose the image for “{self._entry['title']}”", start,
+            None, f"Choose the image for “{self._entry['title']}”", start,
             "Images (*.jpg *.jpeg *.png *.bmp *.tiff *.tif *.webp);;All Files (*)")
         if not src:
             return
@@ -9884,6 +10042,10 @@ class CameraPanel(QWidget):
         self._import_btn = pill_button("📁  Import Image", primary=False, height=34)
         self._import_btn.clicked.connect(self._sidebar.open_views_popup)
 
+        self._clear_btn = pill_button("✕  Clear Image", primary=False, height=34)
+        self._clear_btn.setToolTip("Drop the current photo so you can re-import cleanly")
+        self._clear_btn.clicked.connect(self.clear_board)
+
         self._status = QLabel("● No image loaded")
         self._status.setFont(QFont(UI_FONT, 9))
         self._status.setStyleSheet(f"color:{C_TEXT_DIM};background:transparent;")
@@ -9893,7 +10055,8 @@ class CameraPanel(QWidget):
         hint.setStyleSheet(f"color:{C_TEXT_DIM};background:transparent;")
 
         bl.addWidget(brand); bl.addStretch()
-        bl.addWidget(hint); bl.addWidget(self._import_btn); bl.addWidget(self._status)
+        bl.addWidget(hint); bl.addWidget(self._import_btn); bl.addWidget(self._clear_btn)
+        bl.addWidget(self._status)
         lay.addWidget(bar)
 
         # ── Image display ─────────────────────────────────────────────────────
@@ -9946,6 +10109,7 @@ class CameraPanel(QWidget):
         sidebar.boxes_ready.connect(self._overlay.set_bboxes)
         sidebar.speed_changed.connect(self._on_speed)
         sidebar.view_chosen.connect(self._on_view_chosen)
+        sidebar.board_cleared.connect(self._clear_visual)
 
         # ── Live camera ───────────────────────────────────────────────────────
         self._cam_timer = QTimer(self)
@@ -10025,6 +10189,34 @@ class CameraPanel(QWidget):
             self._status.setStyleSheet("color:#fca5a5;background:transparent;")
             return False
         return self.load_bgr(bgr, label=os.path.basename(path))
+
+    def _clear_visual(self):
+        """Wipe the on-screen canvas only - pixmap, overlay, status. No
+        sidebar call here, since this also runs AS A REACTION to the
+        sidebar's own clear_board() (via board_cleared) - calling back into
+        it here would just re-trigger this same signal forever."""
+        self.stop_camera()
+        self._raw_image = None
+        self._overlay.set_bboxes([])
+        self._overlay.set_image_rect(None)
+        self._video.setPixmap(QPixmap())
+        empty = getattr(self, "_empty_welcome", None)
+        if empty is not None:
+            empty.setGeometry(self._video.rect())
+            empty.show()
+            empty.raise_()
+        self._status.setText("● No image loaded")
+        self._status.setStyleSheet(f"color:{C_TEXT_DIM};background:transparent;")
+
+    def clear_board(self):
+        """Drop the current photo entirely so a fresh Import Image starts
+        clean, instead of the new upload just landing on top of whatever
+        analysis/state the previous board left behind. Entry point for the
+        toolbar Clear Image button; the Views pop-up instead calls
+        sidebar.clear_board() directly (see board_cleared below), since it
+        only has the sidebar, not this panel, in hand."""
+        self._clear_visual()
+        self._sidebar.clear_board()
 
     def load_bgr(self, bgr, label: str = "image") -> bool:
         """Put a BGR frame on the board (import, examples, or a generated view)."""
@@ -10916,5 +11108,13 @@ if __name__ == "__main__":
     app.setPalette(light)
 
     win = MainWindow()
-    win.showFullScreen()
+    # showMaximized, not showFullScreen: true native fullscreen puts the whole
+    # app on its own dedicated macOS Space, and native dialogs (QFileDialog's
+    # Finder panel among them) are unreliable from inside that Space - they can
+    # fail to surface, land on the wrong Space, or open non-interactive. This
+    # still fills the screen with a normal bordered window on the regular
+    # desktop Space, where native dialogs behave correctly. True fullscreen is
+    # still available on demand via F11 (_toggle_fullscreen) for anyone who
+    # wants it and isn't hitting this - just not forced on at startup.
+    win.showMaximized()
     sys.exit(app.exec())

@@ -42,6 +42,7 @@ VISION_MODEL    = "gpt-5.4"
 DEXTERITY_MODEL = "gpt-5.4-mini"
 CLARITY_MODEL   = "gpt-5.4-mini"
 PLANNER_MODEL   = "gpt-5.6-terra"
+MEMORY_MODEL     = "gpt-5.4-mini"
 VOICE_TIDY_MODEL = "gpt-5.4-nano"
 SPEECH_MODEL     = "gpt-4o-transcribe"
 
@@ -371,6 +372,15 @@ C_GREEN     = "#10b981"
 C_AMBER     = "#f59e0b"
 C_RED       = "#ef4444"
 
+# Buttons: one flat black surface with white glyphs (ChatGPT-style), so the
+# colour in the app lives in the wallpaper/launch art, never in the chrome.
+C_BTN       = "#000000"
+C_BTN_HOVER = "#1f1f1f"
+C_BTN_PRESS = "#333333"
+C_BTN_FG    = "#ffffff"
+C_BTN_OFF   = "rgba(0,0,0,0.45)"
+C_BTN_OFFFG = "rgba(255,255,255,0.80)"
+
 # App chrome base — cool white with a whisper of lavender/sky (orbs live on
 # the empty board, not as a harsh full-window candy stripe).
 BG_GRADIENT = (
@@ -405,10 +415,16 @@ APP_STYLESHEET = f"""
         padding: 8px 12px;
     }}
     QPushButton {{
+        background: {C_BTN};
+        color: {C_BTN_FG};
+        border: none;
         border-radius:20px;
         font-family: '{UI_FONT}';
         font-weight: 700;
     }}
+    QPushButton:hover {{ background: {C_BTN_HOVER}; }}
+    QPushButton:pressed {{ background: {C_BTN_PRESS}; }}
+    QPushButton:disabled {{ background: {C_BTN_OFF}; color: {C_BTN_OFFFG}; }}
     QLineEdit, QPlainTextEdit, QTextEdit {{
         background: rgba(255,255,255,0.55);
         color: {C_TEXT};
@@ -3894,6 +3910,114 @@ class DexterityWorker(QThread):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+#  Memory
+#
+#  Runs last, after clarity and dexterity have passed and immediately before
+#  the planner. It reads the task the operator actually sent and asks one
+#  question: is there a STANDING preference in here — something that should
+#  hold on every future task — that is not already in custom training? A
+#  one-off detail about this task is deliberately not saveable; the whole
+#  value of the list is that everything in it applies always.
+# ─────────────────────────────────────────────────────────────────────────────
+MEMORY_SYSTEM = (
+    """
+You watch tasks sent to a household robot and decide whether the operator has revealed a STANDING preference worth remembering for every future task.
+
+You are given the operator's TASK and the EXISTING custom-training instructions.
+
+Save something only when ALL of these hold:
+1. It is a preference, rule, habit or constraint that would still apply on a completely different task next week - not a detail of this one task.
+2. It is not already covered by an existing instruction, in wording or in meaning.
+3. It is concrete enough to act on. "Be careful" is not; "always grip mugs by the body, never the handle" is.
+
+Words like "always", "never", "from now on", "I prefer", "remember", "each time" are strong signals. A plain one-off request ("move the blue mug to D6") has nothing to save - that is the normal case, and saying so is the right answer.
+
+Write any saved instruction as a short standing rule in the imperative, in the operator's own terms, one sentence, no preamble.
+
+Output raw JSON and nothing else. No markdown fences, no commentary.
+
+Nothing to save:
+{"save": false}
+
+Something to save:
+{"save": true, "instruction": "Always stack plates at BH33 when finishing up."}
+"""
+)
+DEFAULT_MEMORY_SYSTEM = MEMORY_SYSTEM
+
+
+class MemoryWorker(QThread):
+    """Decides whether this task contains a standing instruction worth keeping.
+
+    Fails open like the clarity check: any error, junk reply or missing field
+    means "nothing to save" and the run carries on. Memory is a convenience,
+    and a convenience must never be able to hold up a task.
+    """
+    result = Signal(str)    # the instruction to offer, or '' for nothing
+    failed = Signal(str)    # the call itself broke — not "nothing to save"
+    note   = Signal(str)
+
+    def __init__(self, task: str, existing: list):
+        super().__init__()
+        self._task     = task
+        self._existing = list(existing or [])
+
+    def run(self):
+        text = ""
+        try:
+            client = make_client()
+            have = "\n".join(f"- {s}" for s in self._existing) or "(none yet)"
+            user = f"EXISTING CUSTOM TRAINING:\n{have}\n\nTASK:\n{self._task}"
+            self.note.emit(f"Memory check → {MEMORY_MODEL}\n\n{user}")
+            raw = call_model(
+                client,
+                model=MEMORY_MODEL,
+                messages=[
+                    {"role": "system", "content": MEMORY_SYSTEM},
+                    {"role": "user",   "content": user},
+                ],
+                max_tokens=600,
+                stage="Memory check",
+            )
+            self.note.emit(f"Memory check replied:\n{raw}")
+            text = self._parse(raw)
+        except Exception as e:
+            # Still fails open — the task runs regardless — but a broken call
+            # is reported rather than looking identical to "nothing to save",
+            # which is what hid a wrong model id for a whole session.
+            self.note.emit(f"Memory check failed ({e}) — nothing saved.")
+            self.failed.emit(str(e))
+            self.result.emit("")
+            return
+        # A near-duplicate of something already saved is not worth a prompt.
+        if text and any(_norm_rule(text) == _norm_rule(x) for x in self._existing):
+            self.note.emit("Memory check: already in custom training — skipped.")
+            text = ""
+        self.result.emit(text)
+
+    @staticmethod
+    def _parse(raw: str) -> str:
+        txt = (raw or "").strip()
+        if txt.startswith("```"):
+            txt = re.sub(r"^```[a-zA-Z]*\s*|\s*```$", "", txt).strip()
+        m = re.search(r"\{.*\}", txt, re.S)
+        if not m:
+            return ""
+        try:
+            data = json.loads(m.group(0))
+        except Exception:
+            return ""
+        if not isinstance(data, dict) or data.get("save") is not True:
+            return ""
+        return str(data.get("instruction") or "").strip()
+
+
+def _norm_rule(text: str) -> str:
+    """Loose comparison key, so punctuation or case alone is not a new rule."""
+    return re.sub(r"[^a-z0-9 ]", "", str(text).lower()).strip()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 #  Clarity + rephrase workers
 # ─────────────────────────────────────────────────────────────────────────────
 class ClarityWorker(QThread):
@@ -4778,42 +4902,48 @@ class RoundedComboBox(QComboBox):
             pass
 
 
-def _grad_btn(text, c1, c2, h=44, fs=12):
+def _grad_btn(text, c1=None, c2=None, h=44, fs=12):
+    """Primary action button — flat black capsule, white glyph.
+
+    Still takes the old two-colour arguments so every call site keeps working;
+    they are ignored now that every button shares the one black surface.
+    """
     b = QPushButton(text)
     b.setFixedHeight(h)
     b.setCursor(Qt.PointingHandCursor)
     r = h // 2   # true capsule
     b.setStyleSheet(f"""
         QPushButton {{
-            background: qlineargradient(x1:0,y1:0,x2:1,y2:1, stop:0 {c1}, stop:1 {c2});
-            color:#fff; border:none; border-radius:{r}px;
+            background:{C_BTN}; color:{C_BTN_FG}; border:none; border-radius:{r}px;
             font-family:'{UI_FONT}'; font-weight:800; font-size:{fs}px;
             letter-spacing:0.04em; padding:0 18px;
         }}
-        QPushButton:hover {{
-            background: qlineargradient(x1:0,y1:0,x2:1,y2:1, stop:0 {c2}, stop:1 {c1});
-        }}
-        QPushButton:pressed {{ background:{c2}; }}
-        QPushButton:disabled {{ background:rgba(139,92,246,0.30); color:#ffffff; }}
+        QPushButton:hover {{ background:{C_BTN_HOVER}; }}
+        QPushButton:pressed {{ background:{C_BTN_PRESS}; }}
+        QPushButton:disabled {{ background:{C_BTN_OFF}; color:{C_BTN_OFFFG}; }}
     """)
     return b
 
 
-def _ghost_btn(text, accent, h=32, fs=10):
+def _ghost_btn(text, accent=None, h=32, fs=10):
+    """Secondary action — same black capsule, one step smaller/lighter weight.
+
+    The accent argument is kept for call-site compatibility and unused.
+    """
     b = QPushButton(text)
     b.setFixedHeight(h)
     b.setCursor(Qt.PointingHandCursor)
     r = h // 2
     b.setStyleSheet(f"""
         QPushButton {{
-            background: rgba(255,255,255,0.88); color:{accent};
-            border:1.5px solid {accent}; border-radius:{r}px;
+            background:{C_BTN}; color:{C_BTN_FG};
+            border:none; border-radius:{r}px;
             font-family:'{UI_FONT}'; font-weight:700; font-size:{fs}px;
             padding:0 16px;
         }}
-        QPushButton:hover {{ background:{accent}; color:#ffffff; }}
-        QPushButton:disabled {{ background:rgba(255,255,255,0.5); color:#b8c0ce;
-            border-color:{C_BORDER}; }}
+        QPushButton:hover {{ background:{C_BTN_HOVER}; }}
+        QPushButton:pressed {{ background:{C_BTN_PRESS}; }}
+        QPushButton:disabled {{ background:{C_BTN_OFF}; color:{C_BTN_OFFFG}; }}
     """)
     return b
 
@@ -5017,10 +5147,10 @@ class DetailPane(QWidget):
         v.setContentsMargins(0, 0, 0, 0)
         v.setSpacing(4)
 
-        arrow_c = "rgba(255,255,255,0.85)" if on_dark else C_TEXT_DIM
-        hover_c = "#ffffff" if on_dark else C_VIOLET
-        pill_bg = "rgba(255,255,255,0.12)" if on_dark else "rgba(255,255,255,0.75)"
-        pill_bd = "rgba(255,255,255,0.2)" if on_dark else C_BORDER
+        arrow_c = C_BTN_FG
+        hover_c = C_BTN_FG
+        pill_bg = C_BTN
+        pill_bd = C_BTN
         self._btn = QPushButton("›  Details")
         self._btn.setCursor(Qt.PointingHandCursor)
         self._btn.setFixedHeight(24)
@@ -5029,8 +5159,8 @@ class DetailPane(QWidget):
             f"QPushButton{{background:{pill_bg};border:1px solid {pill_bd};"
             f"color:{arrow_c};border-radius:12px;padding:0 12px;"
             f"text-align:left;letter-spacing:0.06em;}}"
-            f"QPushButton:hover{{color:{hover_c};border-color:#c4b5fd;"
-            f"background:rgba(255,255,255,0.95);}}")
+            f"QPushButton:hover{{color:{hover_c};border-color:{C_BTN_HOVER};"
+            f"background:{C_BTN_HOVER};}}")
         self._btn.clicked.connect(self.toggle)
 
         self._copy_btn = QPushButton("Copy")
@@ -5041,8 +5171,8 @@ class DetailPane(QWidget):
             f"QPushButton{{background:{pill_bg};border:1px solid {pill_bd};"
             f"color:{arrow_c};border-radius:12px;padding:0 12px;"
             f"text-align:left;letter-spacing:0.06em;}}"
-            f"QPushButton:hover{{color:{hover_c};border-color:#c4b5fd;"
-            f"background:rgba(255,255,255,0.95);}}")
+            f"QPushButton:hover{{color:{hover_c};border-color:{C_BTN_HOVER};"
+            f"background:{C_BTN_HOVER};}}")
         self._copy_btn.clicked.connect(self._copy)
         self._copy_btn.setVisible(False)
 
@@ -6059,9 +6189,9 @@ class InstructionRow(QFrame):
         self._edit.returnPressed.connect(self._commit)
         self._edit.editingFinished.connect(self._commit)
 
-        self._pencil = self._chip("✎", C_BLUE, "#e8f0ff")
+        self._pencil = self._chip("✎", C_BTN_FG, C_BTN)
         self._pencil.clicked.connect(self._begin_edit)
-        trash = self._chip("✕", C_RED, "#fff1f2")
+        trash = self._chip("✕", C_BTN_FG, C_BTN)
         trash.clicked.connect(self.removed)
 
         h.addWidget(self._num); h.addWidget(self._edit, 1)
@@ -6073,9 +6203,9 @@ class InstructionRow(QFrame):
         b.setCursor(Qt.PointingHandCursor)
         b.setFixedSize(22, 22)
         b.setStyleSheet(
-            f"QPushButton{{background:transparent;color:{C_TEXT_DIM};border:none;"
-            f"border-radius:16px;font-size:11px;}}"
-            f"QPushButton:hover{{background:{hover_bg};color:{hover_fg};}}")
+            f"QPushButton{{background:{C_BTN};color:{C_BTN_FG};border:none;"
+            f"border-radius:11px;font-size:11px;padding:0;}}"
+            f"QPushButton:hover{{background:{C_BTN_HOVER};color:{C_BTN_FG};}}")
         return b
 
     def set_index(self, i: int):
@@ -6132,9 +6262,11 @@ class GlassDialog(QDialog):
         close.setCursor(Qt.PointingHandCursor)
         close.setFixedSize(30, 30)
         close.setStyleSheet(
-            f"QPushButton{{background:rgba(255,255,255,0.85);color:{C_TEXT_DIM};"
-            f"border:1.5px solid {C_BORDER};border-radius:15px;font-size:12px;}}"
-            f"QPushButton:hover{{background:#fdf2f8;color:{C_PINK};border-color:#f9a8d4;}}")
+            f"QPushButton{{background:{C_BTN};color:{C_BTN_FG};"
+            f"border:none;border-radius:15px;font-size:13px;font-weight:700;"
+            f"padding:0;text-align:center;}}"
+            f"QPushButton:hover{{background:{C_BTN_HOVER};color:{C_BTN_FG};"
+            f"border-color:{C_BTN_HOVER};}}")
         close.clicked.connect(self.reject)
         head.addWidget(title_lbl); head.addStretch(1); head.addWidget(close)
         outer.addLayout(head)
@@ -6215,30 +6347,249 @@ class GlassDialog(QDialog):
 
 
 def pill_button(text: str, *, primary: bool = False, height: int = 34) -> QPushButton:
-    """One button style for every pop-up's actions — full-pill radius,
-    purple primary gradient (ChatGPT-ish), soft white secondary."""
+    """One button style for every pop-up's actions — full-pill black capsule
+    with a white label (ChatGPT-ish). `primary` is kept for call-site
+    compatibility; both variants now share the one surface."""
     b = QPushButton(text)
     b.setCursor(Qt.PointingHandCursor)
     b.setFixedHeight(height)
     b.setFont(QFont(UI_FONT, 10, QFont.Bold))
     r = max(height // 2, 14)
-    if primary:
-        b.setStyleSheet(
-            "QPushButton{background:qlineargradient(x1:0,y1:0,x2:1,y2:1,"
-            f"stop:0 {C_PINK}, stop:0.45 {C_VIOLET}, stop:1 {C_BLUE});"
-            "color:#ffffff;border:none;"
-            f"border-radius:{r}px;padding:0 20px;}}"
-            f"QPushButton:hover{{background:qlineargradient(x1:0,y1:0,x2:1,y2:1,"
-            f"stop:0 {C_VIOLET}, stop:1 {C_PINK});}}"
-            "QPushButton:disabled{background:rgba(139,92,246,0.30);color:#ffffff;}")
-    else:
-        b.setStyleSheet(
-            f"QPushButton{{background:rgba(255,255,255,0.88);color:{C_TEXT};"
-            f"border:1px solid {C_BORDER};border-radius:{r}px;padding:0 20px;}}"
-            f"QPushButton:hover{{background:rgba(255,255,255,0.18);border-color:#c4b5fd;"
-            f"color:{C_VIOLET};}}"
-            f"QPushButton:disabled{{color:{C_TEXT_DIM};background:rgba(255,255,255,0.5);}}")
+    b.setStyleSheet(
+        f"QPushButton{{background:{C_BTN};color:{C_BTN_FG};border:none;"
+        f"border-radius:{r}px;padding:0 20px;}}"
+        f"QPushButton:hover{{background:{C_BTN_HOVER};}}"
+        f"QPushButton:pressed{{background:{C_BTN_PRESS};}}"
+        f"QPushButton:disabled{{background:{C_BTN_OFF};color:{C_BTN_OFFFG};}}")
     return b
+
+
+# A dialog can be closed while its transcription is still running; a QThread
+# destroyed mid-run takes the app with it, so live ones are held here until
+# they report finished.
+_LIVE_TRANSCRIBERS = []
+
+
+# The transcription endpoint rejects uploads over 25 MB outright, so that is
+# the real ceiling — anything larger is refused here, with the size named,
+# rather than after a slow upload that ends in an opaque API error.
+VIDEO_MAX_MB      = 25
+VIDEO_EXTENSIONS  = ("mp4", "mov", "m4v", "webm", "avi", "mkv",
+                     "mp3", "m4a", "wav")
+
+
+class VideoTranscribeWorker(QThread):
+    """Whole video file → transcript, off the UI thread.
+
+    The file goes to the transcription endpoint as-is: it reads the container
+    itself, so there is no ffmpeg dependency to install and no audio track to
+    demux here. SPEECH_PROMPT is deliberately not sent — that prompt biases
+    towards short robot commands, which is wrong for someone talking through
+    a standing preference at length.
+    """
+    done   = Signal(str)
+    failed = Signal(str)
+
+    def __init__(self, path: str, parent=None):
+        super().__init__(parent)
+        self._path = path
+
+    def run(self):
+        try:
+            with open(self._path, "rb") as f:
+                data = f.read()
+            buf = io.BytesIO(data)
+            buf.name = os.path.basename(self._path)   # the API reads the format from the name
+            resp = make_client().audio.transcriptions.create(
+                model=SPEECH_MODEL,
+                file=buf,
+                language="en",
+            )
+            text = (getattr(resp, "text", "") or "").strip()
+        except Exception as e:
+            self.failed.emit(str(e)[:200])
+            return
+        if not text:
+            self.failed.emit("No speech was found in that video.")
+            return
+        self.done.emit(text)
+
+
+class VideoInstructionDialog(GlassDialog):
+    """Upload a video, read back what was said, edit it, save it as a rule.
+
+    The transcript lands in an editable box rather than straight in the list:
+    a spoken explanation is nearly always longer and looser than the one-line
+    standing rule it is meant to become, so the edit step is the point of the
+    flow, not a safety net.
+    """
+
+    def __init__(self, parent=None):
+        super().__init__("Add from video", parent,
+                         subtitle=f"Upload a clip, we transcribe it, you edit it, "
+                                  f"then it saves as one instruction. Up to {VIDEO_MAX_MB} MB.",
+                         width=560)
+        self.resize(560, 460)
+        self._worker = None
+        self._path   = ""
+
+        row = QHBoxLayout(); row.setSpacing(9)
+        self._pick = pill_button("Choose video…", primary=True, height=32)
+        self._pick.clicked.connect(self._choose)
+        self._file_lbl = QLabel("No file chosen")
+        self._file_lbl.setFont(QFont(UI_FONT, 9))
+        self._file_lbl.setStyleSheet(f"color:{C_TEXT_DIM};background:transparent;")
+        row.addWidget(self._pick); row.addWidget(self._file_lbl, 1)
+        self.body.addLayout(row)
+
+        self._edit = QPlainTextEdit()
+        self._edit.setPlaceholderText(
+            "The transcript appears here once the video has been read — "
+            "trim it down to the rule you want remembered.")
+        self._edit.setFont(QFont(UI_FONT, 10))
+        self._edit.setStyleSheet(
+            f"QPlainTextEdit{{background:rgba(255,255,255,0.85);color:{C_TEXT};"
+            f"border:1px solid {C_BORDER};border-radius:18px;padding:12px 14px;}}")
+        self.body.addWidget(self._edit, 1)
+
+        foot = QHBoxLayout(); foot.setSpacing(9)
+        self._status = QLabel("")
+        self._status.setWordWrap(True)
+        self._status.setFont(QFont(UI_FONT, 8))
+        self._status.setStyleSheet(f"color:{C_TEXT_DIM};background:transparent;")
+        cancel = pill_button("Cancel", height=32)
+        cancel.clicked.connect(self.reject)
+        self._save = pill_button("Save instruction", primary=True, height=32)
+        self._save.setEnabled(False)
+        self._save.clicked.connect(self._accept)
+        foot.addWidget(self._status, 1)
+        foot.addWidget(cancel); foot.addWidget(self._save)
+        self.body.addLayout(foot)
+
+        self._edit.textChanged.connect(
+            lambda: self._save.setEnabled(bool(self._edit.toPlainText().strip())))
+
+    # ── file → transcript ────────────────────────────────────────────────────
+    def _choose(self):
+        patt = " ".join(f"*.{e}" for e in VIDEO_EXTENSIONS)
+        # Qt's own file dialog, not the native macOS panel. The native one is
+        # opened as a sheet of its parent window, and this parent is a
+        # frameless translucent modal (GlassDialog) — the panel comes up
+        # looking normal but the sidebar and folder columns stop responding,
+        # so there is no way to navigate anywhere or pick a file.
+        dlg = QFileDialog(self, "Choose a video", os.path.expanduser("~"))
+        dlg.setOption(QFileDialog.DontUseNativeDialog, True)
+        dlg.setFileMode(QFileDialog.ExistingFile)
+        dlg.setNameFilters([f"Video or audio ({patt})", "All files (*)"])
+        if not dlg.exec():
+            return
+        picked = dlg.selectedFiles()
+        path = picked[0] if picked else ""
+        if not path:
+            return
+        try:
+            size_mb = os.path.getsize(path) / (1024 * 1024)
+        except OSError as e:
+            self._status.setText(f"⚠️  Could not read that file ({e}).")
+            return
+        if size_mb > VIDEO_MAX_MB:
+            self._status.setText(
+                f"⚠️  That clip is {size_mb:.0f} MB — the limit is {VIDEO_MAX_MB} MB. "
+                f"Trim it, or export it at a lower quality.")
+            return
+
+        self._path = path
+        self._file_lbl.setText(f"{os.path.basename(path)}  ·  {size_mb:.1f} MB")
+        self._status.setText("Transcribing… this takes a moment for a long clip.")
+        self._pick.setEnabled(False)
+        w = VideoTranscribeWorker(path, self)
+        w.done.connect(self._on_text)
+        w.failed.connect(self._on_failed)
+        w.finished.connect(self._on_finished)
+        self._worker = w
+        w.start()
+
+    def _on_text(self, text: str):
+        self._edit.setPlainText(text)
+        self._edit.setFocus()
+        self._status.setText("Transcribed — edit it down, then save.")
+
+    def _on_failed(self, err: str):
+        self._status.setText(f"⚠️  {err}")
+
+    def _on_finished(self):
+        self._pick.setEnabled(True)
+        self._worker = None
+
+    def instruction(self) -> str:
+        return " ".join(self._edit.toPlainText().split()).strip()
+
+    def _accept(self):
+        if self.instruction():
+            self.accept()
+
+    def done(self, result: int):
+        # A transcription still running would be destroyed with the dialog.
+        w = self._worker
+        if w is not None and w.isRunning():
+            w.blockSignals(True)
+            _LIVE_TRANSCRIBERS.append(w)
+            w.finished.connect(lambda w=w: _LIVE_TRANSCRIBERS.remove(w)
+                               if w in _LIVE_TRANSCRIBERS else None)
+        self._worker = None
+        super().done(result)
+
+
+class SaveMemoryDialog(GlassDialog):
+    """"Should I save this to custom training?" — Yes, or No within 3 seconds.
+
+    Silence means yes: the memory model only speaks up when it found a
+    standing preference, and stopping to confirm every one of those would cost
+    more attention than it saves. No is always one click away, and anything
+    saved by the timer can be deleted from the Custom training sheet, so the
+    default is the recoverable one.
+    """
+
+    SECONDS = 3
+
+    def __init__(self, instruction: str, parent=None):
+        super().__init__("Save to custom training?", parent,
+                         subtitle="Saving unless you say no — this applies to every future task.",
+                         width=460)
+        self._left = self.SECONDS
+
+        quote = QLabel(f"\u201c{instruction}\u201d")
+        quote.setWordWrap(True)
+        quote.setFont(QFont(UI_FONT, 11))
+        quote.setStyleSheet(
+            f"color:{C_TEXT};background:rgba(255,255,255,0.72);"
+            f"border:1px solid {C_BORDER};border-radius:18px;padding:14px 16px;")
+        self.body.addWidget(quote)
+
+        row = QHBoxLayout(); row.setSpacing(9)
+        self._no  = pill_button("No", height=32)
+        self._yes = pill_button(f"Yes · {self._left}", primary=True, height=32)
+        self._no.clicked.connect(self.reject)
+        self._yes.clicked.connect(self.accept)
+        row.addStretch(1); row.addWidget(self._no); row.addWidget(self._yes)
+        self.body.addLayout(row)
+
+        self._timer = QTimer(self)
+        self._timer.setInterval(1000)
+        self._timer.timeout.connect(self._tick)
+        self._timer.start()
+
+    def _tick(self):
+        self._left -= 1
+        if self._left <= 0:
+            self._timer.stop()
+            self.accept()
+            return
+        self._yes.setText(f"Yes · {self._left}")
+
+    def reject(self):
+        self._timer.stop()
+        super().reject()
 
 
 class ClarifyDialog(GlassDialog):
@@ -6375,7 +6726,7 @@ class InstructionsDialog(GlassDialog):
     changed = Signal(list)
 
     def __init__(self, items=None, parent=None):
-        super().__init__("Custom instructions", parent,
+        super().__init__("Custom training", parent,
                           subtitle="Added one at a time. A2 applies every one to each task you send.",
                           width=520)
         self.resize(520, 420)
@@ -6397,9 +6748,25 @@ class InstructionsDialog(GlassDialog):
             f"QLineEdit{{background:transparent;color:{C_TEXT};border:none;padding:0;"
             f"selection-background-color:#c7d2fe;}}")
         self._input.returnPressed.connect(self._add)
+        # Same dictation flow as the compose box: tap to speak, tap to stop.
+        # What you say is saved as an instruction the moment it transcribes,
+        # so speaking one is exactly as final as typing one and pressing Add.
+        self._voice        = None
+        self._voice_thread = None
+        self._mic = QPushButton()
+        self._mic.setCursor(Qt.PointingHandCursor)
+        self._mic.setFixedSize(30, 30)
+        self._mic.setIconSize(QSize(18, 18))
+        self._mic.setToolTip("Speak an instruction")
+        self._mic.clicked.connect(self._toggle_voice)
+        self._paint_mic(False)
+        self._video = pill_button("🎥 Video", height=30)
+        self._video.setToolTip("Upload a video, edit its transcript, save it as an instruction")
+        self._video.clicked.connect(self._add_from_video)
         add = pill_button("Add", primary=True, height=30)
         add.clicked.connect(self._add)
-        el.addWidget(self._input, 1); el.addWidget(add)
+        el.addWidget(self._input, 1)
+        el.addWidget(self._mic); el.addWidget(self._video); el.addWidget(add)
         root.addWidget(entry)
         root.addSpacing(12)
 
@@ -6439,6 +6806,100 @@ class InstructionsDialog(GlassDialog):
 
         self._rebuild()
         self._input.setFocus()
+
+    # ── from a video ─────────────────────────────────────────────────────────
+    def _add_from_video(self):
+        dlg = VideoInstructionDialog(self)
+        if not dlg.exec():
+            return
+        text = dlg.instruction()
+        if not text:
+            return
+        self._items.append(text)
+        self._rebuild()
+        self._commit()
+
+    # ── dictation ────────────────────────────────────────────────────────────
+    def _paint_mic(self, live: bool):
+        self._mic.setStyleSheet(
+            f"QPushButton{{background:{C_RED if live else C_BTN};border:none;"
+            f"border-radius:15px;padding:0;}}"
+            f"QPushButton:hover{{background:{C_RED if live else C_BTN_HOVER};}}"
+            f"QPushButton:disabled{{background:{C_BTN_OFF};}}")
+        # A stylesheet colour cannot reach a painted icon, so it is redrawn.
+        self._mic.setIcon(mic_icon(C_BTN_FG))
+
+    def _toggle_voice(self):
+        if self._voice_thread is not None and self._voice_thread.isRunning():
+            return                                  # already transcribing
+        if self._voice is not None:
+            self._voice.stop(by_user=True)          # second tap = stop now
+            return
+        if speech_rec is None:
+            self._hint.setText(f"⚠️  Speech recognition unavailable: "
+                               f"{SPEECH_IMPORT_ERROR}")
+            return
+        rec = VoiceRecorder(self)
+        rec.finished.connect(self._on_voice_audio)
+        rec.failed.connect(self._on_voice_failed)
+        if not rec.start():
+            return
+        self._voice = rec
+        self._paint_mic(True)
+        self._hint.setText("● Listening…  ·  tap the mic to stop")
+
+    def _on_voice_audio(self, pcm: bytes, _by_user: bool):
+        self._voice = None
+        self._paint_mic(False)
+        if len(pcm) < VoiceRecorder.RATE * VoiceRecorder.SAMPLE_WIDTH // 4:
+            self._hint.setText("")
+            return                                  # under 0.25 s: a stray tap
+        self._hint.setText("Transcribing…")
+        self._mic.setEnabled(False)
+        w = TranscribeWorker(pcm, VoiceRecorder.RATE,
+                             VoiceRecorder.SAMPLE_WIDTH, self)
+        w.done.connect(self._on_voice_text)
+        w.failed.connect(self._on_voice_failed)
+        w.stage.connect(self._hint.setText)
+        w.finished.connect(self._voice_thread_done)
+        self._voice_thread = w
+        _LIVE_TRANSCRIBERS.append(w)
+        w.finished.connect(lambda w=w: _LIVE_TRANSCRIBERS.remove(w)
+                           if w in _LIVE_TRANSCRIBERS else None)
+        w.start()
+
+    def _voice_thread_done(self):
+        self._voice_thread = None
+        self._mic.setEnabled(True)
+
+    def _on_voice_text(self, text: str):
+        sentence = speech_to_sentence(text)
+        if not sentence:
+            self._hint.setText("Nothing was heard — try again.")
+            return
+        # Dictation only ever fills the box — exactly like the compose field.
+        # Nothing is saved until Add (or ⏎), so a mis-heard word can be fixed
+        # first rather than landing in the list and needing a delete.
+        existing = self._input.text().strip()
+        self._input.setText(f"{existing} {sentence}" if existing else sentence)
+        self._input.setFocus()
+        self._input.setCursorPosition(len(self._input.text()))
+        self._hint.setText("Edit if you need to, then press Add")
+
+    def _on_voice_failed(self, message: str):
+        self._voice = None
+        self._paint_mic(False)
+        self._mic.setEnabled(True)
+        self._hint.setText(f"⚠️  {message}")
+
+    def done(self, result: int):
+        """Every exit route lands here — ✕, Done, Esc and the window close —
+        so a take that is still running is always let go of. closeEvent alone
+        missed reject(), which left the microphone open after ✕."""
+        if self._voice is not None:
+            self._voice.abort("Dialog closed.")
+            self._voice = None
+        super().done(result)
 
     # ── list management ──────────────────────────────────────────────────────
     def items(self) -> list:
@@ -6523,6 +6984,7 @@ class AISidebar(QWidget):
         # import silently never finished. Workers now live here until their
         # own finished signal fires.
         self._live_workers     = []
+        self._dead_workers     = []   # cancelled threads, held until they exit
         self._last_frame       = None
         self._pending_task     = None
         self._pending_plan_task = None   # task held across the clarity check
@@ -6535,6 +6997,8 @@ class AISidebar(QWidget):
         self._chosen_view_kind  = None
         self._chooser_worker    = None
         self._chain_task        = None   # task text riding the chooser->vision->planner chain
+        self._memory_worker     = None
+        self._pending_memory_task = None
         self.setMinimumWidth(340)
         self.setMaximumWidth(400)
         self.setStyleSheet(
@@ -6849,22 +7313,18 @@ class AISidebar(QWidget):
         self._instructions_btn.clicked.connect(self._open_instructions)
         # True capsule: radius = height / 2
         self._instructions_btn.setStyleSheet(
-            f"QPushButton{{background:rgba(255,255,255,0.92);color:{C_TEXT};"
-            f"border:1.5px solid {C_BORDER};border-radius:17px;padding:0 18px;"
+            f"QPushButton{{background:{C_BTN};color:{C_BTN_FG};"
+            f"border:none;border-radius:17px;padding:0 18px;"
             f"font-weight:700;font-size:11px;}}"
-            f"QPushButton:hover{{background:rgba(255,255,255,0.18);color:{C_VIOLET};"
-            f"border-color:#c4b5fd;}}")
+            f"QPushButton:hover{{background:{C_BTN_HOVER};}}")
+        # No toolbar Stop any more: the compose button becomes the stop button
+        # while a run is in flight. Kept as a hidden widget so the existing
+        # enable/disable calls through the pipeline stay valid.
         self._stop_btn = QPushButton("Stop")
-        self._stop_btn.setFixedHeight(34); self._stop_btn.setEnabled(False)
-        self._stop_btn.setCursor(Qt.PointingHandCursor); self._stop_btn.clicked.connect(self._on_stop)
-        self._stop_btn.setStyleSheet(
-            f"QPushButton{{background:rgba(255,255,255,0.92);color:{C_RED};"
-            f"border:1.5px solid #fecaca;border-radius:17px;padding:0 18px;"
-            f"font-weight:700;font-size:11px;}}"
-            f"QPushButton:hover{{background:#fff1f2;border-color:#f9a8d4;}}"
-            f"QPushButton:disabled{{color:#b8c0ce;border-color:{C_BORDER};"
-            f"background:rgba(255,255,255,0.55);}}")
-        h.addWidget(self._instructions_btn); h.addStretch(); h.addWidget(self._stop_btn)
+        self._stop_btn.setEnabled(False)
+        self._stop_btn.setVisible(False)
+        self._stop_btn.clicked.connect(self._on_stop)
+        h.addWidget(self._instructions_btn); h.addStretch()
         root.addWidget(toolbar)
 
         # Replays the last generated command sequence as-is - no re-planning,
@@ -6879,10 +7339,10 @@ class AISidebar(QWidget):
         self._rerun_btn.setFixedHeight(28); self._rerun_btn.setVisible(False)
         self._rerun_btn.setCursor(Qt.PointingHandCursor); self._rerun_btn.clicked.connect(self._on_rerun)
         self._rerun_btn.setStyleSheet(
-            f"QPushButton{{background:rgba(255,255,255,0.85);color:{C_VIOLET};"
-            f"border:1.5px solid #ddd6fe;border-radius:14px;padding:0 14px;"
+            f"QPushButton{{background:{C_BTN};color:{C_BTN_FG};"
+            f"border:none;border-radius:14px;padding:0 14px;"
             f"font-weight:700;font-size:10px;}}"
-            f"QPushButton:hover{{background:#f5f3ff;border-color:#c4b5fd;}}")
+            f"QPushButton:hover{{background:{C_BTN_HOVER};}}")
 
         # Sits directly beside _rerun_btn, inline in the "Executing on the
         # board…" bubble, so stopping a run is one click at the point where
@@ -6893,12 +7353,11 @@ class AISidebar(QWidget):
         self._inline_stop_btn.setCursor(Qt.PointingHandCursor)
         self._inline_stop_btn.clicked.connect(self._on_stop)
         self._inline_stop_btn.setStyleSheet(
-            f"QPushButton{{background:rgba(255,255,255,0.85);color:{C_RED};"
-            f"border:1.5px solid #fecaca;border-radius:14px;padding:0 14px;"
+            f"QPushButton{{background:{C_BTN};color:{C_BTN_FG};"
+            f"border:none;border-radius:14px;padding:0 14px;"
             f"font-weight:700;font-size:10px;}}"
-            f"QPushButton:hover{{background:#fff1f2;border-color:#f9a8d4;}}"
-            f"QPushButton:disabled{{color:#b8c0ce;border-color:{C_BORDER};"
-            f"background:rgba(255,255,255,0.55);}}")
+            f"QPushButton:hover{{background:{C_BTN_HOVER};}}"
+            f"QPushButton:disabled{{background:{C_BTN_OFF};color:{C_BTN_OFFFG};}}")
 
         self._exec_controls = QWidget()
         ec = QHBoxLayout(self._exec_controls)
@@ -6935,13 +7394,13 @@ class AISidebar(QWidget):
         self._paint_mic(False)
         self._run_btn = QPushButton("↑")
         self._run_btn.setFixedSize(36, 36); self._run_btn.setCursor(Qt.PointingHandCursor)
-        self._run_btn.setStyleSheet(
-            f"QPushButton{{background:qlineargradient(x1:0,y1:0,x2:1,y2:1,"
-            f"stop:0 {C_PINK}, stop:0.5 {C_VIOLET}, stop:1 {C_BLUE});"
-            f"color:white;border:none;border-radius:18px;font-size:20px;font-weight:bold;}}"
-            f"QPushButton:hover{{background:{C_VIOLET};}}"
-            f"QPushButton:disabled{{background:rgba(139,92,246,0.30);}}")
-        self._run_btn.clicked.connect(self._on_run)
+        self._run_btn.clicked.connect(self._on_run_or_stop)
+        # One button, two jobs (ChatGPT-style): send while idle, stop while the
+        # pipeline or the board run is in flight. Nothing else interrupts a
+        # run — only pressing it does.
+        self._pipeline_busy = False
+        self._exec_busy     = False
+        self._refresh_run_btn()
         # Takes the text box's place while recording, the way a voice note
         # replaces the message field rather than crowding in beside it.
         self._wave = WaveMeter()
@@ -6977,7 +7436,7 @@ class AISidebar(QWidget):
     def _refresh_instruction_button(self):
         count = len(getattr(self, "_instructions", []))
         self._instructions_btn.setText(
-            "Custom instructions" + (f" · {count}" if count else ""))
+            "Custom training" + (f" · {count}" if count else ""))
 
     def _open_instructions(self):
         """Edit persistent planner preferences without returning to a sidebar.
@@ -7030,12 +7489,12 @@ class AISidebar(QWidget):
             css = (f"QPushButton{{background:{C_RED};border:none;"
                    "border-radius:18px;}}")
         else:
-            css = (f"QPushButton{{background:rgba(255,255,255,0.85);"
-                   f"border:1px solid {C_BORDER};border-radius:18px;}}"
-                   "QPushButton:hover{background:rgba(255,255,255,0.18);border-color:#c4b5fd;}")
+            css = (f"QPushButton{{background:{C_BTN};border:none;"
+                   "border-radius:18px;}}"
+                   f"QPushButton:hover{{background:{C_BTN_HOVER};}}")
         self._mic_btn.setStyleSheet(css)
         # A stylesheet colour cannot reach a painted icon, so it is redrawn.
-        self._mic_btn.setIcon(mic_icon("#ffffff" if live else C_TEXT_DIM))
+        self._mic_btn.setIcon(mic_icon(C_BTN_FG))
 
     def shutdown(self):
         """Let go of the microphone before the window closes."""
@@ -7125,7 +7584,60 @@ class AISidebar(QWidget):
         # Run no longer requires vision to have already produced an object
         # list — vision now runs per task, inside the chain Run kicks off.
         # Only an imported/captured image is required to start it.
-        self._run_btn.setEnabled(not locked and self._last_frame is not None)
+        self._pipeline_busy = bool(locked)
+        self._refresh_run_btn()
+
+    def _busy(self) -> bool:
+        return self._pipeline_busy or self._exec_busy
+
+    def _refresh_run_btn(self):
+        """Send (↑) while idle, stop (■) while anything is running."""
+        busy = self._busy()
+        self._run_btn.setText("■" if busy else "↑")
+        self._run_btn.setToolTip("Stop" if busy else "Send")
+        self._run_btn.setStyleSheet(
+            f"QPushButton{{background:{C_BTN};color:{C_BTN_FG};border:none;"
+            f"border-radius:18px;font-size:{13 if busy else 20}px;font-weight:bold;}}"
+            f"QPushButton:hover{{background:{C_BTN_HOVER};}}"
+            f"QPushButton:pressed{{background:{C_BTN_PRESS};}}"
+            f"QPushButton:disabled{{background:{C_BTN_OFF};color:{C_BTN_OFFFG};}}")
+        self._run_btn.setEnabled(busy or self._last_frame is not None)
+
+    def _on_run_or_stop(self):
+        if self._busy():
+            self._cancel_everything()
+        else:
+            self._on_run()
+
+    def _cancel_everything(self):
+        """The one thing that interrupts a run: pressing stop.
+
+        Every worker still in flight is muted (blockSignals) and asked to
+        interrupt, so nothing it produces after this point reaches the chat,
+        and the board runner is told to stop as well. References are kept in
+        _dead_workers until the threads actually exit — dropping the last
+        reference to a live QThread destroys it underneath itself.
+        """
+        for w in list(self._live_workers):
+            try:
+                w.blockSignals(True)
+                w.requestInterruption()
+            except Exception:
+                pass
+            self._live_workers.remove(w)
+            self._dead_workers.append(w)
+        self._dead_workers = [w for w in self._dead_workers if w.isRunning()]
+        self._vision_worker = self._command_worker = None
+        self._dexterity_worker = self._chooser_worker = None
+        self._memory_worker = None
+        self._chain_task = self._pending_memory_task = None
+        if self._exec_busy:
+            self.stop_commands.emit()
+        self._exec_busy = False
+        self._stop_btn.setEnabled(False)
+        self._inline_stop_btn.setEnabled(False)
+        self._lock(False)
+        self._set_stage("Stopped.", C_TEXT_DIM)
 
     def _set_stage(self, text: str, color=C_CYAN):
         """Narrate a pipeline stage.
@@ -7358,7 +7870,7 @@ class AISidebar(QWidget):
     def _refresh_objects(self):
         # Object data is deliberately kept out of the sidebar UI. It remains
         # available to the planner and to the grid overlay.
-        self._run_btn.setEnabled(self._last_frame is not None)
+        self._refresh_run_btn()
         self.boxes_ready.emit([o for o in self._all_objs if o.get('box')])
 
     @staticmethod
@@ -7731,7 +8243,7 @@ class AISidebar(QWidget):
         self._pending_task = None
         self._vlog(f"Dexterity check failed ({err}) — planning anyway.")
         if task:
-            self._launch_planner(task)
+            self._memory_then_plan(task)
 
     def _launch_planner(self, task: str):
         """Append the standing boilerplate and hand the task to the planner."""
@@ -7757,8 +8269,9 @@ class AISidebar(QWidget):
 
     # ── generate commands (view choice → vision → planner) ───────────────────
     def _on_submit(self):
-        # Enter is ignored while a task is in flight, matching the send button.
-        if self._run_btn.isEnabled():
+        # Enter never stops a run — that is the stop button's job alone — so it
+        # is simply ignored while a task is in flight.
+        if not self._busy() and self._last_frame is not None:
             self._on_run()
 
     def _run_view_chooser(self, task):
@@ -7826,7 +8339,52 @@ class AISidebar(QWidget):
         task = self._pending_task
         self._pending_task = None
         if task:
-            self._launch_planner(task)
+            self._memory_then_plan(task)
+
+    # ── memory: anything here worth keeping for next time? ───────────────────
+    def _memory_then_plan(self, task: str):
+        """The last stop before the planner.
+
+        Runs on the operator's own words, after clarity and dexterity have
+        both passed, so a task that was never going to run never asks to be
+        remembered. Whatever it decides, the task itself goes ahead.
+        """
+        self._pending_memory_task = task
+        self._set_stage("Checking for anything worth remembering…")
+        w = self._track(MemoryWorker(task, self._instructions))
+        self._memory_worker = w
+        w.note.connect(self._vlog)
+        w.result.connect(self._on_memory_result)
+        w.failed.connect(self._on_memory_failed)
+        w.start()
+
+    def _on_memory_failed(self, err: str):
+        """Memory never blocks a run, but it never fails quietly either."""
+        self._chat_message(
+            "A2", f"⚠️  Memory check unavailable ({err}) — nothing was saved "
+                  f"to custom training for this task.", accent=C_AMBER)
+
+    def _on_memory_result(self, instruction: str):
+        task = self._pending_memory_task
+        self._pending_memory_task = None
+        if not task:
+            return
+        if instruction:
+            # The sheet is modal, so the thinking bubble is frozen first
+            # rather than left shimmering behind it (as in _on_task_questions).
+            self._end_thinking()
+            dlg = SaveMemoryDialog(instruction, self)
+            if dlg.exec():
+                self._instructions = list(self._instructions) + [instruction]
+                self._save_instructions()
+                self._refresh_instruction_button()
+                self._chat_message(
+                    "A2", f"Saved to custom training: \u201c{instruction}\u201d",
+                    accent=C_GREEN)
+                self._vlog(f"Memory saved: {instruction}")
+            else:
+                self._vlog(f"Memory declined: {instruction}")
+        self._launch_planner(task)
 
     def _on_cmd_chunk(self, delta: str):
         self._cmd_text += delta
@@ -7920,6 +8478,8 @@ class AISidebar(QWidget):
         if self._thinking is not None:
             self._thinking.add_widget(self._exec_controls)
             self._rerun_btn.setVisible(True)
+        self._exec_busy = True
+        self._refresh_run_btn()
         self.play_commands.emit(text)
 
     def _on_rerun(self):
@@ -7931,14 +8491,13 @@ class AISidebar(QWidget):
         self._on_play()
 
     def _on_stop(self):
-        self.stop_commands.emit()
-        self._stop_btn.setEnabled(False)
-        self._inline_stop_btn.setEnabled(False)
-        self._set_stage("Stopped.", C_TEXT_DIM)
+        self._cancel_everything()
 
     def on_runner_finished(self):
+        self._exec_busy = False
         self._stop_btn.setEnabled(False)
         self._inline_stop_btn.setEnabled(False)
+        self._refresh_run_btn()
         self._set_stage("Task complete.", C_GREEN)
 
     def on_runner_step(self, current: int, total: int, cmd: str):
@@ -8230,6 +8789,7 @@ SETTINGS_DEFAULTS = {
     "VISION_MODEL": VISION_MODEL,
     "DEXTERITY_MODEL": DEXTERITY_MODEL,
     "CLARITY_MODEL": CLARITY_MODEL,
+    "MEMORY_MODEL": MEMORY_MODEL,
     "PLANNER_MODEL": PLANNER_MODEL,
     "VOICE_TIDY_MODEL": VOICE_TIDY_MODEL,
     "SPEECH_MODEL": SPEECH_MODEL,
@@ -8303,7 +8863,7 @@ class SettingsPanel(QWidget):
         row = QHBoxLayout(); row.setSpacing(8)
         restore = pill_button("Restore defaults", height=30)
         restore.setStyleSheet(restore.styleSheet() +
-                              f"QPushButton:hover{{background:#fff1f2;color:{C_RED};border-color:#fecaca;}}")
+                              f"QPushButton:hover{{background:{C_BTN_HOVER};color:{C_BTN_FG};}}")
         restore.clicked.connect(self._restore)
         row.addWidget(restore); row.addStretch(1)
         outer.addLayout(row)
@@ -8432,6 +8992,7 @@ class SettingsPanel(QWidget):
         for name, label in (("VISION_MODEL", "Vision"),
                             ("DEXTERITY_MODEL", "Dexterity"),
                             ("CLARITY_MODEL", "Clarity + rephrase"),
+                            ("MEMORY_MODEL", "Memory"),
                             ("PLANNER_MODEL", "Planner"),
                             ("VOICE_TIDY_MODEL", "Dictation tidy"),
                             ("SPEECH_MODEL", "Speech to text")):
@@ -9025,8 +9586,9 @@ class BuildPanel(QWidget):
         remove.setCursor(Qt.PointingHandCursor)
         remove.setFixedSize(24, 24)
         remove.setStyleSheet(
-            f"QPushButton{{background:transparent;color:{C_TEXT_DIM};border:none;font-size:11px;}}"
-            f"QPushButton:hover{{color:{C_RED};}}")
+            f"QPushButton{{background:{C_BTN};color:{C_BTN_FG};border:none;"
+            f"border-radius:12px;font-size:11px;padding:0;}}"
+            f"QPushButton:hover{{background:{C_BTN_HOVER};}}")
 
         fl.addWidget(name_edit)
         fl.addWidget(grip_combo)
@@ -9206,8 +9768,9 @@ class GripperAIDialog(GlassDialog):
         remove.setCursor(Qt.PointingHandCursor)
         remove.setFixedSize(24, 24)
         remove.setStyleSheet(
-            f"QPushButton{{background:transparent;color:{C_TEXT_DIM};border:none;font-size:11px;}}"
-            f"QPushButton:hover{{color:{C_RED};}}")
+            f"QPushButton{{background:{C_BTN};color:{C_BTN_FG};border:none;"
+            f"border-radius:12px;font-size:11px;padding:0;}}"
+            f"QPushButton:hover{{background:{C_BTN_HOVER};}}")
 
         fl.addWidget(name_edit)
         fl.addWidget(grip_combo)
@@ -9952,11 +10515,12 @@ class HardwareConnectDialog(GlassDialog):
         open_now = self._link.is_open()
         self._conn_btn.setText("Disconnect" if open_now else "Connect")
         self._conn_btn.setStyleSheet(f"""
-            QPushButton{{background:{'#ffffff' if open_now else '#1f293a'};
-                color:{C_RED if open_now else '#ffffff'};
-                border:{'1px solid ' + C_BORDER if open_now else 'none'};
+            QPushButton{{background:{C_BTN};
+                color:{C_BTN_FG};
+                border:none;
                 border-radius:18px;font-family:'{UI_FONT}';font-weight:700;
                 font-size:10px;padding:0 16px;}}
+            QPushButton:hover{{background:{C_BTN_HOVER};}}
         """)
         self._ports.setEnabled(not open_now)
         self._baud.setEnabled(not open_now)
@@ -10039,10 +10603,23 @@ class CameraPanel(QWidget):
         brand.setStyleSheet(
             f"color:{C_VIOLET};background:transparent;letter-spacing:0.06em;")
 
+        # The two toolbar file actions stay white — they read as chrome for the
+        # canvas, not as actions on the conversation.
+        white_pill = (
+            f"QPushButton{{background:#ffffff;color:{C_TEXT};"
+            f"border:1px solid {C_BORDER};border-radius:17px;padding:0 20px;"
+            f"font-family:'{UI_FONT}';font-weight:700;}}"
+            f"QPushButton:hover{{background:#f3f4f8;}}"
+            f"QPushButton:pressed{{background:#e9ebf1;}}"
+            f"QPushButton:disabled{{background:rgba(255,255,255,0.6);"
+            f"color:{C_TEXT_DIM};}}")
+
         self._import_btn = pill_button("📁  Import Image", primary=False, height=34)
+        self._import_btn.setStyleSheet(white_pill)
         self._import_btn.clicked.connect(self._sidebar.open_views_popup)
 
         self._clear_btn = pill_button("✕  Clear Image", primary=False, height=34)
+        self._clear_btn.setStyleSheet(white_pill)
         self._clear_btn.setToolTip("Drop the current photo so you can re-import cleanly")
         self._clear_btn.clicked.connect(self.clear_board)
 
@@ -10375,6 +10952,22 @@ class MainWindow(QMainWindow):
         self._file_menu = file_menu = QMenu("File", self)
         bar.addMenu(file_menu)
 
+        # Import sits at the top of File, where a file menu is looked for
+        # first. Ctrl+I stays on the Insert ▸ Pictures copy of this action —
+        # two QActions carrying the same sequence makes it ambiguous and
+        # neither fires.
+        act_file_img = QAction("Import Image…", self)
+        act_file_img.setStatusTip("Open the views sheet to load a board photo")
+        act_file_img.triggered.connect(self._sidebar.open_views_popup)
+        file_menu.addAction(act_file_img)
+
+        act_file_clear = QAction("Clear Image", self)
+        act_file_clear.setStatusTip("Drop the current photo so you can re-import cleanly")
+        act_file_clear.triggered.connect(self._cam_panel.clear_board)
+        file_menu.addAction(act_file_clear)
+
+        file_menu.addSeparator()
+
         act_cam = QAction("Connect USB Camera…", self)
         act_cam.setShortcut(QKeySequence("Ctrl+Shift+C"))
         act_cam.triggered.connect(self._cam_panel.choose_camera)
@@ -10439,7 +11032,7 @@ class MainWindow(QMainWindow):
         insert_menu.addSeparator()
 
         # Standing planner notes — Word's "Comment" / "Quick Parts" analogue
-        act_instr = QAction("Custom Instructions…", self)
+        act_instr = QAction("Custom Training…", self)
         act_instr.setStatusTip("Standing rules the planner applies to every task")
         act_instr.triggered.connect(self._open_custom_instructions)
         insert_menu.addAction(act_instr)
@@ -10586,6 +11179,7 @@ class MainWindow(QMainWindow):
             ("VISION_MODEL", "Vision"),
             ("DEXTERITY_MODEL", "Dexterity"),
             ("CLARITY_MODEL", "Clarity + rephrase"),
+            ("MEMORY_MODEL", "Memory"),
             ("PLANNER_MODEL", "Planner"),
             ("VOICE_TIDY_MODEL", "Dictation Tidy"),
             ("SPEECH_MODEL", "Speech to Text"),

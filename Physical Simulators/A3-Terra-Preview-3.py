@@ -24,11 +24,10 @@ from PySide6.QtGui   import (QImage, QPixmap, QFont, QColor, QPalette,
                               QFontDatabase, QCursor, QDesktopServices)
 
 # ─────────────────────────────────────────────────────────────────────────────
-OPENAI_API_KEY = (
-    "sk-proj-vFVeJD0s4A4mfZGLCBUDPCOaQcNj7vQLPcNvHvhQXuWfFoR6OiW1X5gf9jyX"
-    "yyJet33N-dsL_QT3BlbkFJ_hbcfH-O03UxhkANXi4VPepseIX2SkNSYQyX3sGZAn7vax"
-    "8HYBseymYc-ExEV_nnNk0ZiCgXsA"
-)
+# No key is embedded in the source. The operator pastes one through
+# Settings > API Config > Add manual API key, and it is stored in
+# api_key.json in HOS data (see API_KEY_PATH / load_api_key below).
+OPENAI_API_KEY = ""
 
 VISION_MODEL    = "gpt-5.4"
 DEXTERITY_MODEL = "gpt-5.4-mini"
@@ -46,17 +45,70 @@ HOS_DATA_DIR   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "HOS d
 APP_ICON_PATH  = os.path.join(HOS_DATA_DIR, "app icon.png")
 CUSTOM_INSTRUCTIONS_PATH = os.path.join(HOS_DATA_DIR, "custom_instructions.json")
 BUILD_CONFIG_PATH        = os.path.join(HOS_DATA_DIR, "build_config.json")
+API_KEY_PATH             = os.path.join(HOS_DATA_DIR, "api_key.json")
+
+
+class _ApiKeyBus(QObject):
+    """One place for "the key changed" to be announced.
+
+    The banner in the chat sidebar and the field in the Settings panel are
+    built independently and either one can be where the key gets pasted, so
+    they follow this rather than each other.
+    """
+    changed = Signal(bool)          # True once a key is present
+
+
+api_key_bus = _ApiKeyBus()
+
+
+def load_api_key() -> str:
+    """Read the operator's key out of api_key.json in HOS data.
+
+    A missing / unreadable / empty file is not an error: it simply means no
+    key has been added yet, which the UI reports as such (see
+    ApiKeyBanner) rather than failing at the first request.
+    """
+    try:
+        with open(API_KEY_PATH, "r", encoding="utf-8") as fh:
+            return str(json.load(fh).get("api_key", "")).strip()
+    except (OSError, ValueError, AttributeError):
+        return ""
+
+
+def save_api_key(key: str) -> None:
+    """Persist the key to api_key.json and rebind it live.
+
+    Written through set_setting-style rebinding of the module global so the
+    very next request uses it - no restart, nothing cached.
+    """
+    key = (key or "").strip()
+    globals()["OPENAI_API_KEY"] = key
+    os.makedirs(HOS_DATA_DIR, exist_ok=True)
+    with open(API_KEY_PATH, "w", encoding="utf-8") as fh:
+        json.dump({"api_key": key}, fh, indent=2)
+    api_key_bus.changed.emit(bool(key))
+
+
+def api_key_configured() -> bool:
+    return bool(resolve_openai_api_key())
+
+
+OPENAI_API_KEY = load_api_key()
+
+
 
 # Custom instructions default to these two, but the running set is loaded
 # from / saved to custom_instructions.json in HOS data (see
 # CUSTOM_INSTRUCTIONS_PATH) rather than being rewritten into the source. The
-# CURRENT set (as of this prompt revision) is also hardcoded verbatim into
-# A2_SYSTEM's RULES section below, so they hold even before this file loads
-# on disk; edits made through the Custom Instructions UI still layer on top
-# of that at runtime exactly as before (see _launch_planner).
+# CURRENT set (as of this prompt revision) is also hardcoded into
+# A3_TERRA_SYSTEM's CUSTOM INSTRUCTIONS section below, so they hold even before this
+# file loads on disk; edits made through the Custom Instructions UI still
+# layer on top of that at runtime exactly as before (see _launch_planner).
+# Standing rules must be conditional on the operator's task — never force
+# objects (bottle, cloth, …) that the current task does not need.
 AI_INSTRUCTIONS = [
     "If you have more than one plate in the frame where you have to apply soap, apply soap one by one to each.",
-    "while boiling, always add water before the thing which has to get boiled",
+    "while cleaning table with a cloth, should go to ALL the coordinates and use cloth, not just some",
 ]
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -428,7 +480,7 @@ class EmptyBoardWelcome(QWidget):
         bf.setWeight(QFont.Bold)
         bf.setStyleHint(QFont.SansSerif)
         bf.setHintingPreference(QFont.PreferFullHinting)
-        body = ShimmerLabel("HOS’s premier physical simulator",
+        body = ShimmerLabel("HOS’s Flagship Model",
                             dim="#ffffff", bright="#ffffff", base_alpha=240,
                             align=Qt.AlignHCenter, speed=0.018, band=0.32,
                             sweep_alpha=110)
@@ -1942,7 +1994,7 @@ def parse_component_entries(raw):
             seen.add(name)
             entry = {'name': name}
             for k in ('polygon', 'box', 'center', 'touches', 'color',
-                      'desc', 'aka', 'action'):
+                      'desc', 'aka', 'action', 'grip'):
                 if c.get(k) is not None:
                     entry[k] = c[k]
             out.append(entry)
@@ -2007,6 +2059,8 @@ _COMPONENT_FALLBACKS = (
      ["body", "lid", "opening"]),
     (("broom",),
      ["handle", "head", "bristles"]),
+    (("dustpan", "dust pan"),
+     ["pan", "handle", "lip", "body"]),
     (("mop",),
      ["handle", "head", "pad"]),
     (("knife",),
@@ -2021,6 +2075,31 @@ _COMPONENT_FALLBACKS = (
      ["base", "shade", "switch", "bulb"]),
     (("tap", "faucet", "sink"),
      ["spout", "handle", "basin"]),
+    # Everyday items with no buttons or doors, listed for one reason: where a
+    # gripper is allowed to close on them. Without an entry here a plate comes
+    # back partless and gets taken through the middle of the china.
+    (("plate", "dish", "saucer"),
+     ["rim", "base"]),
+    (("tray", "platter"),
+     ["rim", "edge", "handle"]),
+    (("cutting board", "chopping board", "board"),
+     ["edge", "handle"]),
+    (("glass", "tumbler", "wine glass"),
+     ["rim", "body", "stem", "base"]),
+    (("fork", "spoon", "spatula", "ladle", "whisk", "tongs", "peeler"),
+     ["handle", "head"]),
+    (("scissors", "shears"),
+     ["handle", "blade", "pivot"]),
+    (("jug", "pitcher", "watering can", "carafe"),
+     ["handle", "body", "spout", "rim"]),
+    (("squeegee", "duster", "scrub brush", "brush"),
+     ["handle", "head", "bristles"]),
+    (("hammer", "screwdriver", "wrench", "spanner", "pliers"),
+     ["handle", "head"]),
+    (("bag", "backpack", "tote"),
+     ["handle", "strap", "body", "opening"]),
+    (("iron", "clothes iron"),
+     ["handle", "soleplate", "dial", "cord"]),
 )
 
 
@@ -2106,10 +2185,17 @@ def _format_component_token(c):
     Synonyms ride along in parentheses when the component pass supplied them:
     the planner matches operator words against this line, and "hatch" only
     resolves to the door if the word is actually on it.
+
+    A grasp verdict rides along the same way — 'handle@K7 (grip: hold)',
+    'blade@K5 (grip: avoid)' — so where an object may be held survives into
+    the planner's input even on a run where Gripper AI never answered.
     """
     name = c.get('name', 'part')
     cell = c.get('center') or ''
     tok  = f"{name}@{cell}" if cell else name
+    grip = str(c.get('grip') or '').strip().lower()
+    if grip in ('hold', 'avoid'):
+        tok += f" (grip: {grip})"
     aka  = c.get('aka')
     if isinstance(aka, str):
         aka = [aka]
@@ -2809,6 +2895,28 @@ Think about how the object is actually operated, and work through it in order:
 5. What else is functionally distinct?              (spout, nozzle, base, blade,
                                                      bristles, leg, cord, valve)
 {HINTS}
+## GRASP POINTS - ALWAYS ANSWER THIS
+
+A robot with a parallel gripper has to hold this object somewhere, and its
+default is the middle — which for a great many objects is the one place it must
+not close on. So for anything that could be lifted or carried, the part it is
+HELD BY is never optional:
+
+- Always report the part a hand takes it by: handle, grip, shaft, neck, rim,
+  edge, strap, or the body itself when there is nothing else.
+- Always report the parts that must NOT be gripped, when the object has any:
+  blade, cutting edge, teeth, points, hot surfaces, heating elements, bristles,
+  mop pads, spouts, nozzles, triggers, screens, glass.
+- A knife MUST come back with both its handle and its blade. A broom or mop
+  MUST come back with both its shaft/handle and its head. A pan MUST come back
+  with its handle. Missing the handle is the single worst answer you can give
+  about a tool, because the robot then closes on the blade.
+
+Mark every component with a "grip" field:
+  "hold"  - a safe place for the gripper to close (handle, shaft, rim, body)
+  "avoid" - never close here (blade, bristles, spout, button, screen, hot part)
+  omit the field when neither applies (a drum, a drawer, a control panel).
+
 ## HOW MANY
 
 Let the object decide — do not pad the list, do not cut it short:
@@ -2839,9 +2947,14 @@ are visible now. Look for them.
 - A part must be a THING, not a REGION. Edges, rims, sides, corners, halves
   and quadrants of a flat surface are not components: "front edge", "left
   edge", "top surface" of a table are all just places on the table, and a
-  robot cannot press, open, turn or grasp any of them. A flat surface — table,
-  counter, desk, board, tray, floor — normally has NO components at all, and
-  an empty array is the right answer for it. Report a part of one only when it
+  robot cannot press, open, turn or grasp any of them. A FIXED surface — table,
+  counter, desk, floor, worktop — normally has NO components at all, and
+  an empty array is the right answer for it.
+  ONE exception, and only this one: on a LIFTABLE object, the rim or edge the
+  gripper actually closes on IS a component, because it is where the robot
+  holds it — the rim of a plate, bowl or lid, the edge of a chopping board or
+  tray. Outline the graspable band itself, not the whole item, and mark it
+  "grip": "hold". This never applies to something the robot cannot pick up. Report a part of one only when it
   is genuinely a separate operable feature: a drawer, a handle, a hinged flap,
   a power socket set into it.
 - Never report a LOOSE, SEPARATE object as a component just because it is
@@ -2866,22 +2979,32 @@ are visible now. Look for them.
 - aka: 1-3 other words an operator might use for that part.
 - action: the single verb a robot performs on it — one of
   press, turn, open, close, pull, grasp, load, pour, wipe, none.
+- grip: "hold" if the gripper may close there, "avoid" if it must not. Omit
+  when the part is neither a grasp point nor a hazard.
 
 ## OUTPUT
 
 STRICT JSON only — no markdown, no code fences, no commentary:
 
 {"components": [
-  {"name": "door",
+  {"name": "handle",
    "polygon": [[x0, y0], [x1, y1], [x2, y2], [x3, y3]],
-   "desc": "Round front-loading door with a glass window.",
-   "aka": ["hatch", "porthole"],
-   "action": "open"},
+   "desc": "Wooden handle at the left end.",
+   "aka": ["grip", "haft"],
+   "action": "grasp",
+   "grip": "hold"},
+  {"name": "blade",
+   "polygon": [[x0, y0], [x1, y1], [x2, y2], [x3, y3]],
+   "desc": "Steel blade running to the tip.",
+   "aka": ["edge"],
+   "action": "none",
+   "grip": "avoid"},
   {"name": "start stop button",
    "polygon": [[x0, y0], [x1, y1], [x2, y2], [x3, y3]],
    "desc": "Round button at the right of the control panel.",
    "aka": ["power button", "start button"],
-   "action": "press"}
+   "action": "press",
+   "grip": "avoid"}
 ]}
 
 polygon values are integers 0-1000, at least 3 points, traced in order, no
@@ -2907,6 +3030,10 @@ def build_component_hints(name):
         "Treat that as a list of things to LOOK for on this particular one.\n"
         "Report the ones you can actually see, skip the ones you cannot, and\n"
         "add any part it has that the list does not mention.\n"
+        "Before you answer, settle one question about THIS {0}: if a hand were\n"
+        "to pick it up, where exactly would it take hold? That part goes in the\n"
+        "list with \"grip\": \"hold\", and anything that would cut, burn or slip\n"
+        "goes in with \"grip\": \"avoid\".\n"
     ).format(name, ", ".join(parts))
 
 
@@ -3038,6 +3165,16 @@ You are given: the ORIGINAL task, and the QUESTIONS with the operator's ANSWERS.
 
 Rewrite ONLY the part of the task that the question was about. Everything else in the task is carried through EXACTLY as the operator wrote it - same words, same order. If the operator said "wash the dishes and water the plants" and the only question was about which plants, then "wash the dishes" must survive untouched, word for word. You are patching a sentence, not rewriting it.
 
+## WHEN THE ORIGINAL SAYS NOTHING
+
+The rule above assumes there is a task to patch. Sometimes there is not: the operator typed a greeting, a fragment, or something with no instruction in it at all ("hi", "hello", "?"), and the whole of what they actually want is in their ANSWERS. In that case the ANSWERS ARE THE TASK - build the instruction out of them and drop the original entirely. Never hand back a greeting or a fragment unchanged: the planner can do nothing with it, and the operator has already told you what they want.
+
+Original: "hi"
+Q: "What should I do with the broom or dustpan?"  A: "Sweep with the broom at F7"
+Output: Sweep with the broom at F7.
+
+Whatever you output must be an instruction the robot could act on. If it is not, you have not finished the job.
+
 ## STYLE
 
 Use the simplest, most direct English possible. Short words. Short sentences. Say exactly what object, and exactly where.
@@ -3074,11 +3211,11 @@ DEFAULT_REPHRASE_SYSTEM = REPHRASE_SYSTEM
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# A2 system prompt  (planner — unchanged behaviour)
+# A3-Terra system prompt  (planner — unchanged behaviour)
 # ─────────────────────────────────────────────────────────────────────────────
-A2_SYSTEM = (
+A3_TERRA_SYSTEM = (
     f"""
-You are A2, the controller of a ProLabs V12.2 Precision Cartesian Gantry robot.
+You are A3-Terra, the controller of a ProLabs V12.2 Precision Cartesian Gantry robot.
 
 You receive an OBJECT LIST (name, CENTER cell, TOUCHES cells, color, size, description, ALSO_KNOWN_AS, COMPONENTS) and a Task. Output the shortest correct command sequence.
 
@@ -3142,7 +3279,13 @@ open_door                # open the door
 **2. Contact pass - drag a held tool across cells.**
 Pick up a tool (broom, mop, cloth, sponge), move above the FIRST cell, `press` to put the tool in contact with the surface, then issue one `goto_coordinate` per cell. The tool stays in contact and works every cell it crosses. `release` lifts it at the end.
 
-Cloth is the ONLY cleaning tool A2 uses. A2 has no fill/dilution tracking for a spray bottle. If a spray bottle or cleaner object exists in the OBJECT LIST for a cleaning task, ignore it entirely and use the cloth. NEVER pick up or reference a spray bottle for any cleaning task, regardless of how the task is phrased.
+Tool by task: broom for sweeping, mop for mopping, cloth/sponge for wiping /
+scrubbing / soaping. Do not substitute cloth for a broom when the task is to
+sweep, and do not require a bottle for cleaning. A3-Terra has no fill/dilution
+tracking for a spray bottle. If a spray bottle or cleaner object exists in
+the OBJECT LIST for a wiping/scrubbing task, ignore it entirely and use the
+cloth. NEVER pick up or reference a spray bottle for any cleaning task,
+regardless of how the task is phrased.
 
 goto_coordinate = A, 6
 press                    # cloth down
@@ -3188,7 +3331,7 @@ keep                     # return the carton, still half full
 
 **Rules for pour**
 - FRACTION MUST be a decimal from 0.1 to 1.0. `pour(1.0)` and bare `pour` mean the same thing. Prefer the bare form when emptying it.
-- NEVER a percentage, NEVER a volume, NEVER a unit: `pour(0.25)`, not `pour(25%)` or `pour(250ml)`. A2 tracks proportion of the source, not millilitres.
+- NEVER a percentage, NEVER a volume, NEVER a unit: `pour(0.25)`, not `pour(25%)` or `pour(250ml)`. A3-Terra tracks proportion of the source, not millilitres.
 - Map the operator's words to a fraction: "half" -> 0.5, "a third" -> 0.33, "a splash"/"a little"/"a drizzle" -> 0.1, "most of it" -> 0.75, "top it up" -> 0.25.
 - Splitting one source between several containers is one `pour(FRACTION)` per container, moving between them while still holding the source: pour(0.5) at the first glass, goto the second, pour(1.0) to empty the rest.
 - The source is still held after a partial pour, so it still needs its `keep` to be returned before the task ends.
@@ -3254,7 +3397,7 @@ release
 
 **Efficiency** - choose the shortest sequence. No redundant moves.
 
-**Minimal scope** - do exactly what the operator asked, nothing more. Do not add steps they didn't request just because they seem helpful. Don't close a door/lid/drawer that wasn't asked to be closed unless a rule elsewhere requires it, or leaving it open would leave an object unsafe/exposed. Don't tidy, move, or "straighten" objects outside the task. Don't turn an appliance off unless the task or another rule calls for it. Don't run an extra wipe/clean pass "while you're there." If the operator's own wording is broad ("tidy up", "clean the kitchen"), plan everything that phrase reasonably covers. That is the task, not an addition to it.
+**Minimal scope** - do exactly what the operator asked, nothing more. Do not add steps they didn't request just because they seem helpful. Don't close a door/lid/drawer that wasn't asked to be closed unless a rule elsewhere requires it, or leaving it open would leave an object unsafe/exposed. Don't tidy, move, or "straighten" objects outside the task. Don't turn an appliance off unless the task or another rule calls for it. Don't run an extra wipe/clean pass "while you're there." If the operator's own wording is broad ("tidy up", "clean the kitchen"), plan everything that phrase reasonably covers. That is the task, not an addition to it. Standing / ADDITIONAL AI INSTRUCTIONS never expand the task to unrelated objects (e.g. do not move a bottle on a sweep task; do not require a cloth when the task is broom-sweeping).
 
 **Object matching** - match user words to objects using name, ALSO_KNOWN_AS, description, color, size, and COMPONENTS. A phrase like "start button" or "drum" that matches a component of "washing machine" means that part of the washing machine. Use the component's @CELL when present for goto/press; otherwise use the parent CENTER. Resolve silently. Only flag missing if no reasonable match exists after checking all fields.
 
@@ -3279,19 +3422,25 @@ Task_Completed
 
 ## CUSTOM INSTRUCTIONS
 
-These apply on every task, the same as any other rule in this prompt. They
-also arrive per-task appended to the task text under "ADDITIONAL AI
+These are standing rules that ALSO arrive per-task under "ADDITIONAL AI
 INSTRUCTIONS" (see custom_instructions.json in HOS data, editable from the
-Custom Instructions button) - that mechanism is how new ones get added
-without a prompt edit, but the set below is never conditional on it being
-present, so these three hold even if that file is ever missing or emptied.
+Custom Instructions button). Apply a standing rule ONLY when the operator's
+current task involves that action or object. NEVER invent an extra sub-task
+from a standing rule that the operator did not ask for. NEVER write MISSING
+for an object that only appears in a standing rule / ADDITIONAL AI
+INSTRUCTION and is not required by the operator's wording. Example: if the
+task is "sweep the table" and a standing note says "Move the bottle", ignore
+the bottle note entirely — do not MISSING bottle, do not plan a bottle move.
 
-- If there is more than one plate in the frame that needs soap applied, apply
-  soap to them one at a time - not with a single pass across all of them.
-- While boiling something, always add the water before the thing that has to
-  be boiled.
-- While cleaning a table, go to ALL of its cells and use the cloth on each one
-  - never stop partway through the TOUCHES list.
+Hardcoded standing rules (hold even if the JSON file is missing or emptied):
+
+- If the task requires applying soap and there is more than one plate in the
+  frame, apply soap one by one to each plate — not with a single pass across
+  all of them. Ignore this rule when the task is not about soaping plates.
+- If the task is wiping/cleaning a table with a cloth, go to ALL of its
+  coordinates / TOUCHES cells with the cloth — never stop partway. Ignore
+  this rule when the task is sweeping/mopping (use broom/mop playbooks) or
+  when no cloth is involved.
 
 ---
 
@@ -3322,8 +3471,15 @@ wait_X(SECONDS) - only when a later step depends on the delay
 **Clean any surface or object**
 goto cloth -> pickup -> goto first cell -> press -> goto each remaining cell -> release -> goto cloth home -> keep
 
-**Sweep debris to ONE collection point**
-goto broom -> pickup -> per row: goto far edge -> press -> drag through the row ending AT the target cell -> release -> ...repeat per row, every pass ending at the same target -> goto broom home -> keep
+**Sweep (broom) — always converge to ONE cell**
+First pick PILE_COL, PILE_ROW = a CORNER cell INSIDE the area being swept
+(the broom's final destination for every pass). Never off that area.
+CRITICAL: if a dustpan / dust pan is anywhere in the OBJECT LIST, you MUST
+place it at that pile BEFORE the broom touches anything:
+  goto dustpan -> pickup -> goto PILE -> keep
+Then broom: per row goto far edge -> press -> drag cells ending AT PILE ->
+release -> ...every pass ends at the same PILE -> return broom -> keep.
+If no dustpan in the list, skip only the dustpan block; still end every pass at PILE.
 
 **Store / unload items in a plain container**
 goto container -> open_door -> per item: goto item -> pickup -> goto container -> keep -> ...repeat -> goto container -> press -> release (close)
@@ -3345,65 +3501,97 @@ goto source -> pickup -> goto destination -> pour(FRACTION) -> goto source home 
 
 ---
 
-# A2 Task Playbooks
+# A3-Terra Task Playbooks
 
 Substitute real CENTER/TOUCHES coordinates from the OBJECT LIST wherever COL/ROW/NAME placeholders appear below.
 
 ---
 
-## 1. Sweep a Room
+## 1 / 1b. Sweep with broom — ALWAYS to ONE destination cell
 
-Requires a broom-type object (match via ALSO_KNOWN_AS/description if not literally named "broom"). If no broom-type object exists, output the MISSING line and skip.
+Requires a broom-type object (match via ALSO_KNOWN_AS/description if not
+literally named "broom"). If no broom-type object exists, output the MISSING
+line and skip.
 
-goto_coordinate = BROOM_COL, BROOM_ROW
-pickup
-goto_coordinate = A, 1
-press                      # broom down
-goto_coordinate = B, 1
-goto_coordinate = C, 1     # ...continue across the row, one line per cell
-goto_coordinate = T, 1
-goto_coordinate = A, 2     # step to the next row, still in contact
-goto_coordinate = B, 2
-...continue for every row that has debris or was specified by the user
-release                    # broom up
-goto_coordinate = BROOM_COL, BROOM_ROW
-keep                       # return broom to its original cell
+**Default for every sweep task** (room, floor, table surface, debris — any
+wording that means broom-sweep). Do NOT do a free-roaming grid pass that
+never converges. A single serpentine pass across every cell does NOT gather
+dust. Every contact pass MUST end at one shared destination cell.
 
-## 1b. Sweep Debris to ONE Collection Point
+### Step 0 — pick the broom end / pile FIRST (before any move)
+First fix SWEEP_REGION = the cells actually being swept: the TOUCHES footprint
+of the surface named in the task (table / floor / counter). If the operator
+named no surface, SWEEP_REGION is the working area of the board.
 
-Use this instead of playbook 1 whenever the task says to gather, pile, collect
-or push everything swept into a single cell/coordinate. A single pass that crosses
-every cell once does NOT converge anything. To actually converge, every row's
-contact pass must be dragged so that it ENDS at the same PILE_COL, PILE_ROW.
+Then choose PILE_COL, PILE_ROW once. It MUST be one of the four CORNER cells
+of SWEEP_REGION:
+- prefer a corner not occupied by another object's TOUCHES,
+- if all four corners are occupied, take the corner-most free cell that is
+  still inside SWEEP_REGION,
+- the operator's named cell wins only if it lies inside SWEEP_REGION;
+  otherwise snap it to the nearest in-region corner.
+Never a mid-edge cell, never a cell outside SWEEP_REGION, never a spare cell
+elsewhere on the board.
+Write it in a comment:
+`# collection point / broom end = PILE_COL, PILE_ROW  # corner of swept area`.
+Every broom pass ends at exactly this cell. Do not change it mid-plan.
 
-Pick PILE_COL, PILE_ROW first (an empty cell on the object/board, the
-operator's cell if named, otherwise a sensible corner or edge cell of the
-object's TOUCHES list). Then, for every row that has debris, run a SEPARATE
-press -> drag -> release pass that starts at the far edge of that row and
-ends at PILE_COL, PILE_ROW, never the reverse direction.
+### Step 0b — DUSTPAN → pile BEFORE broom (MANDATORY when dustpan exists)
+Scan the OBJECT LIST for dustpan / dust pan / dust-pan (name, ALSO_KNOWN_AS,
+or description).
 
+**IF a dustpan is in the OBJECT LIST (at all — even if the operator never
+said "dustpan"):**
+You MUST place it at PILE_COL, PILE_ROW before the broom is picked up — i.e.
+on the corner cell INSIDE the swept area chosen in Step 0.
+Leaving the dustpan where it started while sweeping the table/floor is a
+critical planning error. So is parking it off the swept surface, at the side
+of the frame, or on any board cell outside SWEEP_REGION. The dustpan's
+resting cell after this step IS the broom end destination — they are the same
+coordinate, and it is a corner of the area being swept.
+
+goto_coordinate = DUSTPAN_COL, DUSTPAN_ROW
+pickup                                         # lift dustpan
+goto_coordinate = PILE_COL, PILE_ROW           # same cell chosen in Step 0
+keep                                           # put dustpan down at the pile
+# dustpan now sits at the broom end — every sweep pass ends here
+
+**IF no dustpan is listed:** skip Step 0b only. Still sweep every pass to
+PILE_COL, PILE_ROW with the broom alone. Do not invent a dustpan or write
+MISSING for one that is not in the scene.
+
+### Step 1 — broom passes (always; every pass ends at the pile / dustpan)
 goto_coordinate = BROOM_COL, BROOM_ROW
 pickup
 goto_coordinate = ROW1_FAR_COL, ROW1_ROW      # far edge of row 1, away from pile
-press                                          # broom down
-goto_coordinate = ROW1_MID_COL, ROW1_ROW       # ...intermediate cells of row 1
-goto_coordinate = PILE_COL, PILE_ROW           # drag row 1's debris onto the pile
-release                                        # broom up, debris left at the pile
-goto_coordinate = ROW2_FAR_COL, ROW2_ROW      # far edge of the next row
+press                                          # broom down  # sweep toward dustpan/pile
+goto_coordinate = ROW1_MID_COL, ROW1_ROW       # intermediate cells of row 1
+goto_coordinate = PILE_COL, PILE_ROW           # MUST end at pile (into dustpan if placed)
+release                                        # broom up; debris left at pile
+goto_coordinate = ROW2_FAR_COL, ROW2_ROW
 press
 goto_coordinate = ROW2_MID_COL, ROW2_ROW
-goto_coordinate = PILE_COL, PILE_ROW           # drag row 2's debris onto the same pile
+goto_coordinate = PILE_COL, PILE_ROW           # same pile every time
 release
-...repeat once per row that has debris, every pass ending at PILE_COL, PILE_ROW
+...one press/release pair per row (or per TOUCHES row of the surface);
+...every pair ends with goto_coordinate = PILE_COL, PILE_ROW
 goto_coordinate = BROOM_COL, BROOM_ROW
-keep                                           # return broom to its original cell
+keep                                           # return broom home
 
-Every row gets its own press/release pair. Do not chain rows together under
-one press. State the pile in a `#` comment on the first press: `# sweep row toward the collection point`.
+### Hard rules (violations = critical error)
+- PILE is a CORNER cell inside the swept surface. Never off the surface,
+  never a mid-edge cell, never elsewhere on the board.
+- Dustpan in OBJECT LIST ⇒ dustpan is moved to PILE before any broom pickup.
+- Every broom contact pass ends at PILE_COL, PILE_ROW (the dustpan cell when
+  a dustpan was placed). Never end a pass at a random mid-table cell.
+- One press/release pair per row — do not chain rows under one press.
+- Do not use cloth, bottle, or mop for a broom-sweep task.
+- Do not leave the dustpan unused, on the side of the frame, or anywhere
+  outside the swept area while sweeping.
 
 ## 2. Mop a Floor (after sweeping)
 
-Requires a mop object. If none exists, output the MISSING line and skip. A2 has no fill/bucket-solution tracking; mop directly. If the same task also asks for sweeping, list that step first and finish it completely (release + keep the broom) before picking up the mop.
+Requires a mop object. If none exists, output the MISSING line and skip. A3-Terra has no fill/bucket-solution tracking; mop directly. If the same task also asks for sweeping, list that step first and finish it completely (release + keep the broom) before picking up the mop.
 
 goto_coordinate = MOP_COL, MOP_ROW
 pickup
@@ -3778,9 +3966,9 @@ pickup
 goto_coordinate = HOLDER_COL, HOLDER_ROW
 keep                        # fresh one now in the holder
 
-## 16. Steps With No A2 Equivalent - Skip, Don't Invent
+## 16. Steps With No A3-Terra Equivalent - Skip, Don't Invent
 
-A2 is a fixed gantry over one board, not a mobile robot: there is no `walk`,
+A3-Terra is a fixed gantry over one board, not a mobile robot: there is no `walk`,
 no separate rooms, and every reachable object is already in the OBJECT LIST.
 - Ignore "walk to X".
 - Ignore "carry upstairs/downstairs".
@@ -3828,7 +4016,8 @@ keep                        # return the empty watering can
 
 Every task type below reduces to a playbook above.
 
-- Floor cleaning (vacuum/sweep/mop/wipe a spill) -> 1, 1b, 2, 3
+- Floor / surface sweeping (broom) -> 1/1b (always one pile at a corner inside the swept area; dustpan to that pile first if present)
+- Floor mopping / wipe a spill -> 2, 3
 - Laundry (basket/washer/dryer load-unload, fold) -> 12, 5, 6, 13
 - Dishwashing -> 12, 3b, 6
 - Cooking (stovetop, oven, toaster, kettle, microwave) -> 11, 6, 12
@@ -3855,7 +4044,9 @@ physical action is being described.
 
 - **Momentary press -> release**: turning any appliance on/off, opening/closing any door/lid/drawer, pressing any switch/button, turning any dial, squeezing any dispenser, actuating any lever. -> playbook shape 1 (press/release section).
 - **press -> wait_X -> release, on/off pair**: any full appliance cycle (wash, dry, dishwasher, brew, bake, microwave, steep, simmer, rice cooker, air fryer, toast, charge). -> playbook 6.
-- **pickup cloth -> contact pass -> keep cloth**: wiping, sweeping, mopping, scrubbing, soaping, washing any surface, dish, or glass. -> playbooks 1, 1b, 2, 3, 3b. NEVER use a spray bottle for any of these.
+- **pickup broom -> contact pass ending at one pile -> keep broom**: any sweep (room/floor/table). ALWAYS pick PILE first, and PILE must be a corner cell inside the area being swept — never off it. If dustpan is in the OBJECT LIST at all, place dustpan at that PILE before broom pickup, then every broom pass ends at that same PILE. No cloth, no bottle. -> playbook 1/1b.
+- **pickup mop -> contact pass -> keep mop**: mopping. -> playbook 2.
+- **pickup cloth -> contact pass -> keep cloth**: wiping, scrubbing, soaping, washing any surface, dish, or glass. -> playbooks 3, 3b. NEVER use a spray bottle for any of these.
 - **pickup source -> goto destination -> pour -> return source**: pouring any liquid or granular/solid substance into a container. -> playbooks 7, 13.
 - **pickup knife -> goto+keep at target -> slice(NAME, N) -> pickup -> return knife**: slicing any food item, walked across every TOUCHES cell if it spans more than one. -> playbook 4.
 - **goto garment -> press -> release, no lift**: folding any garment or fabric item. -> playbook 5.
@@ -3896,7 +4087,7 @@ is ignored by the robot and exists only to say which real-world action a generic
 press was meant to perform. Task_Completed is always the final line.
 """
 )
-DEFAULT_A2_SYSTEM = A2_SYSTEM
+DEFAULT_A3_TERRA_SYSTEM = A3_TERRA_SYSTEM
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -3918,13 +4109,22 @@ class ModelError(RuntimeError):
 
 
 def resolve_openai_api_key() -> str:
-    """The embedded key is the only source — no env var, no sidecar file."""
+    """api_key.json in HOS data is the only source — no env var, no key in
+    the source. Read per call so a key pasted mid-session lands at once."""
     return (OPENAI_API_KEY or "").strip()
 
 
+NO_API_KEY_MSG = ("No API key configured. Add one in "
+                  "Settings ▸ API Config ▸ Add manual API key.")
+
+
 def make_client():
-    return OpenAI(api_key=resolve_openai_api_key(),
-                  timeout=API_TIMEOUT_S, max_retries=0)
+    key = resolve_openai_api_key()
+    if not key:
+        # Phrased for the operator and raised here rather than letting the
+        # SDK fail on an empty key with its own env-var wording.
+        raise ModelError(NO_API_KEY_MSG)
+    return OpenAI(api_key=key, timeout=API_TIMEOUT_S, max_retries=0)
 
 
 def _describe_finish(resp):
@@ -4371,7 +4571,7 @@ class VisionWorker(QThread):
 #  Dexterity worker — silent gate before the planner
 # ─────────────────────────────────────────────────────────────────────────────
 class DexterityWorker(QThread):
-    """Screens a task for fine manipulation A2's parallel gripper cannot do.
+    """Screens a task for fine manipulation A3-Terra's parallel gripper cannot do.
 
     Runs on the CLARIFIED task, never the operator's raw words: the prompt is
     deliberately biased ("when in doubt, classify as dexterous"), so judging
@@ -4412,65 +4612,148 @@ class DexterityWorker(QThread):
 # ─────────────────────────────────────────────────────────────────────────────
 #  Gripper AI
 #
-#  The planner reasons about WHERE an object is, in grid cells, and says
-#  "pick up the plate" meaning its centre. It has no view on HOW a gripper
-#  should approach — and for a lot of household objects the centre is exactly
-#  the wrong place to close on. A plate gripped at its centre is gripped on
-#  flat china with nothing to hold; it has to be taken at the rim. A mug is
-#  taken at the body or the handle, not across the opening. A pan is taken by
-#  the handle. That knowledge is visual, so it comes from a vision pass here.
+#  The planner reasons about WHERE an object is, in grid cells, and its only
+#  coordinate for an object is that object's CENTER. Left alone it therefore
+#  grips everything through the middle — and for a great many household
+#  objects the middle is the one place you must not close on. A knife's
+#  centre is its blade. A plate's centre is flat china with nothing to hold.
+#  A pan's centre is the hot cooking surface, a broom's is bare shaft halfway
+#  to the bristles.
 #
-#  This is OFF by default and is advisory: it emits guidance into the chat
-#  and appends it to the planner's input. It never rewrites a plan by itself.
+#  Gripper AI is the stage that fixes that. It reads the photo and the OBJECT
+#  LIST (whose COMPONENTS already carry a measured cell per part — handle@K7,
+#  blade@K5) and returns, per object, the cell the gripper should actually
+#  close at.
+#
+#  The planner never sees any of this. It plans exactly as it always has,
+#  gripping every object at its CENTER — its prompt has no notion of a grip
+#  point. Once the plan is written, apply_grip_substitution runs a mechanical
+#  find-and-replace over it: for each object with an override, the
+#  goto_coordinate leading straight into that object's first pickup has its
+#  coordinate swapped for the grip cell, and nothing else in the plan is
+#  touched. This is the ONLY place a grip point changes what the robot does —
+#  see _on_cmd_done, where it runs, and resolve_grip_cells, which is what
+#  guarantees every cell offered up for substitution actually sits on the
+#  object it names.
+#
+#  ON by default, and it fails open at every step. A model error, an
+#  unmatched object, or a cell that is not on that object all degrade to the
+#  object's CENTER — which is exactly the behaviour the app had before this
+#  stage existed. Nothing here can block a task, and no cell it did not get
+#  from the OBJECT LIST can ever reach the gantry (see resolve_grip_cells).
 # ─────────────────────────────────────────────────────────────────────────────
-GRIPPER_AI = False          # Settings ▸ Gripper AI
+GRIPPER_AI = True           # Settings ▸ Gripper AI
 
 GRIPPER_AI_SYSTEM = (
     """
-You are Gripper AI for a robot with a simple parallel gripper mounted on an overhead gantry. You are shown a photo of the workspace and a list of the objects detected in it. For each object that a robot might PICK UP, you decide how the gripper should approach it.
+You are Gripper AI for a robot with a simple parallel gripper on an overhead gantry.
 
-For every object output two things:
+You are shown a photo of the workspace and the OBJECT LIST the vision system
+produced for it. Every object line carries its CENTER cell, its TOUCHES cells,
+and its COMPONENTS as name@CELL. For every object the robot might PICK UP, you
+decide WHERE ON THE OBJECT the gripper closes.
 
-1. APPROACH - the angle the gripper comes in at. Exactly one of:
-   - "top"      : straight down from above (default for most small objects)
-   - "side"     : horizontally, closing on the object's sides
-   - "45"       : a 45 degree top-side approach, for objects that are neither
-                  safely grippable from directly above nor from level with the surface
+This is not advice. The planner moves the gantry to the cell you return and
+closes there, so a wrong cell is a wrong grasp on the real robot.
 
-2. GRIP POINT - where on the object to close, and whether that differs from its centre. The planner will move to the object's CENTRE cell unless you say otherwise. If the centre is the wrong place to close, say what the right place is and which way it lies from the centre.
+## THE PROBLEM YOU EXIST TO SOLVE
 
-Guidance that matters:
-- Flat, wide, shallow items (plates, saucers, lids, trays, chopping boards) must be gripped at the RIM or EDGE, never the centre - there is nothing to close on at the centre.
-- Objects with a handle (mugs, pans, jugs, kettles, cutlery) are usually best taken by the handle or by the body beside it, not across the opening.
-- Tall narrow items (bottles, glasses, cans) are gripped at the body, around the middle or slightly below the centre of mass, from the side or top.
-- Bowls and cups are gripped at the rim or the outer wall, not across the top opening.
-- Soft or deformable items (cloth, sponge, bread) can be gripped anywhere but need a gentler note.
-- If the object is not something that would be picked up (a worktop, a wall, a fixed appliance), skip it entirely.
+Left alone, the planner grips everything at its CENTER cell. For a lot of
+objects the centre is the worst place on them: a knife's centre is its blade, a
+plate's centre is flat china with nothing to close on, a pan's centre is the hot
+cooking surface, a broom's centre is bare shaft halfway to the bristles. Your
+job is to say where the object is actually held.
 
-Be specific and physical. "Grip from the rim, on the near edge" is useful. "Grip carefully" is not.
+## FOR EACH OBJECT, DECIDE
 
-Output raw JSON and nothing else. No markdown fences, no commentary.
+1. PART - the component it is held by. Prefer a name straight from that
+   object's own COMPONENTS list, so the part has a real cell already.
+   Typical: handle, grip, shaft, neck, rim, edge, body, base, strap.
+
+2. CELL - the single grid cell the gripper closes at. Rules, in order:
+   - If the chosen PART has an @CELL in COMPONENTS, return exactly that cell.
+   - Otherwise return one cell from that object's own TOUCHES list - the cell
+     the part visibly sits in. NEVER a cell outside TOUCHES, never an invented
+     coordinate, never a cell belonging to a different object.
+   - If the centre genuinely is the right place to close (a sponge, an apple, a
+     folded cloth), return the CENTER cell and say so.
+
+3. APPROACH - the angle the gripper comes in at. Exactly one of:
+   - "top"  : straight down from above (default for most small objects)
+   - "side" : horizontally, closing on the object's sides
+   - "45"   : a 45 degree top-side approach, for objects that are neither
+              safely grippable from directly above nor from level with the
+              surface
+
+4. AVOID - the parts that must NEVER be closed on, by name. Blades, cutting
+   edges, teeth, points, hot cooking surfaces, heating elements, bristles, mop
+   heads, sponge pads, spouts, nozzles, triggers, glass panels, screens,
+   buttons, dials, and anything that would be crushed or would swing the object
+   out of the grip.
+
+5. WHY - one short physical clause. "flat china offers nothing to close on at
+   the centre" is useful. "grip carefully" is not.
+
+## WHAT GOES WHERE
+
+- Bladed and edged tools (knife, cleaver, peeler, scissors, saw): the HANDLE,
+  at the end furthest from the edge. The blade is always in AVOID.
+- Long-handled tools (broom, mop, rake, squeegee): the SHAFT, up near the top
+  where it is balanced, never the head, bristles or pad.
+- Anything with a handle (mug, pan, kettle, jug, basket, bucket, watering can,
+  drawer, bag): the handle, or the body right beside it - never across the
+  opening, never the lid.
+- Flat, wide, shallow items (plate, saucer, tray, chopping board, lid, book):
+  the RIM or EDGE, the near edge by preference. Never the centre.
+- Bowls, cups, glasses: the outer wall or rim, not across the top opening.
+- Tall narrow items (bottle, can, jar, vase): the BODY, around or just below
+  the middle of mass, not the cap, neck ring or trigger.
+- Hot or powered items (pan on a hob, iron, kettle just boiled): the insulated
+  handle only.
+- Soft or deformable items (cloth, sponge, bread, fruit): anywhere is fine -
+  return the centre and note the gentler hold.
+- Objects that are not picked up at all (worktops, walls, floors, fixed
+  appliances, sinks): skip them entirely. Do not invent a grip for them.
+
+## RULES
+
+- One entry per object, at most. Never two entries for the same object.
+- Use the object's name EXACTLY as the OBJECT LIST spells it.
+- Cells are the ones you were given. If you cannot justify a cell from
+  COMPONENTS or TOUCHES, omit that object rather than guess - the planner then
+  falls back to its centre, which is a known-safe default.
+- Judge from the photo, not from the name alone: if this particular knife is
+  lying with its handle to the left, the handle cell is the left-hand one.
+
+## OUTPUT
+
+Raw JSON, nothing else. No markdown fences, no commentary.
 
 {"grips": [
-  {"object": "plate", "approach": "top", "point": "rim", "offset": "move to the near edge of the plate rather than its centre", "why": "flat china offers nothing to close on at the centre"},
-  {"object": "mug",   "approach": "side", "point": "handle", "offset": "none", "why": "the handle gives a positive grip clear of the opening"}
+  {"object": "knife", "part": "handle", "cell": "K7", "approach": "top",
+   "avoid": ["blade"], "why": "the blade cannot be closed on safely"},
+  {"object": "plate", "part": "rim", "cell": "D5", "approach": "top",
+   "avoid": [], "why": "flat china offers nothing to close on at the centre"},
+  {"object": "mug", "part": "handle", "cell": "F3", "approach": "side",
+   "avoid": ["rim"], "why": "the handle gives a positive grip clear of the opening"}
 ]}
 
-If nothing in the photo is pick-up-able, output {"grips": []}.
+If nothing in the photo is pick-up-able, output exactly {"grips": []}.
 """
 )
 DEFAULT_GRIPPER_AI_SYSTEM = GRIPPER_AI_SYSTEM
 
 
 class GripperAIWorker(QThread):
-    """Vision pass deciding gripper approach + grip point per object.
+    """Vision pass deciding gripper approach + grip cell per object.
 
-    Fails open, like the other advisory passes: any error means no guidance
-    and the run carries on planning exactly as it would with the feature off.
-    Guidance is never allowed to block a task.
+    Fails open: any error means no grip points, and the run carries on
+    planning exactly as it would with the feature off — every object gripped
+    at its CENTER. A failure here delays the plan by one call at most; it
+    never blocks it (see AISidebar._launch_planner).
     """
 
-    done  = Signal(list)   # [{'object','approach','point','offset','why'}, …]
+    done  = Signal(list)   # [{'object','part','cell','approach','avoid','why'}, …]
     error = Signal(str)
     note  = Signal(str)    # verbose narration
 
@@ -4526,30 +4809,382 @@ class GripperAIWorker(QThread):
         return [g for g in (data.get("grips") or []) if isinstance(g, dict)]
 
 
-def gripper_ai_lines(grips: list) -> list:
-    """Grip dicts → one readable sentence each, for chat and for the planner."""
-    out = []
-    for g in grips:
-        name = str(g.get("object", "")).strip()
-        if not name:
-            continue
-        approach = str(g.get("approach", "")).strip().lower()
-        angle = {"top": "from above", "side": "from the side",
-                 "45": "at 45° top-side"}.get(approach, f"from the {approach}" if approach else "")
-        point = str(g.get("point", "")).strip()
-        offset = str(g.get("offset", "")).strip()
-        why = str(g.get("why", "")).strip()
+# Part names that make a good parallel-gripper grasp, best first. Used both to
+# fill in objects Gripper AI said nothing about and to sanity-check the part it
+# did choose — so a knife still gets taken by the handle on a run where the
+# model call failed outright.
+GRIP_PART_PRIORITY = (
+    "handle", "grip", "shaft", "stick", "pole", "stem", "strap", "neck",
+    "rim", "edge", "wall", "body", "base",
+)
 
-        bits = [f"grip {name}"]
-        if point:
-            bits.append(f"by the {point}")
-        if angle:
-            bits.append(angle)
+# Parts a gripper must never close on: sharp, hot, powered, fragile, or simply
+# no purchase. Substring match against the part name, so "cutting edge" and
+# "brush head" are caught while a plain "edge" or "rim" stays usable.
+GRIP_AVOID_PARTS = (
+    "blade", "cutting edge", "sharp", "tooth", "teeth", "tine", "point",
+    "burner", "hob", "hotplate", "heating element", "element", "flame",
+    "bristle", "brush head", "mop head", "head", "pad", "sponge",
+    "spout", "nozzle", "trigger", "button", "switch", "dial", "knob",
+    "screen", "display", "glass", "window", "panel",
+    "cavity", "interior", "drum", "opening", "slot", "contents", "lid",
+)
+
+
+# The subset of the above that no verdict can overrule. The rest of
+# GRIP_AVOID_PARTS is "nothing to hold onto" and vision is allowed to disagree
+# about it on a specific object; these are "this will cut or burn the gripper",
+# and a model that marks a blade as holdable is simply wrong.
+GRIP_HAZARD_PARTS = (
+    "blade", "cutting edge", "sharp", "tooth", "teeth", "tine",
+    "burner", "hob", "hotplate", "heating element", "flame",
+)
+
+
+def _is_hazard_part(name: str) -> bool:
+    """Whether a part is dangerous to close on, whatever anything else says."""
+    low = str(name or "").strip().lower()
+    return any(bad in low for bad in GRIP_HAZARD_PARTS)
+
+
+def _is_avoid_part(name: str, extra=()) -> bool:
+    """Whether a part name is one the gripper must not close on."""
+    low = str(name or "").strip().lower()
+    if not low:
+        return True
+    for bad in tuple(GRIP_AVOID_PARTS) + tuple(
+            str(e).strip().lower() for e in extra if str(e).strip()):
+        if bad and bad in low:
+            return True
+    return False
+
+
+def _comp_verdict(c) -> str:
+    """The component pass's own verdict for a part: 'hold', 'avoid', or ''.
+
+    Vision looked at this specific object; the name table is a generalisation
+    about objects of its kind. Where vision committed to an answer it wins.
+    """
+    v = str(c.get('grip') or '').strip().lower()
+    return v if v in ('hold', 'avoid') else ''
+
+
+def _cell_is_avoid(o, cell: str, extra=()) -> bool:
+    """Whether a cell of `o` belongs to a part the gripper must not close on.
+
+    The check the model's own cell has to survive: naming a safe part and then
+    handing back the blade's cell must not put the gripper on the blade.
+    """
+    want = str(cell or '').strip().upper()
+    if not want:
+        return True
+    for c in parse_component_entries(o.get('components')):
+        if str(c.get('center') or '').strip().upper() != want:
+            continue
+        if _is_hazard_part(c.get('name')):
+            return True
+        if _comp_verdict(c) == 'hold':
+            return False
+        if _comp_verdict(c) == 'avoid' or _is_avoid_part(c.get('name'), extra):
+            return True
+    return False
+
+
+def _grip_rank(name: str):
+    """Position of a part name in GRIP_PART_PRIORITY, or None if it is not a
+    recognised grasp feature."""
+    low = str(name or "").strip().lower()
+    for i, key in enumerate(GRIP_PART_PRIORITY):
+        if key in low:
+            return i
+    return None
+
+
+def object_cells(o) -> set:
+    """Every cell an object occupies, upper-cased, CENTER included.
+
+    This is the whitelist a grip cell has to survive: nothing that is not
+    already known to be part of this object can be handed to the planner.
+    """
+    cells = set()
+    center = str(o.get('center') or '').strip().upper()
+    if center:
+        cells.add(center)
+    touches = o.get('touches') or ''
+    if isinstance(touches, str):
+        parts = touches.split(',')
+    else:
+        parts = list(touches)
+    for c in parts:
+        c = str(c).strip().upper()
+        if c:
+            cells.add(c)
+    return cells
+
+
+def default_grip_part(o):
+    """Best graspable component of an object, as (part_name, cell), or None.
+
+    Deterministic and offline — it reads only what the component pass already
+    measured. This is what makes the feature degrade gracefully: with Gripper
+    AI switched off, timed out, or simply silent about this object, a knife
+    whose handle was outlined still gets picked up by the handle.
+    """
+    best = None
+    for c in parse_component_entries(o.get('components')):
+        name = c.get('name') or ''
+        cell = str(c.get('center') or '').strip().upper()
+        verdict = _comp_verdict(c)
+        if not cell or verdict == 'avoid' or _is_hazard_part(name):
+            continue
+        if verdict != 'hold' and _is_avoid_part(name):
+            continue
+        rank = _grip_rank(name)
+        if rank is None:
+            # Vision called it a grasp point even though the name is not one we
+            # know ("haft", "neck ring") — trust it, but behind every named
+            # grasp feature.
+            if verdict != 'hold':
+                continue
+            rank = len(GRIP_PART_PRIORITY)
+        if best is None or rank < best[0]:
+            best = (rank, name, cell)
+    return (best[1], best[2]) if best else None
+
+
+def _match_object(name: str, objs: list):
+    """Find the object a Gripper AI entry refers to, by name then by aka."""
+    low = str(name or '').strip().lower()
+    if not low:
+        return None
+    for o in objs:
+        if str(o.get('name', '')).strip().lower() == low:
+            return o
+    for o in objs:
+        aka = o.get('aka') or []
+        if isinstance(aka, str):
+            aka = [aka]
+        if any(str(a).strip().lower() == low for a in aka):
+            return o
+    for o in objs:                       # last resort: containment both ways
+        on = str(o.get('name', '')).strip().lower()
+        if on and (on in low or low in on):
+            return o
+    return None
+
+
+def _component_cell(o, part: str, extra_avoid=()):
+    """Cell of a named component of `o`, if it has one and is safe to grip."""
+    low = str(part or '').strip().lower()
+    if not low or _is_hazard_part(low) or _is_avoid_part(low, extra_avoid):
+        return None, None
+    comps = parse_component_entries(o.get('components'))
+    for c in comps:                      # exact name first
+        if (c.get('name') or '').strip().lower() == low:
+            if _comp_verdict(c) == 'avoid' or _is_hazard_part(c.get('name')):
+                return None, None
+            cell = str(c.get('center') or '').strip().upper()
+            return (c.get('name'), cell) if cell else (None, None)
+    for c in comps:                      # then a partial ("handle" ~ "door handle")
+        cn = (c.get('name') or '').strip().lower()
+        if not cn or _comp_verdict(c) == 'avoid':
+            continue
+        if (cn in low or low in cn) and not _is_avoid_part(cn, extra_avoid):
+            cell = str(c.get('center') or '').strip().upper()
+            if cell:
+                return c.get('name'), cell
+    return None, None
+
+
+def resolve_grip_cells(grips: list, objs: list) -> list:
+    """Gripper AI's answer + the object list → grip points the planner can use.
+
+    Every returned cell is one the OBJECT LIST already contained for that
+    object — a component's measured cell, or a cell from its own TOUCHES. A
+    model answer that names an unknown object, an unsafe part, or a cell that
+    is not on the object is discarded rather than corrected, because the
+    fallback (the object's CENTER) is the behaviour the planner had anyway.
+
+    Objects the model skipped are filled in from their components, so grip
+    points exist even when the call returned nothing at all.
+    """
+    resolved, claimed = [], set()
+
+    for g in grips or []:
+        if not isinstance(g, dict):
+            continue
+        o = _match_object(g.get('object'), objs)
+        if o is None:
+            continue
+        name = str(o.get('name', 'object'))
+        if name in claimed:              # one grip per object, first wins
+            continue
+        avoid = g.get('avoid') or []
+        if isinstance(avoid, str):
+            avoid = [avoid]
+        cells = object_cells(o)
+        center = str(o.get('center') or '').strip().upper()
+
+        part_name = str(g.get('part') or '').strip()
+        part, cell = _component_cell(o, part_name, avoid)
+        source = 'part'
+        if not cell:
+            # No measured component to bind to — the model's own cell may be
+            # used, but only once it has survived every check: it must be on
+            # this object, the part it named must be one we will close on, and
+            # the cell itself must not belong to a part we won't. A model that
+            # says "grip the knife at K5" where K5 is the blade is refused
+            # here, and falls through to the deterministic pick below.
+            raw = str(g.get('cell') or '').strip().upper()
+            if (raw in cells
+                    and not _is_hazard_part(part_name)
+                    and not _is_avoid_part(part_name, avoid)
+                    and not _cell_is_avoid(o, raw, avoid)):
+                part, cell, source = (part_name or None), raw, 'vision'
+        if not cell:
+            fallback = default_grip_part(o)
+            if fallback:
+                part, cell, source = fallback[0], fallback[1], 'parts'
+        if not cell:
+            continue
+
+        override = bool(center and cell != center)
+        if not (override or g.get('approach') or avoid or g.get('why')):
+            continue                     # centre grip, nothing to tell the planner
+        claimed.add(name)
+        resolved.append({
+            'object':   name,
+            'part':     part or '',
+            'cell':     cell,
+            'center':   center,
+            'approach': str(g.get('approach') or '').strip().lower(),
+            'avoid':    [str(a).strip() for a in avoid if str(a).strip()],
+            'why':      str(g.get('why') or '').strip(),
+            'source':   source,
+            'override': override,
+        })
+
+    for o in objs:                       # objects Gripper AI never mentioned
+        name = str(o.get('name', 'object'))
+        if name in claimed:
+            continue
+        fallback = default_grip_part(o)
+        if not fallback:
+            continue
+        center = str(o.get('center') or '').strip().upper()
+        if fallback[1] == center:        # nothing to say — centre is the part
+            continue
+        claimed.add(name)
+        resolved.append({
+            'object': name, 'part': fallback[0], 'cell': fallback[1],
+            'center': center, 'approach': '', 'avoid': [], 'why': '',
+            'source': 'parts', 'override': True,
+        })
+
+    return resolved
+
+
+def _grip_angle_words(approach: str) -> str:
+    return {"top": "from above", "side": "from the side",
+            "45": "at 45° top-side"}.get(approach, "")
+
+
+# Same coordinate grammar CommandRunner._dispatch parses, kept in sync with it
+# deliberately: this substitutes into the planner's own output, so it has to
+# recognise a goto_coordinate line exactly the way execution will.
+GRIP_SUBST_RE = re.compile(
+    r'(goto_coordinate\s*[:=]?\s*)([A-Za-z]{1,2})\s*,?\s*(\d{1,2})\b',
+    re.IGNORECASE)
+
+
+def _bare_command(line: str) -> str:
+    """Strip a plan line down to its command, dropping numbering and comments
+    — the same shape CommandRunner._dispatch acts on."""
+    l = re.sub(r'^\s*\d+\.\s*', '', line)
+    return l.split('#', 1)[0].strip()
+
+
+def apply_grip_substitution(text: str, grips: list):
+    """The ONLY place a grip point changes what the robot does.
+
+    The planner is never told grip points exist. It plans exactly as it
+    always has, gripping every object at its CENTER. This runs once, after
+    the planner is done and before its plan is parsed, shown, or sent
+    anywhere: for each object with an override, it finds the
+    `goto_coordinate` that leads straight into that object's FIRST `pickup`
+    and rewrites only the coordinate on that one line, leaving the rest of
+    the plan — every other line, every other cell, every later pickup of the
+    same object — untouched.
+
+    A goto not immediately followed by pickup (a slide, a press, a contact
+    pass) is never touched, and neither is a cell that no override names.
+
+    Returns (possibly-rewritten text, [grip dicts actually applied]).
+    """
+    overrides = {}
+    for g in grips or []:
+        if g.get('override') and g.get('center') and g.get('cell'):
+            overrides.setdefault(str(g['center']).strip().upper(), g)
+    if not overrides:
+        return text, []
+
+    lines = text.splitlines()
+    used, applied = set(), []
+    pending = None   # (line_index, match) for the most recent unconsumed goto
+
+    for i, line in enumerate(lines):
+        bare = _bare_command(line)
+        if not bare:
+            continue
+        low = bare.lower()
+        if low.startswith('goto_coordinate'):
+            m = GRIP_SUBST_RE.search(bare)
+            pending = (i, m) if m else None
+            continue
+        if low == 'pickup':
+            if pending is not None:
+                i0, m0 = pending
+                cell = f"{m0.group(2).upper()}{m0.group(3)}"
+                g = overrides.get(cell)
+                if g is not None and cell not in used:
+                    new_col_row = g['cell']
+                    nm = re.match(r'([A-Za-z]{1,2})(\d{1,2})', new_col_row)
+                    if nm:
+                        lines[i0] = GRIP_SUBST_RE.sub(
+                            lambda mm, _c=nm.group(1), _r=nm.group(2):
+                                f"{mm.group(1)}{_c}, {_r}",
+                            lines[i0], count=1)
+                        used.add(cell)
+                        applied.append(g)
+            pending = None
+            continue
+        pending = None   # any other command breaks goto→pickup adjacency
+    return "\n".join(lines), applied
+
+
+def gripper_ai_lines(resolved: list) -> list:
+    """Applied grip points → one readable sentence each, for the chat bubble.
+
+    Called on what apply_grip_substitution actually changed, not on every
+    grip Gripper AI proposed — so the chat reports what happened to the plan,
+    not what might have.
+    """
+    out = []
+    for g in resolved:
+        bits = [f"grip {g['object']}"]
+        if g.get('part'):
+            bits.append(f"by the {g['part']}")
+        bits.append(f"at {g['cell']}")
         line = " ".join(bits)
-        if offset and offset.lower() not in ("none", "no", "-", "n/a"):
-            line += f" — {offset}"
-        if why:
-            line += f" ({why})"
+        if g.get('override') and g.get('center'):
+            line += f" (not its centre {g['center']})"
+        angle = _grip_angle_words(g.get('approach', ''))
+        if angle:
+            line += f" — {angle}"
+        if g.get('avoid'):
+            line += f", avoiding the {', '.join(g['avoid'])}"
+        if g.get('why'):
+            line += f" ({g['why']})"
         out.append(line)
     return out
 
@@ -4780,6 +5415,14 @@ class RephraseWorker(QThread):
                 stage="Rephrase",
             ).strip().strip('"').strip()
             self.note.emit(f"Rephrased task:\n{out}")
+            # Safety net for the case the prompt above is about: the model
+            # handed the original straight back, so the operator's answers
+            # never reached the planner and it would plan the old words. Fall
+            # through to the same append the error path uses.
+            if out.strip().lower() == self._task.strip().lower():
+                self.note.emit("Rephrase returned the task unchanged — "
+                               "appending the answers so they are not lost.")
+                out = f"{self._task}\n\nCLARIFICATIONS:\n{pairs}"
         except Exception as e:
             # Falling back to task + answers keeps every fact the operator gave
             # us, just less tidily phrased than the model would have put it.
@@ -4819,7 +5462,7 @@ class CommandWorker(QThread):
                     stream = client.chat.completions.create(
                         model=PLANNER_MODEL,
                         messages=[
-                            {"role": "system", "content": A2_SYSTEM},
+                            {"role": "system", "content": A3_TERRA_SYSTEM},
                             {"role": "user",   "content": user_msg},
                         ],
                         max_completion_tokens=6000,
@@ -6212,8 +6855,10 @@ EDITABLE_PROMPTS = [
      "hint": "Decides whether a task can be planned as written, and what to ask if not."},
     {"key": "rephrase_system", "global": "REPHRASE_SYSTEM", "label": "Rephrase Prompt",
      "hint": "Folds the operator's answers back into the task in plain, direct English."},
-    {"key": "a2_system", "global": "A2_SYSTEM", "label": "Planner Prompt (A2)",
+    {"key": "a3_terra_system", "global": "A3_TERRA_SYSTEM", "label": "Planner Prompt (A3-Terra)",
      "hint": "The planner's own system prompt — command syntax, playbooks, worked examples."},
+    {"key": "gripper_ai_system", "global": "GRIPPER_AI_SYSTEM", "label": "Gripper AI Prompt",
+     "hint": "Decides where the gripper closes on each object — the cell the planner picks up at."},
     {"key": "speech_prompt", "global": "SPEECH_PROMPT", "label": "Speech Prompt",
      "hint": "Given to the transcription model alongside dictated audio, as vocabulary hints."},
     {"key": "voice_tidy_system", "global": "VOICE_TIDY_SYSTEM", "label": "Dictation Tidy Prompt",
@@ -7191,6 +7836,108 @@ def pill_button(text: str, *, primary: bool = False, height: int = 34) -> QPushB
     return b
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+#  API key
+#
+#  Settings ▸ API Config ▸ Add manual API key… and the "not configured"
+#  banner in the chat sidebar both land here, so there is exactly one dialog
+#  and one save path (save_api_key → api_key.json in HOS data).
+# ─────────────────────────────────────────────────────────────────────────────
+def prompt_for_api_key(parent=None) -> bool:
+    """Paste-a-key sheet. Returns True if a key was saved."""
+    dlg = GlassDialog(
+        "Add Manual API Key", parent,
+        subtitle="Paste your OpenAI API key. It is saved to api_key.json in "
+                 "HOS data and used for every request from here on.",
+        width=460)
+
+    field = QLineEdit(resolve_openai_api_key())
+    field.setPlaceholderText("sk-…")
+    field.setEchoMode(QLineEdit.Password)
+    field.setFixedHeight(32)
+    field.setFont(QFont(MONO_FONT, 9))
+    field.setStyleSheet(
+        f"QLineEdit{{background:rgba(255,255,255,0.72);color:{C_TEXT};"
+        f"border:1px solid {C_BORDER};border-radius:16px;padding:0 12px;}}"
+        f"QLineEdit:focus{{border-color:{C_BLUE};}}")
+    dlg.body.addWidget(field)
+
+    show = QCheckBox("Show key")
+    show.setCursor(Qt.PointingHandCursor)
+    show.setFont(QFont(UI_FONT, 9))
+    show.setStyleSheet(f"color:{C_TEXT_DIM};background:transparent;border:none;")
+    show.toggled.connect(
+        lambda on: field.setEchoMode(QLineEdit.Normal if on else QLineEdit.Password))
+    dlg.body.addWidget(show)
+
+    saved = {"ok": False}
+
+    def _save():
+        key = field.text().strip()
+        if not key:
+            QMessageBox.warning(dlg, "API key", "Paste a key first.")
+            return
+        try:
+            save_api_key(key)
+        except OSError as exc:
+            QMessageBox.warning(dlg, "API key", f"Could not save the key:\n{exc}")
+            return
+        saved["ok"] = True
+        dlg.accept()
+
+    field.returnPressed.connect(_save)
+
+    row = QHBoxLayout(); row.setSpacing(8)
+    clear = pill_button("Remove key", height=30)
+    clear.clicked.connect(lambda: (save_api_key(""), field.clear()))
+    cancel = pill_button("Cancel", height=30)
+    cancel.clicked.connect(dlg.reject)
+    save = pill_button("Save", primary=True, height=30)
+    save.clicked.connect(_save)
+    row.addWidget(clear); row.addStretch(1); row.addWidget(cancel); row.addWidget(save)
+    dlg.body.addLayout(row)
+
+    dlg.exec()
+    return saved["ok"]
+
+
+class ApiKeyBanner(QFrame):
+    """"API key not configured" strip shown above the compose box.
+
+    Visible only while no key is stored, and it takes itself away the moment
+    one is (api_key_bus), whether it was added from here or from Settings.
+    """
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setStyleSheet(
+            f"QFrame{{background:rgba(255,255,255,0.86);"
+            f"border:1px solid {C_BORDER};border-left:3px solid {C_AMBER};"
+            f"border-radius:18px;}}")
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(12, 10, 12, 10)
+        lay.setSpacing(7)
+
+        msg = QLabel("API key not configured, click here to add API key")
+        msg.setWordWrap(True)
+        msg.setFont(QFont(UI_FONT, 9))
+        msg.setStyleSheet(f"color:{C_TEXT};background:transparent;border:none;")
+        lay.addWidget(msg)
+
+        btn = pill_button("Add API key", primary=True, height=28)
+        btn.setToolTip("Settings ▸ API Config ▸ Add manual API key")
+        btn.clicked.connect(lambda: prompt_for_api_key(self.window()))
+        row = QHBoxLayout(); row.setSpacing(8)
+        row.addWidget(btn); row.addStretch(1)
+        lay.addLayout(row)
+
+        api_key_bus.changed.connect(self._sync)
+        self._sync(api_key_configured())
+
+    def _sync(self, *_a):
+        self.setVisible(not api_key_configured())
+
+
 # A dialog can be closed while its transcription is still running; a QThread
 # destroyed mid-run takes the app with it, so live ones are held here until
 # they report finished.
@@ -7424,7 +8171,7 @@ def tidy_video_instruction(text: str) -> str:
 
 def openai_transcribe_video_pcm(pcm: bytes, rate: int, width: int) -> str:
     """Transcribe prepared speech audio with the custom-training prompt."""
-    client = OpenAI(api_key=resolve_openai_api_key(),
+    client = OpenAI(api_key=resolve_openai_api_key() or "missing",
                     timeout=max(API_TIMEOUT_S, 180.0), max_retries=1)
     resp = client.audio.transcriptions.create(
         model=SPEECH_MODEL,
@@ -7443,7 +8190,8 @@ def _friendly_transcribe_error(err: Exception) -> str:
     if "25" in msg and "mb" in low:
         return "That clip is still too large after extracting audio."
     if "invalid_api_key" in low or "authentication" in low:
-        return "Speech API key was rejected — check the OpenAI key."
+        return ("Speech API key was rejected — replace it in "
+                "Settings ▸ API Config ▸ Add manual API key.")
     if "rate limit" in low or "429" in low:
         return "Speech API is rate-limiting — wait a moment and try again."
     if "could not pull the audio" in low or "no audio" in low:
@@ -7858,7 +8606,7 @@ class InstructionsDialog(GlassDialog):
 
     def __init__(self, items=None, parent=None):
         super().__init__("Custom training", parent,
-                          subtitle="Added one at a time. A2 applies every one to each task you send.",
+                          subtitle="Added one at a time. A3-Terra applies every one to each task you send.",
                           width=520)
         self.resize(520, 420)
         self._items = list(items or [])
@@ -8107,6 +8855,22 @@ class AISidebar(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._vision_objs : list = []
+        # Grip points are a property of the BOARD, not the task: Gripper AI
+        # is never shown the task, precisely so its answer survives from one
+        # task to the next. Cached here and cleared in lockstep with
+        # _vision_objs, so an unchanged board costs one grip call in total
+        # rather than one per task.
+        self._grip_points : list = []
+        # The grips actually handed to the executing plan's substitution pass
+        # — set right before each CommandWorker launch, read once in
+        # _on_cmd_done, and otherwise inert.
+        self._active_grips : list = []
+        # Set for exactly one begin_views() call, by the Examples flow, so a
+        # ready-made example board skips the "upload extra views" popup that
+        # a normal import always shows. Consumed (reset to False) the moment
+        # begin_views reads it, so it can never leak into a later manual
+        # import.
+        self._suppress_views_popup = False
         self._vision_worker    = None
         self._command_worker   = None
         self._dexterity_worker = None
@@ -8119,6 +8883,7 @@ class AISidebar(QWidget):
         self._last_frame       = None
         self._pending_task     = None
         self._pending_plan_task = None   # task held across the clarity check
+        self._pending_grip_task = None   # task held across the Gripper AI pass
         # Task-driven view pipeline: views are generated once per imported
         # image; the chooser + vision passes then re-run per task, since a
         # different task on the same photo can genuinely want a different
@@ -8151,7 +8916,7 @@ class AISidebar(QWidget):
     def _build_ui(self):
         # The old control-dense inspector remains below as reference code for
         # maintenance, but it is deliberately not built.  Operators interact
-        # with A2 through one focused, ChatGPT-like conversation instead.
+        # with A3-Terra through one focused, ChatGPT-like conversation instead.
         self._build_chat_ui()
         return
 
@@ -8169,7 +8934,7 @@ class AISidebar(QWidget):
         ico = QLabel("🤖"); ico.setFont(QFont(UI_FONT, 20))
         ico.setStyleSheet("background:transparent;")
         tw = QVBoxLayout(); tw.setSpacing(0)
-        ttl = QLabel("ProLabs · Vision A2")
+        ttl = QLabel("ProLabs · Vision A3-Terra")
         ttl.setFont(QFont(UI_FONT_B, 12))
         ttl.setStyleSheet("color:#ffffff;background:transparent;")
         sub = QLabel("Measured Vision  +  Dexterity Gate")
@@ -8286,7 +9051,7 @@ class AISidebar(QWidget):
         self._task_input.setStyleSheet(_field_css(C_GREEN))
         c_task.add(self._task_input)
 
-        self._run_btn = _grad_btn("⚡   GENERATE A2 COMMANDS", "#15803d", "#22c55e", h=38, fs=11)
+        self._run_btn = _grad_btn("⚡   GENERATE A3-Terra COMMANDS", "#15803d", "#22c55e", h=38, fs=11)
         self._run_btn.setEnabled(False)
         self._run_btn.clicked.connect(self._on_run)
         c_task.add(self._run_btn)
@@ -8323,7 +9088,7 @@ class AISidebar(QWidget):
         bl.addWidget(c_obj)
 
         # ── Commands ──────────────────────────────────────────────────────────
-        c_cmd = SectionCard("A2 EXECUTION COMMANDS", C_PINK)
+        c_cmd = SectionCard("A3-Terra EXECUTION COMMANDS", C_PINK)
         self._cmd_box = QPlainTextEdit()
         self._cmd_box.setReadOnly(True)
         self._cmd_box.setFont(QFont(MONO_FONT, 9))
@@ -8518,6 +9283,11 @@ class AISidebar(QWidget):
         self._chat = ChatView()
         root.addWidget(self._chat, 1)
 
+        # Nothing in the pipeline can run without a key, so say so where the
+        # operator is about to type rather than failing on the first request.
+        self._api_banner = ApiKeyBanner()
+        root.addWidget(self._api_banner)
+
         compose = QFrame()
         compose.setStyleSheet(
             f"QFrame{{background:rgba(255,255,255,0.94);"
@@ -8581,7 +9351,7 @@ class AISidebar(QWidget):
         self._cmd_text = ""
         self._compact_stages = True
         self._thinking = None          # live ShimmerLabel bubble, if any
-        self._chat_message("A2", "Import an image, then tell me what to do.")
+        self._chat_message("A3-Terra", "Import an image, then tell me what to do.")
 
     def _refresh_instruction_button(self):
         count = len(getattr(self, "_instructions", []))
@@ -8781,6 +9551,7 @@ class AISidebar(QWidget):
         self._dexterity_worker = self._chooser_worker = None
         self._memory_worker = None
         self._chain_task = self._pending_memory_task = None
+        self._pending_grip_task = None
         if self._exec_busy:
             self.stop_commands.emit()
         self._exec_busy = False
@@ -8826,7 +9597,7 @@ class AISidebar(QWidget):
             return
 
         self._end_thinking()
-        self._chat_message("A2", text, accent=color)
+        self._chat_message("A3-Terra", text, accent=color)
 
     def _vlog(self, text: str):
         """Verbose narration — the whole story of a run, on demand.
@@ -8872,6 +9643,7 @@ class AISidebar(QWidget):
 
     def _clear_all(self):
         self._vision_objs = []
+        self._grip_points = []
         self._cmd_text = ""
         self._stop_btn.setEnabled(False)
         self._rerun_btn.setVisible(False)
@@ -9149,12 +9921,19 @@ class AISidebar(QWidget):
         other angles by hand; if all 3 are uploaded the chooser picks the
         best one per task. Analysis itself does NOT run here — it only
         starts once a task is actually submitted (see _on_run), so the board
-        photo is never analysed with no task in mind."""
+        photo is never analysed with no task in mind.
+
+        Skipped entirely when _suppress_views_popup is set: an Example ships
+        one flat photo, not three angles, so there is nothing that popup
+        would collect, and the Examples flow needs this call to return
+        without waiting on the operator so it can send the task right after.
+        """
         if bgr is None:
             self._set_stage("⚠️  No image loaded — click  📁 Import Image  first", C_RED)
             return
         self._last_frame       = bgr
         self._vision_objs      = []
+        self._grip_points      = []
         self._chosen_view_kind = None
         self._refresh_objects()
         self._lock(False)   # board is on hand — a task can run right away
@@ -9163,8 +9942,11 @@ class AISidebar(QWidget):
         self._scene_id = ensure_scene(bgr)
         self._views_by_kind = {'original': bgr}
 
-        popup = ViewsUploadPopup(self, self)
-        popup.exec()
+        if self._suppress_views_popup:
+            self._suppress_views_popup = False
+        else:
+            popup = ViewsUploadPopup(self, self)
+            popup.exec()
 
         ready = sum(1 for k in VIEW_KINDS if k in self._views_by_kind)
         if self._task_input.toPlainText().strip():
@@ -9208,6 +9990,7 @@ class AISidebar(QWidget):
         """
         self._last_frame       = bgr
         self._vision_objs       = []
+        self._grip_points       = []
         self._chosen_view_kind  = None
         self._refresh_objects()
         self._lock(False)   # board is on hand — a task can run right away
@@ -9261,6 +10044,7 @@ class AISidebar(QWidget):
         for o in objs:
             finalize_components(o)
         self._vision_objs = objs
+        self._grip_points = []      # new board — old grips no longer apply
         self._refresh_objects()
         n_parts = sum(len(parse_component_entries(o.get('components'))) for o in objs)
         n_mapped = sum(
@@ -9288,7 +10072,7 @@ class AISidebar(QWidget):
             # right-after-import analysis, so prompt for one.
             headline += "\n\nWhat would you like me to do?"
         self._end_thinking()
-        bubble = self._chat_message("A2", headline, accent=C_GREEN)
+        bubble = self._chat_message("A3-Terra", headline, accent=C_GREEN)
         for o in objs:
             bubble.add_detail(obj_to_line(o))
         bubble.open_details()
@@ -9347,7 +10131,7 @@ class AISidebar(QWidget):
             return
         qa = dlg.answers()
         for q, a in qa:
-            self._chat_message("A2", q, accent=C_VIOLET)
+            self._chat_message("A3-Terra", q, accent=C_VIOLET)
             self._chat_message("You", a, user=True)
 
         self._set_stage("Rewriting the task…")
@@ -9365,7 +10149,7 @@ class AISidebar(QWidget):
         self._start_planner(task)
 
     def _start_planner(self, task: str):
-        """Last gate before planning: can A2's gripper physically do this?
+        """Last gate before planning: can A3-Terra's gripper physically do this?
 
         Deliberately placed AFTER the clarity check rather than before it. The
         classifier errs toward "dexterous" by design, so an under-specified
@@ -9374,7 +10158,7 @@ class AISidebar(QWidget):
         task that ends up rejected may have been clarified for nothing.
         """
         self._pending_task = task
-        self._set_stage("Checking A2 can physically do this…")
+        self._set_stage("Checking A3-Terra can physically do this…")
         w = self._track(DexterityWorker(task))
         self._dexterity_worker = w
         w.note.connect(self._vlog)
@@ -9387,7 +10171,7 @@ class AISidebar(QWidget):
 
         Fails open, like the clarity check: the planner is the real authority
         on what it can express, and a task blocked because a classifier call
-        timed out would look identical to a task A2 genuinely cannot do.
+        timed out would look identical to a task A3-Terra genuinely cannot do.
         """
         task = self._pending_task
         self._pending_task = None
@@ -9396,42 +10180,105 @@ class AISidebar(QWidget):
             self._memory_then_plan(task)
 
     def _launch_planner(self, task: str):
-        """Kick off Gripper AI (when on) alongside the planner.
+        """Work out the grip points, then plan — WITHOUT telling the planner
+        about them.
 
-        STRICTLY OBSERVATIONAL. Its guidance is written to the chat and
-        nowhere else: it is never added to the planner's input, never edits a
-        generated plan, and never reaches the simulator or the serial link. So
-        it does not gate planning either — it runs in parallel and its result
-        lands in the conversation whenever it arrives, while the plan proceeds
-        exactly as it would with the feature switched off.
+        The planner is never shown a grip cell and its prompt says nothing
+        about them; it plans exactly as it always did, gripping every object
+        at its CENTER. Gripper AI's answer is only ever applied afterwards, as
+        a mechanical find-and-replace on the finished plan (see
+        apply_grip_substitution, run from _on_cmd_done) — so a grip point can
+        never be argued with, dropped, or misapplied by the planning model,
+        only substituted in verbatim once the coordinates it targets actually
+        exist in a real plan.
+
+        This still runs before planning rather than beside it, purely so the
+        substitution step has its answer in hand the moment the plan comes
+        back. It fails open at every step: no frame, feature off, a model
+        error, or an empty answer all end up planning with whatever grips
+        could be derived offline from the component pass, and with none at
+        all, execution is untouched — CENTER end to end, as before this
+        feature existed.
         """
-        if GRIPPER_AI and self._last_frame is not None:
-            w = self._track(GripperAIWorker(self._last_frame, self._object_list))
-            w.note.connect(self._vlog)
-            w.done.connect(self._on_gripper_ai)
-            w.error.connect(self._on_gripper_ai_error)
-            w.start()
-        self._launch_planner_final(task)
+        if not (GRIPPER_AI and self._last_frame is not None):
+            self._launch_planner_final(task, self._offline_grips())
+            return
+        if self._grip_points:
+            # Same board as the last task, so the same grips: where a knife is
+            # held does not depend on what it was asked to do. Reuses them the
+            # way _on_run reuses the vision pass, instead of paying for a
+            # second look at a photo that has not changed.
+            self._vlog(f"Reusing {len(self._grip_points)} grip point(s) — "
+                       "board hasn't changed since Gripper AI last ran.")
+            self._launch_planner_final(task, self._grip_points)
+            return
+        self._pending_grip_task = task
+        self._set_stage("🤖  Working out grip points…")
+        w = self._track(GripperAIWorker(self._last_frame, self._object_list))
+        w.note.connect(self._vlog)
+        w.done.connect(self._on_gripper_ai)
+        w.error.connect(self._on_gripper_ai_error)
+        w.start()
+
+    def _offline_grips(self) -> list:
+        """Grip points derived from the component pass alone, no model call.
+
+        What the feature falls back to whenever the vision half is unavailable
+        — an object whose handle was outlined is still taken by the handle.
+        """
+        return resolve_grip_cells([], self._all_objs)
 
     def _on_gripper_ai(self, grips: list):
-        lines = gripper_ai_lines(grips)
-        if not lines:
-            self._vlog("Gripper AI returned no grip guidance for this board.")
-            return
-        # The entire output of the feature: say out loud, in the conversation,
-        # how each object would be taken. Nothing acts on it.
-        self._chat_message(
-            "A2",
-            "🤖  **Gripper AI**  ·  observation only\n"
-            + "\n".join(f"• {ln}" for ln in lines),
-            accent=C_CYAN)
+        task = self._pending_grip_task
+        self._pending_grip_task = None
+        resolved = resolve_grip_cells(grips, self._all_objs)
+        self._grip_points = resolved
+        by_source = {}
+        for g in resolved:
+            by_source[g['source']] = by_source.get(g['source'], 0) + 1
+        # Where each grip came from is the useful diagnostic: 'part' is a
+        # measured component cell, 'vision' is Gripper AI's own cell, and
+        # 'parts' means its answer was unusable and the component pass carried
+        # the object instead.
+        self._vlog(f"Gripper AI resolved {len(resolved)} grip point(s) "
+                   f"from {len(grips)} suggestion(s)"
+                   + (f" ({', '.join(f'{k}: {v}' for k, v in sorted(by_source.items()))})"
+                      if by_source else "") + ".")
+        lines = gripper_ai_lines(resolved)
+        if lines:
+            # This is a PREVIEW, shown before the plan exists — it says what
+            # Gripper AI found, not what happened to the plan. Nothing here
+            # reaches the planner or the robot; the only thing that actually
+            # changes execution is apply_grip_substitution in _on_cmd_done,
+            # which posts its own "applied" bubble once the plan is real.
+            # Showing both is deliberate: this one proves Gripper AI ran at
+            # all, even on a run where nothing it found survives into a plan.
+            self._chat_message(
+                "A3-Terra",
+                "🤖  **Gripper AI**  ·  found\n"
+                + "\n".join(f"• {ln}" for ln in lines),
+                accent=C_CYAN)
+        else:
+            self._vlog("Gripper AI found no reason to grip anything off-centre.")
+        if task is not None:
+            self._launch_planner_final(task, resolved)
 
     def _on_gripper_ai_error(self, err: str):
-        # Observational only — a failure is a log line, never a visible error.
-        self._vlog(f"Gripper AI failed ({err}) — no grip guidance reported.")
+        """A failed grip pass must not strand the run — plan without it."""
+        task = self._pending_grip_task
+        self._pending_grip_task = None
+        self._vlog(f"Gripper AI failed ({err}) — planning with centre grips.")
+        if task is not None:
+            self._launch_planner_final(task, self._offline_grips())
 
-    def _launch_planner_final(self, task: str):
-        """Append the standing boilerplate and hand the task to the planner."""
+    def _launch_planner_final(self, task: str, grips: list = ()):
+        """Append the standing boilerplate and hand the task to the planner.
+
+        `grips` is held for _on_cmd_done, not sent to the model: the planner
+        prompt has no notion of a grip point, so nothing about them is added
+        to `task` here.
+        """
+        self._active_grips = list(grips or [])
         if self._instructions:
             notes = "\n".join(f"- {s}" for s in self._instructions)
             task  = f"{task}\n\nADDITIONAL AI INSTRUCTIONS (apply throughout):\n{notes}"
@@ -9518,7 +10365,7 @@ class AISidebar(QWidget):
             self._pending_task = None
             self._lock(False)
             self._set_stage(
-                "🖐  Task requires dexterous manipulation — A2 (parallel gripper) "
+                "🖐  Task requires dexterous manipulation — A3-Terra (parallel gripper) "
                 "cannot perform it. Try rephrasing with non-dexterous actions.", C_RED)
             return
         task = self._pending_task
@@ -9546,7 +10393,7 @@ class AISidebar(QWidget):
     def _on_memory_failed(self, err: str):
         """Memory never blocks a run, but it never fails quietly either."""
         self._chat_message(
-            "A2", f"⚠️  Memory check unavailable ({err}) — nothing was saved "
+            "A3-Terra", f"⚠️  Memory check unavailable ({err}) — nothing was saved "
                   f"to custom training for this task.", accent=C_AMBER)
 
     def _on_memory_result(self, instruction: str):
@@ -9564,7 +10411,7 @@ class AISidebar(QWidget):
                 self._save_instructions()
                 self._refresh_instruction_button()
                 self._chat_message(
-                    "A2", f"Saved to custom training: \u201c{instruction}\u201d",
+                    "A3-Terra", f"Saved to custom training: \u201c{instruction}\u201d",
                     accent=C_GREEN)
                 self._vlog(f"Memory saved: {instruction}")
             else:
@@ -9598,6 +10445,24 @@ class AISidebar(QWidget):
         self._lock(False)
         self._end_thinking()
 
+        # The one and only place a grip point takes effect: a mechanical
+        # find-and-replace on the plan the planner actually wrote, run before
+        # anything downstream (parsing, the chat log, the wire, playback)
+        # sees it. The planner's own text never mentioned a grip cell.
+        self._cmd_text, applied_grips = apply_grip_substitution(
+            self._cmd_text, self._active_grips)
+        self._active_grips = []
+        if applied_grips:
+            lines = gripper_ai_lines(applied_grips)
+            self._chat_message(
+                "A3-Terra",
+                "🤖  **Gripper AI**  ·  applied to this plan\n"
+                + "\n".join(f"• {ln}" for ln in lines),
+                accent=C_CYAN)
+            self._vlog("Gripper AI substitution:\n" +
+                       "\n".join(f"  {g['object']}: {g['center']} → {g['cell']}"
+                                for g in applied_grips))
+
         missing = self._missing_objects(self._cmd_text)
         if missing:
             listed = ", ".join(missing)
@@ -9612,7 +10477,7 @@ class AISidebar(QWidget):
             return
 
         bubble = self._chat_message(
-            "A2", "Commands ready. Invoking Alpha 2D unstacker…", accent=C_GREEN)
+            "A3-Terra", "Commands ready. Invoking Alpha 2D unstacker…", accent=C_GREEN)
         # The plan itself stays folded away — one arrow reveals every step.
         for line in self._cmd_text.strip().splitlines():
             if line.strip():
@@ -9672,7 +10537,7 @@ class AISidebar(QWidget):
         text = self._cmd_text.strip()
         if not text:
             return
-        self._chat_message("A2", "Re-running the last command sequence…", accent=C_VIOLET)
+        self._chat_message("A3-Terra", "Re-running the last command sequence…", accent=C_VIOLET)
         self._on_play()
 
     def _on_stop(self):
@@ -9990,6 +10855,7 @@ SETTINGS_DEFAULTS = {
     "API_RETRIES": API_RETRIES,
     "API_BACKOFF_S": API_BACKOFF_S,
     "SNAP_DEFAULT_ON": SNAP_DEFAULT_ON,
+    "GRIPPER_AI": GRIPPER_AI,
 }
 
 
@@ -10039,6 +10905,7 @@ class SettingsPanel(QWidget):
         body.addWidget(self._models_card())
         body.addWidget(self._voice_card())
         body.addWidget(self._detection_card())
+        body.addWidget(self._api_card())
         body.addWidget(self._network_card())
         legend = SectionCard("HIGHLIGHT COLOUR LEGEND", C_TEXT_DIM)
         legend.add(AISidebar._legend())
@@ -10167,11 +11034,11 @@ class SettingsPanel(QWidget):
             lambda on: set_setting("GRIPPER_AI", bool(on)))
         card.add(self._row(
             "Gripper AI", self._gripper_ai,
-            "Off by default. Before planning, reads the photo and works out "
-            "how each object should be gripped — the approach angle "
-            "(top / side / 45°) and whether to close somewhere other than the "
-            "object's centre, such as a plate at the rim. Reported in the chat "
-            "and passed to the planner."))
+            "On by default. Before planning, reads the photo and works out "
+            "where the gripper should actually close on each object — a knife "
+            "by the handle, a plate at the rim — and the planner picks up at "
+            "that cell instead of the object's centre. Turn it off to grip "
+            "everything through the centre."))
 
         self._verbose = ToggleSwitch(VERBOSE)
         self._verbose.toggled.connect(
@@ -10239,6 +11106,42 @@ class SettingsPanel(QWidget):
                            "Frame edges a waived object still may not exceed."))
         return card
 
+    def _api_card(self):
+        card = SectionCard("API CONFIG", C_BLUE)
+        self._api_state = QLabel()
+        self._api_state.setWordWrap(True)
+        self._api_state.setFont(QFont(UI_FONT, 9))
+        card.add(self._api_state)
+
+        btn = pill_button("Add manual API key", height=28)
+        btn.clicked.connect(lambda: prompt_for_api_key(self.window()))
+        row = QHBoxLayout(); row.setSpacing(8)
+        row.addWidget(btn); row.addStretch(1)
+        card.add(row)
+
+        note = QLabel("Stored in api_key.json in HOS data — never in the source.")
+        note.setWordWrap(True)
+        note.setFont(QFont(UI_FONT, 8))
+        note.setStyleSheet(f"color:{C_TEXT_DIM};background:transparent;border:none;")
+        card.add(note)
+
+        api_key_bus.changed.connect(self._sync_api_state)
+        self._sync_api_state()
+        return card
+
+    def _sync_api_state(self, *_a):
+        key = resolve_openai_api_key()
+        if key:
+            shown = f"{key[:7]}…{key[-4:]}" if len(key) > 14 else "•" * len(key)
+            self._api_state.setText(f"Key configured  ·  {shown}")
+            self._api_state.setStyleSheet(
+                f"color:{C_TEXT};background:transparent;border:none;")
+        else:
+            self._api_state.setText("No API key configured — nothing can run "
+                                    "until one is added.")
+            self._api_state.setStyleSheet(
+                f"color:{C_AMBER};background:transparent;border:none;")
+
     def _network_card(self):
         card = SectionCard("NETWORK", C_AMBER)
         card.add(self._row("Request timeout (s)",
@@ -10294,6 +11197,7 @@ class SettingsPanel(QWidget):
         self._speed.setValue(AISidebar.SPEEDS.index(1.0))
         self._verify.setChecked(True)
         self._snap.setChecked(SETTINGS_DEFAULTS["SNAP_DEFAULT_ON"])
+        self._gripper_ai.setChecked(SETTINGS_DEFAULTS["GRIPPER_AI"])
 
 
 IMAGE_MAX_SIDE  = 1536         # longest side uploaded as the reference photo
@@ -10358,7 +11262,20 @@ class ViewsUploadPopup(GlassDialog):
         root = self.body
 
         self._tabs = QTabWidget()
-        # Uses global APP_STYLESHEET tab chrome (rounded, purple selected).
+        # Pill-shaped angle tabs. The global APP_STYLESHEET rounds them too,
+        # but its tabs tuck under the pane, which squares off their bottom
+        # corners — the margin-bottom here lifts them clear so all four
+        # corners show.
+        self._tabs.setStyleSheet(f"""
+            QTabBar::tab{{background:rgba(255,255,255,0.45);color:{C_TEXT_DIM};
+                border:none;border-radius:16px;padding:8px 18px;
+                margin:3px 4px 7px 4px;font-family:'{UI_FONT}';
+                font-weight:700;font-size:10px;}}
+            QTabBar::tab:selected{{background:rgba(139,92,246,0.35);color:{C_TEXT};}}
+            QTabBar::tab:hover{{background:rgba(255,255,255,0.7);color:{C_TEXT};}}
+            QTabWidget::pane{{border:1.5px solid {C_BORDER};border-radius:22px;
+                background:rgba(255,255,255,0.45);top:0px;}}
+        """)
         root.addWidget(self._tabs, 1)
 
         self._previews = {}
@@ -11154,6 +12071,7 @@ def save_captured_view(sidebar, kind: str, bgr) -> None:
         # next task silently reuses vision results computed before this
         # angle was overwritten, so the new photo is never actually looked at.
         sidebar._vision_objs      = []
+        sidebar._grip_points      = []
         sidebar._chosen_view_kind = None
         sidebar._refresh_objects()
 
@@ -11241,8 +12159,8 @@ def _format_views_error(err) -> str:
     low = text.lower()
     if ("401" in text or "invalid_api_key" in low or "incorrect api key" in low
             or "authentication" in low):
-        return ("OpenAI rejected the API key. Update the embedded "
-                "OPENAI_API_KEY constant near the top of A3-Terra.py.")
+        return ("OpenAI rejected the API key. Replace it in "
+                "Settings ▸ API Config ▸ Add manual API key.")
     if "429" in text or "rate" in low:
         return "OpenAI rate limit hit — wait a moment and try Generate again."
     if "timeout" in low or "timed out" in low:
@@ -11408,6 +12326,27 @@ EXAMPLES = [
         "note":  "Three plates in a row and a squeeze bottle: the same action "
                  "repeated across every plate.",
     },
+    {
+        "file":  "Example 3.png",
+        "title": "Broom and stool",
+        "task":  "sweep the table",
+        "note":  "Broom, dustpan and a wooden stool: sweep every cell of the "
+                 "stool top to one corner pile, dustpan there first.",
+    },
+    {
+        "file":  "Example 4.png",
+        "title": "Carrot on a board",
+        "task":  "slice the carrot",
+        "note":  "Carrot, cutting board and a knife — pick up the knife and "
+                 "slice across every cell the carrot touches.",
+    },
+    {
+        "file":  "Example 5.png",
+        "title": "Mop and folding board",
+        "task":  "mop the board without spinning",
+        "note":  "Mop, bucket and a folding wooden board: a plain contact pass "
+                 "over the board, no spin step in the bucket.",
+    },
 ]
 
 
@@ -11556,15 +12495,27 @@ class ExamplesDialog(GlassDialog):
         root.addLayout(row)
 
     def _load(self, entry: dict):
-        # Task first, so it's sitting in the box once the image loads — the
-        # operator still has to send it themselves to kick off vision.
+        # Task first, so it's sitting in the box once the image loads. Loading
+        # an example is the ONE way a task auto-sends without a click — every
+        # other way of getting a photo onto the board (Import Image, camera
+        # capture, a generated view) still waits for the operator to press
+        # Send. See MainWindow._load_example for the matching Examples ▸ menu
+        # path; both skip the views popup and both auto-send, and nowhere else
+        # does either.
         self._sidebar.set_task_text(entry["task"])
-        if not self._cam.load_image_file(example_path(entry)):
+        self._sidebar._suppress_views_popup = True
+        try:
+            ok = self._cam.load_image_file(example_path(entry))
+        finally:
+            self._sidebar._suppress_views_popup = False
+        if not ok:
             self._sidebar.set_task_text("")
             QMessageBox.warning(self, "Examples",
                                 "That image could not be read — pick it again.")
             return
         self.accept()
+        if not self._sidebar._busy():
+            self._sidebar._on_run()
 
 
 # AprilTag families, in the order they are tried. 36h11 is the usual default
@@ -12413,6 +13364,7 @@ class CameraPanel(QWidget):
     # Reserved gutters so the A-BH / 1-33 headers drawn outside the image rect
     # are never clipped against the widget edge.
     PAD_L, PAD_T, PAD_R, PAD_B = 26, 20, 10, 10
+    IMG_RADIUS = 18            # corner rounding of the photo on the board
 
     def __init__(self, sidebar: AISidebar, parent=None):
         super().__init__(parent)
@@ -12654,6 +13606,9 @@ class CameraPanel(QWidget):
         ah   = max(50, lh - self.PAD_T - self.PAD_B)
         pix  = QPixmap.fromImage(qi).scaled(aw, ah, Qt.KeepAspectRatio,
                                             Qt.SmoothTransformation)
+        # Round the board photo's corners the same way every other preview in
+        # the app is rounded — QLabel.setPixmap does no clipping of its own.
+        pix  = rounded_pixmap(pix, pix.width(), pix.height(), self.IMG_RADIUS)
         ox = self.PAD_L + (aw - pix.width())  / 2.0
         oy = self.PAD_T + (ah - pix.height()) / 2.0
         self._overlay.set_image_rect(QRectF(ox, oy, pix.width(), pix.height()))
@@ -12719,7 +13674,7 @@ class CameraPanel(QWidget):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Humanoid Operating System – A2 Physical Simulator")
+        self.setWindowTitle("Humanoid Operating System - A3-Terra")
         if os.path.isfile(APP_ICON_PATH):
             self.setWindowIcon(QIcon(APP_ICON_PATH))
         self.setMinimumSize(1100, 680)
@@ -13032,9 +13987,9 @@ class MainWindow(QMainWindow):
         self._act_gripper_ai = QAction("Gripper AI", self)
         self._act_gripper_ai.setCheckable(True)
         self._act_gripper_ai.setStatusTip(
-            "Before planning, work out from the photo how each object should be "
-            "gripped — approach angle, and whether to grip somewhere other than "
-            "its centre (a plate at the rim, a pan by the handle)")
+            "Before planning, work out from the photo where each object is "
+            "actually held, and pick it up there instead of at its centre "
+            "(a knife by the handle, a plate at the rim, a pan by the handle)")
         self._act_gripper_ai.triggered.connect(self._toggle_gripper_ai)
         sim.addAction(self._act_gripper_ai)
 
@@ -13122,6 +14077,16 @@ class MainWindow(QMainWindow):
                     self._edit_numeric_setting(n, l.rstrip("…"), ca, h))
             net.addAction(act)
         set_menu.addMenu(net)
+
+        # API Config ▶
+        api_menu = QMenu("API Config", self)
+        set_menu.addMenu(api_menu)
+        act_api_key = QAction("Add manual API key…", self)
+        act_api_key.setStatusTip(
+            "Paste an OpenAI API key — saved to api_key.json in HOS data")
+        act_api_key.triggered.connect(lambda: prompt_for_api_key(self))
+        api_menu.addAction(act_api_key)
+        self._api_menu = api_menu
 
         set_menu.addSeparator()
 
@@ -13253,6 +14218,7 @@ class MainWindow(QMainWindow):
                      "Changes apply immediately and are saved to build_config.json.",
             width=620)
         dlg.resize(620, 560)
+        dlg.setWindowOpacity(0.8)   # 20% transparent
         panel = BuildPanel(dlg)
         dlg.body.addWidget(panel, 1)
         dlg.exec()
@@ -13265,6 +14231,7 @@ class MainWindow(QMainWindow):
                      "detection, network, and the colour legend.",
             width=480)
         dlg.resize(480, 560)
+        dlg.setWindowOpacity(0.8)   # 20% transparent
         panel = SettingsPanel(self._sidebar, dlg)
         dlg.body.addWidget(panel, 1)
         dlg.exec()
@@ -13472,12 +14439,23 @@ class MainWindow(QMainWindow):
                 QMessageBox.warning(self, "Examples", f"Could not save it: {err}")
                 return
 
+        # Loading an example is the ONE way a task auto-sends without a click
+        # — see ExamplesDialog._load for the matching Open Examples… path;
+        # both skip the views popup and both auto-send, nowhere else does.
         self._sidebar.set_task_text(entry["task"])
-        if not self._cam_panel.load_image_file(path):
+        self._sidebar._suppress_views_popup = True
+        try:
+            ok = self._cam_panel.load_image_file(path)
+        finally:
+            self._sidebar._suppress_views_popup = False
+        if not ok:
             self._sidebar.set_task_text("")
             QMessageBox.warning(
                 self, "Examples",
                 "That image could not be read — pick it again via Open Examples….")
+            return
+        if not self._sidebar._busy():
+            self._sidebar._on_run()
 
     def _open_views_manager(self):
         self._sidebar.open_views_popup()

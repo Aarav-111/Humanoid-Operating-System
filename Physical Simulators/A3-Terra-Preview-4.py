@@ -36,6 +36,7 @@ PLANNER_MODEL   = "gpt-5.6-terra"
 MEMORY_MODEL     = "gpt-5.4-mini"
 VOICE_TIDY_MODEL = "gpt-5.4-nano"
 SPEECH_MODEL     = "gpt-4o-transcribe"
+ERR_MODEL        = "gpt-5.4"
 
 # Everything the app ships alongside its own code (app icon, example scenes,
 # every file it reads or writes at runtime) lives in "HOS data" next to this
@@ -603,6 +604,7 @@ RULER_FRAC   = 0.075          # ruler margin as a fraction of the content square
 # only the observation that an object covering most of the frame is the scene
 # rather than a thing in it.
 SNAP_DEFAULT_ON   = False   # CV snapping is OPT-IN — see note below
+HARDWARE_CAMERA_MODE = False # Hardware Connect ▸ Import via camera — see CameraCaptureDialog
 SEG_BORDER_FRAC   = 0.045   # border ring sampled to estimate the background
 SEG_MIN_AREA_FRAC = 0.0016  # blobs smaller than this fraction of frame → noise
 SEG_MAX_AREA_FRAC = 0.55    # blobs bigger than this are background, not objects
@@ -3211,6 +3213,111 @@ DEFAULT_REPHRASE_SYSTEM = REPHRASE_SYSTEM
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Error Rebounds AI — after-the-fact check of a completed run.
+# Production remains strictly binary. The in-app check adds a one-line
+# reason so the chat can show *why*, without ever rewriting the plan.
+# ─────────────────────────────────────────────────────────────────────────────
+ERR_PRODUCTION_PROMPT = """
+You are the Error Rebound AI. You are given three inputs: the task description, the initial image (before the robot attempts the task), and the final image (after the robot completes the task). Your job is to determine whether the task was completed correctly.
+
+Output exactly one of the following — no other text, punctuation, or explanation:
+
+{Done_correctly}
+{Done_wrong,_redo}
+
+───────────────
+CORE RULES
+───────────────
+
+1. UNREADABLE FINAL IMAGE
+If the final image is heavily blurred, out of focus, or obstructed such that the main object or its position cannot be clearly identified, output {Done_wrong,_redo}.
+
+IMPORTANT DISTINCTION: A minor shift in camera angle that does not affect the readability of object positions or coordinates is acceptable and should be ignored. However, if the camera angle is so extreme that grid coordinates or object positions cannot be reliably read and verified, this counts as an obstructed image and must output {Done_wrong,_redo}.
+
+2. COORDINATE VERIFICATION
+When verifying object positions, always prioritise the Object Positions panel (the text readout) as the authoritative source of coordinate information. Use the visual grid as a secondary reference only. If the panel and the grid conflict, trust the panel.
+
+3. NATURAL STATE CHANGES
+Do NOT consider natural texture changes — such as cooked vs raw food, melting, blending, or crushing — as an error. These are expected outcomes of valid tasks.
+
+4. IGNORED DIFFERENCES
+Do NOT consider differences in lighting, shadows, background, container, or minor camera angle as changes to the object or its outcome. Focus only on whether the task goal was achieved.
+
+5. NO MEANINGFUL CHANGE
+If there is no meaningful change between the initial and final image (ignoring lighting, background, or minor location differences), output {Done_wrong,_redo}.
+
+6. PARTIAL COMPLETION
+If the task is only partially completed, output {Done_wrong,_redo}. There is no partial credit.
+
+7. MULTI-OBJECT TASKS
+When a task involves more than one object, every named object must be independently verified at its correct destination. If even one object is missing, at the wrong position, or unverified, output {Done_wrong,_redo}. A partially correct multi-object state is always a failure.
+
+8. OVERLAPPING OBJECTS
+If two or more objects share the same coordinate in the final image, verify each object individually by name against its stated target destination. Do not assume that the presence of any object at a coordinate satisfies the requirement — confirm which specific object is there.
+
+9. INCORRECT RESULT
+If the final result does not match the task description, output {Done_wrong,_redo}.
+
+10. CORRECT RESULT
+If all objects named in the task are confirmed at their correct destinations and the task outcome matches the description, output {Done_correctly}
+""".strip()
+
+
+ERR_TESTER_PROMPT = """
+You are the Error Rebound AI. You are given three inputs: the task description, the initial image (before the robot attempts the task), and the final image (after the robot completes the task). Your job is to determine whether the task was completed correctly.
+
+Return exactly the following two lines, with no additional text, punctuation, markdown, or explanation:
+
+VERDICT: {Done_correctly}
+REASON: <short factual explanation>
+
+OR
+
+VERDICT: {Done_wrong,_redo}
+REASON: <short factual explanation>
+
+The reason must be concise and based only on the task and the before/after images. Do not include chain-of-thought or hidden reasoning.
+
+───────────────
+CORE RULES
+───────────────
+
+1. UNREADABLE FINAL IMAGE
+If the final image is heavily blurred, out of focus, or obstructed such that the main object or its position cannot be clearly identified, output {Done_wrong,_redo}.
+
+IMPORTANT DISTINCTION: A minor shift in camera angle that does not affect the readability of object positions or coordinates is acceptable and should be ignored. However, if the camera angle is so extreme that grid coordinates or object positions cannot be reliably read and verified, this counts as an obstructed image and must output {Done_wrong,_redo}.
+
+2. COORDINATE VERIFICATION
+When verifying object positions, always prioritise the Object Positions panel (the text readout) as the authoritative source of coordinate information. Use the visual grid as a secondary reference only. If the panel and the grid conflict, trust the panel.
+
+3. NATURAL STATE CHANGES
+Do NOT consider natural texture changes — such as cooked vs raw food, melting, blending, or crushing — as an error. These are expected outcomes of valid tasks.
+
+4. IGNORED DIFFERENCES
+Do NOT consider differences in lighting, shadows, background, container, or minor camera angle as changes to the object or its outcome. Focus only on whether the task goal was achieved.
+
+5. NO MEANINGFUL CHANGE
+If there is no meaningful change between the initial and final image (ignoring lighting, background, or minor location differences), output {Done_wrong,_redo}.
+
+6. PARTIAL COMPLETION
+If the task is only partially completed, output {Done_wrong,_redo}. There is no partial credit.
+
+7. MULTI-OBJECT TASKS
+When a task involves more than one object, every named object must be independently verified at its correct destination. If even one object is missing, at the wrong position, or unverified, output {Done_wrong,_redo}. A partially correct multi-object state is always a failure.
+
+8. OVERLAPPING OBJECTS
+If two or more objects share the same coordinate in the final image, verify each object individually by name against its stated target destination. Do not assume that the presence of any object at a coordinate satisfies the requirement — confirm which specific object is there.
+
+9. INCORRECT RESULT
+If the final result does not match the task description, output {Done_wrong,_redo}.
+
+10. CORRECT RESULT
+If all objects named in the task are confirmed at their correct destinations and the task outcome matches the description, output {Done_correctly}
+""".strip()
+DEFAULT_ERR_TESTER_PROMPT = ERR_TESTER_PROMPT
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # A3-Terra system prompt  (planner — unchanged behaviour)
 # ─────────────────────────────────────────────────────────────────────────────
 A3_TERRA_SYSTEM = (
@@ -5495,6 +5602,89 @@ class CommandWorker(QThread):
             self.error.emit(str(e))
 
 
+class ErrorReboundWorker(QThread):
+    """Compare before/after board photos against the operator's task.
+
+    Report-only: the result never rewrites the plan, the board, or the
+    chat history. A correct verdict is just text in the transcript.
+    """
+    done  = Signal(dict)
+    error = Signal(str)
+
+    def __init__(self, task: str, before_bgr, after_bgr, object_list: str = ""):
+        super().__init__()
+        self._task    = task
+        self._before  = before_bgr
+        self._after   = after_bgr
+        self._objects = object_list or ""
+
+    def run(self):
+        try:
+            if self._before is None or self._after is None:
+                raise ModelError("Need both a before photo and an after photo.")
+            b64_before = encode_jpeg_b64(self._before)
+            b64_after  = encode_jpeg_b64(self._after)
+            if not b64_before or not b64_after:
+                raise ModelError("Could not encode the before/after photos.")
+
+            positions = (f"\n\nOBJECT POSITIONS (authoritative before-state "
+                         f"readout):\n{self._objects}"
+                         if self._objects.strip() else "")
+            user_text = (
+                f"TASK:\n{self._task}{positions}\n\n"
+                "IMAGE 1 = BEFORE STATE\n"
+                "IMAGE 2 = AFTER STATE\n\n"
+                "Evaluate whether the task was completed correctly."
+            )
+
+            client = make_client()
+            raw = call_model(
+                client,
+                model=ERR_MODEL,
+                messages=[
+                    {"role": "system", "content": ERR_TESTER_PROMPT},
+                    {"role": "user", "content": [
+                        {"type": "text", "text": user_text},
+                        {"type": "image_url", "image_url": {
+                            "url": f"data:image/jpeg;base64,{b64_before}",
+                            "detail": "high"}},
+                        {"type": "image_url", "image_url": {
+                            "url": f"data:image/jpeg;base64,{b64_after}",
+                            "detail": "high"}},
+                    ]},
+                ],
+                max_tokens=800,
+                stage="Error Rebounds",
+            ).strip()
+
+            verdict_token = None
+            reason_text = None
+            for line in raw.splitlines():
+                stripped = line.strip()
+                if stripped.startswith("VERDICT:"):
+                    verdict_token = stripped[len("VERDICT:"):].strip()
+                elif stripped.startswith("REASON:"):
+                    reason_text = stripped[len("REASON:"):].strip()
+
+            if verdict_token == "{Done_correctly}":
+                verdict = "done correctly"
+            elif verdict_token == "{Done_wrong,_redo}":
+                verdict = "done wrongly"
+            else:
+                # Surface the model's own words rather than inventing a token.
+                verdict = "unknown"
+                if reason_text is None:
+                    reason_text = raw
+
+            self.done.emit({
+                "verdict": verdict,
+                "reason": reason_text or "",
+                "raw": raw,
+            })
+        except Exception as e:
+            self.error.emit(str(e))
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 #  GridOverlay
 # ─────────────────────────────────────────────────────────────────────────────
@@ -6859,6 +7049,8 @@ EDITABLE_PROMPTS = [
      "hint": "The planner's own system prompt — command syntax, playbooks, worked examples."},
     {"key": "gripper_ai_system", "global": "GRIPPER_AI_SYSTEM", "label": "Gripper AI Prompt",
      "hint": "Decides where the gripper closes on each object — the cell the planner picks up at."},
+    {"key": "err_tester_prompt", "global": "ERR_TESTER_PROMPT", "label": "Error Rebounds Prompt",
+     "hint": "After a run finishes: compares before/after board photos and reports whether the task was done correctly. Never rewrites the plan."},
     {"key": "speech_prompt", "global": "SPEECH_PROMPT", "label": "Speech Prompt",
      "hint": "Given to the transcription model alongside dictated audio, as vocabulary hints."},
     {"key": "voice_tidy_system", "global": "VOICE_TIDY_SYSTEM", "label": "Dictation Tidy Prompt",
@@ -8471,6 +8663,66 @@ class SaveMemoryDialog(GlassDialog):
         super().reject()
 
 
+class ErrorReboundDialog(GlassDialog):
+    """Ask whether to run Error Rebounds on a just-completed task.
+
+    Optional after-photo picker is only for the check itself — it does
+    not replace the board, so the transcript and the plan stay put.
+    """
+
+    def __init__(self, task: str, parent=None):
+        super().__init__(
+            "Error Rebounds AI", parent,
+            subtitle="Compare the board from before this run with how it looks now.",
+            width=480)
+        self.after_path = None
+
+        q = QLabel("Do you want to check the completed task with the "
+                   "Error Rebounds AI?")
+        q.setWordWrap(True)
+        q.setFont(QFont(UI_FONT_B, 11))
+        q.setStyleSheet(f"color:{C_TEXT};background:transparent;border:none;")
+        self.body.addWidget(q)
+
+        if task:
+            quote = QLabel(f"\u201c{task}\u201d")
+            quote.setWordWrap(True)
+            quote.setFont(QFont(UI_FONT, 10))
+            quote.setStyleSheet(
+                f"color:{C_TEXT};background:rgba(255,255,255,0.72);"
+                f"border:1px solid {C_BORDER};border-radius:18px;padding:12px 14px;")
+            self.body.addWidget(quote)
+
+        self._after_lbl = QLabel("After photo: current board")
+        self._after_lbl.setWordWrap(True)
+        self._after_lbl.setFont(QFont(UI_FONT, 9))
+        self._after_lbl.setStyleSheet(
+            f"color:{C_TEXT_DIM};background:transparent;border:none;")
+        self.body.addWidget(self._after_lbl)
+
+        pick = pill_button("Choose after photo…", height=30)
+        pick.clicked.connect(self._pick_after)
+        self.body.addWidget(pick)
+
+        row = QHBoxLayout(); row.setSpacing(9)
+        no  = pill_button("Not now", height=32)
+        yes = pill_button("Check", primary=True, height=32)
+        no.clicked.connect(self.reject)
+        yes.clicked.connect(self.accept)
+        yes.setDefault(True)
+        row.addStretch(1); row.addWidget(no); row.addWidget(yes)
+        self.body.addLayout(row)
+
+    def _pick_after(self):
+        path, _ = QFileDialog.getOpenFileName(
+            self, "After photo", "",
+            "Images (*.png *.jpg *.jpeg *.webp *.bmp)")
+        if not path:
+            return
+        self.after_path = path
+        self._after_lbl.setText(f"After photo: {os.path.basename(path)}")
+
+
 class ClarifyDialog(GlassDialog):
     """The one or two questions the clarity check decided it had to ask.
 
@@ -8895,6 +9147,13 @@ class AISidebar(QWidget):
         self._chain_task        = None   # task text riding the chooser->vision->planner chain
         self._memory_worker     = None
         self._pending_memory_task = None
+        # Error Rebounds: the operator's original task plus the board photo
+        # captured the moment execution starts. Each "Task complete" bubble
+        # keeps its own copy so a later import or a later task cannot wipe
+        # the history of an earlier check.
+        self._err_task   = None
+        self._err_before = None
+        self._camera_panel = None
         self.setMinimumWidth(340)
         self.setMaximumWidth(400)
         self.setStyleSheet(
@@ -10339,6 +10598,9 @@ class AISidebar(QWidget):
             self._set_stage("Please import an image first so I can analyse the board.", C_RED); return
         self._chat_message("You", task, user=True)
         self._vlog(f"Task submitted:\n{task}")
+        # Keep the operator's own words for Error Rebounds, not the
+        # rephrased planner input — that is the task they asked to verify.
+        self._err_task = task
         self._task_input.clear()
         self._lock(True)
         self._stop_btn.setEnabled(False)
@@ -10516,6 +10778,10 @@ class AISidebar(QWidget):
         text = self._cmd_text.strip()
         if not text:
             return
+        # Snapshot the board now — this is "before the robot attempts".
+        # Copied so a later import cannot change what this run will verify.
+        frame = self._board_bgr()
+        self._err_before = None if frame is None else frame.copy()
         self._stop_btn.setEnabled(True)
         self._inline_stop_btn.setEnabled(True)
         self._set_stage("Executing on the board…")
@@ -10548,7 +10814,112 @@ class AISidebar(QWidget):
         self._stop_btn.setEnabled(False)
         self._inline_stop_btn.setEnabled(False)
         self._refresh_run_btn()
-        self._set_stage("Task complete.", C_GREEN)
+        # Always add a fresh "Task complete" bubble — _set_stage would
+        # swallow a second completion if _last_stage was already that text.
+        # The check button is created per run so earlier completions stay
+        # in the transcript with their own button and their own photos.
+        self._end_thinking()
+        bubble = self._chat_message("A3-Terra", "Task complete.", accent=C_GREEN)
+        self._attach_err_button(bubble)
+        self._last_stage = "Task complete."
+        self._chat.scroll_to_end()
+
+    def _board_bgr(self):
+        """Current board photo. Live camera frame if one is open."""
+        cam = getattr(self, "_camera_panel", None)
+        if cam is not None:
+            return cam.current_bgr()
+        if self._last_frame is None:
+            return None
+        return self._last_frame.copy()
+
+    def _attach_err_button(self, bubble: ChatBubble):
+        """Put a Check button on this completion. History is never cleared."""
+        before = None if self._err_before is None else self._err_before.copy()
+        payload = {
+            "task": self._err_task or "",
+            "before": before,
+            "object_list": self._object_list,
+        }
+        btn = QPushButton("Check with Error Rebounds AI")
+        btn.setFixedHeight(28)
+        btn.setCursor(Qt.PointingHandCursor)
+        btn.setStyleSheet(
+            f"QPushButton{{background:{C_BTN};color:{C_BTN_FG};"
+            f"border:none;border-radius:14px;padding:0 14px;"
+            f"font-weight:700;font-size:10px;}}"
+            f"QPushButton:hover{{background:{C_BTN_HOVER};}}"
+            f"QPushButton:disabled{{background:{C_BTN_OFF};color:{C_BTN_OFFFG};}}")
+        btn.clicked.connect(lambda _=False, p=payload, b=btn:
+                            self._on_err_check(p, b))
+        bubble.add_widget(btn)
+
+    def _on_err_check(self, payload: dict, button: QPushButton):
+        """Confirm, then run Error Rebounds. Never mutates the plan."""
+        task = (payload or {}).get("task") or ""
+        dlg = ErrorReboundDialog(task, self)
+        if not dlg.exec():
+            return
+
+        before = (payload or {}).get("before")
+        if before is None:
+            before = self._err_before
+        after = None
+        if dlg.after_path:
+            after = imread_any(dlg.after_path)
+            if after is None:
+                self._chat_error(
+                    f"Could not read {dlg.after_path}",
+                    "Error Rebounds needs a readable after photo.")
+                return
+        else:
+            after = self._board_bgr()
+
+        if before is None or after is None:
+            self._chat_error(
+                "Need a before photo (captured when the run started) "
+                "and an after photo (current board, or one you choose).",
+                "Error Rebounds is missing a photo.")
+            return
+
+        button.setEnabled(False)
+        self._set_stage("Checking with Error Rebounds AI…")
+        w = self._track(ErrorReboundWorker(
+            task, before, after, (payload or {}).get("object_list", "")))
+        w.done.connect(lambda result, b=button: self._on_err_done(result, b))
+        w.error.connect(lambda err, b=button: self._on_err_failed(err, b))
+        w.start()
+
+    def _on_err_done(self, result: dict, button: QPushButton):
+        """Print the verifier's own words. Do not touch the plan or history."""
+        button.setEnabled(True)
+        self._end_thinking()
+        verdict = (result or {}).get("verdict", "")
+        raw     = (result or {}).get("raw", "") or ""
+        reason  = (result or {}).get("reason", "") or ""
+        if verdict == "done correctly":
+            headline = "Error Rebounds AI  ·  DONE CORRECTLY"
+            accent = C_GREEN
+        elif verdict == "done wrongly":
+            headline = "Error Rebounds AI  ·  DONE WRONG — REDO"
+            accent = C_AMBER
+        else:
+            headline = "Error Rebounds AI"
+            accent = C_TEXT_DIM
+        # The model's text is the answer. A correct verdict is report-only:
+        # _cmd_text, the board, and every earlier chat bubble stay as they are.
+        body = raw.strip() or reason or headline
+        bubble = self._chat_message("A3-Terra", headline, accent=accent)
+        if body and body != headline:
+            for line in body.splitlines():
+                bubble.add_detail(line)
+            bubble.open_details()
+        self._last_stage = headline
+        self._chat.scroll_to_end()
+
+    def _on_err_failed(self, err: str, button: QPushButton):
+        button.setEnabled(True)
+        self._chat_error(err, "Error Rebounds could not check this task.")
 
     def on_runner_step(self, current: int, total: int, cmd: str):
         # Keep progress lightweight: high-frequency robot steps belong on the
@@ -10843,6 +11214,7 @@ SETTINGS_DEFAULTS = {
     "PLANNER_MODEL": PLANNER_MODEL,
     "VOICE_TIDY_MODEL": VOICE_TIDY_MODEL,
     "SPEECH_MODEL": SPEECH_MODEL,
+    "ERR_MODEL": ERR_MODEL,
     "WAIT_MAX_PLAYBACK": WAIT_MAX_PLAYBACK,
     "VERBOSE": VERBOSE,
     "VOICE_TIDY": VOICE_TIDY,
@@ -10856,6 +11228,7 @@ SETTINGS_DEFAULTS = {
     "API_BACKOFF_S": API_BACKOFF_S,
     "SNAP_DEFAULT_ON": SNAP_DEFAULT_ON,
     "GRIPPER_AI": GRIPPER_AI,
+    "HARDWARE_CAMERA_MODE": HARDWARE_CAMERA_MODE,
 }
 
 
@@ -10907,6 +11280,7 @@ class SettingsPanel(QWidget):
         body.addWidget(self._detection_card())
         body.addWidget(self._api_card())
         body.addWidget(self._network_card())
+        body.addWidget(self._hardware_card())
         legend = SectionCard("HIGHLIGHT COLOUR LEGEND", C_TEXT_DIM)
         legend.add(AISidebar._legend())
         body.addWidget(legend)
@@ -11057,6 +11431,7 @@ class SettingsPanel(QWidget):
                             ("CLARITY_MODEL", "Clarity + rephrase"),
                             ("MEMORY_MODEL", "Memory"),
                             ("PLANNER_MODEL", "Planner"),
+                            ("ERR_MODEL", "Error Rebounds"),
                             ("VOICE_TIDY_MODEL", "Dictation tidy"),
                             ("SPEECH_MODEL", "Speech to text")):
             field = self._field(globals()[name])
@@ -11152,6 +11527,18 @@ class SettingsPanel(QWidget):
                            "Delay before a retry, multiplied by the attempt number."))
         return card
 
+    def _hardware_card(self):
+        card = SectionCard("HARDWARE", C_GREEN)
+        self._cam_mode = ToggleSwitch(HARDWARE_CAMERA_MODE)
+        self._cam_mode.toggled.connect(
+            lambda on: set_setting("HARDWARE_CAMERA_MODE", bool(on)))
+        card.add(self._row(
+            "Import via camera", self._cam_mode,
+            "When on, Import Image / Update view opens a live camera capture "
+            "instead of a file picker. Same switch as Hardware Connect ▸ "
+            "Camera."))
+        return card
+
     # ── behaviour ─────────────────────────────────────────────────────────────
     def _on_speed(self, idx: int):
         mult = AISidebar.SPEEDS[idx]
@@ -11198,6 +11585,7 @@ class SettingsPanel(QWidget):
         self._verify.setChecked(True)
         self._snap.setChecked(SETTINGS_DEFAULTS["SNAP_DEFAULT_ON"])
         self._gripper_ai.setChecked(SETTINGS_DEFAULTS["GRIPPER_AI"])
+        self._cam_mode.setChecked(SETTINGS_DEFAULTS["HARDWARE_CAMERA_MODE"])
 
 
 IMAGE_MAX_SIDE  = 1536         # longest side uploaded as the reference photo
@@ -11225,6 +11613,135 @@ VIEW_KINDS = {
 
 # Tab order for the Views upload popup.
 VIEWS_TAB_ORDER = ("top", "isometric", "side")
+
+
+class CameraCaptureDialog(GlassDialog):
+    """Hardware Connect ▸ Import via camera: when that mode is on, this
+    replaces the Finder file picker for board/view photos everywhere one
+    would normally browse for an image. Live feed and captured still are
+    both clipped to a rounded rect via ``_bgr_to_qpixmap`` — plain CSS
+    border-radius does not clip a QLabel pixmap in Qt (see rounded_pixmap).
+
+    ``self.captured_frame`` holds the chosen BGR frame once the dialog
+    accepts; it is None if the operator cancelled instead of capturing.
+    """
+
+    PREVIEW_W, PREVIEW_H = 380, 260
+
+    def __init__(self, parent=None, title: str = "Capture from camera"):
+        super().__init__(title, parent,
+                          subtitle="Aim the camera and capture — no file picker needed.",
+                          width=440)
+        self.captured_frame = None
+        self._cap = None
+        self._last_frame = None
+
+        root = self.body
+
+        row = QHBoxLayout(); row.setSpacing(8)
+        self._picker = RoundedComboBox()
+        self._picker.setStyleSheet(_combo_css())
+        refresh = pill_button("⟳", height=30)
+        refresh.setFixedWidth(30)
+        refresh.clicked.connect(self._reload_devices)
+        row.addWidget(self._picker, 1)
+        row.addWidget(refresh)
+        root.addLayout(row)
+
+        self._preview = QLabel("No camera connected")
+        self._preview.setAlignment(Qt.AlignCenter)
+        self._preview.setMinimumHeight(self.PREVIEW_H)
+        self._preview.setStyleSheet(
+            "background:#1e1233;color:#c4b5fd;border-radius:18px;")
+        root.addWidget(self._preview, 1)
+
+        self._status = QLabel("")
+        self._status.setAlignment(Qt.AlignCenter)
+        self._status.setFont(QFont(UI_FONT, 9))
+        self._status.setStyleSheet(f"color:{C_TEXT_DIM};background:transparent;")
+        root.addWidget(self._status)
+
+        btn_row = QHBoxLayout(); btn_row.setSpacing(8)
+        cancel = pill_button("Cancel", height=32)
+        cancel.clicked.connect(self.reject)
+        capture = pill_button("📷  Capture photo", primary=True, height=32)
+        capture.clicked.connect(self._capture)
+        btn_row.addWidget(cancel); btn_row.addStretch(1); btn_row.addWidget(capture)
+        root.addLayout(btn_row)
+
+        self._timer = QTimer(self)
+        self._timer.timeout.connect(self._tick)
+        self._picker.currentIndexChanged.connect(self._open_device)
+
+        self._reload_devices()
+
+    def _reload_devices(self):
+        keep = self._picker.currentData()
+        self._picker.blockSignals(True)
+        self._picker.clear()
+        cams = enumerate_cameras()
+        for idx, name in cams:
+            self._picker.addItem(f"{name}  ·  index {idx}", idx)
+        self._picker.blockSignals(False)
+        if not cams:
+            self._status.setText("⚠️  No cameras detected. Plug one in and hit ⟳.")
+            self._preview.setText("No camera detected")
+            return
+        i = self._picker.findData(keep)
+        self._picker.setCurrentIndex(i if i >= 0 else 0)
+        if i == self._picker.currentIndex():
+            self._open_device(self._picker.currentIndex())
+
+    def _open_device(self, _row):
+        self._close_device()
+        idx = self._picker.currentData()
+        if idx is None:
+            return
+        cap = cv2.VideoCapture(idx)
+        if not cap.isOpened():
+            cap.release()
+            self._preview.setText("Could not open this camera")
+            self._status.setText("⚠️  Camera is busy or unavailable")
+            return
+        self._cap = cap
+        self._status.setText("Live")
+        self._timer.start(33)
+
+    def _tick(self):
+        if self._cap is None:
+            return
+        ok, frame = self._cap.read()
+        if not ok or frame is None:
+            return
+        self._last_frame = frame
+        self._preview.setPixmap(_bgr_to_qpixmap(
+            frame, self.PREVIEW_W, self.PREVIEW_H, radius=18))
+
+    def _close_device(self):
+        self._timer.stop()
+        if self._cap is not None:
+            self._cap.release()
+            self._cap = None
+        self._last_frame = None
+
+    def _capture(self):
+        if self._last_frame is None:
+            self._status.setText("⚠️  No live frame yet — pick a camera first.")
+            return
+        self.captured_frame = self._last_frame.copy()
+        self.accept()
+
+    def reject(self):
+        self._close_device()
+        super().reject()
+
+    def accept(self):
+        self._close_device()
+        super().accept()
+
+    def closeEvent(self, ev):
+        self._close_device()
+        super().closeEvent(ev)
 
 
 class ViewsUploadPopup(GlassDialog):
@@ -11333,25 +11850,33 @@ class ViewsUploadPopup(GlassDialog):
         # be. Anything unexpected is now visible instead of vanishing.
         try:
             title = VIEW_KINDS[kind]["title"]
-            downloads = os.path.join(os.path.expanduser("~"), "Downloads")
-            start_dir = downloads if os.path.isdir(downloads) else os.path.expanduser("~")
-            # pick_image_file handles the frameless-modal case (this popup is
-            # one) - see it for why neither a parented nor an unparented native
-            # panel can be clicked from in here.
-            #
-            # Deliberately opened BEFORE any clearing happens: doing a full
-            # canvas teardown (clear_board -> board_cleared -> a repaint
-            # cascade across the main window) immediately before asking macOS
-            # to establish a native modal panel is exactly the kind of timing
-            # that makes that panel fail to attach/activate. Nothing on
-            # screen gets touched until AFTER a file is actually chosen.
-            path = pick_image_file(self, f"Upload {title}", start_dir)
-            if not path:
-                return
-            bgr = imread_any(path)
-            if bgr is None:
-                self._hints[kind].setText("Could not read that file")
-                return
+
+            if HARDWARE_CAMERA_MODE:
+                cam_dlg = CameraCaptureDialog(self, f"Capture {title.lower()}")
+                cam_dlg.exec()
+                bgr = cam_dlg.captured_frame
+                if bgr is None:
+                    return
+            else:
+                downloads = os.path.join(os.path.expanduser("~"), "Downloads")
+                start_dir = downloads if os.path.isdir(downloads) else os.path.expanduser("~")
+                # pick_image_file handles the frameless-modal case (this popup is
+                # one) - see it for why neither a parented nor an unparented native
+                # panel can be clicked from in here.
+                #
+                # Deliberately opened BEFORE any clearing happens: doing a full
+                # canvas teardown (clear_board -> board_cleared -> a repaint
+                # cascade across the main window) immediately before asking macOS
+                # to establish a native modal panel is exactly the kind of timing
+                # that makes that panel fail to attach/activate. Nothing on
+                # screen gets touched until AFTER a file is actually chosen.
+                path = pick_image_file(self, f"Upload {title}", start_dir)
+                if not path:
+                    return
+                bgr = imread_any(path)
+                if bgr is None:
+                    self._hints[kind].setText("Could not read that file")
+                    return
             # NOW clear the whole canvas - the same reset the toolbar Clear
             # Image button does - before the newly-picked photo lands, so
             # the old board photo and every other collected angle are gone
@@ -13225,6 +13750,15 @@ class HardwareConnectDialog(GlassDialog):
             cam_row.addStretch(1)
             root.addLayout(cam_row)
 
+            mode_row = QHBoxLayout(); mode_row.setSpacing(10)
+            mode_lab = QLabel("Import via camera (instead of a file picker)")
+            mode_lab.setFont(QFont(UI_FONT, 9))
+            mode_lab.setStyleSheet(f"color:{C_TEXT};background:transparent;")
+            self._cam_mode = ToggleSwitch(HARDWARE_CAMERA_MODE)
+            self._cam_mode.toggled.connect(self._on_camera_mode)
+            mode_row.addWidget(mode_lab); mode_row.addStretch(1); mode_row.addWidget(self._cam_mode)
+            root.addLayout(mode_row)
+
             self._refresh_cam_state()
 
         # ── calibration ───────────────────────────────────────────────────────
@@ -13357,6 +13891,9 @@ class HardwareConnectDialog(GlassDialog):
         self._cam_panel.stop_camera()
         self._refresh_cam_state()
 
+    def _on_camera_mode(self, on: bool):
+        set_setting("HARDWARE_CAMERA_MODE", on)
+
 
 class CameraPanel(QWidget):
     runner_finished = Signal()
@@ -13369,6 +13906,7 @@ class CameraPanel(QWidget):
     def __init__(self, sidebar: AISidebar, parent=None):
         super().__init__(parent)
         self._sidebar   = sidebar
+        sidebar._camera_panel = self
         self._raw_image = None
         self._cap       = None      # live USB camera, when one is connected
         self._cam_index = None
@@ -13658,6 +14196,22 @@ class CameraPanel(QWidget):
         h, w = bgr.shape[:2]
         self._status.setText(f"● {title}  ({w}×{h})")
         self._status.setStyleSheet("color:#86efac;background:transparent;")
+
+    def current_bgr(self):
+        """Board photo as it is right now.
+
+        A live USB camera yields a fresh frame (the after shot once the
+        robot has moved). A still import returns the canvas image. Never
+        goes through begin_views, so requesting this cannot wipe history.
+        """
+        if self._cap is not None:
+            ok, frame = self._cap.read()
+            if ok and frame is not None:
+                self._raw_image = frame
+                return frame.copy()
+        if self._raw_image is None:
+            return None
+        return self._raw_image.copy()
 
     def run_commands(self, text: str):
         self._runner.load(text)
@@ -14019,6 +14573,7 @@ class MainWindow(QMainWindow):
             ("CLARITY_MODEL", "Clarity + rephrase"),
             ("MEMORY_MODEL", "Memory"),
             ("PLANNER_MODEL", "Planner"),
+            ("ERR_MODEL", "Error Rebounds"),
             ("VOICE_TIDY_MODEL", "Dictation Tidy"),
             ("SPEECH_MODEL", "Speech to Text"),
         ):

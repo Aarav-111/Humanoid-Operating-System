@@ -1,4 +1,4 @@
-import sys, os, base64, re, math, json, io, wave, time, shutil, hashlib
+import sys, os, base64, re, math, json, io, wave, time, shutil, hashlib, datetime
 import subprocess, tempfile
 import cv2
 import numpy as np
@@ -47,6 +47,7 @@ APP_ICON_PATH  = os.path.join(HOS_DATA_DIR, "app icon.png")
 CUSTOM_INSTRUCTIONS_PATH = os.path.join(HOS_DATA_DIR, "custom_instructions.json")
 BUILD_CONFIG_PATH        = os.path.join(HOS_DATA_DIR, "build_config.json")
 API_KEY_PATH             = os.path.join(HOS_DATA_DIR, "api_key.json")
+ERR_HISTORY_PATH         = os.path.join(HOS_DATA_DIR, "error_rebounds_test_results.json")
 
 
 class _ApiKeyBus(QObject):
@@ -927,7 +928,7 @@ CMD_STATES = {
     'press':    ('#f97316', 'Pressing…'),
     'release':  ('#a78bfa', 'Releasing…'),
     'wait':     ('#6b7280', 'Waiting…'),
-    'complete': ('#ffd700', '✅  Task Complete!'),
+    'complete': ('#ffd700', 'Task Complete!'),
 }
 
 # A wait is real time the operator watches tick by. A wash cycle written as
@@ -3855,6 +3856,16 @@ pour            # or keep if the detergent is a pod/solid, not a liquid
 goto_coordinate = DETERGENT_COL, DETERGENT_ROW
 keep            # return the detergent bottle before continuing
 
+Washing machine - after the cycle, put the clothes back: once the appliance is turned off, `open_door` again, then for each garment that was loaded, pick it up from the appliance and `keep` it at the exact COL,ROW cell it was picked up from originally (its own CENTER from the OBJECT LIST) - never a new cell. This applies whenever the task is about washing clothes; it is part of the wash, not an addition to it.
+
+goto_coordinate = APPLIANCE_COL, APPLIANCE_ROW
+open_door                   # open the door to take the clothes back out
+goto_coordinate = APPLIANCE_COL, APPLIANCE_ROW
+pickup
+goto_coordinate = ITEM1_COL, ITEM1_ROW    # the garment's own original CENTER
+keep
+...repeat per garment that was loaded
+
 ## 7. Pour Liquid (bottle/jar -> container)
 
 goto_coordinate = SOURCE_COL, SOURCE_ROW
@@ -4576,7 +4587,7 @@ class VisionWorker(QThread):
         for i, o in enumerate(objs, 1):
             name = o.get('name', 'object')
             self.progress.emit(
-                f"🧩  Pass 3 — parts for '{name}' ({i}/{total})…")
+                f"Pass 3 — parts for '{name}' ({i}/{total})…")
             try:
                 self._detect_parts(client, o)
             except Exception as e:
@@ -4590,7 +4601,7 @@ class VisionWorker(QThread):
             canvas, mapping = build_measured_canvas(self._bgr)
             client = make_client()
 
-            self.progress.emit("🔍  Pass 1 — identifying objects…")
+            self.progress.emit("Pass 1 — identifying objects…")
             raw = self._ask(client, canvas,
                             build_vision_prompt(mapping, task_text=self._task),
                             stage="Vision pass 1")
@@ -4609,7 +4620,7 @@ class VisionWorker(QThread):
 
             if self._verify:
                 try:
-                    self.progress.emit(f"🔎  Pass 2 — verifying {len(objs)} outlines…")
+                    self.progress.emit(f"Pass 2 — verifying {len(objs)} outlines…")
                     annotated = self._annotate(canvas, objs, mapping)
                     raw2 = self._ask(client, annotated,
                                      build_vision_prompt(mapping, VERIFY_PROMPT,
@@ -4628,9 +4639,9 @@ class VisionWorker(QThread):
                 except Exception as e:
                     print(f"[vision] verification pass failed ({e}) — keeping pass 1")
 
-            self.progress.emit("📐  Resolving grid cells…"
+            self.progress.emit("Resolving grid cells…"
                                if not self._snap else
-                               "📐  Locking outlines to image pixels…")
+                               "Locking outlines to image pixels…")
             objs, snapped = self._localise(objs)
             if not objs:
                 self.error.emit(
@@ -4650,7 +4661,7 @@ class VisionWorker(QThread):
             # by construction (a plain loop on this one thread), so nothing
             # runs concurrently and nothing gets skipped.
             self.progress.emit(
-                f"🧩  Pass 3 — finding parts for {len(objs)} object(s)…")
+                f"Pass 3 — finding parts for {len(objs)} object(s)…")
             self._detect_all_parts(client, objs)
 
             for o in objs:
@@ -5602,6 +5613,27 @@ class CommandWorker(QThread):
             self.error.emit(str(e))
 
 
+def append_err_history(record: dict) -> None:
+    """Append one Error Rebounds verdict to ERR_HISTORY_PATH, creating the
+    file (as a JSON list) if it doesn't exist yet."""
+    try:
+        try:
+            with open(ERR_HISTORY_PATH, encoding="utf-8") as f:
+                entries = json.load(f)
+            if not isinstance(entries, list):
+                entries = []
+        except Exception:
+            entries = []
+        entries.append(record)
+        os.makedirs(HOS_DATA_DIR, exist_ok=True)
+        tmp = ERR_HISTORY_PATH + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(entries, f, indent=2)
+        os.replace(tmp, ERR_HISTORY_PATH)
+    except Exception:
+        pass
+
+
 class ErrorReboundWorker(QThread):
     """Compare before/after board photos against the operator's task.
 
@@ -5961,14 +5993,6 @@ class GridOverlay(QWidget):
 
         color = self._dot_color
         pulse = math.sin(self._pulse)
-
-        ci, ri = int(round(self._cur_col)), int(round(self._cur_row))
-        hx = area.x() + ci * cell_w
-        hy = area.y() + ri * cell_h
-        hc = QColor(color); hc.setAlpha(int(38 + 18 * pulse))
-        painter.setBrush(QBrush(hc))
-        painter.setPen(QPen(color, 1.4))
-        painter.drawRect(QRectF(hx, hy, cell_w, cell_h))
 
         glow_r = r * (1.9 + 0.25 * pulse)
         grad   = QRadialGradient(px, py, glow_r)
@@ -8529,17 +8553,17 @@ class VideoInstructionDialog(GlassDialog):
         ext = os.path.splitext(path)[1].lstrip(".").lower()
         if ext and ext not in VIDEO_EXTENSIONS:
             self._status.setText(
-                f"⚠️  That file type (.{ext}) is not supported. "
+                f"That file type (.{ext}) is not supported. "
                 f"Use: {', '.join('.' + e for e in VIDEO_EXTENSIONS)}.")
             return
         try:
             size_mb = os.path.getsize(path) / (1024 * 1024)
         except OSError as e:
-            self._status.setText(f"⚠️  Could not read that file ({e}).")
+            self._status.setText(f"Could not read that file ({e}).")
             return
         if size_mb > VIDEO_MAX_MB:
             self._status.setText(
-                f"⚠️  That clip is {size_mb:.0f} MB — the limit is {VIDEO_MAX_MB} MB. "
+                f"That clip is {size_mb:.0f} MB — the limit is {VIDEO_MAX_MB} MB. "
                 f"Trim it, or export it at a lower quality.")
             return
 
@@ -8554,7 +8578,7 @@ class VideoInstructionDialog(GlassDialog):
             limit_txt = (f"{limit_m} min" if limit_s == 0
                          else f"{limit_m}:{limit_s:02d}")
             self._status.setText(
-                f"⚠️  That clip is {mins}:{secs:02d} long — "
+                f"That clip is {mins}:{secs:02d} long — "
                 f"max is {limit_txt}. Trim it and try again.")
             return
 
@@ -8586,7 +8610,7 @@ class VideoInstructionDialog(GlassDialog):
         self._status.setText("Transcribed — edit it down, then save.")
 
     def _on_failed(self, err: str):
-        self._status.setText(f"⚠️  {err}")
+        self._status.setText(f"{err}")
 
     def _on_finished(self):
         self._pick.setEnabled(True)
@@ -8693,7 +8717,7 @@ class ErrorReboundDialog(GlassDialog):
                 f"border:1px solid {C_BORDER};border-radius:18px;padding:12px 14px;")
             self.body.addWidget(quote)
 
-        self._after_lbl = QLabel("After photo: current board")
+        self._after_lbl = QLabel("After photo: none chosen yet")
         self._after_lbl.setWordWrap(True)
         self._after_lbl.setFont(QFont(UI_FONT, 9))
         self._after_lbl.setStyleSheet(
@@ -8706,11 +8730,12 @@ class ErrorReboundDialog(GlassDialog):
 
         row = QHBoxLayout(); row.setSpacing(9)
         no  = pill_button("Not now", height=32)
-        yes = pill_button("Check", primary=True, height=32)
+        self._yes = pill_button("Check", primary=True, height=32)
         no.clicked.connect(self.reject)
-        yes.clicked.connect(self.accept)
-        yes.setDefault(True)
-        row.addStretch(1); row.addWidget(no); row.addWidget(yes)
+        self._yes.clicked.connect(self.accept)
+        self._yes.setDefault(True)
+        self._yes.setEnabled(False)
+        row.addStretch(1); row.addWidget(no); row.addWidget(self._yes)
         self.body.addLayout(row)
 
     def _pick_after(self):
@@ -8721,6 +8746,7 @@ class ErrorReboundDialog(GlassDialog):
             return
         self.after_path = path
         self._after_lbl.setText(f"After photo: {os.path.basename(path)}")
+        self._yes.setEnabled(True)
 
 
 class ClarifyDialog(GlassDialog):
@@ -8891,7 +8917,7 @@ class InstructionsDialog(GlassDialog):
         self._mic.setToolTip("Speak an instruction")
         self._mic.clicked.connect(self._toggle_voice)
         self._paint_mic(False)
-        self._video = pill_button("🎥 Video", height=30)
+        self._video = pill_button("Video", height=30)
         self._video.setToolTip("Upload a video, edit its transcript, save it as an instruction")
         self._video.clicked.connect(self._add_from_video)
         add = pill_button("Add", primary=True, height=30)
@@ -8967,7 +8993,7 @@ class InstructionsDialog(GlassDialog):
             self._voice.stop(by_user=True)          # second tap = stop now
             return
         if speech_rec is None:
-            self._hint.setText(f"⚠️  Speech recognition unavailable: "
+            self._hint.setText(f"Speech recognition unavailable: "
                                f"{SPEECH_IMPORT_ERROR}")
             return
         rec = VoiceRecorder(self)
@@ -9021,7 +9047,7 @@ class InstructionsDialog(GlassDialog):
         self._voice = None
         self._paint_mic(False)
         self._mic.setEnabled(True)
-        self._hint.setText(f"⚠️  {message}")
+        self._hint.setText(f"{message}")
 
     def done(self, result: int):
         """Every exit route lands here — ✕, Done, Esc and the window close —
@@ -9190,8 +9216,6 @@ class AISidebar(QWidget):
             border-bottom:1px solid {C_BORDER};
         """)
         hl = QHBoxLayout(hdr); hl.setContentsMargins(16, 0, 16, 0); hl.setSpacing(10)
-        ico = QLabel("🤖"); ico.setFont(QFont(UI_FONT, 20))
-        ico.setStyleSheet("background:transparent;")
         tw = QVBoxLayout(); tw.setSpacing(0)
         ttl = QLabel("ProLabs · Vision A3-Terra")
         ttl.setFont(QFont(UI_FONT_B, 12))
@@ -9200,7 +9224,7 @@ class AISidebar(QWidget):
         sub.setFont(QFont(UI_FONT, 8))
         sub.setStyleSheet("color:#a5f3fc;background:transparent;letter-spacing:0.08em;")
         tw.addWidget(ttl); tw.addWidget(sub)
-        hl.addWidget(ico); hl.addLayout(tw); hl.addStretch()
+        hl.addLayout(tw); hl.addStretch()
         root.addWidget(hdr)
 
         scroll = VScrollArea()
@@ -9226,7 +9250,7 @@ class AISidebar(QWidget):
         self._instr_input.setFixedHeight(32)
         self._instr_input.setStyleSheet(_field_css(C_VIOLET))
         self._instr_input.returnPressed.connect(self._on_add_instruction)
-        add_btn = _ghost_btn("➕ Add", C_VIOLET)
+        add_btn = _ghost_btn("Add", C_VIOLET)
         add_btn.clicked.connect(self._on_add_instruction)
         row.addWidget(self._instr_input, 1); row.addWidget(add_btn)
         c_instr.add(row)
@@ -9310,7 +9334,7 @@ class AISidebar(QWidget):
         self._task_input.setStyleSheet(_field_css(C_GREEN))
         c_task.add(self._task_input)
 
-        self._run_btn = _grad_btn("⚡   GENERATE A3-Terra COMMANDS", "#15803d", "#22c55e", h=38, fs=11)
+        self._run_btn = _grad_btn("GENERATE A3-Terra COMMANDS", "#15803d", "#22c55e", h=38, fs=11)
         self._run_btn.setEnabled(False)
         self._run_btn.clicked.connect(self._on_run)
         c_task.add(self._run_btn)
@@ -9364,8 +9388,8 @@ class AISidebar(QWidget):
         c_cmd.add(self._cmd_box)
 
         crow = QHBoxLayout(); crow.setSpacing(6)
-        copy_btn  = _ghost_btn("📋  Copy",  C_GREEN, h=29)
-        clear_btn = _ghost_btn("🗑  Clear all", C_RED, h=29)
+        copy_btn  = _ghost_btn("Copy",  C_GREEN, h=29)
+        clear_btn = _ghost_btn("Clear all", C_RED, h=29)
         copy_btn.clicked.connect(
             lambda: QApplication.clipboard().setText(self._cmd_box.toPlainText()))
         clear_btn.clicked.connect(self._clear_all)
@@ -9695,7 +9719,7 @@ class AISidebar(QWidget):
             self._voice.stop(by_user=True)          # second tap = stop now
             return
         if speech_rec is None:
-            self._set_stage(f"⚠️  Speech recognition unavailable: "
+            self._set_stage(f"Speech recognition unavailable: "
                             f"{SPEECH_IMPORT_ERROR}", C_RED)
             return
 
@@ -9757,7 +9781,7 @@ class AISidebar(QWidget):
         self._show_wave(False)
         self._mic_btn.setEnabled(True)
         self._task_input.setPlaceholderText(self._idle_hint)
-        self._set_stage(f"⚠️  {message}", C_RED)
+        self._set_stage(f"{message}", C_RED)
 
     def _lock(self, locked: bool):
         # Run no longer requires vision to have already produced an object
@@ -9981,7 +10005,7 @@ class AISidebar(QWidget):
         except Exception as exc:
             # It still applies this session, but say so — silently losing an
             # instruction the operator just wrote would be worse.
-            self._set_stage("⚠️  Instructions apply now but could not be saved "
+            self._set_stage("Instructions apply now but could not be saved "
                             f"into {os.path.basename(CUSTOM_INSTRUCTIONS_PATH)}: {exc}",
                             C_RED)
 
@@ -10015,8 +10039,8 @@ class AISidebar(QWidget):
         menu.setStyleSheet(
             f"QMenu{{background:{C_PANEL_2};color:{C_TEXT};border:1px solid {C_BORDER};}}"
             f"QMenu::item:selected{{background:{C_RED};}}")
-        edit_act = menu.addAction("✏️  Edit")
-        del_act  = menu.addAction("🗑  Delete")
+        edit_act = menu.addAction("Edit")
+        del_act  = menu.addAction("Delete")
         chosen = menu.exec(self._instr_combo.mapToGlobal(pos))
         if chosen == del_act:
             self._confirm_delete_instruction(idx)
@@ -10152,7 +10176,7 @@ class AISidebar(QWidget):
         self._rerun_btn.setVisible(False)
         self._inline_stop_btn.setEnabled(False)
         self._cmd_text = ""
-        self._set_stage("🖼️  Preparing views…")
+        self._set_stage("Preparing views…")
         self.request_frame.emit()
 
     # ── worker lifetime ──────────────────────────────────────────────────────
@@ -10188,7 +10212,7 @@ class AISidebar(QWidget):
         without waiting on the operator so it can send the task right after.
         """
         if bgr is None:
-            self._set_stage("⚠️  No image loaded — click  📁 Import Image  first", C_RED)
+            self._set_stage("No image loaded — click  Import Image  first", C_RED)
             return
         self._last_frame       = bgr
         self._vision_objs      = []
@@ -10231,12 +10255,12 @@ class AISidebar(QWidget):
             tb = traceback.format_exc()
             print(f"[views] open_views_popup failed:\n{tb}", file=sys.stderr)
             self._set_stage(
-                f"⚠️  Could not open Views: {tb.strip().splitlines()[-1][:160]}", C_RED)
+                f"Could not open Views: {tb.strip().splitlines()[-1][:160]}", C_RED)
             return
 
         ready = sum(1 for k in VIEW_KINDS if k in self._views_by_kind)
         if self._last_frame is None:
-            self._set_stage("📁  Add a Top, Isometric, or Side view to load the board.")
+            self._set_stage("Add a Top, Isometric, or Side view to load the board.")
         elif self._task_input.toPlainText().strip():
             self._set_stage(f"Board ready ({ready}/3 extra views) — send the task to begin.")
         else:
@@ -10260,10 +10284,10 @@ class AISidebar(QWidget):
     def _on_retry_vision(self):
         """Re-run the last task's full chooser → vision → planner chain."""
         if self._last_frame is None:
-            self._set_stage("⚠️  Nothing to retry — import an image first", C_RED)
+            self._set_stage("Nothing to retry — import an image first", C_RED)
             return
         if not self._chain_task:
-            self._set_stage("⚠️  Type a task and press Run to retry.", C_RED)
+            self._set_stage("Type a task and press Run to retry.", C_RED)
             return
         self._lock(True)
         self._run_view_chooser(self._chain_task)
@@ -10279,7 +10303,7 @@ class AISidebar(QWidget):
             bgr = self._last_frame
         title = VIEW_KINDS.get(kind, {}).get('title', 'Original')
         tail = " for this task…" if self._chain_task else "…"
-        self._set_stage(f"🔍  Analysing the {title.lower()}{tail}")
+        self._set_stage(f"Analysing the {title.lower()}{tail}")
         self._vlog(f"View chosen: {title} ({kind}) · vision model {VISION_MODEL}")
         self.view_chosen.emit(kind, bgr)
         if self._vision_busy():
@@ -10472,7 +10496,7 @@ class AISidebar(QWidget):
             self._launch_planner_final(task, self._grip_points)
             return
         self._pending_grip_task = task
-        self._set_stage("🤖  Working out grip points…")
+        self._set_stage("Working out grip points…")
         w = self._track(GripperAIWorker(self._last_frame, self._object_list))
         w.note.connect(self._vlog)
         w.done.connect(self._on_gripper_ai)
@@ -10514,7 +10538,7 @@ class AISidebar(QWidget):
             # all, even on a run where nothing it found survives into a plan.
             self._chat_message(
                 "A3-Terra",
-                "🤖  **Gripper AI**  ·  found\n"
+                "**Gripper AI**  ·  found\n"
                 + "\n".join(f"• {ln}" for ln in lines),
                 accent=C_CYAN)
         else:
@@ -10580,7 +10604,7 @@ class AISidebar(QWidget):
             self._on_view_chosen(kind, bgr)
             return
         chooser_task = task or DEFAULT_VIEW_TASK
-        self._set_stage("🧭  Choosing the best view" +
+        self._set_stage("Choosing the best view" +
                         (" for this task…" if task else "…"))
         candidates = dict(self._views_by_kind)
         candidates.setdefault('original', self._last_frame)
@@ -10593,7 +10617,7 @@ class AISidebar(QWidget):
     def _on_run(self):
         task = self._task_input.toPlainText().strip()
         if not task:
-            self._set_stage("⚠️  Please describe a task first", C_RED); return
+            self._set_stage("Please describe a task first", C_RED); return
         if self._last_frame is None:
             self._set_stage("Please import an image first so I can analyse the board.", C_RED); return
         self._chat_message("You", task, user=True)
@@ -10627,7 +10651,7 @@ class AISidebar(QWidget):
             self._pending_task = None
             self._lock(False)
             self._set_stage(
-                "🖐  Task requires dexterous manipulation — A3-Terra (parallel gripper) "
+                "Task requires dexterous manipulation — A3-Terra (parallel gripper) "
                 "cannot perform it. Try rephrasing with non-dexterous actions.", C_RED)
             return
         task = self._pending_task
@@ -10655,7 +10679,7 @@ class AISidebar(QWidget):
     def _on_memory_failed(self, err: str):
         """Memory never blocks a run, but it never fails quietly either."""
         self._chat_message(
-            "A3-Terra", f"⚠️  Memory check unavailable ({err}) — nothing was saved "
+            "A3-Terra", f"Memory check unavailable ({err}) — nothing was saved "
                   f"to custom training for this task.", accent=C_AMBER)
 
     def _on_memory_result(self, instruction: str):
@@ -10718,7 +10742,7 @@ class AISidebar(QWidget):
             lines = gripper_ai_lines(applied_grips)
             self._chat_message(
                 "A3-Terra",
-                "🤖  **Gripper AI**  ·  applied to this plan\n"
+                "**Gripper AI**  ·  applied to this plan\n"
                 + "\n".join(f"• {ln}" for ln in lines),
                 accent=C_CYAN)
             self._vlog("Gripper AI substitution:\n" +
@@ -10759,10 +10783,10 @@ class AISidebar(QWidget):
     def set_serial(self, link):
         """Hand the sidebar the shared USB link owned by the main window."""
         self._serial = link
-        link.failed.connect(lambda msg: self._set_stage(f"⚠️  {msg}", C_RED))
+        link.failed.connect(lambda msg: self._set_stage(f"{msg}", C_RED))
         link.sent.connect(
             lambda n, port: self._set_stage(
-                f"🔌  Sent {n} command{'' if n == 1 else 's'} to {port}", C_VIOLET))
+                f"Sent {n} command{'' if n == 1 else 's'} to {port}", C_VIOLET))
 
     def _send_to_hardware(self, plan: str):
         link = getattr(self, "_serial", None)
@@ -10864,21 +10888,22 @@ class AISidebar(QWidget):
         before = (payload or {}).get("before")
         if before is None:
             before = self._err_before
-        after = None
-        if dlg.after_path:
-            after = imread_any(dlg.after_path)
-            if after is None:
-                self._chat_error(
-                    f"Could not read {dlg.after_path}",
-                    "Error Rebounds needs a readable after photo.")
-                return
-        else:
-            after = self._board_bgr()
+        if not dlg.after_path:
+            self._chat_error(
+                "No after photo was chosen.",
+                "Error Rebounds needs an uploaded after photo.")
+            return
+        after = imread_any(dlg.after_path)
+        if after is None:
+            self._chat_error(
+                f"Could not read {dlg.after_path}",
+                "Error Rebounds needs a readable after photo.")
+            return
 
         if before is None or after is None:
             self._chat_error(
                 "Need a before photo (captured when the run started) "
-                "and an after photo (current board, or one you choose).",
+                "and an uploaded after photo.",
                 "Error Rebounds is missing a photo.")
             return
 
@@ -10886,17 +10911,27 @@ class AISidebar(QWidget):
         self._set_stage("Checking with Error Rebounds AI…")
         w = self._track(ErrorReboundWorker(
             task, before, after, (payload or {}).get("object_list", "")))
-        w.done.connect(lambda result, b=button: self._on_err_done(result, b))
+        w.done.connect(lambda result, b=button, t=task, ap=dlg.after_path:
+                       self._on_err_done(result, b, t, ap))
         w.error.connect(lambda err, b=button: self._on_err_failed(err, b))
         w.start()
 
-    def _on_err_done(self, result: dict, button: QPushButton):
+    def _on_err_done(self, result: dict, button: QPushButton,
+                      task: str = "", after_path: str = ""):
         """Print the verifier's own words. Do not touch the plan or history."""
         button.setEnabled(True)
         self._end_thinking()
         verdict = (result or {}).get("verdict", "")
         raw     = (result or {}).get("raw", "") or ""
         reason  = (result or {}).get("reason", "") or ""
+        append_err_history({
+            "task": task,
+            "verdict": verdict,
+            "reason": reason,
+            "model": ERR_MODEL,
+            "image_after": after_path or "",
+            "timestamp": datetime.datetime.now().isoformat(timespec="seconds"),
+        })
         if verdict == "done correctly":
             headline = "Error Rebounds AI  ·  DONE CORRECTLY"
             accent = C_GREEN
@@ -11067,7 +11102,7 @@ class USBCameraDialog(GlassDialog):
             self._target.setStyleSheet(combo_style)
             for kind in VIEWS_TAB_ORDER:
                 self._target.addItem(VIEW_KINDS[kind]["title"].replace(" view", ""), kind)
-            take = pill_button("📷  Take Photo — Use This", height=30)
+            take = pill_button("Take Photo — Use This", height=30)
             take.clicked.connect(self._take_photo)
             cap_row.addWidget(self._target)
             cap_row.addWidget(take, 1)
@@ -11100,7 +11135,7 @@ class USBCameraDialog(GlassDialog):
     # ── take a still photo instead of only picking a live feed ─────────────────
     def _take_photo(self):
         if self._last_frame is None:
-            self._status.setText("⚠️  No live preview yet — pick a camera above first.")
+            self._status.setText("No live preview yet — pick a camera above first.")
             return
         kind = self._target.currentData()
         save_captured_view(self._sidebar, kind, self._last_frame.copy())
@@ -11125,11 +11160,11 @@ class USBCameraDialog(GlassDialog):
         self._list.clear()
         self._cams = enumerate_cameras()
         for idx, name in self._cams:
-            QListWidgetItem(f"📷  {name}   ·   index {idx}", self._list)
+            QListWidgetItem(f"{name}   ·   index {idx}", self._list)
         self._list.blockSignals(False)
 
         if not self._cams:
-            self._status.setText("⚠️  No cameras detected. Plug one in and hit Refresh.")
+            self._status.setText("No cameras detected. Plug one in and hit Refresh.")
             self._preview.setText("No camera detected")
             self._use.setEnabled(False)
             return
@@ -11155,7 +11190,7 @@ class USBCameraDialog(GlassDialog):
         if not cap.isOpened():
             cap.release()
             self._preview.setText("Could not open this camera")
-            self._status.setText(f"⚠️  {name} is busy or unavailable")
+            self._status.setText(f"{name} is busy or unavailable")
             return
         self._cap = cap
         self._status.setText(f"Previewing {name}")
@@ -11453,7 +11488,7 @@ class SettingsPanel(QWidget):
         card.add(self._row("Clean up dictation", self._tidy,
                            "A second pass that strips hesitations from what you said."))
 
-        note = QLabel("🎙 button dictates into the box; right ⌥ dictates and sends.")
+        note = QLabel("The mic button dictates into the box; right ⌥ dictates and sends.")
         note.setWordWrap(True)
         note.setFont(QFont(UI_FONT, 8))
         note.setStyleSheet(f"color:{C_TEXT_DIM};background:transparent;border:none;")
@@ -11611,8 +11646,98 @@ VIEW_KINDS = {
     },
 }
 
-# Tab order for the Views upload popup.
-VIEWS_TAB_ORDER = ("top", "isometric", "side")
+# The three angles that ship built in — everything else in VIEW_KINDS is a
+# user-added custom view (named on its own tab, not fixed at start-up).
+BUILTIN_VIEW_KINDS = frozenset(VIEW_KINDS)
+
+# Tab order for the Views upload popup. Mutable — custom views appended by
+# add_view_kind() land at the end, after the three built-in angles.
+VIEWS_TAB_ORDER = ["top", "isometric", "side"]
+
+# Same set of kinds the automatic view chooser is allowed to pick from —
+# kept in sync with VIEWS_TAB_ORDER whenever a custom view is added.
+VIEW_CHOOSER_ORDER = ["original", "top", "side", "isometric"]
+
+CUSTOM_VIEWS_PATH = os.path.join(VIEWS_CACHE_DIR, "custom_views.json")
+
+
+def _slugify_view_name(name: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "_", name.strip().lower()).strip("_")
+    return slug or "view"
+
+
+def add_view_kind(display_name: str) -> str:
+    """Register a new, user-named camera angle. Returns its kind key.
+
+    Slugifies the display name into a unique dict key, adds it to
+    VIEW_KINDS/VIEWS_TAB_ORDER/VIEW_CHOOSER_ORDER so every place that already
+    loops over those (the Views popup, Connect Camera for Views, the AI view
+    chooser, scene save/load) picks it up with no further wiring, and
+    persists it so it survives an app restart.
+    """
+    display_name = display_name.strip() or "Custom view"
+    base = _slugify_view_name(display_name)
+    kind = base
+    n = 2
+    while kind in VIEW_KINDS:
+        kind = f"{base}_{n}"
+        n += 1
+    VIEW_KINDS[kind] = {
+        "title": display_name,
+        "angle": f"a custom view labelled '{display_name}'",
+    }
+    VIEWS_TAB_ORDER.append(kind)
+    VIEW_CHOOSER_ORDER.append(kind)
+    _save_custom_views()
+    return kind
+
+
+def remove_view_kind(kind: str) -> None:
+    """Delete a custom view kind everywhere it's referenced. Built-in kinds
+    (top/side/isometric) refuse silently — they aren't user-removable."""
+    if kind in BUILTIN_VIEW_KINDS or kind not in VIEW_KINDS:
+        return
+    del VIEW_KINDS[kind]
+    if kind in VIEWS_TAB_ORDER:
+        VIEWS_TAB_ORDER.remove(kind)
+    if kind in VIEW_CHOOSER_ORDER:
+        VIEW_CHOOSER_ORDER.remove(kind)
+    _save_custom_views()
+
+
+def _save_custom_views() -> None:
+    """Persist every non-built-in view kind so custom angles survive a restart."""
+    custom = {k: v for k, v in VIEW_KINDS.items() if k not in BUILTIN_VIEW_KINDS}
+    try:
+        os.makedirs(VIEWS_CACHE_DIR, exist_ok=True)
+        tmp = CUSTOM_VIEWS_PATH + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump({"order": [k for k in VIEWS_TAB_ORDER if k in custom],
+                       "kinds": custom}, f, indent=0)
+        os.replace(tmp, CUSTOM_VIEWS_PATH)
+    except Exception:
+        pass
+
+
+def _load_custom_views() -> None:
+    """Restore custom view kinds saved by a previous session, in order."""
+    try:
+        with open(CUSTOM_VIEWS_PATH, encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        return
+    kinds = data.get("kinds", {}) if isinstance(data, dict) else {}
+    order = data.get("order", []) if isinstance(data, dict) else []
+    for kind in order:
+        info = kinds.get(kind)
+        if not isinstance(info, dict) or kind in VIEW_KINDS:
+            continue
+        VIEW_KINDS[kind] = info
+        VIEWS_TAB_ORDER.append(kind)
+        VIEW_CHOOSER_ORDER.append(kind)
+
+
+_load_custom_views()
 
 
 class CameraCaptureDialog(GlassDialog):
@@ -11664,7 +11789,7 @@ class CameraCaptureDialog(GlassDialog):
         btn_row = QHBoxLayout(); btn_row.setSpacing(8)
         cancel = pill_button("Cancel", height=32)
         cancel.clicked.connect(self.reject)
-        capture = pill_button("📷  Capture photo", primary=True, height=32)
+        capture = pill_button("Capture photo", primary=True, height=32)
         capture.clicked.connect(self._capture)
         btn_row.addWidget(cancel); btn_row.addStretch(1); btn_row.addWidget(capture)
         root.addLayout(btn_row)
@@ -11684,7 +11809,7 @@ class CameraCaptureDialog(GlassDialog):
             self._picker.addItem(f"{name}  ·  index {idx}", idx)
         self._picker.blockSignals(False)
         if not cams:
-            self._status.setText("⚠️  No cameras detected. Plug one in and hit ⟳.")
+            self._status.setText("No cameras detected. Plug one in and hit ⟳.")
             self._preview.setText("No camera detected")
             return
         i = self._picker.findData(keep)
@@ -11701,7 +11826,7 @@ class CameraCaptureDialog(GlassDialog):
         if not cap.isOpened():
             cap.release()
             self._preview.setText("Could not open this camera")
-            self._status.setText("⚠️  Camera is busy or unavailable")
+            self._status.setText("Camera is busy or unavailable")
             return
         self._cap = cap
         self._status.setText("Live")
@@ -11726,7 +11851,7 @@ class CameraCaptureDialog(GlassDialog):
 
     def _capture(self):
         if self._last_frame is None:
-            self._status.setText("⚠️  No live frame yet — pick a camera first.")
+            self._status.setText("No live frame yet — pick a camera first.")
             return
         self.captured_frame = self._last_frame.copy()
         self.accept()
@@ -11768,10 +11893,10 @@ class ViewsUploadPopup(GlassDialog):
 
     def __init__(self, sidebar, parent=None):
         super().__init__("Views", parent,
-                          subtitle="Add at least one of the top, isometric, or side views of "
-                                   "the board for more accurate analysis - the other two are "
-                                   "optional but recommended. Capture from a second USB camera "
-                                   "instead of a file via View ▸ Connect Camera for Views.",
+                          subtitle="Add at least one view of the board (Top, Isometric, Side, "
+                                   "or a custom angle you name yourself) for more accurate "
+                                   "analysis. Capture from a second USB camera instead of a "
+                                   "file via View ▸ Connect Camera for Views.",
                           width=420)
         self.resize(420, 460)
         self._sidebar = sidebar
@@ -11792,15 +11917,59 @@ class ViewsUploadPopup(GlassDialog):
             QTabBar::tab:hover{{background:rgba(255,255,255,0.7);color:{C_TEXT};}}
             QTabWidget::pane{{border:1.5px solid {C_BORDER};border-radius:22px;
                 background:rgba(255,255,255,0.45);top:0px;}}
+            QTabBar::tab:last{{background:{C_BTN};color:{C_BTN_FG};
+                padding:8px 16px;}}
+            QTabBar::tab:last:hover{{background:{C_BTN_HOVER};}}
+            QTabBar::tab:last:selected{{background:{C_BTN};color:{C_BTN_FG};}}
         """)
         root.addWidget(self._tabs, 1)
 
+        # The "+" is a real tab that always sits last, right after Side —
+        # tabBarClicked below intercepts it before Qt settles there, so it
+        # reads as "part of the tab row" instead of a detached button.
+        self._tabs.tabBarClicked.connect(self._on_tab_bar_clicked)
+        self._tabs.tabBar().setContextMenuPolicy(Qt.CustomContextMenu)
+        self._tabs.tabBar().customContextMenuRequested.connect(
+            self._on_tab_context_menu)
+
         self._previews = {}
         self._hints = {}
+        self._build_tabs()
+
+        self._requirement = QLabel("")
+        self._requirement.setWordWrap(True)
+        self._requirement.setFont(QFont(UI_FONT, 9))
+        root.addWidget(self._requirement)
+
+        self._done = pill_button("Done", primary=True, height=30)
+        self._done.clicked.connect(self.accept)
+        foot = QHBoxLayout(); foot.addStretch(1); foot.addWidget(self._done)
+        root.addLayout(foot)
+
+        self._update_requirement()
+
+    def _build_tabs(self):
+        """(Re)populate one tab per known view kind, in VIEWS_TAB_ORDER."""
+        self._tabs.clear()
+        self._previews.clear()
+        self._hints.clear()
+        self._name_edits = {}
+        self._update_btns = {}
         for kind in VIEWS_TAB_ORDER:
             title = VIEW_KINDS[kind]["title"]
             page = QWidget()
             lay = QVBoxLayout(page)
+
+            if kind not in BUILTIN_VIEW_KINDS:
+                # Custom views are named right here, on the same page as the
+                # upload — no separate naming step before or after the photo.
+                name_edit = QLineEdit(title)
+                name_edit.setPlaceholderText("Name this view…")
+                name_edit.setFont(QFont(UI_FONT, 10))
+                name_edit.editingFinished.connect(
+                    lambda k=kind: self._rename_view(k))
+                lay.addWidget(name_edit)
+                self._name_edits[kind] = name_edit
 
             img = QLabel("No image uploaded")
             img.setAlignment(Qt.AlignCenter)
@@ -11820,19 +11989,80 @@ class ViewsUploadPopup(GlassDialog):
 
             self._previews[kind] = img
             self._hints[kind] = status
+            self._update_btns[kind] = btn
             self._tabs.addTab(page, title.replace(" view", ""))
 
-        self._requirement = QLabel("")
-        self._requirement.setWordWrap(True)
-        self._requirement.setFont(QFont(UI_FONT, 9))
-        root.addWidget(self._requirement)
-
-        self._done = pill_button("Done", primary=True, height=30)
-        self._done.clicked.connect(self.accept)
-        foot = QHBoxLayout(); foot.addStretch(1); foot.addWidget(self._done)
-        root.addLayout(foot)
-
+        self._tabs.addTab(QWidget(), "+")
         self._prime_from_sidebar()
+
+    def _on_tab_bar_clicked(self, index: int):
+        """The "+" tab is always last — intercept a click on it before Qt
+        settles there, so the tab selection never actually lands on it.
+        Adds the new view immediately, with a default name editable right
+        on its page, rather than asking for a name in a dialog first."""
+        if index != self._tabs.count() - 1:
+            return
+        n = sum(1 for k in VIEWS_TAB_ORDER if k not in BUILTIN_VIEW_KINDS) + 1
+        kind = add_view_kind(f"Custom view {n}")
+        self._build_tabs()
+        self._tabs.setCurrentIndex(VIEWS_TAB_ORDER.index(kind))
+        self._update_requirement()
+        edit = self._name_edits.get(kind)
+        if edit is not None:
+            edit.selectAll()
+            edit.setFocus()
+
+    def _rename_view(self, kind: str):
+        edit = self._name_edits.get(kind)
+        if edit is None:
+            return
+        text = edit.text().strip()
+        if not text:
+            edit.setText(VIEW_KINDS[kind]["title"])
+            return
+        VIEW_KINDS[kind]["title"] = text
+        VIEW_KINDS[kind]["angle"] = f"a custom view labelled '{text}'"
+        _save_custom_views()
+        idx = VIEWS_TAB_ORDER.index(kind)
+        self._tabs.setTabText(idx, text.replace(" view", ""))
+        btn = self._update_btns.get(kind)
+        if btn is not None:
+            btn.setText(f"Update {text.lower()}")
+
+    def _on_tab_context_menu(self, pos):
+        """Right-click a tab to rename or delete it. Built-in angles (Top /
+        Isometric / Side) are neither - only views the operator added."""
+        bar = self._tabs.tabBar()
+        idx = bar.tabAt(pos)
+        if idx < 0 or idx >= len(VIEWS_TAB_ORDER):
+            return
+        kind = VIEWS_TAB_ORDER[idx]
+        if kind in BUILTIN_VIEW_KINDS:
+            return
+        menu = QMenu(self)
+        rename_act = menu.addAction("Rename")
+        delete_act = menu.addAction("Delete")
+        chosen = menu.exec(bar.mapToGlobal(pos))
+        if chosen is rename_act:
+            self._tabs.setCurrentIndex(idx)
+            edit = self._name_edits.get(kind)
+            if edit is not None:
+                edit.selectAll()
+                edit.setFocus()
+        elif chosen is delete_act:
+            self._delete_view(kind)
+
+    def _delete_view(self, kind: str):
+        reply = QMessageBox.question(
+            self, "Delete view",
+            f"Delete \"{VIEW_KINDS[kind]['title']}\"? Its uploaded photo, "
+            "if any, is removed too.",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply != QMessageBox.Yes:
+            return
+        self._sidebar._views_by_kind.pop(kind, None)
+        remove_view_kind(kind)
+        self._build_tabs()
         self._update_requirement()
 
     def _prime_from_sidebar(self):
@@ -11915,8 +12145,7 @@ class ViewsUploadPopup(GlassDialog):
             self._requirement.setText("✓ At least one view added.")
             self._requirement.setStyleSheet(f"color:{C_GREEN};background:transparent;")
         else:
-            self._requirement.setText(
-                "Add at least one view (Top, Isometric, or Side) to continue.")
+            self._requirement.setText("Add at least one view to continue.")
             self._requirement.setStyleSheet(f"color:{C_AMBER};background:transparent;")
 
 
@@ -11978,7 +12207,7 @@ class CamViewCaptureDialog(GlassDialog):
         target_row.addWidget(self._target, 1)
         root.addLayout(target_row)
 
-        capture = pill_button("📷  Capture photo", primary=True, height=32)
+        capture = pill_button("Capture photo", primary=True, height=32)
         capture.clicked.connect(self._capture)
         root.addWidget(capture)
 
@@ -11997,7 +12226,7 @@ class CamViewCaptureDialog(GlassDialog):
             self._picker.addItem(f"{name}  ·  index {idx}", idx)
         self._picker.blockSignals(False)
         if not cams:
-            self._status.setText("⚠️  No cameras detected. Plug one in and hit ⟳.")
+            self._status.setText("No cameras detected. Plug one in and hit ⟳.")
             self._preview.setText("No camera detected")
             return
         i = self._picker.findData(keep)
@@ -12016,7 +12245,7 @@ class CamViewCaptureDialog(GlassDialog):
         if not cap.isOpened():
             cap.release()
             self._preview.setText("Could not open this camera")
-            self._status.setText("⚠️  Camera is busy or unavailable")
+            self._status.setText("Camera is busy or unavailable")
             return
         self._cap = cap
         self._status.setText("Live")
@@ -12044,7 +12273,7 @@ class CamViewCaptureDialog(GlassDialog):
 
     def _capture(self):
         if self._last_frame is None:
-            self._status.setText("⚠️  No live frame yet — pick a camera first.")
+            self._status.setText("No live frame yet — pick a camera first.")
             return
         kind = self._target.currentData()
         bgr  = self._last_frame.copy()
@@ -12699,8 +12928,9 @@ def _format_views_error(err) -> str:
 # ─────────────────────────────────────────────────────────────────────────────
 #  View chooser  —  shown all camera angles on hand, picks the one best suited
 #  to the task at hand before vision ever runs on it.
+#  VIEW_CHOOSER_ORDER itself lives up near VIEW_KINDS, since add_view_kind()
+#  appends to it too.
 # ─────────────────────────────────────────────────────────────────────────────
-VIEW_CHOOSER_ORDER = ("original", "top", "side", "isometric")
 
 # Used for the import-time pass, which runs before any task exists — picks
 # whichever angle serves general object identification and localisation best.
@@ -13302,7 +13532,7 @@ class AprilTagCalibrationDialog(GlassDialog):
         self._cam_pick.clear()
         self._cams = enumerate_cameras()
         for idx, name in self._cams:
-            self._cam_pick.addItem(f"📷  {name}  ·  index {idx}", idx)
+            self._cam_pick.addItem(f"{name}  ·  index {idx}", idx)
         if not self._cams:
             self._cam_pick.addItem("No cameras detected", None)
         self._cam_pick.blockSignals(False)
@@ -13779,7 +14009,7 @@ class HardwareConnectDialog(GlassDialog):
         cal_note.setStyleSheet(f"color:{C_TEXT_DIM};background:transparent;")
         root.addWidget(cal_note)
 
-        cal_btn = pill_button("🎯  AprilTag Calibration…", height=30)
+        cal_btn = pill_button("AprilTag Calibration…", height=30)
         cal_btn.clicked.connect(self._open_apriltag_calibration)
         cal_row = QHBoxLayout(); cal_row.addWidget(cal_btn); cal_row.addStretch(1)
         root.addLayout(cal_row)
@@ -13857,7 +14087,7 @@ class HardwareConnectDialog(GlassDialog):
         self._baud.setEnabled(not open_now)
 
         if pyserial is None:
-            self._set_status(f"⚠️  pyserial not installed — {SERIAL_IMPORT_ERROR}", C_RED)
+            self._set_status(f"pyserial not installed — {SERIAL_IMPORT_ERROR}", C_RED)
         elif open_now and self._link.enabled:
             self._set_status(f"● Armed — plans go to {self._link.port_name()} "
                              f"@ {self._link.baud()}", C_GREEN)
@@ -13872,7 +14102,7 @@ class HardwareConnectDialog(GlassDialog):
         self._status.setStyleSheet(f"color:{color};background:transparent;")
 
     def _show_error(self, message: str):
-        self._set_status(f"⚠️  {message}", C_RED)
+        self._set_status(f"{message}", C_RED)
 
     # ── camera (piggybacks on the CameraPanel that feeds main vision) ──────────
     def _refresh_cam_state(self):
@@ -13936,7 +14166,7 @@ class CameraPanel(QWidget):
             f"QPushButton:disabled{{background:rgba(255,255,255,0.6);"
             f"color:{C_TEXT_DIM};}}")
 
-        self._import_btn = pill_button("📁  Import Image", primary=False, height=34)
+        self._import_btn = pill_button("Import Image", primary=False, height=34)
         self._import_btn.setStyleSheet(white_pill)
         self._import_btn.clicked.connect(self._sidebar.open_views_popup)
 
@@ -14086,7 +14316,7 @@ class CameraPanel(QWidget):
         self.stop_camera()          # a still image replaces the live feed
         bgr = imread_any(path)
         if bgr is None:
-            self._status.setText("⚠️  Could not read file")
+            self._status.setText("Could not read file")
             self._status.setStyleSheet("color:#fca5a5;background:transparent;")
             return False
         return self.load_bgr(bgr, label=os.path.basename(path))

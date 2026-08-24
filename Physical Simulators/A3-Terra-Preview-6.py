@@ -41,6 +41,8 @@ BUILD_CONFIG_PATH        = os.path.join(HOS_DATA_DIR, "build_config.json")
 UI_SETTINGS_PATH         = os.path.join(HOS_DATA_DIR, "ui_settings.json")
 API_KEY_PATH             = os.path.join(HOS_DATA_DIR, "api_key.json")
 ERR_HISTORY_PATH         = os.path.join(HOS_DATA_DIR, "error_rebounds_test_results.json")
+TASK_FEEDBACK_PATH       = os.path.join(HOS_DATA_DIR, "task_feedback.json")
+LEARNED_SKILLS_PATH      = os.path.join(HOS_DATA_DIR, "learned_skills.json")
 
 
 class _ApiKeyBus(QObject):
@@ -481,12 +483,14 @@ def _col_label_to_index(label: str):
 COL_LABELS   = [_col_index_to_label(i) for i in range(COLS)]
 ROW_LABELS   = [str(i + 1)             for i in range(ROWS)]
 
-TOUCH_THRESHOLD = 0.15
+TOUCH_THRESHOLD = 0.28
 REL_FALLBACK    = 0.45
 SMALL_OBJ_CELLS = 1.5
 SMALL_TOUCH_THR = 0.45
 PADDING_KEEP_MIN = 0.55
-MAX_TOUCH_CELLS = COLS * ROWS
+MAX_TOUCH_CELLS_SLACK = 1.6
+MAX_TOUCH_CELLS_PAD   = 6
+SURFACE_MAX_CELLS = COLS * ROWS
 POLY_SAMPLES    = 10
 
 IMG_MAX_SIDE = 1536
@@ -519,6 +523,19 @@ LARGE_SUBJECTS    = (
 )
 VERIFY_MAX_TRAVEL = 0.25
 UNKNOWN_MIN_AREA  = 0.006
+GLOBAL_OFFSET_MIN_PAIRS = 3
+GLOBAL_OFFSET_MIN       = 8.0
+GLOBAL_OFFSET_MAX       = 120.0
+SEG_EDGE_FRAC     = 0.010
+SEG_BG_MODES      = 3
+SEG_MODE_MIN_FRAC = 0.08
+BG_LEAK_OK        = 0.05
+BG_LEAK_MAX       = 0.15
+SEG_COVER_MAX     = 0.60
+SEG_THICK_MIN     = 0.012
+SEG_SUBSTANCE_MIN = 0.010
+SPLIT_MIN_PEAK    = 0.55
+SPLIT_MIN_PART    = 0.18
 
 C_BG        = "#f4f6fb"
 C_PANEL     = "rgba(255,255,255,0.55)"
@@ -1135,23 +1152,202 @@ def _bg_reference(bgr):
     return lab, np.median(ring.astype(np.float32), axis=0)
 
 
-def foreground_mask(bgr):
-    """Binary mask of 'things that are not the background'."""
+def _edge_foreground(bgr):
+    """Edge-derived foreground, for backgrounds one colour cannot describe.
+
+    The Lab-distance mask below models the background as a SINGLE reference
+    colour. On a wood grain, a patterned cloth or a two-tone counter that model
+    has no right answer: Otsu splits the pattern rather than the objects, and
+    the mask comes back as everything or nothing. Object edges survive all
+    three, so when the colour route gives up this one still has something to
+    say. Closed contours are filled by flooding in from a corner and inverting.
+    """
     h, w = bgr.shape[:2]
-    lab, ref = _bg_reference(bgr)
-    dist = np.linalg.norm(lab.astype(np.float32) - ref[None, None, :], axis=2)
-    dist = cv2.GaussianBlur(dist, (0, 0), max(1.0, min(h, w) / 300.0))
+    g = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+    g = cv2.bilateralFilter(g, 7, 50, 50)
+    med = float(np.median(g))
+    e = cv2.Canny(g, int(max(0, 0.66 * med)), int(min(255, 1.33 * med)))
+    k = max(3, int(round(min(h, w) * SEG_EDGE_FRAC)) | 1)
+    kern = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (k, k))
+    e = cv2.morphologyEx(cv2.dilate(e, kern), cv2.MORPH_CLOSE, kern)
 
-    d8 = np.clip(dist / max(1e-6, dist.max()) * 255.0, 0, 255).astype(np.uint8)
-    thr, mask = cv2.threshold(d8, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-
-    if mask.mean() > 255 * 0.80:
+    ff = e.copy()
+    cv2.floodFill(ff, np.zeros((h + 2, w + 2), np.uint8), (0, 0), 255)
+    filled = cv2.morphologyEx(e | cv2.bitwise_not(ff), cv2.MORPH_OPEN, kern)
+    # A corner that happens to sit INSIDE an object inverts the whole picture.
+    # That shows up as a mask covering nearly everything, and is not worth
+    # trying to repair — an unusable mask is better than a confidently wrong one.
+    if filled.mean() > 255 * 0.80 or not filled.any():
         return np.zeros((h, w), np.uint8)
+    return filled
 
+
+def _fill_holes(mask):
+    """Close enclosed gaps so a blob is the object, not a ring around it.
+
+    A dark rim on a pale object (a plate's shadow line, a lid seam) thresholds
+    as foreground while the object's own face reads as background, leaving an
+    annulus. Its contour is still right, but its area and centroid are not, and
+    both feed the match score. Flooding from a border added around the frame —
+    rather than from pixel (0,0) — keeps this correct when an object sits in the
+    corner of the picture.
+    """
+    h, w = mask.shape[:2]
+    pad = cv2.copyMakeBorder(mask, 1, 1, 1, 1, cv2.BORDER_CONSTANT, value=0)
+    cv2.floodFill(pad, np.zeros((h + 4, w + 4), np.uint8), (0, 0), 255)
+    return mask | cv2.bitwise_not(pad)[1:-1, 1:-1]
+
+
+def _mask_leak(mask):
+    """Fraction of the frame's own border the mask sits on.
+
+    This is the tell for a background that has been segmented AS the objects.
+    Real objects rest inside the picture and touch an edge only where one runs
+    out of frame; a countertop, a tiled wall or a blurred kitchen behind the
+    subject runs along the border for most of its length. Measured on the
+    border alone it separates the two cleanly on the example scenes — good
+    masks come in at or below 3%, leaked ones at 30% and up — where whole-frame
+    coverage does not, because a big legitimate subject is also large.
+    """
+    if mask is None or not mask.size:
+        return 1.0
+    edge = np.concatenate([mask[0], mask[-1], mask[:, 0], mask[:, -1]])
+    return float((edge > 0).mean())
+
+
+def _mask_substance(mask):
+    """Fraction of the frame held by blobs that could actually BE objects.
+
+    The edge route can pass the border-leak test while carrying nothing usable:
+    on a blurred kitchen backdrop it returns a scatter of one-pixel-wide
+    slivers along every plank and tile. Each is small, none touches the border,
+    and a sliver that lands near a real object can still steal its snap. An
+    object has WIDTH, so the test is thickness — twice the area over the
+    perimeter, which is the average radius of the shape. Solidity does not work
+    here: a straight sliver is its own convex hull and scores near 1.0.
+    """
+    if mask is None or not mask.any():
+        return 0.0
+    h, w = mask.shape[:2]
+    area = float(h * w)
+    n, lab, stats, _ = cv2.connectedComponentsWithStats((mask > 0).astype(np.uint8), 8)
+    total = 0.0
+    for i in range(1, n):
+        a = float(stats[i, cv2.CC_STAT_AREA])
+        frac = a / area
+        if frac < SEG_MIN_AREA_FRAC or frac > SEG_MAX_AREA_FRAC:
+            continue
+        cnts, _ = cv2.findContours((lab == i).astype(np.uint8),
+                                   cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if not cnts:
+            continue
+        per = cv2.arcLength(max(cnts, key=cv2.contourArea), True)
+        if per <= 0.0:
+            continue
+        if (2.0 * a / per) / min(h, w) >= SEG_THICK_MIN:
+            total += frac
+    return total
+
+
+def _clean_mask(mask, bgr):
+    h, w = bgr.shape[:2]
     k = max(3, int(round(min(h, w) * SEG_CLOSE_FRAC)) | 1)
     kern = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (k, k))
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kern)
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kern)
+    return _fill_holes(mask)
+
+
+def _distance_mask(bgr, modes):
+    """Threshold on distance to the NEAREST of `modes` background colours.
+
+    One median colour describes a seamless sweep. It cannot describe a scene
+    whose border ring spans a wooden counter AND the wall behind it: the median
+    lands between the two, both read as foreground, and the background is
+    returned as the objects. Clustering the ring and taking the minimum
+    distance lets a background be several colours at once.
+    """
+    h, w = bgr.shape[:2]
+    lab, ref = _bg_reference(bgr)
+    if modes <= 1:
+        refs = ref[None, :]
+    else:
+        b = max(2, int(round(min(h, w) * SEG_BORDER_FRAC)))
+        ring = np.concatenate([
+            lab[:b].reshape(-1, 3), lab[-b:].reshape(-1, 3),
+            lab[:, :b].reshape(-1, 3), lab[:, -b:].reshape(-1, 3),
+        ]).astype(np.float32)
+        if len(ring) > 20000:
+            ring = ring[::max(1, len(ring) // 20000)]
+        uniq = min(modes, len(np.unique(ring, axis=0)))
+        if uniq < 2:
+            refs = ref[None, :]
+        else:
+            crit = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 20, 1.0)
+            _, labels, centers = cv2.kmeans(ring, uniq, None, crit, 3,
+                                            cv2.KMEANS_PP_CENTERS)
+            counts = np.bincount(labels.ravel(), minlength=uniq)
+            # A cluster made of a handful of border pixels is an object poking
+            # into the ring, not a background mode. Excusing it would erase
+            # that object.
+            refs = centers[counts >= SEG_MODE_MIN_FRAC * len(ring)]
+            if not len(refs):
+                refs = ref[None, :]
+
+    f = lab.astype(np.float32)
+    dist = np.min(np.stack([np.linalg.norm(f - r[None, None, :], axis=2)
+                            for r in refs]), axis=0)
+    dist = cv2.GaussianBlur(dist, (0, 0), max(1.0, min(h, w) / 300.0))
+    d8 = np.clip(dist / max(1e-6, dist.max()) * 255.0, 0, 255).astype(np.uint8)
+    _, mask = cv2.threshold(d8, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    return mask
+
+
+def foreground_mask(bgr):
+    """Binary mask of 'things that are not the background'.
+
+    Three ways of asking the question, tried in order of how much they assume:
+    one background colour, several, then colour ignored entirely in favour of
+    edges. The first that does not leak onto the frame border wins, so a scene
+    the simple route already handles is segmented exactly as before and the
+    harder routes only ever see the scenes it fails.
+
+    Returning an empty mask is a real answer, not a failure to answer: it means
+    none of the three could tell object from background, and the caller must
+    fall back to the model's own outlines rather than snap to nonsense.
+    """
+    h, w = bgr.shape[:2]
+    tried = []
+    for label, raw in (("colour", lambda: _distance_mask(bgr, 1)),
+                       ("multi-colour", lambda: _distance_mask(bgr, SEG_BG_MODES)),
+                       ("edges", lambda: _edge_foreground(bgr))):
+        mask = raw()
+        if mask is None or not mask.any():
+            continue
+        mask = _clean_mask(mask, bgr)
+        cover, leak = float((mask > 0).mean()), _mask_leak(mask)
+        if cover < 0.005 or cover > SEG_COVER_MAX:
+            continue
+        if _mask_substance(mask) < SEG_SUBSTANCE_MIN:
+            print(f"[cv] {label} segmentation found only slivers — skipped")
+            continue
+        if leak <= BG_LEAK_OK:
+            if tried:
+                print(f"[cv] {label} segmentation used "
+                      f"(after {', '.join(t[0] for t in tried)})")
+            return mask
+        tried.append((label, mask, leak))
+
+    if not tried:
+        print("[cv] no usable foreground mask — outlines will not be snapped")
+        return np.zeros((h, w), np.uint8)
+
+    label, mask, leak = min(tried, key=lambda t: t[2])
+    if leak > BG_LEAK_MAX:
+        print(f"[cv] every mask leaks onto the frame border (best: {label} at "
+              f"{leak * 100:.0f}%) — treating segmentation as unusable")
+        return np.zeros((h, w), np.uint8)
+    print(f"[cv] {label} segmentation used, {leak * 100:.0f}% border leak")
     return mask
 
 
@@ -1177,32 +1373,14 @@ def segment_blobs(bgr):
         if frac < SEG_MIN_AREA_FRAC or frac > SEG_MAX_AREA_FRAC:
             continue
         comp = (labels == i).astype(np.uint8)
-        cnts, _ = cv2.findContours(comp, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        if not cnts:
-            continue
-        cnt = max(cnts, key=cv2.contourArea)
-        eps = 0.006 * cv2.arcLength(cnt, True)
-        appr = cv2.approxPolyDP(cnt, eps, True).reshape(-1, 2)
-        if len(appr) < 3:
-            continue
-        if len(appr) > 14:
-            step = len(appr) / 14.0
-            appr = np.array([appr[int(j * step)] for j in range(14)])
-        poly = [[float(x) / w * 1000.0, float(y) / h * 1000.0] for x, y in appr]
-        x0, y0 = stats[i, cv2.CC_STAT_LEFT], stats[i, cv2.CC_STAT_TOP]
-        blobs.append({
-            'poly':     poly,
-            'mask':     comp,
-            'area_px':  area,
-            'area_frac': frac,
-            'centroid': (float(cents[i][0]) / w * 1000.0,
-                         float(cents[i][1]) / h * 1000.0),
-            'bbox':     [float(x0) / w * 1000.0,
-                         float(y0) / h * 1000.0,
-                         float(x0 + stats[i, cv2.CC_STAT_WIDTH])  / w * 1000.0,
-                         float(y0 + stats[i, cv2.CC_STAT_HEIGHT]) / h * 1000.0],
-            'used':     False,
-        })
+        parts = split_by_shape(comp, bgr)
+        if len(parts) > 1:
+            print(f"[cv] blob at {frac * 100:.0f}% of frame separated into "
+                  f"{len(parts)} touching objects")
+        for pm in parts:
+            nb = _blob_from_mask(pm, (h, w))
+            if nb and SEG_MIN_AREA_FRAC <= nb['area_frac'] <= SEG_MAX_AREA_FRAC:
+                blobs.append(nb)
     blobs.sort(key=lambda b: -b['area_px'])
     return blobs, mask
 
@@ -1244,6 +1422,66 @@ def _blob_from_mask(comp, shape_hw):
                       float(xs.max()) / w * 1000.0, float(ys.max()) / h * 1000.0],
         'used':      False,
     }
+
+
+def split_by_shape(comp, bgr=None):
+    """One connected component → its natural parts, by shape alone.
+
+    Objects that touch in the photo merge into a single connected component,
+    and a component can only ever be snapped to one object, so the second
+    object silently loses its outline. split_touching_blobs already separates
+    them WHEN two model outlines both land on the blob — but that needs the
+    model to have been roughly right about both, which is the assumption in
+    doubt. This runs first and needs nothing but the shape.
+
+    Three plates in a row make one component with three fat middles joined by
+    thin necks. The distance transform turns that into three peaks with low
+    ground between them, so thresholding it at a fraction of the tallest peak
+    isolates one core per plate, and a watershed from those cores cuts at the
+    necks. A single object — however long or irregular — has one plateau and
+    yields one core, so it passes through untouched.
+
+    The watershed runs on the PHOTO where one is supplied, not on the binary
+    shape, so the cut follows the seam actually visible between the two objects
+    rather than the midpoint of the neck. With no photo it still works, just
+    less precisely.
+
+    Known limitation: this reads shape, so a genuinely single object with a
+    waist — a dumbbell, an hourglass, a figure-of-eight cushion — comes back as
+    two. Snapping is where that is caught: two halves each score worse against
+    the model's outline than the whole did, and a weak match is left unsnapped
+    rather than applied.
+    """
+    area = float(np.count_nonzero(comp))
+    if area <= 0.0:
+        return [comp]
+    dt = cv2.distanceTransform(comp, cv2.DIST_L2, 5)
+    peak = float(dt.max())
+    if peak <= 0.0:
+        return [comp]
+    cores = (dt >= SPLIT_MIN_PEAK * peak).astype(np.uint8)
+    n, lab = cv2.connectedComponents(cores)
+    # A core smaller than 1% of the blob is a bump on the outline, not the
+    # heart of a second object.
+    keep = [i for i in range(1, n) if np.count_nonzero(lab == i) >= 0.01 * area]
+    if len(keep) < 2:
+        return [comp]
+
+    markers = np.zeros(comp.shape, np.int32)
+    markers[comp == 0] = 1
+    for k, i in enumerate(keep):
+        markers[lab == i] = 2 + k
+    canvas = bgr if bgr is not None and bgr.shape[:2] == comp.shape[:2] \
+             else cv2.cvtColor(comp * 255, cv2.COLOR_GRAY2BGR)
+    cv2.watershed(np.ascontiguousarray(canvas), markers)
+
+    parts = [pm for pm in
+             (((markers == 2 + k) & (comp > 0)).astype(np.uint8)
+              for k in range(len(keep)))
+             if np.count_nonzero(pm) >= SPLIT_MIN_PART * area]
+    # An all-or-nothing result: a split that only carved off one usable piece
+    # has thrown the rest of the blob away, which is worse than not splitting.
+    return parts if len(parts) >= 2 else [comp]
 
 
 def split_touching_blobs(objs, bgr, blobs):
@@ -1346,6 +1584,49 @@ def _is_small_object(poly):
     return poly_area(poly) <= SMALL_OBJ_CELLS * (1000.0 / COLS) * (1000.0 / ROWS)
 
 
+def apply_global_offset(objs, disp):
+    """Shift the outlines that never snapped by the bias the snapped ones show.
+
+    The model reads the burnt-in ruler with a bias that is largely the SAME for
+    every object in one image — everything comes back a little high, or a little
+    left. Snapping fixes that per object, but only for objects that matched a
+    blob confidently; with snapping off, only sub-cell objects match at all, and
+    the big ones keep the full error even though the small ones just measured it.
+
+    So: take the median displacement of the matches (median, not mean — one bad
+    pair should not steer the frame), and translate everything else by it. The
+    guards matter more than the maths. Under GLOBAL_OFFSET_MIN_PAIRS matches
+    there is no consensus, only a coincidence. Under GLOBAL_OFFSET_MIN units the
+    bias is within the measurement noise and moving things would add error.
+    Over GLOBAL_OFFSET_MAX the matches are wrong, not biased — a real ruler
+    misread does not put an object a tenth of the frame away — so the honest
+    answer is to leave the outlines alone.
+    """
+    if len(disp) < GLOBAL_OFFSET_MIN_PAIRS:
+        return 0.0, 0.0
+    dx = float(np.median([d[0] for d in disp]))
+    dy = float(np.median([d[1] for d in disp]))
+    mag = math.hypot(dx, dy)
+    if mag < GLOBAL_OFFSET_MIN:
+        return 0.0, 0.0
+    if mag > GLOBAL_OFFSET_MAX:
+        print(f"[cv] global offset {mag:.0f} units looks like bad matches, "
+              f"not ruler bias — not applied")
+        return 0.0, 0.0
+    moved = 0
+    for o in objs:
+        if o.get('snapped'):
+            continue
+        o['polygon'] = [(max(0.0, min(1000.0, x + dx)),
+                         max(0.0, min(1000.0, y + dy))) for x, y in o['polygon']]
+        o['offset_applied'] = [round(dx, 1), round(dy, 1)]
+        moved += 1
+    if moved:
+        print(f"[cv] ruler bias {dx:+.0f},{dy:+.0f} measured from "
+              f"{len(disp)} snapped object(s) — applied to {moved} unsnapped")
+    return dx, dy
+
+
 def snap_to_blobs(objs, bgr, blobs, only_small=False):
     """Replace each model polygon with the contour of the blob it refers to.
 
@@ -1380,6 +1661,11 @@ def snap_to_blobs(objs, bgr, blobs, only_small=False):
     for s, d, oi, bi in pairs:
         cur = best.setdefault(oi, [])
         cur.append(s)
+        # Best-scoring blob per object, kept even when the object never snaps:
+        # its area is the honest answer to "how big is this really?", which the
+        # cell threshold needs and the model's own outline cannot supply.
+        if '_blob_area' not in objs[oi]:
+            objs[oi]['_blob_area'] = poly_area(blobs[bi]['poly'])
     ambiguous = set()
     for oi, scores in best.items():
         scores.sort(reverse=True)
@@ -1387,6 +1673,7 @@ def snap_to_blobs(objs, bgr, blobs, only_small=False):
             ambiguous.add(oi)
 
     taken_o, taken_b, snapped = set(), set(), 0
+    disp = []
     for s, d, oi, bi in pairs:
         if oi in taken_o or bi in taken_b:
             continue
@@ -1398,6 +1685,9 @@ def snap_to_blobs(objs, bgr, blobs, only_small=False):
             print(f"[cv] {objs[oi]['name']}: two blobs score alike — not snapped")
             taken_o.add(oi)
             continue
+        pcx, pcy = poly_centroid(objs[oi]['polygon'])
+        bcx, bcy = blobs[bi]['centroid']
+        disp.append((bcx - pcx, bcy - pcy))
         objs[oi]['polygon'] = list(blobs[bi]['poly'])
         objs[oi]['snapped'] = True
         objs[oi]['snap_score'] = round(s, 3)
@@ -1408,6 +1698,8 @@ def snap_to_blobs(objs, bgr, blobs, only_small=False):
     for oi, o in enumerate(objs):
         if oi not in taken_o:
             o['snapped'] = False
+
+    apply_global_offset(objs, disp)
     return snapped
 
 
@@ -1485,7 +1777,13 @@ def is_background_polygon(poly, bgr=None, mask=None, name=None, allow_names=None
     that is what left "clean the table" with nothing to clean.
     """
     x0, y0, x1, y1 = _poly_bbox(poly)
-    span = (x1 - x0) * (y1 - y0) / 1e6
+    # Span is the polygon's OWN area, not its bounding box. The outline rules
+    # ask for diagonals (brooms, cables, tools) to be traced rather than boxed,
+    # and a traced diagonal has a bbox covering most of the frame while
+    # occupying almost none of it — measured on the bbox it was deleted as
+    # background, which is precisely the shape the prompt asks for. The bbox is
+    # still what the edge test wants: it asks which sides the object reaches.
+    span = poly_area(poly) / 1e6
     if span >= BG_REJECT_FRAC:
         edges, opposite = _edges_touched(x0, y0, x1, y1)
         waived = (span < BG_ABSOLUTE_MAX
@@ -1544,15 +1842,21 @@ def unknown_from_blobs(blobs, existing):
     return out
 
 
-def polygon_to_cells(polygon, thr=None):
+def polygon_to_cells(polygon, thr=None, cap=None, area_hint=None):
     """Normalised polygon → (center_cell, touches_list, coverage_dict).
 
     Coverage is measured by sampling points inside each candidate cell, so thin
     or diagonal objects only claim the cells they genuinely occupy. Surfaces are
-    never capped: sweep/wipe has to span the whole thing.
+    never capped: sweep/wipe has to span the whole thing, so callers pass
+    cap=SURFACE_MAX_CELLS for one the task un-banned.
 
     Objects at or below SMALL_OBJ_CELLS are scored under a stricter rule — see
-    the constant. A caller-supplied `thr` always wins over both.
+    the constant. `area_hint` is the area of the segmented blob this object
+    matched, in the same 0-1000 space. It exists because deciding "is this
+    small?" from the model's own polygon is circular: an over-outlined mug
+    grows past the small cutoff and thereby escapes into the lax threshold,
+    exactly when the strict one is needed. Where CV has an opinion, the smaller
+    of the two areas wins. A caller-supplied `thr` still beats everything.
     """
     thr_arg = thr
     try:
@@ -1570,7 +1874,10 @@ def polygon_to_cells(polygon, thr=None):
     cell_w = 1000.0 / COLS
     cell_h = 1000.0 / ROWS
 
-    small = poly_area(poly) <= SMALL_OBJ_CELLS * cell_w * cell_h
+    area = poly_area(poly)
+    if area_hint is not None and area_hint > 0.0:
+        area = min(area, float(area_hint))
+    small = area <= SMALL_OBJ_CELLS * cell_w * cell_h
     if thr_arg is not None:
         thr = thr_arg
     else:
@@ -1616,10 +1923,27 @@ def polygon_to_cells(polygon, thr=None):
             cut  = best * REL_FALLBACK
             touches = [c for c, f in cov.items() if f >= cut]
 
-    if len(touches) > MAX_TOUCH_CELLS:
+    # The cap is proportional to the outline's OWN area, not a flat number.
+    # It used to be COLS * ROWS — the whole board — so it could never fire and a
+    # runaway outline that slipped under the background span test still claimed
+    # half the grid. A flat number is no good either: it truncates an appliance
+    # that genuinely covers thirty-odd cells. What is never legitimate is an
+    # outline touching far more cells than its area could fill, which is what a
+    # long slack diagonal does. The additive pad keeps small objects honest —
+    # a half-cell object on a corner touches four cells and always did.
+    if cap is None:
+        area_cells = poly_area(poly) / (cell_w * cell_h)
+        limit = max(8, int(math.ceil(MAX_TOUCH_CELLS_SLACK * area_cells
+                                     + MAX_TOUCH_CELLS_PAD)))
+    else:
+        limit = cap
+    if len(touches) > limit:
         ranked  = sorted(cov.items(), key=lambda kv: -kv[1])
-        keep    = {c for c, _ in ranked[:MAX_TOUCH_CELLS]}
+        keep    = {c for c, _ in ranked[:limit]}
+        dropped = len(touches) - len(keep)
         touches = [c for c in touches if c in keep]
+        print(f"[cells] outline claimed {len(touches) + dropped} cells — "
+              f"kept the {limit} best-covered")
 
     mx, my = poly_centroid(poly)
     if small and cov:
@@ -2584,6 +2908,7 @@ outline is numbered with a coloured tag. The ruler in the margins is unchanged:
 0-1000 on both axes, X left to right, Y top to bottom, faint lines every 100.
 
 {CONTENT_RECT_NOTE}
+{TASK_SCOPE_NOTE}
 
 Check every numbered outline against the object it is supposed to cover:
 
@@ -2600,7 +2925,9 @@ Check every numbered outline against the object it is supposed to cover:
    front and side edges and has not run down onto the floor or out to the
    frame.
 4. OVERLAP — do two outlines cross? Separate them at the true boundary.
-5. MISSING — is there a discrete physical object with no outline? Add it.
+5. MISSING — is there a discrete physical object with no outline that the
+   scope above calls for? Add it. An object left out because the task does not
+   need it was left out ON PURPOSE — do not add it back.
 6. BACKGROUND — is any outline covering the table, counter, floor, wall or
    backdrop rather than an object resting in the scene? DELETE that entry
    entirely. Surfaces and backgrounds are never reported.
@@ -3156,6 +3483,16 @@ open_door                # open the door
 goto_coordinate = APPLIANCE_COL, APPLIANCE_ROW
 close_door               # close the door
 
+**This covers everything that opens - not only things called "door".** A
+window, a guard, a cover, a hatch, a flap, a lid, a toilet seat, a drawer, a
+toolbox top, a jar lid: if the point of the step is that the thing ends up
+open (or ends up shut), it is `open_door` / `close_door`, whatever the OBJECT
+LIST happens to call it, and whatever sub-part (latch, catch, handle) you move
+above to work it. Move above that part's cell if it has one, then write the
+single `open_door` or `close_door` - never a bare press/release pair. "Open
+the window", "slide the window open", "close the guard on the drill press",
+"open the jar", "lift the toilet seat" are all `open_door`/`close_door`.
+
 **2. Contact pass - drag a held tool across cells.**
 Pick up a tool (broom, mop, cloth, sponge), move above the FIRST cell, `press` to put the tool in contact with the surface, then issue one `goto_coordinate` per cell. The tool stays in contact and works every cell it crosses. `release` lifts it at the end.
 
@@ -3191,6 +3528,17 @@ There is no drag() command. Sliding is always press -> goto -> release.
 - The robot cannot `pickup` or `keep` while pressed. Release first.
 - While pressed, the ONLY valid next commands are `goto_coordinate` (to continue the pass/drag) or `release`. NEVER goto an unrelated object, pickup, keep, pour, or slice while a press is still open. Finish the press/release pair before touching anything else.
 - One contact pass per surface run. Do not press and release at every single cell. Press once, cross the cells, release once.
+  WRONG - a press/release pair at every cell:
+      press / goto A,1 / release / goto T,2 / press / goto A,1 / release ...
+  RIGHT - one press, every cell, one release:
+      goto FIRST / press / goto NEXT / goto NEXT / ... / goto LAST / release
+- Sweeping, mopping, wiping or scrubbing an AREA - a floor, a counter, a rug,
+  a corner of the room, the space under or around something - always crosses
+  several cells. After the single `press`, write one `goto_coordinate` per
+  cell of that area before the `release`. A "pass" with no goto between the
+  press and the release has touched exactly one cell and has not cleaned an
+  area at all. Only a genuinely single-cell target - one lamp, one window
+  pane, one toolbox lid - is a press and release in one spot.
 - State your intent in a `#` comment on its own line, since the commands themselves are generic:
   `# turn the stove on`, `# wipe the countertop`, `# fold the shirt`.
 
@@ -3221,6 +3569,8 @@ keep                     # return the carton, still half full
 ## wait_X - PAUSING
 
 `wait_X(SECONDS)` holds the gantry exactly where it is and does nothing for that many seconds. Use it when the task depends on something the robot does not control finishing: a cycle running, a kettle boiling, food cooking, a wiped surface drying, a liquid draining.
+
+**An explicit instruction to wait is always honoured.** When the operator asks the robot to wait for a stated time - "wait five minutes", "wait forty five seconds", "hold there for a minute" - write `wait_X(SECONDS)` with their figure, even if no later step depends on it, and even if waiting is the only thing the task asks for. A bare wait is a complete, valid plan: `wait_X(300)` on its own. Never answer a wait instruction with a comment saying nothing depends on it, and never drop it as an optimisation - the operator asked the robot to wait, so the robot waits.
 
 **Default wait times (use the operator's own figure whenever they give one; otherwise use this table):**
 
@@ -3581,6 +3931,27 @@ keep                        # return knife to its original cell
 
 A vegetable whose TOUCHES list is a single cell just gets the one
 goto/keep/slice/pickup cycle.
+
+### N IS THE NUMBER OF CUTS, NOT THE NUMBER OF PIECES
+
+`slice(NAME, N)` brings the blade down N times. N cuts leave N+1 pieces, so
+whenever the operator counts PIECES you must subtract one before writing N.
+
+| The operator says | N to write |
+|---|---|
+| "in half", "halve it", "cut it in two", "into two halves" | 1 |
+| "into three", "in thirds" | 2 |
+| "into four", "quarter it", "into quarters" | 3 |
+| "into six pieces" | 5 |
+| "into eight" | 7 |
+| "slice it three times", "cut it twice", "give it five cuts" | 3, 2, 5 |
+
+The rule in one line: a count of PIECES becomes N = pieces - 1; a count of
+CUTS is already N and is written exactly as the operator said it. Before
+writing the slice line, state to yourself how many pieces they want and how
+many cuts that takes - an off-by-one here is the most common slicing error
+there is, and "quarter the tomato" is slice(tomato, 3), never slice(tomato, 2)
+and never slice(tomato, 4).
 
 ## 5. Fold Laundry
 
@@ -4135,7 +4506,7 @@ class VisionWorker(QThread):
         )
 
     @staticmethod
-    def _convert(entries, mapping):
+    def _convert(entries, mapping, dropped=None):
         """Model JSON → normalised polygons. No cells yet: position is still
         provisional at this stage and gets settled by the CV snap.
 
@@ -4156,9 +4527,16 @@ class VisionWorker(QThread):
             if len(poly) < 3 or kept < PADDING_KEEP_MIN:
                 print(f"[clip] {name}: {100 * kept:.0f}% inside frame — discarded "
                       f"(outlined into the letterbox padding)")
+                # Dropping an object the operator can plainly see, on a stdout
+                # line they never read, is how a task ends up reporting MISSING
+                # for something in the photo. Hand it back to the caller.
+                if dropped is not None:
+                    dropped.append((name, kept))
                 continue
             if kept < 0.995:
                 print(f"[clip] {name}: trimmed to {100 * kept:.0f}% (padding overhang)")
+                if dropped is not None and kept < 0.90:
+                    dropped.append((name, kept, 'trimmed'))
 
             comps = convert_component_polygons(obj.get('components'), mapping)
             entry = {
@@ -4193,6 +4571,12 @@ class VisionWorker(QThread):
         seg_blobs, seg_mask = segment_blobs(bgr)
         if not seg_blobs:
             print("[cv] no usable blobs — keeping model outlines")
+            # The operator has to know this: with no blobs there is no snap and
+            # no offset correction, so every outline on screen is the model's
+            # raw guess. Silently degrading to that was indistinguishable from
+            # a good run.
+            self.progress.emit("⚠  Segmentation found nothing — outlines are "
+                               "unverified model estimates")
         if self._snap:
             blobs, mask = seg_blobs, seg_mask
         else:
@@ -4223,7 +4607,13 @@ class VisionWorker(QThread):
 
         for o in live:
             poly = o['polygon']
-            center, touches, cov = polygon_to_cells(poly)
+            # A surface the task un-banned is exempt from the cell cap: wiping
+            # a table means covering the whole table.
+            cap = (SURFACE_MAX_CELLS
+                   if is_allowed_surface(o.get('name'), allow_surfaces)
+                   else None)
+            center, touches, cov = polygon_to_cells(
+                poly, cap=cap, area_hint=o.get('_blob_area'))
             if center is None:
                 o['_cells'] = []
                 continue
@@ -4232,6 +4622,7 @@ class VisionWorker(QThread):
             o['_center'] = center
             o['_cells']  = touches
             o['_cov']    = cov
+            o.pop('_blob_area', None)
 
             comps = parse_component_entries(o.get('components'))
             for c in comps:
@@ -4292,25 +4683,36 @@ class VisionWorker(QThread):
 
         Components are unioned with pass 1 (by name, keeping geometry when
         present) so a verify pass that forgets parts does not wipe pass 1.
+
+        Pairing is by name AND position, each pass-1 object claimable once. Name
+        alone was wrong wherever the scene holds two of a kind — the prompt
+        explicitly allows two entries both called "mug" — because the old
+        `setdefault` remembered only the first one's centroid, so the second
+        mug's correction was measured against the first mug's position and
+        vetoed for "moving too far". The veto then re-added BOTH pass-1 mugs.
         """
-        prev_cent = {}
-        prev_comps = {}
-        for o in before:
-            prev_cent.setdefault(o['name'], poly_centroid(o['polygon']))
-            prev_comps.setdefault(o['name'],
-                                  parse_component_entries(o.get('components')))
+        prev = [(o['name'], poly_centroid(o['polygon']),
+                 parse_component_entries(o.get('components')))
+                for o in before]
+        claimed = set()
         rejected = 0
         for o in after:
             name = o.get('name')
-            c = prev_cent.get(name)
-            if c:
-                nx, ny = poly_centroid(o['polygon'])
-                if math.hypot(nx - c[0], ny - c[1]) / 1000.0 > VERIFY_MAX_TRAVEL:
+            nx, ny = poly_centroid(o['polygon'])
+            cands = [(math.hypot(nx - c[0], ny - c[1]), i)
+                     for i, (n, c, _) in enumerate(prev)
+                     if n == name and i not in claimed]
+            idx = min(cands)[1] if cands else None
+            if idx is not None:
+                claimed.add(idx)
+                d = math.hypot(nx - prev[idx][1][0], ny - prev[idx][1][1])
+                if d / 1000.0 > VERIFY_MAX_TRAVEL:
                     rejected += 1
                     o['_veto'] = True
+                    o['_veto_idx'] = idx
                     continue
             o['components'] = merge_components(
-                o.get('components'), prev_comps.get(name, []))
+                o.get('components'), prev[idx][2] if idx is not None else [])
             finalize_components(o)
         if rejected:
             print(f"[verify] {rejected} correction(s) moved too far — pass 1 kept")
@@ -4385,7 +4787,19 @@ class VisionWorker(QThread):
             if salvaged:
                 print("[vision] response was truncated — salvaged complete entries only")
 
-            objs = self._convert(entries, mapping)
+            clipped = []
+            objs = self._convert(entries, mapping, dropped=clipped)
+            if clipped:
+                lost = [c for c in clipped if len(c) == 2]
+                cut  = [c for c in clipped if len(c) == 3]
+                if lost:
+                    self.progress.emit(
+                        "⚠  Dropped at the frame edge: "
+                        + ", ".join(f"{n} ({k * 100:.0f}% inside)" for n, k in lost))
+                if cut:
+                    self.progress.emit(
+                        "⚠  Trimmed at the frame edge: "
+                        + ", ".join(f"{c[0]} ({c[1] * 100:.0f}% kept)" for c in cut))
             if not objs:
                 self.error.emit("Vision returned no usable objects.")
                 return
@@ -4402,9 +4816,13 @@ class VisionWorker(QThread):
                     objs2 = self._convert(entries2, mapping) if entries2 else []
                     if objs2:
                         self._accept_verify(objs, objs2)
-                        keep = {o['name'] for o in objs2 if o.get('_veto')}
+                        # Restore the specific pass-1 object each veto refers
+                        # to — by index, not by name, so two same-named objects
+                        # cannot resurrect each other.
+                        keep = {o['_veto_idx'] for o in objs2
+                                if o.get('_veto') and '_veto_idx' in o}
                         merged = [o for o in objs2 if not o.get('_veto')]
-                        merged += [o for o in objs if o['name'] in keep]
+                        merged += [o for i, o in enumerate(objs) if i in keep]
                         objs = merged or objs
                     else:
                         print("[vision] verification pass unusable — keeping pass 1")
@@ -4434,6 +4852,7 @@ class VisionWorker(QThread):
             for o in objs:
                 finalize_components(o)
                 o.pop('_sq', None); o.pop('_cov', None); o.pop('_veto', None)
+                o.pop('_veto_idx', None); o.pop('_blob_area', None)
                 for c in parse_component_entries(o.get('components')):
                     c.pop('_sq', None); c.pop('_center', None); c.pop('_cells', None)
                 o['components'] = parse_component_entries(o.get('components'))
@@ -4492,6 +4911,7 @@ class DexterityWorker(QThread):
 
 
 GRIPPER_AI = bool(load_ui_settings().get("GRIPPER_AI", True))
+APPROACH_PREVIEW = bool(load_ui_settings().get("APPROACH_PREVIEW", True))
 
 GRIPPER_AI_SYSTEM = (
     """
@@ -5315,6 +5735,414 @@ def append_err_history(record: dict) -> None:
         os.replace(tmp, ERR_HISTORY_PATH)
     except Exception:
         pass
+
+
+def load_task_feedback() -> list:
+    """Every rating left so far, oldest first. Missing or corrupt file reads
+    as an empty history rather than raising — feedback is never load-bearing
+    for a run, so it must not be able to break one."""
+    try:
+        with open(TASK_FEEDBACK_PATH, encoding="utf-8") as f:
+            entries = json.load(f)
+        return entries if isinstance(entries, list) else []
+    except Exception:
+        return []
+
+
+def append_task_feedback(record: dict) -> dict:
+    """Append one star rating (and any written improvement) to the feedback
+    database in HOS data, creating the file as a JSON list if needed.
+
+    Returns the record as stored, with its id and timestamp filled in, so the
+    caller can echo the saved entry back into the chat.
+    """
+    entries = load_task_feedback()
+    stored = dict(record or {})
+    stored.setdefault("timestamp",
+                      datetime.datetime.now().isoformat(timespec="seconds"))
+    stored["id"] = len(entries) + 1
+    entries.append(stored)
+    try:
+        os.makedirs(HOS_DATA_DIR, exist_ok=True)
+        tmp = TASK_FEEDBACK_PATH + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(entries, f, indent=2, ensure_ascii=False)
+        os.replace(tmp, TASK_FEEDBACK_PATH)
+    except Exception:
+        pass
+    return stored
+
+
+# ---------------------------------------------------------------------------
+# Teaching A3-Terra a task: approach preview, feedback recall, learned skills
+#
+# Three layers that share one idea — show the operator the shape of the plan
+# BEFORE it is committed to robot commands, let them correct it there, and
+# remember the correction. Every layer fails open: none of them can stop a
+# run, because a teaching aid that can strand a task is worse than none.
+# ---------------------------------------------------------------------------
+
+APPROACH_MODEL = "gpt-5.4-mini"
+
+APPROACH_SYSTEM = (
+    """
+You are the Approach Planner for A3-Terra, a parallel-gripper Cartesian gantry robot.
+
+Before the command planner writes a single line of robot code, you write the SHAPE of the plan: the handful of real-world steps a person would list if asked "so how are you going to do this?". The operator reads your steps as a flowchart and edits them. Whatever they approve becomes the skeleton the command planner must follow - so a step you get wrong is a plan that goes wrong, and a step you leave out is a step that never happens.
+
+## WHAT THE ROBOT CAN ACTUALLY DO
+
+Move above a cell, pick up, place, press, release, open a door, close a door, pour (all of it or a fraction), slice, wait. That is everything.
+
+- Sweeping, mopping, wiping and scrubbing are all the same shape: pick up the broom/mop/cloth, press it down, drag it across the cells, release. Never a spray bottle.
+- Opening or closing any door, lid, hatch or drawer is its own step.
+- Sliding something heavy is press on it, travel, release - not a pick-up.
+- The robot has ONE gripper and holds ONE object at a time. It cannot do fine manipulation - no folding a fitted sheet, no threading a needle, no tying laces.
+
+## THE STEPS
+
+- Between 2 and 8 steps. Fewer is better. One step is one meaningful move in the real world, NOT one robot command - "put the three garments in the drum" is one step, not three.
+- `title`: at most 8 words, imperative, plain English, naming the real object. "Put the red shirt in the drum."
+- `detail`: one short sentence saying why or how - the part the operator would correct if you had it wrong. May be "".
+- `kind`: exactly one of move, grip, actuate, pour, clean, wait, check.
+- Name objects the way somebody looking at the scene would say it - colour, size, what it is. NEVER mention grid cells, coordinates, or letter/number references. The operator cannot see the grid.
+- Order matters; the steps run top to bottom. A door has to be opened before anything goes through it, and closed after.
+- Do not invent objects. Work only from the OBJECT LIST you are given.
+
+## OUTPUT
+
+Raw JSON and nothing else. No markdown fences, no commentary, no explanation.
+
+{"steps": [{"title": "Open the washing machine lid", "detail": "The drum has to be open before any clothes go in.", "kind": "actuate"}, {"title": "Move the clothes into the drum", "detail": "The red shirt and the jeans, one at a time.", "kind": "grip"}]}
+"""
+)
+DEFAULT_APPROACH_SYSTEM = APPROACH_SYSTEM
+
+
+FLOW_MAX_STEPS = 8
+
+# label + accent per step kind, so a flowchart is readable at a glance.
+FLOW_KINDS = {
+    "move":    ("MOVE",    C_BLUE),
+    "grip":    ("PICK / PLACE", C_VIOLET),
+    "actuate": ("PRESS / DOOR", C_AMBER),
+    "pour":    ("POUR",    C_CYAN),
+    "clean":   ("CONTACT PASS", C_GREEN),
+    "wait":    ("WAIT",    C_TEXT_DIM),
+    "check":   ("CHECK",   C_TEXT_DIM),
+}
+FLOW_DEFAULT_KIND = "move"
+
+
+def flow_kind_label(kind: str) -> str:
+    return FLOW_KINDS.get(str(kind or "").strip().lower(),
+                          FLOW_KINDS[FLOW_DEFAULT_KIND])[0]
+
+
+def flow_kind_colour(kind: str) -> str:
+    return FLOW_KINDS.get(str(kind or "").strip().lower(),
+                          FLOW_KINDS[FLOW_DEFAULT_KIND])[1]
+
+
+def make_flow_step(title: str, detail: str = "", kind: str = FLOW_DEFAULT_KIND) -> dict:
+    """One flowchart step, with every field guaranteed present and a string."""
+    k = str(kind or "").strip().lower()
+    return {
+        "title":  str(title or "").strip(),
+        "detail": str(detail or "").strip(),
+        "kind":   k if k in FLOW_KINDS else FLOW_DEFAULT_KIND,
+    }
+
+
+def normalise_flow_steps(raw) -> list:
+    """Clean a step list from anywhere - the model, a saved skill, the editor.
+
+    Tolerant on the way in, strict on the way out: a bare string becomes a
+    titled step, anything without a title is dropped rather than shown to the
+    operator as an empty card, and the list is capped so one runaway reply
+    cannot produce a forty-step flowchart nobody will read.
+    """
+    out = []
+    for item in (raw or []):
+        if isinstance(item, str):
+            step = make_flow_step(item)
+        elif isinstance(item, dict):
+            step = make_flow_step(
+                item.get("title") or item.get("step") or item.get("name") or "",
+                item.get("detail") or item.get("why") or item.get("note") or "",
+                item.get("kind") or item.get("type") or FLOW_DEFAULT_KIND)
+        else:
+            continue
+        if step["title"]:
+            out.append(step)
+        if len(out) >= FLOW_MAX_STEPS:
+            break
+    return out
+
+
+def parse_flow_json(raw: str) -> list:
+    """Pull the step list out of an Approach reply, or [] if there isn't one."""
+    txt = (raw or "").strip()
+    if txt.startswith("```"):
+        txt = re.sub(r"^```[a-zA-Z]*\s*|\s*```$", "", txt).strip()
+    m = re.search(r"\{.*\}", txt, re.S)
+    if not m:
+        return []
+    try:
+        data = json.loads(m.group(0))
+    except Exception:
+        return []
+    if not isinstance(data, dict):
+        return []
+    return normalise_flow_steps(data.get("steps"))
+
+
+def flow_to_prompt_block(steps: list, header: str = "") -> str:
+    """The approved flow, written the way the planner should read it."""
+    steps = normalise_flow_steps(steps)
+    if not steps:
+        return ""
+    lines = []
+    for i, s in enumerate(steps, 1):
+        line = f"{i}. {s['title']}"
+        if s["detail"]:
+            line += f" — {s['detail']}"
+        lines.append(line)
+    head = header or (
+        "APPROVED APPROACH (the operator read these steps and approved them; "
+        "follow them in this order, and do not add stages they did not ask "
+        "for). Each step may need several robot commands:")
+    return f"{head}\n" + "\n".join(lines)
+
+
+def flow_signature(steps: list) -> str:
+    """Compare two flows by their titles alone, so re-wording a detail is not
+    a different flow but re-ordering the steps is."""
+    return " | ".join(re.sub(r"[^a-z0-9 ]", "", s["title"].lower()).strip()
+                      for s in normalise_flow_steps(steps))
+
+
+# --- recall: what the operator has already told us -------------------------
+
+_TASK_STOPWORDS = frozenset("""
+a an and are as at be been but by can could do does for from had has have
+how i if in into is it its just me my of on or our out over please put should
+so that the their them then there these they this to too up us was were what
+when where which who will with would you your
+""".split())
+
+
+def _task_keywords(text: str) -> set:
+    """The words in a task that actually pick it out from other tasks."""
+    words = re.findall(r"[a-z0-9]+", str(text or "").lower())
+    return {w for w in words if len(w) > 2 and w not in _TASK_STOPWORDS}
+
+
+def _overlap(a: set, b: set) -> float:
+    """Jaccard similarity - 1.0 for the same task, 0.0 for nothing in common."""
+    if not a or not b:
+        return 0.0
+    return len(a & b) / float(len(a | b))
+
+
+def _feedback_score(entry: dict, kw: set) -> float:
+    """How much this past rating should count for the task in hand.
+
+    Relevance comes first, but a run the operator took the trouble to write
+    an improvement on outranks a bare five stars at the same relevance - the
+    written sentence is the only part that actually teaches anything.
+    """
+    if not isinstance(entry, dict):
+        return 0.0
+    rel = _overlap(kw, _task_keywords(entry.get("task", "")))
+    if rel <= 0:
+        return 0.0
+    score = rel
+    if str(entry.get("improvements") or "").strip():
+        score += 0.35
+    stars = entry.get("stars")
+    try:
+        stars = int(stars)
+    except (TypeError, ValueError):
+        stars = 0
+    if 0 < stars <= 3:
+        score += 0.25
+    return score
+
+
+def relevant_task_feedback(task: str, k: int = 3) -> list:
+    """The past ratings worth showing the model for this task, best first."""
+    kw = _task_keywords(task)
+    if not kw:
+        return []
+    scored = []
+    for e in load_task_feedback():
+        s = _feedback_score(e, kw)
+        if s > 0:
+            scored.append((s, e))
+    scored.sort(key=lambda pair: pair[0], reverse=True)
+    return [e for _s, e in scored[:max(0, int(k))]]
+
+
+def feedback_lessons_block(task: str, k: int = 3) -> str:
+    """Past ratings folded into a prompt block, or "" when there are none.
+
+    This is the whole point of the star button: until this existed, feedback
+    was written to disk and never read by anything again.
+    """
+    picks = relevant_task_feedback(task, k)
+    if not picks:
+        return ""
+    lines = []
+    for e in picks:
+        try:
+            stars = int(e.get("stars") or 0)
+        except (TypeError, ValueError):
+            stars = 0
+        bit = f'- A past run of "{str(e.get("task", "")).strip()}" was rated {stars}/5'
+        note = str(e.get("improvements") or "").strip()
+        if note:
+            bit += f'. The operator said: "{note}"'
+        lines.append(bit + ".")
+    return ("LESSONS FROM PAST RUNS (the operator's own corrections on tasks "
+            "like this one — honour them unless this task contradicts them):\n"
+            + "\n".join(lines))
+
+
+# --- learned skills: taught once, reused after -----------------------------
+
+SKILL_MATCH_THRESHOLD = 0.45
+
+
+def load_learned_skills() -> list:
+    """Every skill taught so far. A missing or corrupt file reads as none —
+    a skill library is a convenience and must never break a run."""
+    try:
+        with open(LEARNED_SKILLS_PATH, encoding="utf-8") as f:
+            entries = json.load(f)
+        return [e for e in entries if isinstance(e, dict)] \
+            if isinstance(entries, list) else []
+    except Exception:
+        return []
+
+
+def save_learned_skills(skills: list) -> bool:
+    """Overwrite the library. Written to a temp file and moved into place so
+    an interrupted save cannot leave a half-written library behind."""
+    try:
+        os.makedirs(HOS_DATA_DIR, exist_ok=True)
+        tmp = LEARNED_SKILLS_PATH + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(list(skills or []), f, indent=2, ensure_ascii=False)
+        os.replace(tmp, LEARNED_SKILLS_PATH)
+        return True
+    except Exception:
+        return False
+
+
+def append_learned_skill(record: dict) -> dict:
+    """Teach one task. Re-teaching a task the library already knows replaces
+    the old entry rather than stacking a second copy next to it, so the
+    newest correction is always the one that gets recalled."""
+    skills = load_learned_skills()
+    stored = dict(record or {})
+    stored["steps"] = normalise_flow_steps(stored.get("steps"))
+    stored.setdefault("task", "")
+    stored.setdefault("timestamp",
+                      datetime.datetime.now().isoformat(timespec="seconds"))
+    kw = _task_keywords(stored.get("task", ""))
+    kept = [s for s in skills
+            if _overlap(kw, _task_keywords(s.get("task", ""))) < 0.95]
+    stored["id"] = len(kept) + 1
+    kept.append(stored)
+    for i, s in enumerate(kept, 1):
+        s["id"] = i
+    save_learned_skills(kept)
+    return stored
+
+
+def skill_match_score(skill: dict, kw: set) -> float:
+    if not isinstance(skill, dict) or not skill.get("steps"):
+        return 0.0
+    return _overlap(kw, _task_keywords(skill.get("task", "")))
+
+
+def match_learned_skill(task: str, threshold: float = None) -> dict:
+    """The closest skill already taught for this task, or None.
+
+    Deliberately strict: seeding the flowchart with the wrong recipe wastes
+    more of the operator's attention than showing them a blank one.
+    """
+    kw = _task_keywords(task)
+    if not kw:
+        return None
+    bar = SKILL_MATCH_THRESHOLD if threshold is None else float(threshold)
+    best, best_score = None, 0.0
+    for s in load_learned_skills():
+        score = skill_match_score(s, kw)
+        if score > best_score:
+            best, best_score = s, score
+    return best if best_score >= bar else None
+
+
+class ApproachWorker(QThread):
+    """The shape of the plan, in the operator's own language, before a single
+    robot command exists.
+
+    Fails open exactly like the clarity check: an error, a junk reply or an
+    empty step list all mean "nothing to show" and the run goes straight on
+    to the planner as it always did. When a learned skill seeded the request,
+    a failure falls back to that skill rather than to nothing — the operator
+    already approved it once.
+    """
+    done = Signal(list)
+    note = Signal(str)
+
+    def __init__(self, task: str, object_list: str, seed_steps=None,
+                 lessons: str = ""):
+        super().__init__()
+        self._task    = task
+        self._objs    = object_list
+        self._seed    = normalise_flow_steps(seed_steps)
+        self._lessons = lessons or ""
+
+    def run(self):
+        try:
+            client = make_client()
+            parts = [f"OBJECT LIST:\n{self._objs}", f"TASK:\n{self._task}"]
+            if self._lessons:
+                parts.append(self._lessons)
+            if self._seed:
+                parts.append(flow_to_prompt_block(
+                    self._seed,
+                    "AN APPROACH THE OPERATOR ALREADY APPROVED FOR A TASK LIKE "
+                    "THIS (reuse it step for step unless this task genuinely "
+                    "differs):"))
+            user = "\n\n".join(parts)
+            self.note.emit(f"Approach → {APPROACH_MODEL}\n\n{user}")
+            raw = call_model(
+                client,
+                model=APPROACH_MODEL,
+                messages=[
+                    {"role": "system", "content": APPROACH_SYSTEM},
+                    {"role": "user",   "content": user},
+                ],
+                max_tokens=1500,
+                stage="Approach",
+            )
+            self.note.emit(f"Approach replied:\n{raw}")
+            steps = parse_flow_json(raw)
+            if not steps and self._seed:
+                self.note.emit("Approach returned nothing usable — falling back "
+                               "to the approved skill.")
+                steps = list(self._seed)
+        except Exception as e:
+            self.note.emit(f"Approach failed ({e}) — "
+                           + ("using the approved skill instead."
+                              if self._seed else
+                              "planning without a flowchart."))
+            steps = list(self._seed)
+        self.done.emit(steps)
 
 
 class ErrorReboundWorker(QThread):
@@ -6679,6 +7507,8 @@ EDITABLE_PROMPTS = [
      "hint": "The planner's own system prompt — command syntax, playbooks, worked examples."},
     {"key": "gripper_ai_system", "global": "GRIPPER_AI_SYSTEM", "label": "Gripper AI Prompt",
      "hint": "Decides where the gripper closes on each object — the cell the planner picks up at."},
+    {"key": "approach_system", "global": "APPROACH_SYSTEM", "label": "Approach Prompt",
+     "hint": "Before planning: the handful of real-world steps the operator edits as a flowchart. Whatever they approve becomes the skeleton the planner must follow."},
     {"key": "err_tester_prompt", "global": "ERR_TESTER_PROMPT", "label": "Error Rebounds Prompt",
      "hint": "After a run finishes: compares before/after board photos and reports whether the task was done correctly. Never rewrites the plan."},
     {"key": "speech_prompt", "global": "SPEECH_PROMPT", "label": "Speech Prompt",
@@ -8333,23 +9163,460 @@ class ErrorReboundDialog(GlassDialog):
         self.body.addLayout(row)
 
     def _pick_before(self):
-        path, _ = QFileDialog.getOpenFileName(
-            self, "Before photo", "",
-            "Images (*.png *.jpg *.jpeg *.webp *.bmp)")
+        path = pick_image_file(self, "Before photo", "")
         if not path:
             return
         self.before_path = path
         self._before_lbl.setText(f"Before photo: {os.path.basename(path)}")
 
     def _pick_after(self):
-        path, _ = QFileDialog.getOpenFileName(
-            self, "After photo", "",
-            "Images (*.png *.jpg *.jpeg *.webp *.bmp)")
+        path = pick_image_file(self, "After photo", "")
         if not path:
             return
         self.after_path = path
         self._after_lbl.setText(f"After photo: {os.path.basename(path)}")
         self._yes.setEnabled(True)
+
+
+class StarRating(QWidget):
+    """Five stars, click one to set the score, hover to preview it.
+
+    Painted rather than built from buttons so the row keeps the same glass
+    look as the rest of the app at any size, and so hover preview and the
+    chosen value can share one piece of geometry.
+    """
+
+    changed = Signal(int)
+
+    STARS = 5
+
+    def __init__(self, size: int = 30, parent=None):
+        super().__init__(parent)
+        self._size  = size
+        self._value = 0
+        self._hover = 0
+        self.setMouseTracking(True)
+        self.setCursor(Qt.PointingHandCursor)
+        self.setFixedSize(size * self.STARS, size)
+
+    def value(self) -> int:
+        return self._value
+
+    def set_value(self, n: int):
+        n = max(0, min(self.STARS, int(n)))
+        if n != self._value:
+            self._value = n
+            self.update()
+            self.changed.emit(n)
+
+    def _index_at(self, x: float) -> int:
+        return max(0, min(self.STARS, int(x // self._size) + 1))
+
+    def mouseMoveEvent(self, ev):
+        idx = self._index_at(ev.position().x())
+        if idx != self._hover:
+            self._hover = idx
+            self.update()
+
+    def leaveEvent(self, _ev):
+        self._hover = 0
+        self.update()
+
+    def mousePressEvent(self, ev):
+        if ev.button() == Qt.LeftButton:
+            self.set_value(self._index_at(ev.position().x()))
+
+    def keyPressEvent(self, ev):
+        if Qt.Key_1 <= ev.key() <= Qt.Key_5:
+            self.set_value(ev.key() - Qt.Key_0)
+            return
+        super().keyPressEvent(ev)
+
+    @staticmethod
+    def _star_path(cx: float, cy: float, r: float) -> QPainterPath:
+        path = QPainterPath()
+        for i in range(10):
+            rad = r if i % 2 == 0 else r * 0.44
+            ang = math.radians(-90 + i * 36)
+            x, y = cx + rad * math.cos(ang), cy + rad * math.sin(ang)
+            if i == 0:
+                path.moveTo(x, y)
+            else:
+                path.lineTo(x, y)
+        path.closeSubpath()
+        return path
+
+    def paintEvent(self, _event):
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing)
+        lit = self._hover or self._value
+        r = self._size * 0.40
+        for i in range(self.STARS):
+            cx = i * self._size + self._size / 2.0
+            path = self._star_path(cx, self._size / 2.0, r)
+            if i < lit:
+                p.fillPath(path, QBrush(QColor(C_AMBER)))
+                p.setPen(QPen(QColor(180, 120, 10, 200), 1))
+            else:
+                p.fillPath(path, QBrush(QColor(255, 255, 255, 200)))
+                p.setPen(QPen(QColor(160, 160, 172, 190), 1))
+            p.drawPath(path)
+
+
+class TaskFeedbackDialog(GlassDialog):
+    """Rate the task that just finished, and say what would have been better.
+
+    Report-only, like Error Rebounds: nothing typed here touches the plan or
+    the board. It is written to the feedback database in HOS data so the
+    ratings survive the session.
+    """
+
+    WORDS = {
+        1: "Poor — it did the wrong thing.",
+        2: "Rough — needed a lot of correction.",
+        3: "Okay — usable with some fixes.",
+        4: "Good — small things to improve.",
+        5: "Excellent — exactly what I asked for.",
+    }
+
+    def __init__(self, task: str = "", parent=None):
+        super().__init__("How did that task go?", parent,
+                         subtitle="Stars and any improvements are saved to the "
+                                  "feedback database — they never change the plan.",
+                         width=470)
+        self.stars = 0
+        self.improvements = ""
+
+        if task:
+            quote = QLabel(f"\u201c{task}\u201d")
+            quote.setWordWrap(True)
+            quote.setFont(QFont(UI_FONT, 10))
+            quote.setStyleSheet(
+                f"color:{C_TEXT};background:rgba(255,255,255,0.72);"
+                f"border:1px solid {C_BORDER};border-radius:16px;padding:11px 14px;")
+            self.body.addWidget(quote)
+
+        row = QHBoxLayout(); row.setSpacing(10)
+        self._rating = StarRating(32)
+        self._rating.changed.connect(self._on_stars)
+        row.addWidget(self._rating, 0)
+        self._words = QLabel("Click a star to rate this task.")
+        self._words.setWordWrap(True)
+        self._words.setFont(QFont(UI_FONT, 9))
+        self._words.setStyleSheet(f"color:{C_TEXT_DIM};background:transparent;")
+        row.addWidget(self._words, 1)
+        self.body.addLayout(row)
+
+        self._notes = QPlainTextEdit()
+        self._notes.setPlaceholderText(
+            "What would have made this better? (optional)")
+        self._notes.setFont(QFont(UI_FONT, 10))
+        self._notes.setFixedHeight(96)
+        self._notes.setStyleSheet(_field_css())
+        self.body.addWidget(self._notes)
+
+        actions = QHBoxLayout(); actions.setSpacing(9)
+        skip = pill_button("Not now", height=32)
+        skip.clicked.connect(self.reject)
+        self._save = pill_button("Save feedback", primary=True, height=32)
+        self._save.setEnabled(False)
+        self._save.clicked.connect(self._on_save)
+        actions.addStretch(1); actions.addWidget(skip); actions.addWidget(self._save)
+        self.body.addLayout(actions)
+
+    def _on_stars(self, n: int):
+        self._words.setText(self.WORDS.get(n, "Click a star to rate this task."))
+        self._save.setEnabled(n > 0)
+
+    def _on_save(self):
+        self.stars = self._rating.value()
+        self.improvements = self._notes.toPlainText().strip()
+        if self.stars <= 0:
+            return
+        self.accept()
+
+
+class FlowStepCard(QFrame):
+    """One step of the approach, editable in place.
+
+    Everything on the card is live: the wording, what kind of move it is, and
+    where it sits in the order. The operator is correcting the robot's plan
+    here, not filling in a form, so nothing is read-only and nothing has to be
+    confirmed twice.
+    """
+    moved   = Signal(int, int)   # index, direction (-1 up, +1 down)
+    removed = Signal(int)        # index
+
+    KIND_ORDER = ["move", "grip", "actuate", "pour", "clean", "wait", "check"]
+
+    def __init__(self, index: int, step: dict, total: int, parent=None):
+        super().__init__(parent)
+        self._index = index
+        accent = flow_kind_colour(step.get("kind"))
+        self.setStyleSheet(
+            f"QFrame{{background:rgba(255,255,255,0.82);"
+            f"border:1px solid {C_BORDER};border-left:3px solid {accent};"
+            f"border-radius:16px;}}")
+
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(12, 10, 12, 11)
+        lay.setSpacing(7)
+
+        head = QHBoxLayout(); head.setSpacing(7)
+
+        badge = QLabel(str(index + 1))
+        badge.setAlignment(Qt.AlignCenter)
+        badge.setFixedSize(21, 21)
+        badge.setFont(QFont(UI_FONT, 9, QFont.Bold))
+        badge.setStyleSheet(
+            f"background:{accent};color:#ffffff;border:none;"
+            f"border-radius:10px;")
+        head.addWidget(badge, 0)
+
+        self._kind = QComboBox()
+        for k in self.KIND_ORDER:
+            self._kind.addItem(flow_kind_label(k), k)
+        cur = str(step.get("kind") or FLOW_DEFAULT_KIND).lower()
+        if cur not in self.KIND_ORDER:
+            cur = FLOW_DEFAULT_KIND
+        self._kind.setCurrentIndex(self.KIND_ORDER.index(cur))
+        self._kind.setFixedHeight(21)
+        self._kind.setFont(QFont(UI_FONT, 8, QFont.Bold))
+        self._kind.setCursor(Qt.PointingHandCursor)
+        self._kind.setStyleSheet(
+            f"QComboBox{{background:rgba(255,255,255,0.9);color:{accent};"
+            f"border:1px solid {C_BORDER};border-radius:10px;padding:0 8px;}}"
+            f"QComboBox::drop-down{{border:none;width:14px;}}"
+            f"QComboBox QAbstractItemView{{background:#ffffff;color:{C_TEXT};"
+            f"selection-background-color:{C_VIOLET};selection-color:#ffffff;"
+            f"border:1px solid {C_BORDER};border-radius:10px;outline:none;}}")
+        head.addWidget(self._kind, 0)
+        head.addStretch(1)
+
+        self._up   = self._chip("↑", "Move this step earlier")
+        self._down = self._chip("↓", "Move this step later")
+        self._del  = self._chip("✕", "Remove this step", danger=True)
+        self._up.setEnabled(index > 0)
+        self._down.setEnabled(index < total - 1)
+        self._up.clicked.connect(lambda: self.moved.emit(self._index, -1))
+        self._down.clicked.connect(lambda: self.moved.emit(self._index, +1))
+        self._del.clicked.connect(lambda: self.removed.emit(self._index))
+        for b in (self._up, self._down, self._del):
+            head.addWidget(b, 0)
+        lay.addLayout(head)
+
+        self._title = QLineEdit(str(step.get("title") or ""))
+        self._title.setPlaceholderText("What happens in this step")
+        self._title.setFont(QFont(UI_FONT, 10, QFont.Bold))
+        self._title.setFixedHeight(28)
+        self._title.setStyleSheet(
+            f"QLineEdit{{background:rgba(255,255,255,0.95);color:{C_TEXT};"
+            f"border:1px solid {C_BORDER};border-radius:12px;padding:0 10px;}}"
+            f"QLineEdit:focus{{border-color:{accent};}}")
+        lay.addWidget(self._title)
+
+        self._detail = QLineEdit(str(step.get("detail") or ""))
+        self._detail.setPlaceholderText("Why, or how — optional")
+        self._detail.setFont(QFont(UI_FONT, 9))
+        self._detail.setFixedHeight(25)
+        self._detail.setStyleSheet(
+            f"QLineEdit{{background:rgba(255,255,255,0.72);color:{C_TEXT_DIM};"
+            f"border:1px solid {C_BORDER};border-radius:11px;padding:0 10px;}}"
+            f"QLineEdit:focus{{border-color:{accent};color:{C_TEXT};}}")
+        lay.addWidget(self._detail)
+
+    @staticmethod
+    def _chip(glyph: str, tip: str, danger: bool = False) -> QPushButton:
+        b = QPushButton(glyph)
+        b.setCursor(Qt.PointingHandCursor)
+        b.setFixedSize(22, 22)
+        b.setToolTip(tip)
+        b.setFont(QFont(UI_FONT, 9, QFont.Bold))
+        hover = C_RED if danger else C_VIOLET
+        b.setStyleSheet(
+            f"QPushButton{{background:rgba(255,255,255,0.9);color:{C_TEXT_DIM};"
+            f"border:1px solid {C_BORDER};border-radius:11px;padding:0;}}"
+            f"QPushButton:hover{{background:{hover};color:#ffffff;"
+            f"border-color:{hover};}}"
+            f"QPushButton:disabled{{background:rgba(255,255,255,0.45);"
+            f"color:rgba(107,114,128,0.35);border-color:rgba(196,181,253,0.2);}}")
+        return b
+
+    def step(self) -> dict:
+        """Whatever is on the card right now."""
+        return make_flow_step(self._title.text(),
+                              self._detail.text(),
+                              self._kind.currentData())
+
+
+class FlowchartDialog(GlassDialog):
+    """The approach, as a flowchart the operator can rewrite before it costs
+    anything.
+
+    This is the cheapest place in the whole pipeline to fix a plan. Correcting
+    a step here is one line of text; correcting the same mistake after the
+    planner has run means reading eighty lines of goto_coordinate, and after
+    the gantry has run it means re-staging the board by hand.
+
+    Closing the sheet is deliberately NOT a cancel — it plans the task the old
+    way, without a flow. Only the explicit Cancel button stops the run, since
+    dismissing a suggestion and abandoning a task are very different intents.
+    """
+
+    def __init__(self, steps: list, task: str = "", parent=None,
+                 seeded_from: str = ""):
+        super().__init__(
+            "Here's how I'd do it", parent,
+            subtitle="Reword a step, reorder them, or delete anything that "
+                     "shouldn't happen. The planner follows exactly what you "
+                     "approve.",
+            width=640)
+        self.cancelled = False
+        self._steps = normalise_flow_steps(steps)
+        self._cards = []
+        self.resize(640, 640)
+
+        if task:
+            quote = QLabel(f"“{task}”")
+            quote.setWordWrap(True)
+            quote.setFont(QFont(UI_FONT, 10))
+            quote.setStyleSheet(
+                f"color:{C_TEXT};background:rgba(255,255,255,0.72);"
+                f"border:1px solid {C_BORDER};border-radius:16px;"
+                f"padding:10px 13px;")
+            self.body.addWidget(quote)
+
+        if seeded_from:
+            recalled = QLabel(f"◆  Recalled from a skill you taught me: "
+                              f"“{seeded_from}”")
+            recalled.setWordWrap(True)
+            recalled.setFont(QFont(UI_FONT, 9, QFont.Bold))
+            recalled.setStyleSheet(
+                f"color:{C_GREEN};background:rgba(16,185,129,0.10);"
+                f"border:1px solid rgba(16,185,129,0.35);border-radius:13px;"
+                f"padding:8px 12px;")
+            self.body.addWidget(recalled)
+
+        scroll = VScrollArea()
+        scroll.setMinimumHeight(300)
+        scroll.setStyleSheet("QScrollArea{background:transparent;border:none;}")
+        host = QWidget()
+        host.setStyleSheet("background:transparent;")
+        self._col = QVBoxLayout(host)
+        self._col.setContentsMargins(2, 2, 2, 2)
+        self._col.setSpacing(0)
+        scroll.setWidget(host)
+        self.body.addWidget(scroll, 1)
+
+        add = QPushButton("+  Add a step")
+        add.setCursor(Qt.PointingHandCursor)
+        add.setFixedHeight(28)
+        add.setFont(QFont(UI_FONT, 9, QFont.Bold))
+        add.setStyleSheet(
+            f"QPushButton{{background:rgba(255,255,255,0.75);color:{C_TEXT_DIM};"
+            f"border:1px dashed {C_BORDER};border-radius:14px;padding:0 14px;}}"
+            f"QPushButton:hover{{color:{C_VIOLET};border-color:{C_VIOLET};}}")
+        add.clicked.connect(self._on_add)
+        self.body.addWidget(add)
+
+        actions = QHBoxLayout(); actions.setSpacing(9)
+        cancel = pill_button("Cancel run", height=32)
+        cancel.clicked.connect(self._on_cancel)
+        skip = pill_button("Plan without this", height=32)
+        skip.clicked.connect(self.reject)
+        self._ok = pill_button("Approve & plan", primary=True, height=32)
+        self._ok.clicked.connect(self.accept)
+        actions.addWidget(cancel, 0)
+        actions.addStretch(1)
+        actions.addWidget(skip, 0)
+        actions.addWidget(self._ok, 0)
+        self.body.addLayout(actions)
+
+        self._rebuild()
+
+    # --- structure -------------------------------------------------------
+
+    def _harvest(self):
+        """Pull the live text off the cards before the layout is torn down,
+        so an edit is never lost to a reorder."""
+        if self._cards:
+            self._steps = [c.step() for c in self._cards]
+
+    def _rebuild(self):
+        """Cards are rebuilt wholesale rather than shuffled in place — with at
+        most eight of them it is instant, and it keeps every card's index,
+        badge number and arrow state honest without a reindexing pass."""
+        while self._col.count():
+            item = self._col.takeAt(0)
+            w = item.widget()
+            if w is not None:
+                w.setParent(None)
+                w.deleteLater()
+        self._cards = []
+
+        total = len(self._steps)
+        for i, step in enumerate(self._steps):
+            if i:
+                arrow = QLabel("↓")
+                arrow.setAlignment(Qt.AlignCenter)
+                arrow.setFixedHeight(18)
+                arrow.setFont(QFont(UI_FONT, 11, QFont.Bold))
+                arrow.setStyleSheet(
+                    f"color:{C_BORDER};background:transparent;border:none;")
+                self._col.addWidget(arrow)
+            card = FlowStepCard(i, step, total)
+            card.moved.connect(self._on_move)
+            card.removed.connect(self._on_remove)
+            self._col.addWidget(card)
+            self._cards.append(card)
+
+        if not total:
+            empty = QLabel("No steps. Add one, or plan without a flowchart.")
+            empty.setAlignment(Qt.AlignCenter)
+            empty.setWordWrap(True)
+            empty.setFont(QFont(UI_FONT, 9))
+            empty.setStyleSheet(
+                f"color:{C_TEXT_DIM};background:transparent;border:none;"
+                f"padding:26px 0;")
+            self._col.addWidget(empty)
+
+        self._col.addStretch(1)
+        self._ok.setEnabled(total > 0)
+
+    def _on_move(self, index: int, delta: int):
+        self._harvest()
+        target = index + delta
+        if 0 <= index < len(self._steps) and 0 <= target < len(self._steps):
+            self._steps[index], self._steps[target] = \
+                self._steps[target], self._steps[index]
+            self._rebuild()
+
+    def _on_remove(self, index: int):
+        self._harvest()
+        if 0 <= index < len(self._steps):
+            del self._steps[index]
+            self._rebuild()
+
+    def _on_add(self):
+        self._harvest()
+        if len(self._steps) >= FLOW_MAX_STEPS:
+            return
+        self._steps.append(make_flow_step(""))
+        self._rebuild()
+        if self._cards:
+            self._cards[-1]._title.setFocus()
+
+    def _on_cancel(self):
+        self.cancelled = True
+        self.reject()
+
+    # --- result ----------------------------------------------------------
+
+    def steps(self) -> list:
+        """The approved flow. Blank cards are dropped rather than handed to
+        the planner as empty instructions."""
+        self._harvest()
+        return normalise_flow_steps(self._steps)
 
 
 class ClarifyDialog(GlassDialog):
@@ -9304,14 +10571,14 @@ class AISidebar(QWidget):
     def _refresh_run_btn(self):
         """Send (↑) while idle, stop (■) while anything is running."""
         busy = self._busy()
-        self._run_btn.setText("■" if busy else "↑")
+        self._run_btn.setText("◼" if busy else "↑")
         self._run_btn.setToolTip("Stop" if busy else "Send")
         self._run_btn.setStyleSheet(
-            f"QPushButton{{background:{C_BTN};color:{C_BTN_FG};border:none;"
-            f"border-radius:18px;font-size:{18 if busy else 20}px;font-weight:bold;}}"
-            f"QPushButton:hover{{background:{C_BTN_HOVER};}}"
-            f"QPushButton:pressed{{background:{C_BTN_PRESS};}}"
-            f"QPushButton:disabled{{background:{C_BTN_OFF};color:{C_BTN_OFFFG};}}")
+            f"QPushButton{{background:#000000;color:#ffffff;border:none;"
+            f"border-radius:18px;font-size:{13 if busy else 18}px;font-weight:bold;}}"
+            f"QPushButton:hover{{background:#2b2b2b;}}"
+            f"QPushButton:pressed{{background:#404040;}}"
+            f"QPushButton:disabled{{background:#d6d6d6;color:#9a9a9a;}}")
         self._run_btn.setEnabled(busy or self._last_frame is not None)
 
     def _on_run_or_stop(self):
@@ -9948,6 +11215,82 @@ class AISidebar(QWidget):
         if task:
             self._memory_then_plan(task)
 
+    def _approach_then_plan(self, task: str):
+        """Show the operator the shape of the plan before it becomes commands.
+
+        Sits between the memory check and the planner because this is the last
+        point where a correction is still cheap - one line of text here against
+        eighty lines of goto_coordinate afterwards, and a re-staged board after
+        that. Turned off by the toggle, or handed nothing usable by the model,
+        the run takes exactly the path it took before this feature existed.
+        """
+        if not APPROACH_PREVIEW:
+            self._launch_planner(task)
+            return
+        self._pending_approach_task = task
+        skill = match_learned_skill(task)
+        self._approach_skill = skill
+        seed = normalise_flow_steps(skill.get("steps")) if skill else []
+        if skill:
+            self._vlog(f"Recalled learned skill #{skill.get('id')} "
+                       f"(\u201c{skill.get('task')}\u201d) - seeding the approach.")
+        lessons = feedback_lessons_block(task)
+        if lessons:
+            self._vlog("Recalled past feedback for the approach:\n" + lessons)
+        self._set_stage("Working out an approach\u2026")
+        w = self._track(ApproachWorker(task, self._object_list, seed, lessons))
+        self._approach_worker = w
+        w.note.connect(self._vlog)
+        w.done.connect(self._on_approach_ready)
+        w.start()
+
+    def _on_approach_ready(self, steps: list):
+        """Put the flowchart in front of the operator, then plan whatever they
+        approved. An empty answer is not an error - it just means there was
+        nothing worth showing, and the task plans as it always did."""
+        task = self._pending_approach_task
+        self._pending_approach_task = None
+        skill = getattr(self, "_approach_skill", None)
+        self._approach_skill = None
+        if not task:
+            return
+        steps = normalise_flow_steps(steps)
+        if not steps:
+            self._vlog("No approach to show - planning straight through.")
+            self._launch_planner(task)
+            return
+
+        self._end_thinking()
+        dlg = FlowchartDialog(steps, task, self,
+                              seeded_from=(skill or {}).get("task", ""))
+        if not dlg.exec():
+            if dlg.cancelled:
+                self._set_stage("Run cancelled - approach rejected.", C_RED)
+                self._lock(False)
+                return
+            self._approved_flow = []
+            self._vlog("Approach dismissed - planning without a flow.")
+            self._launch_planner(task)
+            return
+
+        flow = dlg.steps()
+        self._approved_flow = flow
+        edited = flow_signature(steps) != flow_signature(flow)
+        bubble = self._chat_message(
+            "A3-Terra",
+            ("Approach approved \u2014 rebuilt around your edits."
+             if edited else "Approach approved."),
+            accent=C_VIOLET)
+        for i, s in enumerate(flow, 1):
+            bubble.add_detail(f"{i}. {s['title']}"
+                              + (f" \u2014 {s['detail']}" if s['detail'] else ""))
+        bubble.open_details()
+        self._chat.scroll_to_end()
+        self._vlog(("Operator edited the approach:\n" if edited
+                    else "Operator approved the approach unchanged:\n")
+                   + flow_to_prompt_block(flow))
+        self._launch_planner(task)
+
     def _launch_planner(self, task: str):
         """Work out the grip points, then plan — WITHOUT telling the planner
         about them.
@@ -10033,6 +11376,13 @@ class AISidebar(QWidget):
         to `task` here.
         """
         self._active_grips = list(grips or [])
+        flow = normalise_flow_steps(getattr(self, "_approved_flow", []))
+        if flow:
+            task = f"{task}\n\n{flow_to_prompt_block(flow)}"
+        lessons = feedback_lessons_block(getattr(self, "_err_task", "") or task)
+        if lessons:
+            task = f"{task}\n\n{lessons}"
+            self._vlog("Folded past feedback into the planner input:\n" + lessons)
         if self._instructions:
             notes = "\n".join(f"- {s}" for s in self._instructions)
             task  = f"{task}\n\nADDITIONAL AI INSTRUCTIONS (apply throughout):\n{notes}"
@@ -10092,6 +11442,7 @@ class AISidebar(QWidget):
         self._chat_message("You", task, user=True)
         self._vlog(f"Task submitted:\n{task}")
         self._err_task = task
+        self._approved_flow = []
         self._task_input.clear()
         self._lock(True)
         self._stop_btn.setEnabled(False)
@@ -10159,7 +11510,7 @@ class AISidebar(QWidget):
                 self._vlog(f"Memory saved: {instruction}")
             else:
                 self._vlog(f"Memory declined: {instruction}")
-        self._launch_planner(task)
+        self._approach_then_plan(task)
 
     def _on_cmd_chunk(self, delta: str):
         self._cmd_text += delta
@@ -10278,6 +11629,7 @@ class AISidebar(QWidget):
         self._end_thinking()
         bubble = self._chat_message("A3-Terra", "Task complete.", accent=C_GREEN)
         self._attach_err_button(bubble)
+        self._attach_feedback_button(bubble)
         self._last_stage = "Task complete."
         self._chat.scroll_to_end()
 
@@ -10310,6 +11662,93 @@ class AISidebar(QWidget):
         btn.clicked.connect(lambda _=False, p=payload, b=btn:
                             self._on_err_check(p, b))
         bubble.add_widget(btn)
+
+    def _attach_feedback_button(self, bubble: ChatBubble):
+        """Put a small white Feedback chip on this completion.
+
+        Deliberately tiny and low-contrast against the black Error Rebounds
+        button next to it: rating a task is optional and must never look like
+        the next step of the run.
+        """
+        task = self._err_task or ""
+        btn = QPushButton("☆ Feedback")
+        btn.setCursor(Qt.PointingHandCursor)
+        btn.setFixedHeight(20)
+        btn.setFont(QFont(UI_FONT, 8, QFont.Bold))
+        btn.setStyleSheet(
+            "QPushButton{background:rgba(255,255,255,0.96);"
+            f"color:{C_TEXT_DIM};border:1px solid rgba(160,160,175,0.45);"
+            "border-radius:10px;padding:0 9px;}"
+            "QPushButton:hover{background:#ffffff;"
+            f"color:{C_TEXT};border-color:{C_VIOLET};}}"
+            f"QPushButton:disabled{{background:rgba(255,255,255,0.55);"
+            f"color:{C_TEXT_DIM};border-color:rgba(160,160,175,0.30);}}")
+        btn.clicked.connect(lambda _=False, t=task, b=btn:
+                            self._on_feedback(t, b))
+
+        row = QWidget()
+        row.setStyleSheet("background:transparent;")
+        h = QHBoxLayout(row)
+        h.setContentsMargins(0, 0, 0, 0)
+        h.setSpacing(0)
+        h.addWidget(btn, 0)
+        h.addStretch(1)
+        bubble.add_widget(row)
+
+    def _on_feedback(self, task: str, button: QPushButton):
+        """Collect stars + improvements, store them, and confirm in chat."""
+        dlg = TaskFeedbackDialog(task, self)
+        if not dlg.exec():
+            return
+        record = append_task_feedback({
+            "task": task,
+            "stars": dlg.stars,
+            "improvements": dlg.improvements,
+            "commands": self._cmd_text.strip(),
+            "object_list": self._object_list,
+            "model": PLANNER_MODEL,
+        })
+        stars = int(record.get("stars", 0))
+        filled, empty = "★" * stars, "☆" * (5 - stars)
+        button.setEnabled(False)
+        button.setText(f"{filled} {stars}/5 saved")
+        bubble = self._chat_message(
+            "A3-Terra", f"Thanks — feedback saved.  {filled}{empty}",
+            accent=C_AMBER)
+        bubble.add_detail(f"Rating: {record.get('stars', 0)}/5")
+        if record.get("improvements"):
+            bubble.add_detail(f"Improvements: {record['improvements']}")
+        bubble.add_detail(f"Saved to {os.path.basename(TASK_FEEDBACK_PATH)} "
+                          f"(entry #{record.get('id', '?')})")
+        self._maybe_teach_skill(task, record, bubble)
+        self._chat.scroll_to_end()
+
+    def _maybe_teach_skill(self, task: str, record: dict, bubble):
+        """Keep the flow behind a well-rated run, so the next task like it
+        starts from what already worked.
+
+        Only 4- and 5-star runs are kept. The point of the library is to
+        repeat what worked; a 2-star flow recalled verbatim is a mistake the
+        operator would have to correct a second time.
+        """
+        flow = normalise_flow_steps(getattr(self, "_approved_flow", []))
+        try:
+            stars = int(record.get("stars") or 0)
+        except (TypeError, ValueError):
+            stars = 0
+        if stars < 4 or not flow:
+            return
+        skill = append_learned_skill({
+            "task": task,
+            "steps": flow,
+            "stars": stars,
+            "commands": self._cmd_text.strip(),
+        })
+        bubble.add_detail(
+            f"Learned as skill #{skill.get('id', '?')} \u2014 {len(flow)} step"
+            f"{'' if len(flow) == 1 else 's'}. I'll offer this flow next time.")
+        self._vlog(f"Skill learned #{skill.get('id')}: {task}\n"
+                   + flow_to_prompt_block(flow))
 
     def _on_err_check(self, payload: dict, button: QPushButton):
         """Confirm, then run Error Rebounds. Never mutates the plan."""
@@ -10682,7 +12121,8 @@ SETTINGS_DEFAULTS = {
     "VERBOSE": VERBOSE,
     "VOICE_TIDY": VOICE_TIDY,
     "TOUCH_THRESHOLD": TOUCH_THRESHOLD,
-    "MAX_TOUCH_CELLS": MAX_TOUCH_CELLS,
+    "MAX_TOUCH_CELLS_SLACK": MAX_TOUCH_CELLS_SLACK,
+    "SURFACE_MAX_CELLS": SURFACE_MAX_CELLS,
     "PADDING_KEEP_MIN": PADDING_KEEP_MIN,
     "BG_FOREGROUND_MIN": BG_FOREGROUND_MIN,
     "BG_EDGE_MIN_TOUCH": BG_EDGE_MIN_TOUCH,
@@ -10876,6 +12316,20 @@ class SettingsPanel(QWidget):
             "that cell instead of the object's centre. Turn it off to grip "
             "everything through the centre."))
 
+        self._approach = ToggleSwitch(APPROACH_PREVIEW)
+        self._approach.toggled.connect(
+            lambda on: (set_setting("APPROACH_PREVIEW", bool(on)),
+                        save_ui_setting("APPROACH_PREVIEW", bool(on))))
+        card.add(self._row(
+            "Approach preview", self._approach,
+            "On by default. Before the planner writes any commands, sketches "
+            "the handful of real-world steps it is about to take and shows "
+            "them as a flowchart you can reword, reorder or delete. What you "
+            "approve becomes the skeleton the planner must follow, and a run "
+            "you then rate 4 or 5 stars is remembered as a skill, so the next "
+            "task like it starts from the flow that already worked. Turn it "
+            "off to plan straight through without being asked."))
+
         self._verbose = ToggleSwitch(VERBOSE)
         self._verbose.toggled.connect(
             lambda on: set_setting("VERBOSE", bool(on)))
@@ -10929,8 +12383,10 @@ class SettingsPanel(QWidget):
         card.add(self._row("Touch threshold", self._numeric_field("TOUCH_THRESHOLD", float),
                            "Fraction of a cell an object's polygon must cover "
                            "to count as touching it. 0.0 – 1.0"))
-        card.add(self._row("Max touch cells", self._numeric_field("MAX_TOUCH_CELLS", int),
-                           "Ceiling on how many cells any one object may claim."))
+        card.add(self._row("Max touch cells slack",
+                           self._numeric_field("MAX_TOUCH_CELLS_SLACK", float),
+                           "How many times its own area an outline may claim in "
+                           "cells before the extras are dropped."))
         card.add(self._row("Padding keep min", self._numeric_field("PADDING_KEEP_MIN", float),
                            "Minimum polygon area that must lie inside the real "
                            "photo, or the outline is dropped as padding."))
@@ -13980,8 +15436,8 @@ class MainWindow(QMainWindow):
         for name, label, caster, hint in (
             ("TOUCH_THRESHOLD", "Touch Threshold…", float,
              "Fraction of a cell an object must cover (0.0 – 1.0)."),
-            ("MAX_TOUCH_CELLS", "Max Touch Cells…", int,
-             "Ceiling on how many cells any one object may claim."),
+            ("MAX_TOUCH_CELLS_SLACK", "Max Touch Cells Slack…", float,
+             "How many times its own area an outline may claim in cells."),
             ("PADDING_KEEP_MIN", "Padding Keep Min…", float,
              "Minimum polygon area that must lie inside the real photo."),
             ("BG_FOREGROUND_MIN", "Background Foreground Min…", float,

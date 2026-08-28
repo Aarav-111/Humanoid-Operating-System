@@ -78,9 +78,16 @@ Physical simulators combine a live camera feed and coordinate planning with an a
   4. Custom-build mode
   5. Stronger task planner
   6. Improved vision-prompt AI
-  7. Free to use, powered by AI scraping
-  8. Expanded task compatibility
-- **A3-Sol** *(not started)* — Planned as our most capable simulator to date.
+  7. Expanded task compatibility
+
+**Physical models before HOS 2.0**
+- HOS 1.1
+- HOS 1.2
+- HOS 1.4
+- HOS 1.5
+- HOS 1.7
+- HOS 1.9
+- HOS 1.9.5
 
 ---
 

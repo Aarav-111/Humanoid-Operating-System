@@ -292,7 +292,7 @@ Developed by **Prolabs Robotics**.
 | --- | --- |
 | Project Lead | Aarav Jaisingh |
 | Project Co-lead | Siyona Chicker |
-| Collaborators | Vivan Rajpuria, Ray Archer, Job San Jose, Sachin Sai
+| Collaborators | Job San Jose, Sachin Sai
 
 For collaboration, research, or project questions: **prolabsrobotics@gmail.com**
 

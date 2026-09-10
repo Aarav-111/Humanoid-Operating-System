@@ -1209,8 +1209,14 @@ def tag_cell_centering(pts, grid: "Grid", col: int, row: int) -> bool:
 # a FLUSH point at offset r * H / (H - h) would -- so the true position is
 # the raw reading pulled back toward the board's center by k = (H-h)/H.
 TRIG_CAMERA_HEIGHT_IN = 35.0   # all three are measured FROM THE GROUND, and
-TRIG_TAG_HEIGHT_IN = 6.0       # adjustable in the Trigonometry menu
-TRIG_BOARD_HEIGHT_IN = 0.0
+TRIG_TAG_HEIGHT_IN = 5.5       # adjustable in the Trigonometry menu
+TRIG_BOARD_HEIGHT_IN = 0.0     # The tag has always been 5.5" on this rig; it
+                               # was simply recorded here as 6.0. Nothing moved
+                               # -- this corrects a wrong measurement. k was
+                               # 0.8286 instead of 0.8429, so every reading was
+                               # pulled ~1.7% too far toward the nadir: about
+                               # 0.2" (a sixth of a cell) at the board edge,
+                               # always toward the centre, never away.
 
 # WHY A BOARD HEIGHT EXISTS AT ALL -- this is the whole correction, and
 # getting it wrong is the single easiest way to be badly off.
@@ -1284,8 +1290,14 @@ TRIG_PIVOT_Y = 0.0
 #
 # Sign convention follows build_path_commands: "down" is a LARGER row index
 # (toward row 20), "right" is a larger column index.
-GRIPPER_OFFSET_CELLS = 0
-GRIPPER_OFFSET_DIR = "down"
+# Measured on the rig: the gripper sits five cells ABOVE the tag (toward
+# row 1), so a tag on H10 puts the gripper on H5. Was 0/"down" -- zero meant
+# a fresh copy drove the tag itself to the target, and "down" was the wrong
+# way round for this mount, putting the gripper 10 cells from where the app
+# said it was. The count is the one part only the rig can settle: try it,
+# and if the gripper lands a cell out, this is the number to change.
+GRIPPER_OFFSET_CELLS = 5
+GRIPPER_OFFSET_DIR = "up"
 GRIPPER_OFFSET_DIRS = ("up", "down", "left", "right")
 GRIPPER_OFFSET_STEPS = {"up": (0, -1), "down": (0, 1),
                         "left": (-1, 0), "right": (1, 0)}
@@ -1365,6 +1377,48 @@ def fixed_unreachable_rows() -> set:
     return set(range(CONFIG.n_rows - n, CONFIG.n_rows))
 
 
+def _index_spans(indices) -> list:
+    """Sorted ints -> contiguous [start, end] runs, e.g. {16,17,18,19} ->
+    [[16, 19]]. Shared by the row/column phrasing below."""
+    spans = []
+    for i in sorted(indices):
+        if spans and i == spans[-1][1] + 1:
+            spans[-1][1] = i
+        else:
+            spans.append([i, i])
+    return spans
+
+
+def unreachable_board_note() -> str:
+    """The red band -- rows/columns the gripper's own geometry keeps it out
+    of no matter how the tag is driven -- as a short phrase for a prompt:
+    'row 17-20' or 'row 17-20 and column S-T'. Empty when nothing is
+    excluded.
+
+    Combines the same two sources Grid.draw paints red: unreachable_rows()/
+    unreachable_cols() (the real, offset-derived limit) and
+    fixed_unreachable_rows() (the separate always-on cosmetic band). Both
+    read the same to a plan: nowhere in the union is a coordinate the robot
+    can ever actually reach.
+    """
+    bad_rows = unreachable_rows() | fixed_unreachable_rows()
+    bad_cols = unreachable_cols()
+    parts = []
+    if bad_rows:
+        spans = [f"{CONFIG.rows[a]}-{CONFIG.rows[b]}" if a != b
+                else str(CONFIG.rows[a])
+                for a, b in _index_spans(bad_rows)]
+        parts.append(f"row{'s' if len(bad_rows) > 1 else ''} "
+                     + ", ".join(spans))
+    if bad_cols:
+        spans = [f"{CONFIG.columns[a]}-{CONFIG.columns[b]}" if a != b
+                else CONFIG.columns[a]
+                for a, b in _index_spans(bad_cols)]
+        parts.append(f"column{'s' if len(bad_cols) > 1 else ''} "
+                     + ", ".join(spans))
+    return " and ".join(parts)
+
+
 def gripper_offset_label() -> str:
     """"none", or "2 cells down" -- for the panel and the status line."""
     if GRIPPER_OFFSET_CELLS <= 0:
@@ -1373,57 +1427,16 @@ def gripper_offset_label() -> str:
     return f"{GRIPPER_OFFSET_CELLS} {unit} {GRIPPER_OFFSET_DIR}"
 
 
-# A data-fitted alternative to apply_trig_offset() below. The trig formula
-# assumes a perfect pinhole camera, perfectly level, tag plane exactly
-# parallel to the board -- any real mount departs from that a little, and
-# the error this leaves behind is uneven: fine through the middle, off by a
-# cell in specific pockets near the edges, because the true geometry and the
-# idealised formula diverge unevenly rather than by one clean multiplier.
-#
-# The tag always moves in a plane parallel to the board, just offset upward
-# by some constant height -- and projecting any such plane through a pinhole
-# camera is itself exactly a 2D homography, regardless of that height, the
-# camera's height, or the lens. So a handful of (raw pixel, true board
-# position) correspondences, gathered by ParallaxCalibrator below, fit the
-# real correction directly instead of assuming it.
-PARALLAX_HOMOGRAPHY = None    # None = uncalibrated, correct_parallax is a no-op
-PARALLAX_BOX = None           # the grid box the homography was fitted against
-PARALLAX_FRAME_SIZE = None    # and the frame size, likewise
-
-
-def correct_parallax(cx: float, cy: float) -> tuple:
-    """Raw detected tag pixel -> where a flush marker there would read,
-    using the calibrated homography. A no-op until one exists."""
-    if PARALLAX_HOMOGRAPHY is None:
-        return cx, cy
-    pt = cv2.perspectiveTransform(
-        np.array([[[cx, cy]]], dtype=np.float32), PARALLAX_HOMOGRAPHY)
-    return float(pt[0, 0, 0]), float(pt[0, 0, 1])
-
-
-def parallax_calibrated_for(grid: "Grid") -> bool:
-    """Whether the stored homography still matches this grid's box and frame
-    size closely enough to trust.
-
-    Recalibration isn't required for a jitter-sized change -- the corners can
-    move a pixel or two from float round-tripping through the settings file
-    -- but a real recrop or a resize invalidates every correspondence the fit
-    was built from, and applying it anyway would be a confident wrong answer
-    dressed up as a calibrated one.
-    """
-    if PARALLAX_HOMOGRAPHY is None or PARALLAX_BOX is None:
-        return False
-    if PARALLAX_FRAME_SIZE != (grid.frame_width, grid.frame_height):
-        return False
-    return all(abs(a - b) <= 2.0 for a, b in zip(PARALLAX_BOX, grid.box))
-
-
 def correct_tag_position(cx: float, cy: float, grid: "Grid") -> tuple:
-    """The one call site everything downstream should use: the fitted
-    homography when one is calibrated and still valid for this grid, the
-    trig formula otherwise."""
-    if parallax_calibrated_for(grid):
-        return correct_parallax(cx, cy)
+    """The one call site everything downstream should use.
+
+    There used to be a second, data-fitted correction here -- a homography
+    fitted from measured (raw pixel, true board position) correspondences,
+    which would have sat in front of the trig formula whenever it had been
+    calibrated. It was never calibrated on this rig, and it is gone now: the
+    trig formula is the whole correction, so what the Trigonometry panel says
+    is exactly what the board does.
+    """
     return apply_trig_offset(cx, cy, grid)
 
 
@@ -2935,11 +2948,6 @@ def save_settings(cam: CameraSettings, grid: Grid):
         },
         "vision": {"board_width_in": BOARD_WIDTH_IN},
         "behaviour": {"manual_gripper_steps": MANUAL_GRIPPER_STEPS},
-        "parallax": ({} if PARALLAX_HOMOGRAPHY is None else {
-            "matrix": PARALLAX_HOMOGRAPHY.tolist(),
-            "box": PARALLAX_BOX,
-            "frame_size": list(PARALLAX_FRAME_SIZE),
-        }),
     }
     if not ensure_data_dir():
         return
@@ -2994,20 +3002,9 @@ def load_settings():
     else:
         print(f"[settings] ignoring unknown gripper direction {saved_dir!r}")
 
-    global PARALLAX_HOMOGRAPHY, PARALLAX_BOX, PARALLAX_FRAME_SIZE
-    p_data = data.get("parallax", {})
-    matrix = p_data.get("matrix")
-    if matrix:
-        try:
-            PARALLAX_HOMOGRAPHY = np.array(matrix, dtype=np.float64)
-            PARALLAX_BOX = list(p_data.get("box") or [])
-            fs = p_data.get("frame_size") or [0, 0]
-            PARALLAX_FRAME_SIZE = (int(fs[0]), int(fs[1]))
-        except (TypeError, ValueError) as e:
-            print(f"[settings] ignoring unreadable parallax calibration: {e}")
-            PARALLAX_HOMOGRAPHY = PARALLAX_BOX = PARALLAX_FRAME_SIZE = None
-    else:
-        PARALLAX_HOMOGRAPHY = PARALLAX_BOX = PARALLAX_FRAME_SIZE = None
+    # A "parallax" block from an older settings file is simply ignored now
+    # that the trig formula is the only correction -- reading it back would
+    # restore a calibration nothing applies any more.
 
     global BOARD_WIDTH_IN
     BOARD_WIDTH_IN = float(data.get("vision", {}).get("board_width_in",
@@ -3110,10 +3107,19 @@ class ManualMovePanel:
         state.action_label = None
         state.manual_move_active = True
         name = coordinate_name(self.sel_col, self.sel_row)
+        # state.target_col/row is a GRIPPER cell everywhere in the app, so
+        # the move above puts the GRIPPER on `name` and the tag stops a
+        # whole offset short of it. Saying "the tag" here read as the
+        # offset being ignored: the message promised H14 while the tag
+        # settled on H10, which is the offset working exactly as set. Named
+        # the same way update_guidance does, so both lines agree.
+        stop = tag_cell_for(self.sel_col, self.sel_row)
+        off_note = ("" if gripper_offset() == (0, 0)
+                    else f"  (tag -> {cell_label(*stop)})")
         chat_say(state, "assistant",
-                 f"Manual move: guiding the tag to {name}.")
+                 f"Manual move: guiding the gripper to {name}.{off_note}")
         self.close()
-        return f"Guiding the tag to {name}."
+        return f"Guiding the gripper to {name}.{off_note}"
 
     def _nudge(self, dcol, drow, state, runner, sim):
         """Move the target one cell, then let the same live guidance drive it.
@@ -3417,128 +3423,6 @@ class ManualMovePanel:
         self.number_dd.draw_list(frame, self.sel_row, mouse)
 
 
-PARALLAX_CALIB_TIMEOUT_S = 15.0
-PARALLAX_CALIB_DWELL_S = 0.3
-
-
-def parallax_calib_points():
-    """9 (col, row) tag-cell targets: 4 corners, 4 edge midpoints, centre --
-    generated from the CURRENT grid size, so it works for any n_cols/n_rows,
-    not just a 20x20 board."""
-    c0, c1 = 0, CONFIG.n_cols - 1
-    r0, r1 = 0, CONFIG.n_rows - 1
-    cm, rm = c1 // 2, r1 // 2
-    return [(c0, r0), (c1, r0), (c0, r1), (c1, r1),
-            (cm, r0), (cm, r1), (c0, rm), (c1, rm),
-            (cm, rm)]
-
-
-class ParallaxCalibrator:
-    """Walks the tag through 9 known cells and fits the real camera->board
-    correction from where it actually lands, rather than assuming a formula.
-
-    Modeled on PlanRunner's single-target drive/arrive loop: a target cell is
-    handed to the existing live guidance (state.target_col/row, driven by
-    update_guidance every frame) exactly like ManualMovePanel's GO button
-    does, and this class only watches for a settled arrival to capture a
-    sample from -- it never talks to the motors directly.
-    """
-
-    def __init__(self):
-        self.active = False
-        self.points = []
-        self.index = -1
-        self.samples = []
-        self._settled_since = None
-        self._started_at = 0.0
-        self.status = ""
-        self.done = False
-        self.failed = False
-
-    def start(self, state):
-        self.points = parallax_calib_points()
-        self.index = -1
-        self.samples = []
-        self._settled_since = None
-        self.done = False
-        self.failed = False
-        self.active = True
-        self.status = "Calibrating -- point 1/9"
-        self._advance(state)
-
-    def stop(self, state, why=""):
-        if self.active:
-            state.target_col = state.target_row = None
-            state.manual_move_active = False
-            state.arrived = False
-            ARDUINO.send_direction(None)
-        self.active = False
-        if why:
-            self.status = why
-
-    def _advance(self, state, grid=None):
-        self.index += 1
-        if self.index >= len(self.points):
-            self._finish(state, grid)
-            return
-        col, row = self.points[self.index]
-        # The points are TAG cells; state.target_col/row is a GRIPPER target
-        # everywhere else in the app (see gripper_offset()), so the forward
-        # map here is what makes update_guidance land the TAG on (col, row).
-        state.target_col, state.target_row = gripper_cell(col, row)
-        state.arrived = False
-        state.manual_move_active = True
-        self._settled_since = None
-        self._started_at = time.time()
-        self.status = f"Calibrating -- point {self.index + 1}/{len(self.points)}"
-
-    def _finish(self, state, grid):
-        self.active = False
-        global PARALLAX_HOMOGRAPHY, PARALLAX_BOX, PARALLAX_FRAME_SIZE
-        raw_pts = np.array([[rx, ry] for rx, ry, _, _ in self.samples],
-                           dtype=np.float32)
-        true_pts = np.array([[tx, ty] for _, _, tx, ty in self.samples],
-                            dtype=np.float32)
-        H, _ = cv2.findHomography(raw_pts, true_pts, method=0)
-        if H is None:
-            self.failed = True
-            self.status = "Calibration failed -- could not fit a homography."
-            return
-        PARALLAX_HOMOGRAPHY = H
-        if grid is not None:
-            PARALLAX_BOX = list(grid.box)
-            PARALLAX_FRAME_SIZE = (grid.frame_width, grid.frame_height)
-        self.done = True
-        self.status = "Calibration complete."
-
-    def tick(self, state, grid, runner=None, sim=None):
-        """Called every frame while active, same contract as PlanRunner.tick."""
-        if not self.active:
-            return
-        if (runner is not None and runner.active) or (sim is not None and sim.active):
-            self.stop(state, "Calibration cancelled -- another run started.")
-            return
-        now = time.time()
-        col, row = self.points[self.index]
-        fresh = state.tag_visible and state.tag_raw_px is not None
-        on_point = (fresh and state.arrived and state.tag_centered
-                   and state.last_tag_col == col and state.last_tag_row == row)
-        if on_point:
-            if self._settled_since is None:
-                self._settled_since = now
-            elif now - self._settled_since >= PARALLAX_CALIB_DWELL_S:
-                rx, ry = state.tag_raw_px
-                tx, ty = grid.grid_to_pixel(col + 0.5, row + 0.5)
-                self.samples.append((rx, ry, tx, ty))
-                self._advance(state, grid)
-            return
-        self._settled_since = None
-        if now - self._started_at >= PARALLAX_CALIB_TIMEOUT_S:
-            self.stop(state, f"Calibration timed out at point "
-                             f"{self.index + 1}/{len(self.points)} -- "
-                             f"the tag never settled there.")
-
-
 class TrigPanel:
     """A small frosted card, opened from its own "Trigonometry" menu, for
     the two measurements apply_trig_offset() derives its correction from --
@@ -3560,7 +3444,6 @@ class TrigPanel:
         self.buttons = []
         self._last_rect = None
         self._anim = 0.0
-        self.calibrator = ParallaxCalibrator()
         self.count_dd = Dropdown("Cells", 0, 0, 0, 0, "trig_off_count")
         self.dir_dd = Dropdown("Direction", 0, 0, 0, 0, "trig_off_dir")
         self.count_dd.set_items([(n, str(n))
@@ -3643,20 +3526,6 @@ class TrigPanel:
                 else:
                     TRIG_PIVOT_Y = max(-400.0, min(400.0, TRIG_PIVOT_Y + delta))
                 return f"Pivot {TRIG_PIVOT_X:+.0f}, {TRIG_PIVOT_Y:+.0f}px"
-            if b.kind == "calib_start":
-                if (runner is not None and runner.active) or \
-                   (sim is not None and sim.active):
-                    return "Busy -- stop the current run first."
-                self.calibrator.start(state)
-                return self.calibrator.status
-            if b.kind == "calib_stop":
-                self.calibrator.stop(state, "Calibration cancelled.")
-                return self.calibrator.status
-            if b.kind == "calib_clear":
-                global PARALLAX_HOMOGRAPHY, PARALLAX_BOX, PARALLAX_FRAME_SIZE
-                PARALLAX_HOMOGRAPHY = PARALLAX_BOX = PARALLAX_FRAME_SIZE = None
-                save_settings(cam_settings, grid)
-                return "Calibration cleared -- back to the trig formula."
             if b.kind == "save":
                 save_settings(cam_settings, grid)
                 return f"Saved to {os.path.basename(SETTINGS_PATH)}"
@@ -3763,11 +3632,7 @@ class TrigPanel:
         cv2.line(frame, (px + 24, y + 2), (px + pw - 24, y + 2), C_BORDER, 1)
         h_in, H_in = trig_heights()
         k = trig_offset_k()
-        calibrated = grid is not None and parallax_calibrated_for(grid)
-        if calibrated:
-            line = "Using the fitted camera calibration (trig formula idle)."
-            line_c = C_GREEN
-        elif H_in <= 0 or h_in < 0 or h_in >= H_in:
+        if H_in <= 0 or h_in < 0 or h_in >= H_in:
             line, line_c = "Heights are impossible -- correction is OFF", C_AMBER
         else:
             shift = (h_in / (H_in - h_in)) * (CONFIG.n_cols / 2.0)
@@ -3776,40 +3641,6 @@ class TrigPanel:
             line_c = C_TEXT_DIM
         draw_text(frame, line, (px + 24, y + 26), 0.36, line_c, 1)
         y += 40
-
-        # --- Camera calibration: a data-fitted correction, for when the trig
-        # formula's uneven edge/corner error (see the comment by
-        # PARALLAX_HOMOGRAPHY) isn't good enough any more ---
-        cv2.line(frame, (px + 24, y + 2), (px + pw - 24, y + 2), C_BORDER, 1)
-        draw_text(frame, "Camera calibration", (px + 24, y + 24), 0.48, C_TEXT, 1)
-        y += 30
-        cal = self.calibrator
-        if cal.active:
-            cal_line, cal_c = cal.status, C_ACCENT
-        elif calibrated:
-            cal_line, cal_c = "Calibrated for this board layout.", C_GREEN
-        elif PARALLAX_HOMOGRAPHY is not None:
-            cal_line = "Calibrated, but the grid moved since -- recalibrate."
-            cal_c = C_AMBER
-        else:
-            cal_line, cal_c = "Not calibrated -- using the trig formula.", C_TEXT_DIM
-        draw_text(frame, cal_line, (px + 24, y + 16), 0.34, cal_c, 1)
-        y += 26
-        if cal.active:
-            stop = Button("STOP", px + 24, y + 4, px + 24 + half,
-                         y + row_h - 6, "calib_stop", style="primary", scale=0.46)
-            stop.draw(frame, hover=stop.contains(mx, my), shadow=False)
-            self.buttons.append(stop)
-        else:
-            start = Button("CALIBRATE", px + 24, y + 4, px + 24 + half,
-                          y + row_h - 6, "calib_start", style="accent", scale=0.42)
-            start.draw(frame, hover=start.contains(mx, my), shadow=False)
-            self.buttons.append(start)
-        clear = Button("CLEAR", px + 36 + half, y + 4, px + pw - 24,
-                      y + row_h - 6, "calib_clear", scale=0.46)
-        clear.draw(frame, hover=clear.contains(mx, my), shadow=False)
-        self.buttons.append(clear)
-        y += row_h + 10
 
         save = Button("SAVE", px + 24, y + 4, px + 24 + half, y + row_h - 6,
                       "save", style="primary", scale=0.46)
@@ -4458,7 +4289,7 @@ printed in the cell it is sitting on. The labels exist so you never have to
 count across from an edge, and counting is exactly how outlines end up a cell
 off. Whatever you are about to write down, check it against the label printed
 under the object first.
-
+{REACHABLE_NOTE}
 ## COORDINATES: FRACTIONAL CELL UNITS
 
 Every point is written [col, row] in cell units, NOT pixels:
@@ -5390,7 +5221,6 @@ def snap_object_to_content(frame_bgr, grid: Grid, obj, fgmap=None, others=None):
     return obj
 
 
-
 UNCLAIMED_MIN_CELLS = 0.30
 UNCLAIMED_MAX_CELLS = 45.0
 UNCLAIMED_COVERED = 0.45
@@ -6132,10 +5962,38 @@ and not the other, look again - it is in both.
 """
 
 
+def build_reachable_note() -> str:
+    """The OUT OF REACH section -- told to vision so it never reports an
+    object the gripper's own geometry can never put a tool on.
+
+    Empty (no section at all) when GRIPPER_OFFSET_CELLS is 0 and the fixed
+    cosmetic band is disabled -- most boards have nothing to exclude.
+    """
+    note = unreachable_board_note()
+    if not note:
+        return ""
+    return REACHABLE_NOTE.format(NOTE=note)
+
+
+REACHABLE_NOTE = """
+## OUT OF REACH - {NOTE}
+
+The gripper sits a fixed distance from the tag the camera tracks, so the
+robot's own geometry keeps it out of {NOTE} no matter how the tag is driven -
+a hard physical limit, not a rule, and the same one on every task. Do not
+report an object there: outlining it only hands the planner a target it can
+never act on. Skip anything whose full extent sits inside that area. If an
+object straddles the line, outline it as it really is - the part on the
+reachable side is still real and still worth reporting.
+
+"""
+
+
 def build_vision_prompt(task_text=None, grid=None, two_plates=False):
     cols = CONFIG.columns
     return (VISION_PROMPT
             .replace("{TWO_PLATES}", TWO_PLATES_NOTE if two_plates else "")
+            .replace("{REACHABLE_NOTE}", build_reachable_note())
             .replace("{SCALE_NOTE}", build_scale_note(grid))
             .replace("{COLS_LABEL_FIRST}", cols[0])
             .replace("{N_COLS}", str(CONFIG.n_cols))
@@ -6237,7 +6095,7 @@ the window", "slide the window open", "close the guard on the drill press",
 "open the jar", "lift the toilet seat" are all `open_door`/`close_door`.
 
 **2. Contact pass - drag a held tool across cells.**
-Pick up a tool (broom, mop, cloth, sponge), move above the FIRST cell, `press` to put the tool in contact with the surface, then issue one `goto_coordinate` per cell. The tool stays in contact and works every cell it crosses. `release` lifts it at the end.
+Pick up a tool (broom, mop, cloth, sponge), move above the FIRST cell, `press` to put the tool in contact with the surface, then issue one `goto_coordinate` per cell. The tool stays in contact and works every cell it crosses. `release` lifts it at the end. Across more than one row, zigzag - see **Serpentine coverage**.
 
 Tool by task: broom for sweeping, mop for mopping, cloth/sponge for wiping /
 scrubbing / soaping. Do not substitute cloth for a broom when the task is to
@@ -6370,7 +6228,21 @@ Fix what fails and answer with the corrected plan. Never emit a plan you have ju
 
 **Coordinate format** - every move MUST be written exactly as: goto_coordinate = X, N (letter, comma, space, number). NEVER fuse the coordinate (H6), NEVER omit the "=". No other spelling is valid.
 
-**Surface coverage** - when cleaning an OBJECT, the contact pass MUST cross every cell in that object's TOUCHES list, not just its CENTER. Cleaning one cell of a multi-cell object is a failure.
+**Surface coverage** - when cleaning an OBJECT, the contact pass MUST cross every cell in that object's TOUCHES list, not just its CENTER. Cleaning one cell of a multi-cell object is a failure. Stay one cell in from the object's outer edge, though: TOUCHES marks where the object visibly IS, not where the tool should actually make contact, and driving straight onto the outermost boundary cell risks working past the object's real edge instead of on it. For a TOUCHES cell that sits on the object's outer boundary, use the cell one step in toward its CENTER instead - the ring just inside the edge, not the edge itself. An object only one or two cells wide has no inner ring; clean its TOUCHES cells directly in that case.
+
+**Serpentine coverage** - a contact pass covering more than one row runs BACK AND FORTH, reversing direction on every row. Cover the first row left to right, step DOWN one row, cover the next row right to left, step down, the next left to right again, and so on to the end of the area. The tool is already at the near end of the next row when it steps down, so the pass never crosses ground it has just covered.
+
+RIGHT - one press, a zigzag, one release:
+    goto A,4 / press / goto C,4 / goto E,4     # row 4, left to right
+    goto E,5 / goto C,5 / goto A,5             # down, row 5 right to left
+    goto A,6 / goto C,6 / goto E,6 / release   # down, row 6 left to right
+
+WRONG - every row in the same direction, flying back to the left edge between them:
+    goto A,4 / press / goto C,4 / goto E,4
+    goto A,5 / goto C,5 / goto E,5             # dragged the tool back across row 4-5
+    goto A,6 / goto C,6 / goto E,6
+
+Writing every row in the same direction doubles the travel and drags the tool back over cells it just finished. This applies to wiping, dusting, soaping, scrubbing and mopping - anything that stays pressed across several rows. It does NOT apply to broom sweeping (playbook 1), where each row is its own press/release pair and every pass must end at the pile: there the direction of travel is what moves the debris, so every pass runs the same way, toward the pile.
 
 **Surfaces usually aren't in the list, but check first** - vision normally reports only discrete objects, not the table, counter, floor or wall they rest on. But when the task itself names a surface (e.g. "clean the table"), vision may report that specific surface as its own object with a real CENTER/TOUCHES - check the OBJECT LIST before assuming it's absent. If it genuinely isn't there, NEVER invent a coordinate for it; clean an area instead by running the contact pass over explicit board cells (see playbook 3).
 
@@ -6411,7 +6283,9 @@ Cells named in an OBJECT's CENTER or TOUCHES are exact - never round those to a 
 
 **Aim at the right object** - every coordinate you write is either a cell of the object you mean to act on, or an empty cell you chose deliberately. Before writing a `goto` that is followed by `pour`, `keep`, `pickup` or `press`, check the cell against the OBJECT LIST: if it appears in the TOUCHES of an object OTHER than the one this step is about, you are aiming at the wrong thing. This matters most when a component looks misplaced - a plant whose "pot" sits in the middle of the cup's cells is a mis-outlined part, not a pot, and pouring there empties the cup into itself. When an object's component cell contradicts the object's own CENTER and TOUCHES, trust CENTER and TOUCHES.
 
-**Free space** - "NEVER invent a coordinate" means never invent one for an OBJECT. Choosing an empty cell to put something down is not inventing anything: the board is {COLS}x{ROWS}, the robot reaches all of it, and every cell not listed in some object's TOUCHES is known to be clear. When a step needs a destination and the operator named none, pick one yourself:
+**Out of reach** - {OUT_OF_REACH_RULE}
+
+**Free space** - "NEVER invent a coordinate" means never invent one for an OBJECT. Choosing an empty cell to put something down is not inventing anything: the board is {COLS}x{ROWS}, and every cell not listed in some object's TOUCHES is known to be clear. Never pick one inside the OUT OF REACH area above. When a step needs a destination and the operator named none, pick one yourself:
 - a cell that appears in NO object's TOUCHES list (including UNIDENTIFIED entries),
 - as close to the object's own CENTER as that allows, so the move is short,
 - and off whatever is being worked on, if the task is clearing or cleaning something.
@@ -6642,7 +6516,8 @@ pickup
 goto_coordinate = A, 1
 press                      # mop down
 goto_coordinate = B, 1
-...one goto per cell, row by row
+...across row 1, then DOWN one row and back the other way
+...zigzag to the end of the area (see **Serpentine coverage**)
 release
 goto_coordinate = MOP_COL, MOP_ROW
 keep
@@ -6662,12 +6537,13 @@ vision does not report bare surfaces by default), fall back to board cells:
 (a) The user named the area to wipe in grid terms ("wipe C4 to H8", "wipe row
     6"). Expand that range yourself and wipe exactly those cells.
 (b) The user said "wipe the table" with no area given and no table object
-    exists. The board is {COLS}x{ROWS} and the robot can reach all of it, so wipe the
-    full board row by row - but on a board this size that is {N_CELLS} cells, so
+    exists. The board is {COLS}x{ROWS}, so wipe the full board row by row,
+    zigzagging (see **Serpentine coverage**) and skipping what **Out of
+    reach** excludes - but on a board this size that is {N_CELLS} cells, so
     cover it in strides: every 2nd cell along a row and every 2nd row, first
-    and last of each run always included. This is a last resort, not the
-    default - it will also sweep cells that are floor/background, not the
-    table, whenever the table doesn't fill the frame, so prefer (a) or the
+    and last of each run always included. This is a last resort, not the default - it will also sweep
+    cells that are floor/background, not the table, whenever the table
+    doesn't fill the frame, so prefer (a) or the
     OBJECT LIST case above whenever either is available.
 
 **Things sitting on the surface stay where they are - unless the task is to
@@ -6709,7 +6585,7 @@ goto_coordinate = CLOTH_COL, CLOTH_ROW
 pickup
 goto_coordinate = <first cell of the full surface area>
 press
-...one goto per cell of the full area, corner cell excluded
+...zigzag over the full area (see **Serpentine coverage**), corner cell excluded
 release
 goto_coordinate = CLOTH_COL, CLOTH_ROW
 keep
@@ -6731,12 +6607,14 @@ keep
 
 To clean a specific OBJECT (a plate, a tray, a chopping board, or a table/
 counter that IS in the OBJECT LIST), run the contact pass over that object's
-own full TOUCHES list rather than a board region.
+own TOUCHES footprint rather than a board region (see **Surface coverage** -
+stay one cell in from the object's outer edge).
 
 ## 3b. Wash Dishes (sink)
 
-Soap goes on the DISHES, using each dish's own TOUCHES cells. Keep the
-sponge pressed while moving from one dish to the next; one pass covers them all.
+Soap goes on the DISHES, using each dish's own TOUCHES footprint (see
+**Surface coverage**). Keep the sponge pressed while moving from one dish to
+the next; one pass covers them all.
 
 goto_coordinate = SPONGE_COL, SPONGE_ROW      # or dish soap bottle
 pickup
@@ -7336,13 +7214,32 @@ press was meant to perform. Task_Completed is always the final line.
 """
 
 
+def build_out_of_reach_rule() -> str:
+    """The **Out of reach** paragraph's body -- the same union Grid.draw
+    paints red and vision is told to skip, restated for the planner in case
+    an object's TOUCHES still crosses into it (see REACHABLE_NOTE)."""
+    note = unreachable_board_note()
+    if not note:
+        return "The robot can reach every cell on this board."
+    return (f"The gripper's own geometry keeps it out of {note}, on every "
+           f"task, regardless of what the OBJECT LIST says - a hard "
+           f"physical limit, not a preference. NEVER write a "
+           f"`goto_coordinate` there, for a contact pass, a pickup, a "
+           f"placement, or free space alike. If an object's own CENTER or "
+           f"TOUCHES falls inside it, that part of the object is genuinely "
+           f"unreachable - cover the rest and skip only that part, rather "
+           f"than skipping the whole step or attempting a coordinate that "
+           f"will never be reached.")
+
+
 def build_planner_system() -> str:
     """A3-Terra's own system prompt, resized to this board."""
     return (A3_TERRA_SYSTEM
             .replace("{COLS}", str(CONFIG.n_cols))
             .replace("{ROWS}", str(CONFIG.n_rows))
             .replace("{N_CELLS}", str(CONFIG.n_cols * CONFIG.n_rows))
-            .replace("{LAST_COL}", CONFIG.columns[-1]))
+            .replace("{LAST_COL}", CONFIG.columns[-1])
+            .replace("{OUT_OF_REACH_RULE}", build_out_of_reach_rule()))
 
 
 
@@ -8986,13 +8883,6 @@ class PlanRunner:
     before the next one starts.
     """
 
-    @staticmethod
-    def home_cell():
-        """The bottom-left cell of the CURRENT grid -- column A, last row.
-        Read live rather than cached: n_rows can change (Settings) between
-        one run and the next."""
-        return (0, CONFIG.n_rows - 1)
-
     def __init__(self):
         self.commands = []
         self.index = -1
@@ -9000,7 +8890,6 @@ class PlanRunner:
         self.mode = "idle"
         self.hold_until = 0.0
         self.label = ""
-        self._went_home = False
         self.finished = False
         self.await_speech = False
         self.speech_until = 0.0
@@ -9024,7 +8913,6 @@ class PlanRunner:
         self.active = False
         self.mode = "idle"
         self.label = ""
-        self._went_home = False
         self.finished = False
         self.await_speech = False
         self.speech_until = 0.0
@@ -9040,7 +8928,6 @@ class PlanRunner:
             return False
         self.active = True
         self.index = -1
-        self._went_home = False
         self.finished = False
         self.await_speech = False
         self.speech_until = 0.0
@@ -9083,21 +8970,18 @@ class PlanRunner:
     def _advance(self, state):
         self.index += 1
         if self.index >= len(self.commands):
-            if not self._went_home:
-                self._went_home = True
-                home = coordinate_name(*self.home_cell())
-                self.commands.append(f"goto_coordinate = {home}")
-                print(f"[plan] task done -- returning to {home}")
-                self._dispatch(state, self.commands[self.index])
-                return
-            home = coordinate_name(*self.home_cell())
+            # No auto-return-home step: the last command's own destination
+            # is where the task ends, and clearing target_col/row is what
+            # actually stops the motors -- update_guidance's very first
+            # check is `target_col is None`, so nothing drives the tag
+            # anywhere after this.
             self.active = False
             self.mode = "idle"
             self.label = ""
             self.finished = True
             state.action_label = None
             state.target_col = state.target_row = None
-            state.status_message = f"Plan finished -- back at {home}."
+            state.status_message = "Plan finished."
             print("[plan] finished")
             ARDUINO.send_direction(None)
             return
@@ -11914,9 +11798,19 @@ def main():
         """A trackpad/wheel scroll, delivered via AppKit because
         cv2.EVENT_MOUSEWHEEL never fires for a two-finger swipe on this
         HighGUI build (see install_scroll_monitor). `dy` is AppKit's own
-        sign convention (natural scrolling already applied), so it needs
-        the same negation the old cv2 path used to get "swipe up reveals
-        earlier content" rather than the reverse.
+        sign convention, natural scrolling already applied: fingers down
+        gives a POSITIVE dy and should reveal whatever sits above.
+
+        The two panels count their scroll in opposite directions, so they
+        need opposite signs here -- getting this wrong is what made the
+        transcript feel unscrollable. SettingsPanel.scroll is a normal
+        top-down offset, so revealing content above means decreasing it.
+        AISidebar.chat_scroll is measured UP FROM THE BOTTOM (0 = newest
+        message, the resting position), so revealing older messages means
+        INCREASING it. Negating both, as this did, left the only working
+        gesture the counter-intuitive one: swiping down to reach the
+        history just pinned chat_scroll at 0 and looked completely dead.
+        The cv2 wheel path below already had this asymmetry right.
 
         Uses state.mouse for the pointer position rather than trying to
         convert the NSEvent's own window-relative location -- state.mouse
@@ -11929,7 +11823,7 @@ def main():
             settings_panel.scroll_by(int(round(-dy * 2)))
             return True
         if sidebar.contains(mx, my):
-            px = -dy * 2
+            px = dy * 2
             if 0 < abs(px) < 1:
                 px = 1.0 if px > 0 else -1.0
             sidebar.scroll_by(state, int(round(px)))
@@ -12072,18 +11966,7 @@ def main():
         sim.tick(state)
         finish_simulation()
         runner.tick(state)
-        trig_panel.calibrator.tick(state, grid, runner, sim)
         gripper_panel.tick()
-        if trig_panel.calibrator.done:
-            # Auto-saved rather than waiting for the panel's own SAVE button:
-            # this is nine driven points and several minutes of dwell time,
-            # not a value someone is still adjusting -- losing it to a
-            # forgotten Save press would be a much worse failure than the
-            # gentler manual-Save convention everything else in this panel
-            # follows.
-            trig_panel.calibrator.done = False
-            save_settings(cam_settings, grid)
-            state.status_message = "Calibration complete -- saved."
 
         if sim.active:
             grid.highlight_cell(frame, sim.target_col, sim.target_row,

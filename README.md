@@ -245,6 +245,7 @@ Roadmap items are research goals, not shipping commitments.
 - [x] Hardware connector integrated into the physical-simulator workflow
 - [x] A2.6-Sol physical-simulation milestone
 - [x] A3-Terra launch
+- [ ] S1-SRC
 - [ ] HOS 1
 - [ ] K9D
 - [ ] A4-Astra

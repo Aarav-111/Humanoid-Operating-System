@@ -220,6 +220,7 @@ Simulation is how the HOS team tests planning behavior before committing it to a
 | **K3D** | First 3D simulator; added task categories such as pouring, dishwashing, and dusting. |
 | **K3.5D** | Broader task range and longer-horizon planning experiments. |
 | **K5D** | Current virtual simulator direction, exploring complex multi-step tasks, a plan-and-approve workflow, memory for operator corrections, and 3D re-orientation for side approaches. |
+| **K9D** | Upcoming virtual simulator direction, exploring complex 3D manipulation tasks. (Will be released after launch of HOS-1) |
 
 ### Physical simulator series
 
@@ -229,6 +230,7 @@ Simulation is how the HOS team tests planning behavior before committing it to a
 | **A2** | Expanded A1 with vision-prompt AI. |
 | **A2.3 - A2.6-Sol** | Progressive physical-simulation iterations; A2.6-Sol established the direction for richer task planning in a physical simulator. |
 | **A3-Terra** | Current A-series evolution, emphasizing robust image intake, measured scene localization, component-level reasoning, gripper guidance, simulation-first review, and guarded hardware connection. |
+| **A4-Astra** | Upcoming A-series evolution, for complex 3D manuplation |
 
 ---
 
@@ -243,15 +245,16 @@ Roadmap items are research goals, not shipping commitments.
 - [x] Hardware connector integrated into the physical-simulator workflow
 - [x] A2.6-Sol physical-simulation milestone
 - [x] A3-Terra launch
-- [ ] Physical arm integration and expanded hardware compatibility
-- [ ] Physical robot series: HO-S-1, HOS1.1
+- [ ] HOS 1
+- [ ] K9D
+- [ ] A4-Astra
 - [ ] HOS-2.0
 
 ### Planned physical robot versions
 
 | Version | Direction | Illustrative goals |
 | --- | --- | --- |
-| **v2.0** | Full Cartesian system | General tabletop manipulation: preparing vegetables, retrieving water, sorting and loading laundry. |
+| **v2.0** | Full Robotic arm 3D system | General tabletop manipulation: preparing vegetables, retrieving water, sorting and loading laundry. |
 | **v3.0** | Advanced intelligence | Stronger high-level planners, error recovery, and contextual task planning. |
 | **v4.0** | Wheeled humanoid navigation | Wheels, LiDAR, and cameras for a controlled mini-room environment. |
 | **v5.0** | Full-room humanoid autonomy | Legged navigation in a full-sized room with upgraded perception and correction loops. |

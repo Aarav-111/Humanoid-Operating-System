@@ -907,6 +907,13 @@ def grip_command(angle) -> str:
 JOG_PULSE_S = 0.1
 SLOW_APPROACH_CELLS = 1
 TAG_HOLD_SECONDS = 0.35
+AUTO_GRIP_COMMAND_DELAY_S = 1.0
+
+
+def has_serial_stop_signal(data) -> bool:
+    """Return whether a sensor packet contains lowercase or uppercase S."""
+    text = data.decode("ascii", "ignore") if isinstance(data, bytes) else str(data)
+    return text.strip().lower() in ("s", "stop") or "s" in text.lower()
 
 CARET_BLINK_PERIOD = 1.06   # matches the default macOS text-caret blink rate
 CARET_BLINK_ON = 0.53
@@ -944,6 +951,10 @@ class SerialLink:
         self._last_logged_error = None
         self.auto_reconnect = True
         self.on_line = None
+        self.on_bytes = None
+        self.last_received = ""
+        self._rx_buf = b""
+        self._rx_chunk_at = 0.0
 
     def available_ports(self):
         if serial_list_ports is None:
@@ -1076,6 +1087,37 @@ class SerialLink:
             self._last_sent = "s"
             return True
         return False
+
+    def pump_receive(self):
+        """Drain incoming serial bytes and deliver them to the observer."""
+        if not self.connected:
+            return
+        try:
+            count = self.conn.in_waiting
+            data = self.conn.read(count) if count else b""
+        except Exception as e:
+            if self.on_line:
+                self.on_line("sys", f"Read failed: {e}")
+            return
+        if data:
+            self._rx_buf += data
+            self._rx_chunk_at = time.time()
+            while b"\n" in self._rx_buf:
+                raw, self._rx_buf = self._rx_buf.split(b"\n", 1)
+                text = raw.decode("utf-8", "replace").rstrip("\r")
+                if text:
+                    self.last_received = text
+                    if self.on_line:
+                        self.on_line("rx", text)
+            if self.on_bytes is not None:
+                self.on_bytes(data)
+        elif self._rx_buf and time.time() - self._rx_chunk_at >= 0.5:
+            text = self._rx_buf.decode("utf-8", "replace").rstrip("\r")
+            self._rx_buf = b""
+            if text:
+                self.last_received = text
+                if self.on_line:
+                    self.on_line("rx", text)
 
     def maybe_reconnect(self):
         """Called every frame: try to find and open the Arduino again after
@@ -2754,26 +2796,16 @@ class ConsolePanel:
 
     def pump(self):
         """Called every frame: drain whatever the Arduino has sent back."""
-        if not self.arduino.connected:
-            return
-        try:
-            n = self.arduino.conn.in_waiting
-            if not n:
-                return
-            data = self.arduino.conn.read(n)
-        except Exception:
-            return
+        self.arduino.on_bytes = self.receive_bytes
+        self.arduino.pump_receive()
+
+    def receive_bytes(self, data):
+        """Notify raw-byte consumers; SerialLink logs parsed RX lines."""
         if self.on_rx_bytes is not None:
             try:
                 self.on_rx_bytes(data)
             except Exception as e:
                 print(f"[serial] rx observer failed: {e}")
-        self._rx_buf += data
-        while b"\n" in self._rx_buf:
-            raw, self._rx_buf = self._rx_buf.split(b"\n", 1)
-            text = raw.decode("utf-8", "replace").rstrip("\r")
-            if text:
-                self.log("rx", text)
 
     def send_line(self):
         text = self.input_text.strip()
@@ -3699,6 +3731,14 @@ class GripperPanel:
     JOG_ARROWS = {"up": "^", "down": "v", "left": "<", "right": ">"}
     JOG_STOP_ROW_COL = (1, 1)
 
+    AUTO_GRIP_IDLE = "idle"
+    AUTO_GRIP_WAIT_DOWN = "wait_down"
+    AUTO_GRIP_DOWN = "down"
+    AUTO_GRIP_WAIT_GRIP = "wait_grip"
+    AUTO_GRIP_WAIT_UP = "wait_up"
+    AUTO_GRIP_UP = "up"
+    AUTO_GRIP_WAIT_STOP = "wait_stop"
+
     # Why this card exists at all. Red because it is a caveat about the rig,
     # not a description of the controls -- someone opening this expecting an
     # autonomous gripper should find out here rather than by waiting for one
@@ -3725,6 +3765,10 @@ class GripperPanel:
         self._last_height_cmd = None  # HU/HD most recently sent, for the read-out
         self.jog_dir = None           # direction currently mid-pulse, or None
         self.jog_until = 0.0
+        self.auto_grip_phase = self.AUTO_GRIP_IDLE
+        self.auto_grip_started_at = 0.0
+        self.auto_grip_down_duration = 0.0
+        self.auto_grip_up_until = 0.0
         # The result of the most recent button press, shown on the card
         # itself. Without this, a press that is correctly refused (no
         # serial port, a booting board) changes nothing visible ON THE CARD
@@ -3872,6 +3916,41 @@ class GripperPanel:
         if self.jog_dir is not None and time.time() >= self.jog_until:
             ARDUINO.halt()
             self.jog_dir = None
+        now = time.monotonic()
+        if (self.auto_grip_phase == self.AUTO_GRIP_WAIT_DOWN
+                and now >= self.auto_grip_up_until):
+            if ARDUINO.send_command(HEIGHT_DOWN_CMD):
+                self.auto_grip_phase = self.AUTO_GRIP_DOWN
+                self.auto_grip_started_at = now
+                self.last_msg = "Automatic gripping: sent hd; waiting for s/S."
+            return
+        if (self.auto_grip_phase == self.AUTO_GRIP_WAIT_GRIP
+                and now >= self.auto_grip_up_until):
+            if ARDUINO.send_command(grip_command(GRIP_MAX_DEG)):
+                self.grip = GRIP_MAX_DEG
+                self.auto_grip_phase = self.AUTO_GRIP_WAIT_UP
+                self.auto_grip_up_until = now + AUTO_GRIP_COMMAND_DELAY_S
+                self.last_msg = "Sensor S received -- sent g90; hu scheduled in 1.0s."
+            return
+        if (self.auto_grip_phase == self.AUTO_GRIP_WAIT_UP
+                and now >= self.auto_grip_up_until):
+            if ARDUINO.send_command(HEIGHT_UP_CMD):
+                self.auto_grip_phase = self.AUTO_GRIP_UP
+                self.auto_grip_up_until = now + self.auto_grip_down_duration
+                self.last_msg = (f"Automatic gripping: sent hu for "
+                                 f"{self.auto_grip_down_duration:.1f}s.")
+            return
+        if (self.auto_grip_phase == self.AUTO_GRIP_UP
+                and now >= self.auto_grip_up_until):
+            self.auto_grip_phase = self.AUTO_GRIP_WAIT_STOP
+            self.auto_grip_up_until = now + AUTO_GRIP_COMMAND_DELAY_S
+            self.last_msg = "Automatic gripping: stop scheduled in 1.0s."
+            return
+        if (self.auto_grip_phase == self.AUTO_GRIP_WAIT_STOP
+                and now >= self.auto_grip_up_until
+                and ARDUINO.halt()):
+            self.auto_grip_phase = self.AUTO_GRIP_IDLE
+            self.last_msg = "Automatic gripping complete -- sent s."
 
     def _stop_jog(self) -> str:
         """The d-pad's centre button: send 's' right now, unconditionally.
@@ -3890,6 +3969,30 @@ class GripperPanel:
         if ARDUINO.halt():
             return "Stopped -- sent s."
         return "Could not send s -- the board may still be booting."
+
+    def _start_auto_grip(self) -> str:
+        """Schedule HD, grip, HU, and stop with one-second command gaps."""
+        if not ARDUINO.connected:
+            return "Automatic gripping not started -- not connected."
+        if self.auto_grip_phase != self.AUTO_GRIP_IDLE:
+            return "Automatic gripping is already running."
+        self.auto_grip_phase = self.AUTO_GRIP_WAIT_DOWN
+        self.auto_grip_up_until = time.monotonic() + AUTO_GRIP_COMMAND_DELAY_S
+        return "Automatic gripping: hd scheduled in 1.0s."
+
+    def note_rx(self, data) -> bool:
+        """Handle a sensor packet while automatic gripping is descending."""
+        if self.auto_grip_phase != self.AUTO_GRIP_DOWN:
+            return False
+        if not has_serial_stop_signal(data):
+            return False
+        self.auto_grip_down_duration = max(
+            0.0, time.monotonic() - self.auto_grip_started_at)
+        self.auto_grip_phase = self.AUTO_GRIP_WAIT_GRIP
+        self.auto_grip_up_until = time.monotonic() + AUTO_GRIP_COMMAND_DELAY_S
+        self.last_msg = ("Sensor S received -- g90 scheduled in 1.0s; "
+                         "hu follows after another 1.0s.")
+        return True
 
     def status_line(self) -> str:
         sent = grip_command(self.grip)
@@ -3930,6 +4033,9 @@ class GripperPanel:
                 # a booting board -- is still visibly not a no-op.
                 if b.kind == "grip_height":
                     self.last_msg = self._height_step(up=b.value)
+                    return self.last_msg
+                if b.kind == "grip_auto":
+                    self.last_msg = self._start_auto_grip()
                     return self.last_msg
                 if b.kind == "grip_jog":
                     self.last_msg = self._start_jog(b.value)
@@ -3990,7 +4096,8 @@ class GripperPanel:
         instr_h = (len(instr_lines) * self.INSTR_LINE_H + 16
                   if instr_lines else 0)
         done_h = row_h + 10 if self.awaiting_confirm else 0
-        return (self.PAD * 2 + 44 + instr_h + 78 + 26 + row_h + jog_h + 30
+        return (self.PAD * 2 + 44 + instr_h + 78 + 26 + row_h + row_h + 10
+             + jog_h + 30
                + note_h + 26 + done_h + row_h)
 
     def draw(self, frame, mouse=(-1, -1)):
@@ -4032,7 +4139,8 @@ class GripperPanel:
                   if instr_lines else 0)
         done_h = row_h + S(10) if self.awaiting_confirm else 0
         ph = int(round(
-            self.PAD * 2 + S(44) + instr_h + S(78) + S(26) + row_h + jog_h
+            self.PAD * 2 + S(44) + instr_h + S(78) + S(26) + row_h
+            + row_h + S(10) + jog_h
             + S(30) + note_h + S(26) + done_h + row_h))
         # Centred on the video -- big and meant to be watched while jogging,
         # not tucked in a corner like the smaller reference/status cards.
@@ -4114,6 +4222,13 @@ class GripperPanel:
         down_btn.draw(frame, hover=down_btn.contains(mx, my), shadow=False)
         up_btn.draw(frame, hover=up_btn.contains(mx, my), shadow=False)
         self.buttons.extend([down_btn, up_btn])
+        y += row_h + S(10)
+
+        auto_btn = Button("AUTOMATIC GRIPPING", px + 28, int(y),
+                  px + pw - 28, int(y + row_h - S(8)),
+                  "grip_auto", style="accent", scale=0.48 * k)
+        auto_btn.draw(frame, hover=auto_btn.contains(mx, my), shadow=False)
+        self.buttons.append(auto_btn)
         y += row_h + S(10)
 
         # --- Jog: a small d-pad, each press a timed pulse, STOP at centre --
@@ -11160,6 +11275,12 @@ def main():
     runner.on_manual_action = gripper_panel.show_instruction
     runner.manual_wait = gripper_panel.waiting_for_confirm
     runner.on_manual_clear = gripper_panel.clear_instruction
+
+    def on_serial_bytes(data):
+        runner.plunge.note_rx(data)
+        gripper_panel.note_rx(data)
+
+    console_panel.on_rx_bytes = on_serial_bytes
 
     auto_port = ARDUINO.guess_arduino_port()
     if auto_port:

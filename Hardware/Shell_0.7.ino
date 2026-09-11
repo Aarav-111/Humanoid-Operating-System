@@ -1,0 +1,515 @@
+// -----------------------------------------------------------------------------
+// Shell 0.6
+// Arduino Uno + CNC Shield V3
+//
+// BASE:
+//   Shell 0.1 X/Y/Z logic is preserved.
+//
+// SERIAL COMMANDS
+//   u / d / r / l  = X/Y continuous motion
+//   uq/dq/rq/lq    = X/Y continuous motion at 3x slower speed
+//   hu / hd        = Z continuous motion
+//   hx             = Z down continuous motion, IR sensor ignored
+//   g0 ... g90     = A-axis absolute angle from 0 to 90 degrees
+//   s              = stop X/Y/Z immediately
+//
+// IR CRASH PROTECTION
+//   The IR sensor is connected to the CNC Shield V3 Z+ endstop (Arduino D11).
+//   It is watched only during hd. A detected input stops X/Y/Z and sends S.
+//
+// MICROSTEPPING
+//   X/Y/Z = 1/16
+//   A     = full-step (no microstepping)
+//
+// A AXIS
+//   STEP = D12
+//   DIR  = D13
+//
+// IMPORTANT
+//   A assumes its physical position is 0 degrees when the Arduino powers on.
+//   A uses the confirmed-working pulse method, now with a gentle acceleration
+//   and deceleration ramp to reduce sudden load on the gripper.
+// -----------------------------------------------------------------------------
+
+// -----------------------------------------------------------------------------
+// CONFIGURATION
+// -----------------------------------------------------------------------------
+
+// CNC Shield V3 / Arduino Uno pins
+const uint8_t X_STEP_PIN = 2;
+const uint8_t X_DIR_PIN  = 5;
+
+const uint8_t Y_STEP_PIN = 3;
+const uint8_t Y_DIR_PIN  = 6;
+
+const uint8_t Z_STEP_PIN = 4;
+const uint8_t Z_DIR_PIN  = 7;
+
+const uint8_t ENABLE_PIN = 8;
+
+// A axis
+#define A_STEP_PIN 12
+#define A_DIR_PIN  13
+
+// Z+ endstop input: IR crash sensor (CNC Shield V3 = Arduino D11)
+const uint8_t Z_PLUS_PIN = 11;
+
+// Most IR obstacle sensors pull their OUT pin LOW when they detect an object.
+// If your sensor instead outputs HIGH on detection, change LOW to HIGH here.
+const uint8_t IR_DETECTED_LEVEL = LOW;
+
+// Serial communication
+const unsigned long SERIAL_BAUD = 115200;
+
+// Motor configuration
+const uint16_t MOTOR_FULL_STEPS_PER_REV = 200;
+const uint8_t MICROSTEP = 16;      // X/Y/Z
+const uint8_t A_MICROSTEP = 1;    // A is full-step
+
+// -----------------------------------------------------------------------------
+// X/Y SPEED
+// -----------------------------------------------------------------------------
+
+// X/Y normal speed approximately 3000 microsteps/second
+const unsigned long STEP_HALF_PERIOD_US = 167;
+
+// X/Y q speed approximately 1000 microsteps/second
+const unsigned long SLOW_STEP_HALF_PERIOD_US = STEP_HALF_PERIOD_US * 3;
+
+// -----------------------------------------------------------------------------
+// Z SPEED
+// -----------------------------------------------------------------------------
+
+// SAME AS WORKING SHELL 0.1
+// Z axis approximately 3000 microsteps/second
+const unsigned long Z_STEP_HALF_PERIOD_US = 56UL;
+
+// -----------------------------------------------------------------------------
+// A SPEED
+// -----------------------------------------------------------------------------
+
+// A-axis motion profile.
+// Each full STEP pulse uses the same delay for HIGH and LOW.
+// Start/end slowly, then ramp to the original confirmed-working 3000 us delay.
+const unsigned long A_START_STEP_DELAY_US  = 12000UL;
+const unsigned long A_CRUISE_STEP_DELAY_US = 3000UL;
+const unsigned long A_ACCEL_STEPS = 12UL;
+
+// -----------------------------------------------------------------------------
+// DIRECTION INVERSION
+// -----------------------------------------------------------------------------
+
+const bool INVERT_X_DIRECTION = false;
+const bool INVERT_Y_DIRECTION = false;
+const bool INVERT_Z_DIRECTION = false;
+
+// Change to true only if increasing g angles rotate A in the wrong direction.
+const bool INVERT_A_DIRECTION = false;
+
+// Maximum time Arduino waits for the optional q / second command character.
+const unsigned long COMMAND_WAIT_US = 5000;
+
+// Maximum idle time while reading digits after g.
+const unsigned long G_COMMAND_WAIT_US = 20000;
+
+// -----------------------------------------------------------------------------
+// RUNTIME STATE
+// -----------------------------------------------------------------------------
+
+bool running = false;
+
+// True only while the hd (height down) command is running.
+bool hdActive = false;
+
+uint8_t activeStepPin = X_STEP_PIN;
+uint8_t activeDirPin  = X_DIR_PIN;
+
+unsigned long activeStepHalfPeriodUs = STEP_HALF_PERIOD_US;
+unsigned long lastStepMicros = 0;
+
+// -----------------------------------------------------------------------------
+// A AXIS STATE
+// -----------------------------------------------------------------------------
+
+const long A_STEPS_PER_REV =
+  (long)MOTOR_FULL_STEPS_PER_REV * A_MICROSTEP;
+
+// The position at power-on is treated as physical 0 degrees.
+long currentASteps = 0;
+
+// -----------------------------------------------------------------------------
+// STOP
+// -----------------------------------------------------------------------------
+
+void stopAll() {
+  running = false;
+  hdActive = false;
+
+  digitalWrite(X_STEP_PIN, LOW);
+  digitalWrite(Y_STEP_PIN, LOW);
+  digitalWrite(Z_STEP_PIN, LOW);
+}
+
+// -----------------------------------------------------------------------------
+// START X/Y MOTION
+// -----------------------------------------------------------------------------
+
+void startMotion(char cmd, bool slow) {
+  // An X/Y command cancels downward-Z crash monitoring.
+  hdActive = false;
+
+  bool dirLevel;
+
+  switch (cmd) {
+    // Y axis
+    case 'u':
+      activeStepPin = Y_STEP_PIN;
+      activeDirPin  = Y_DIR_PIN;
+      dirLevel = LOW;
+      if (INVERT_Y_DIRECTION) dirLevel = !dirLevel;
+      digitalWrite(activeDirPin, dirLevel);
+      break;
+
+    case 'd':
+      activeStepPin = Y_STEP_PIN;
+      activeDirPin  = Y_DIR_PIN;
+      dirLevel = HIGH;
+      if (INVERT_Y_DIRECTION) dirLevel = !dirLevel;
+      digitalWrite(activeDirPin, dirLevel);
+      break;
+
+    // X axis
+    case 'r':
+      activeStepPin = X_STEP_PIN;
+      activeDirPin  = X_DIR_PIN;
+      dirLevel = LOW;
+      if (INVERT_X_DIRECTION) dirLevel = !dirLevel;
+      digitalWrite(activeDirPin, dirLevel);
+      break;
+
+    case 'l':
+      activeStepPin = X_STEP_PIN;
+      activeDirPin  = X_DIR_PIN;
+      dirLevel = HIGH;
+      if (INVERT_X_DIRECTION) dirLevel = !dirLevel;
+      digitalWrite(activeDirPin, dirLevel);
+      break;
+
+    default:
+      return;
+  }
+
+  activeStepHalfPeriodUs = slow ? SLOW_STEP_HALF_PERIOD_US : STEP_HALF_PERIOD_US;
+  running = true;
+  lastStepMicros = micros();
+  digitalWrite(activeStepPin, HIGH);
+}
+
+// -----------------------------------------------------------------------------
+// START Z MOTION
+// -----------------------------------------------------------------------------
+// IMPORTANT: This is intentionally kept the same as the working Shell 0.1.
+
+void startZMotion(char cmd) {
+  bool dirLevel;
+
+  // Z directions are exactly as in Shell 0.1.
+  if (cmd == 'u') {
+    dirLevel = HIGH;
+    hdActive = false;
+  } else if (cmd == 'd') {
+    dirLevel = LOW;
+    hdActive = true;
+  } else {
+    return;
+  }
+
+  if (INVERT_Z_DIRECTION) dirLevel = !dirLevel;
+
+  activeStepPin = Z_STEP_PIN;
+  activeDirPin  = Z_DIR_PIN;
+  activeStepHalfPeriodUs = Z_STEP_HALF_PERIOD_US;
+
+  digitalWrite(activeDirPin, dirLevel);
+  running = true;
+  lastStepMicros = micros();
+  digitalWrite(activeStepPin, HIGH);
+}
+
+// -----------------------------------------------------------------------------
+// MOVE A TO ABSOLUTE ANGLE
+// -----------------------------------------------------------------------------
+
+void moveAToAngle(uint8_t angle) {
+  if (angle > 90) {
+    Serial.println("ERR:G_RANGE");
+    return;
+  }
+
+  // 200 full steps = 360 degrees.
+  // Rounded to the nearest full step because A has no microstepping.
+  long targetSteps =
+    ((long)angle * A_STEPS_PER_REV + 180L) / 360L;
+
+  long deltaSteps = targetSteps - currentASteps;
+
+  if (deltaSteps == 0) {
+    return;
+  }
+
+  bool dirLevel;
+  long stepChange;
+
+  if (deltaSteps > 0) {
+    dirLevel = HIGH;
+    stepChange = 1;
+  } else {
+    dirLevel = LOW;
+    stepChange = -1;
+  }
+
+  if (INVERT_A_DIRECTION) dirLevel = !dirLevel;
+
+  digitalWrite(A_DIR_PIN, dirLevel);
+
+  // Give DIR time to settle before the first STEP pulse.
+  delayMicroseconds(100);
+
+  unsigned long stepsToMove =
+    (deltaSteps > 0)
+      ? (unsigned long)deltaSteps
+      : (unsigned long)(-deltaSteps);
+
+  // For short moves, automatically shorten the ramp so acceleration and
+  // deceleration fit inside the available number of steps.
+  unsigned long rampSteps = A_ACCEL_STEPS;
+  if (rampSteps * 2UL > stepsToMove) {
+    rampSteps = stepsToMove / 2UL;
+  }
+
+  for (unsigned long i = 0; i < stepsToMove; i++) {
+    unsigned long stepDelayUs = A_CRUISE_STEP_DELAY_US;
+
+    if (rampSteps > 0) {
+      // Distance from the nearest end of the move.
+      unsigned long fromStart = i;
+      unsigned long fromEnd = stepsToMove - 1UL - i;
+      unsigned long edgeDistance =
+        (fromStart < fromEnd) ? fromStart : fromEnd;
+
+      if (edgeDistance < rampSteps) {
+        // edgeDistance = 0          -> slowest delay
+        // edgeDistance = rampSteps  -> cruise delay
+        unsigned long delayRange =
+          A_START_STEP_DELAY_US - A_CRUISE_STEP_DELAY_US;
+
+        stepDelayUs =
+          A_START_STEP_DELAY_US -
+          (delayRange * edgeDistance) / rampSteps;
+      }
+    } else {
+      // A one-step move stays deliberately slow.
+      stepDelayUs = A_START_STEP_DELAY_US;
+    }
+
+    digitalWrite(A_STEP_PIN, HIGH);
+    delayMicroseconds(stepDelayUs);
+
+    digitalWrite(A_STEP_PIN, LOW);
+    delayMicroseconds(stepDelayUs);
+
+    currentASteps += stepChange;
+
+    // Allow an immediately queued 's' to abort A movement.
+    if (Serial.available() > 0) {
+      char next = (char)Serial.peek();
+      if (next == 's' || next == 'S') {
+        Serial.read();
+        digitalWrite(A_STEP_PIN, LOW);
+        return;
+      }
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+// READ AND EXECUTE g0 ... g90
+// -----------------------------------------------------------------------------
+
+void processGCommand() {
+  int angle = 0;
+  bool gotDigit = false;
+  unsigned long waitStart = micros();
+
+  while ((unsigned long)(micros() - waitStart) < G_COMMAND_WAIT_US) {
+    if (Serial.available() > 0) {
+      char next = (char)Serial.read();
+
+      if (next >= '0' && next <= '9') {
+        gotDigit = true;
+        angle = angle * 10 + (next - '0');
+
+        // Give the next digit time to arrive.
+        waitStart = micros();
+        continue;
+      }
+
+      // Newline / CR / space ends the g command once digits were received.
+      if (next == '\r' || next == '\n' || next == ' ' || next == '\t') {
+        if (gotDigit) break;
+        continue;
+      }
+
+      // Any other byte ends this g command.
+      break;
+    }
+  }
+
+  if (!gotDigit) {
+    Serial.println("ERR:G");
+    return;
+  }
+
+  if (angle < 0 || angle > 90) {
+    Serial.println("ERR:G_RANGE");
+    return;
+  }
+
+  moveAToAngle((uint8_t)angle);
+}
+
+// -----------------------------------------------------------------------------
+// PROCESS COMMAND
+// -----------------------------------------------------------------------------
+
+void processCommand(char cmd) {
+  // Convert uppercase to lowercase.
+  if (cmd >= 'A' && cmd <= 'Z') cmd = cmd - 'A' + 'a';
+
+  // Stop.
+  if (cmd == 's') {
+    stopAll();
+    return;
+  }
+
+  // A command: g0 ... g90
+  if (cmd == 'g') {
+    processGCommand();
+    return;
+  }
+
+  // Z commands.
+  // IMPORTANT: This block is intentionally kept the same as Shell 0.1.
+  if (cmd == 'h') {
+    unsigned long waitStart = micros();
+    while ((unsigned long)(micros() - waitStart) < COMMAND_WAIT_US) {
+      if (Serial.available() > 0) {
+        char next = (char)Serial.read();
+        if (next >= 'A' && next <= 'Z') next = next - 'A' + 'a';
+        if (next == 'u' || next == 'd') {
+          startZMotion(next);
+        } else if (next == 'x') {
+          // hx: same downward Z movement as hd, but IR crash monitoring is disabled.
+          startZMotion('d');
+          hdActive = false;
+        }
+        break;
+      }
+    }
+    return;
+  }
+
+  // X/Y commands.
+  if (cmd != 'u' && cmd != 'd' && cmd != 'r' && cmd != 'l') return;
+
+  bool slow = false;
+  unsigned long waitStart = micros();
+  while ((unsigned long)(micros() - waitStart) < COMMAND_WAIT_US) {
+    if (Serial.available() > 0) {
+      char next = (char)Serial.read();
+      if (next >= 'A' && next <= 'Z') next = next - 'A' + 'a';
+
+      if (next == 'q') {
+        slow = true;
+      } else if (next == 's' || next == 'h' || next == 'u' ||
+                 next == 'd' || next == 'r' || next == 'l' ||
+                 next == 'g') {
+        processCommand(next);
+      }
+      break;
+    }
+  }
+
+  startMotion(cmd, slow);
+}
+
+// -----------------------------------------------------------------------------
+// SETUP
+// -----------------------------------------------------------------------------
+
+void setup() {
+  pinMode(X_STEP_PIN, OUTPUT);
+  pinMode(X_DIR_PIN, OUTPUT);
+  pinMode(Y_STEP_PIN, OUTPUT);
+  pinMode(Y_DIR_PIN, OUTPUT);
+  pinMode(Z_STEP_PIN, OUTPUT);
+  pinMode(Z_DIR_PIN, OUTPUT);
+
+  // A axis, exactly matching the confirmed-working standalone setup.
+  pinMode(A_STEP_PIN, OUTPUT);
+  pinMode(A_DIR_PIN, OUTPUT);
+
+  pinMode(ENABLE_PIN, OUTPUT);
+  pinMode(Z_PLUS_PIN, INPUT_PULLUP);
+
+  // A4988 / DRV8825 ENABLE is active LOW.
+  digitalWrite(ENABLE_PIN, LOW);
+
+  digitalWrite(X_DIR_PIN, LOW);
+  digitalWrite(Y_DIR_PIN, LOW);
+  digitalWrite(Z_DIR_PIN, LOW);
+
+  // Same initial A direction as the working standalone test.
+  digitalWrite(A_DIR_PIN, HIGH);
+  digitalWrite(A_STEP_PIN, LOW);
+
+  stopAll();
+  Serial.begin(SERIAL_BAUD);
+}
+
+// -----------------------------------------------------------------------------
+// MAIN LOOP
+// -----------------------------------------------------------------------------
+
+void loop() {
+  // Read serial commands.
+  while (Serial.available() > 0) {
+    char incoming = (char)Serial.read();
+
+    // Ignore line endings and whitespace at top level.
+    if (incoming == '\r' || incoming == '\n' ||
+        incoming == ' '  || incoming == '\t') {
+      continue;
+    }
+
+    processCommand(incoming);
+  }
+
+  // IR crash protection. It is deliberately active only while hd is running.
+  if (running && hdActive &&
+      digitalRead(Z_PLUS_PIN) == IR_DETECTED_LEVEL) {
+    stopAll();
+    Serial.println("S");
+    return;
+  }
+
+  // Continuous X/Y/Z step generation.
+  if (running) {
+    unsigned long now = micros();
+    if ((unsigned long)(now - lastStepMicros) >= activeStepHalfPeriodUs) {
+      lastStepMicros = now;
+      bool currentState = digitalRead(activeStepPin);
+      digitalWrite(activeStepPin, !currentState);
+    }
+  }
+}

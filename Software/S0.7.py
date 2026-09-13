@@ -1,3 +1,6 @@
+import sys
+sys.dont_write_bytecode = True
+
 import base64
 import colorsys
 import copy
@@ -7,8 +10,8 @@ import math
 import os
 import queue
 import re
+import shutil
 import subprocess
-import sys
 import threading
 import time
 from dataclasses import dataclass, field, replace as dc_replace
@@ -20,6 +23,7 @@ import numpy as np
 try:
     from openai import OpenAI
 except ImportError:
+
     OpenAI = None
 
 try:
@@ -50,30 +54,52 @@ ALPHABET = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 DEBUG_INPUT = bool(os.environ.get("S1_DEBUG_INPUT"))
 
-# Everything the app writes lives beside the script in one folder, so the
-# only loose file here is S1.py itself. Created on demand: a fresh copy of
-# the script has no data folder until it saves something.
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "S1 data")
+# S1 is deliberately a single-file application. Settings, custom training,
+# and error-rebound history live in this encoded JSON payload and are updated
+# in place when the user saves. No sidecar folder or cache is required.
+SCRIPT_PATH = os.path.abspath(__file__)
+S1_EMBEDDED_STATE_B64 = "eyJzZXR0aW5ncyI6eyJjYW1lcmEiOnsiem9vbSI6MS4wLCJicmlnaHRuZXNzIjowLCJjb250cmFzdCI6MS4wLCJzYXR1cmF0aW9uIjoxLjAsInNoYXJwbmVzcyI6MC4wLCJyb3RhdGlvbiI6MCwibWlycm9yIjpmYWxzZX0sImdyaWQiOnsibl9jb2xzIjoyMCwibl9yb3dzIjoyMCwiYm94IjpbMzIwLjI2MzMwNzMxMDE0OSwzMS4zMjAwMDAwMDAwMDAwNjQsMTMzMi43Njk4MjI1NjkxOTgxLDEwNDQuMF0sInNxdWFyZV9jZWxscyI6dHJ1ZSwiZnJhbWVfc2l6ZSI6WzE4NTcsMTA0NF0sImJveF9yZWwiOlswLjE3MjQ2MjczOTUzMTU4MjY3LDAuMDMwMDAwMDAwMDAwMDAwMDYsMC43MTc3MDA0OTY4MDYyNDU2LDEuMF19LCJ0cmlnX29mZnNldCI6eyJjYW1lcmFfaGVpZ2h0X2luIjozNS4wLCJ0YWdfaGVpZ2h0X2luIjo1LjUsImJvYXJkX2hlaWdodF9pbiI6MC4wLCJwaXZvdF94IjowLjAsInBpdm90X3kiOjAuMCwiZ3JpcHBlcl9jZWxscyI6NiwiZ3JpcHBlcl9kaXIiOiJ1cCJ9LCJ2aXNpb24iOnsiYm9hcmRfd2lkdGhfaW4iOjI0LjB9LCJiZWhhdmlvdXIiOnsibWFudWFsX2dyaXBwZXJfc3RlcHMiOmZhbHNlLCJncmlwcGVyX2FpIjp0cnVlfX0sImN1c3RvbV90cmFpbmluZyI6WyJVc2Ugb25seSB0aGUgYmx1ZSBub3RlcGFkIGZvciB3aXBpbmcuIiwiS2VlcCB0aGUgYmxhY2tzIGFuZCB3aGl0ZXMgdG9nZXRoZXIsIGJ1dCBmYXIgYXdheSBmcm9tIGVhY2ggb3RoZXIsIHRvIGdldCBzZXRzLiJdLCJlcnJvcl9yZWJvdW5kcyI6W3sidGFzayI6InN3YXAgYWxsIHRoZSBvYmplY3RzIG9uIHRoZSBib2FyZCIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJPYmplY3RzIGRpZCBub3Qgc3dhcCBwb3NpdGlvbnM7IHNjcmV3ZHJpdmVyIHJlbWFpbnMgYXQgSDE0IGFuZCB1dGlsaXR5IGtuaWZlIHJlbWFpbnMgYXQgUDExLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDgtMzFUMjA6NDU6MDYifSx7InRhc2siOiJ3YXRlciBteSBwbGFudHMiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiTm8gdmlzaWJsZSBldmlkZW5jZSB0aGUgcGxhbnQgd2FzIHdhdGVyZWQ7IGN1cCBhbmQgcGxhbnQgcmVtYWluIGVzc2VudGlhbGx5IHVuY2hhbmdlZC4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTAxVDE1OjQ2OjEzIn0seyJ0YXNrIjoid2F0ZXIgbXkgcGxhbnRzIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6Ik5vIHZpc2libGUgZXZpZGVuY2UgdGhlIHBsYW50IHdhcyB3YXRlcmVkOyBwbGFudCBhbmQgbXVnIG9ubHkgc2hpZnRlZCBzbGlnaHRseS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTAyVDE0OjMxOjUwIn0seyJ0YXNrIjoiS2VlcCB0aGUgYmxhY2sgc3BvdCBpbiB0aGUgYm9keS4iLCJ2ZXJkaWN0IjoiZG9uZSBjb3JyZWN0bHkiLCJyZWFzb24iOiJibGFjayBzb2NrIHdhcyBtb3ZlZCBpbnRvIHRoZSBib3dsLCB3aXRoIHRoZSBib3dsIHN0aWxsIGNvbnRhaW5pbmcgaXQgaW4gdGhlIGZpbmFsIGltYWdlIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMTo1MToyMiJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNwb3QgaW4gdGhlIGJvZHkuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6ImJsYWNrIHNvY2sgd2FzIG1vdmVkIG5lYXIgSzQgaW5zdGVhZCBvZiBiZWluZyBrZXB0IGluIHRoZSBib3dsL2JvZHkgYXQgUTMiLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDExOjUxOjM2In0seyJ0YXNrIjoic29ydCB0aGUgc29ja2VzIGFuZCBrZWVwIHRoZSB3aGl0ZXMgaW4gdGUgYm93bCIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJXaGl0ZSBzb2NrcyBhcmUgbm90IHZpc2libGUgaW4gdGhlIGJvd2wgaW4gdGhlIGZpbmFsIGltYWdlOyBvbmx5IHRoZSBibGFjayBzb2NrcyByZW1haW4gb24gdGhlIGJvYXJkLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTI6MDM6MDAifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzb2NrcyBzdGFja2VkIHRvZ2V0aGVyLiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJPbmx5IG9uZSBibGFjayBzb2NrIGlzIHZpc2libGUgaW4gdGhlIGZpbmFsIGltYWdlOyB0aGUgdHdvIHNvY2tzIGFyZSBub3QgY29uZmlybWVkIHN0YWNrZWQgdG9nZXRoZXIuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMjowNToxMyJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNvY2tzIHN0YWNrZWQgdG9nZXRoZXIuIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5IiwicmVhc29uIjoiVGhlIHR3byBibGFjayBzb2NrcyBhcmUgc3RhY2tlZCB0b2dldGhlciBpbiB0aGUgZmluYWwgaW1hZ2UuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMjowNToyMyJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNvY2sgaW4gdGhlIGJvd2wuIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5IiwicmVhc29uIjoiYmxhY2sgc29jayBpcyBwbGFjZWQgaW4gdGhlIGdyZWVuIGJvd2wgaW4gdGhlIGZpbmFsIGltYWdlLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTM6MDE6MzQifSx7InRhc2siOiJTb3J0IHRoZSBibGFjayBhbmQgd2hpdGUgc29ja3MsIGFuZCBwdXQgYWxsIHRoZSB3aGl0ZXMgaW4gdGhlIGJvd2wuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6IldoaXRlIHNvY2sgaXMgaW4gdGhlIGJvd2wsIGJ1dCBvbmUgd2hpdGUgc29jayByZW1haW5zIG91dHNpZGUgdGhlIGJvd2wuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxNjoyNzo0OCJ9LHsidGFzayI6IlNvcnQgbXkgY2xvdGhlcyBvciBzb2NrcyBpbnRvIGJsYWNrIGFuZCB3aGl0ZS4gS2VlcCBhbGwgdGhlIGJsYWNrcyBpbiB0aGUgYm93bC4iLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiT25seSBvbmUgYmxhY2sgc29jayBpcyBpbiB0aGUgYm93bDsgdGhlIG90aGVyIGJsYWNrIHNvY2sgaXMgbm90IHZlcmlmaWVkIGluIHRoZSBib3dsLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTY6Mzk6NDIifSx7InRhc2siOiJLZWVwIHRoZSBsZWF2ZXMgaW4gdGhlIGJvd2wuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6IkxlYXZlcyBhcmUgbm90IGZ1bGx5IGluIHRoZSBib3dsOyBwYXJ0IG9mIHRoZSBzcHJpZyByZW1haW5zIG91dHNpZGUgb24gdGhlIHJpbS90YWJsZS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDE2OjQ3OjUyIn1dfQ=="  # S1_EMBEDDED_STATE
+try:
+    S1_EMBEDDED_STATE = json.loads(
+        base64.b64decode(S1_EMBEDDED_STATE_B64).decode("utf-8"))
+except (ValueError, UnicodeDecodeError):
+    S1_EMBEDDED_STATE = {
+        "settings": {}, "custom_training": [], "error_rebounds": []}
+_EMBEDDED_STATE_LOCK = threading.RLock()
 
 
-def data_path(name: str) -> str:
-    return os.path.join(DATA_DIR, name)
-
-
-def ensure_data_dir() -> bool:
-    """Make the data folder if it is missing. Returns False when it could
-    not be created, so a caller can report that rather than raising from
-    inside an open()."""
+def persist_embedded_state() -> bool:
+    """Persist mutable application state by replacing one line in S1.py."""
+    encoded = base64.b64encode(json.dumps(
+        S1_EMBEDDED_STATE, separators=(",", ":"), ensure_ascii=False
+    ).encode("utf-8")).decode("ascii")
+    replacement = (
+        f'S1_EMBEDDED_STATE_B64 = "{encoded}"  # S1_EMBEDDED_STATE')
+    pattern = re.compile(
+        r'^S1_EMBEDDED_STATE_B64 = "[A-Za-z0-9+/=]*"'
+        r'  # S1_EMBEDDED_STATE$', re.MULTILINE)
     try:
-        os.makedirs(DATA_DIR, exist_ok=True)
+        with _EMBEDDED_STATE_LOCK:
+            with open(SCRIPT_PATH, "r+", encoding="utf-8") as fh:
+                source = fh.read()
+                updated, count = pattern.subn(replacement, source, count=1)
+                if count != 1:
+                    raise OSError("embedded state marker is missing")
+                fh.seek(0)
+                fh.write(updated)
+                fh.truncate()
+                fh.flush()
+                os.fsync(fh.fileno())
+        print(f"[state] saved inside {SCRIPT_PATH}")
         return True
     except OSError as e:
-        print(f"[data] could not create {DATA_DIR}: {e}")
+        print(f"[state] could not update {SCRIPT_PATH}: {e}")
         return False
 
 
-SETTINGS_PATH = data_path("S1_settings.json")
-ERR_HISTORY_PATH = data_path("S1_error_rebounds.json")
+SETTINGS_PATH = SCRIPT_PATH
+TRAINING_PATH = SCRIPT_PATH
+ERR_HISTORY_PATH = SCRIPT_PATH
 
 
 class GridConfig:
@@ -905,15 +931,55 @@ def grip_command(angle) -> str:
 # otherwise means. Long enough to see the carriage actually move, short
 # enough that a mis-click does not send it running.
 JOG_PULSE_S = 0.1
+# The Simple Gripper card's own jog: a deliberately coarser nudge than the
+# big card's JOG_PULSE_S, because this is the one an operator uses to line
+# the jaw up on the work before an action rather than to trim a position.
+SIMPLE_JOG_PULSE_S = 0.2
 SLOW_APPROACH_CELLS = 1
 TAG_HOLD_SECONDS = 0.35
 AUTO_GRIP_COMMAND_DELAY_S = 1.0
+AUTO_PULSE_S = 0.1
+AUTO_PICKUP_HX_S = 0.2
+AUTO_ACTION_GAP_S = 1.0
+# How long the automatic pickup will drive DOWN before giving up on the
+# contact sensor. There was no limit at all: if the packet never arrived --
+# unplugged sensor, a miss, a board still booting -- the phase machine sat
+# in AUTO_GRIP_DOWN forever with hd still running, the carriage still
+# descending into whatever was under it, and the plan step never finishing.
+# Generous enough for a full-height descent, short enough to be a stop.
+AUTO_GRIP_DOWN_MAX_S = 25.0
+# What an automatic release raises by when it has no press to measure --
+# release pressed on its own, or a plan whose press step was skipped.
+# The old code used the measured duration unconditionally, so a release
+# with nothing to measure sent hu and stopped it the same instant: the
+# tool stayed exactly where it was and the step silently did nothing.
+AUTO_RELEASE_FALLBACK_S = 0.4
+# The outside limit on one whole automatic action, start to finish.
+# Every phase that writes to the board retries a failed write for as long
+# as it takes -- deliberately, so a board still booting does not eat a
+# button press. Nothing bounded those retries, so a port that never came
+# back left the action running forever, the card showing "waiting to send",
+# and any plan step waiting on it stopped for good. This is the backstop
+# that makes "the automatic steps always finish" true rather than usually
+# true: comfortably longer than the longest real action (offset legs, a
+# full descent, the one-second gaps, the lift), and still an end.
+AUTO_ACTION_MAX_S = 90.0
 
 
 def has_serial_stop_signal(data) -> bool:
-    """Return whether a sensor packet contains lowercase or uppercase S."""
+    """Whether a sensor packet is the board saying "contact" -- s/S/stop.
+
+    Matched a token at a time. The old test ended in `"s" in text.lower()`,
+    which is true of any line with an s ANYWHERE in it: "sensors ok",
+    "pos 40", "status". Every one of those ended the automatic pickup's
+    descent early, and an early end means the jaw closes on air and the
+    lift is timed from a descent that never finished. A whole token is the
+    thing the firmware actually sends, and it still accepts "S\r\n",
+    "ok S" and "stop" -- just not a stray letter inside another word.
+    """
     text = data.decode("ascii", "ignore") if isinstance(data, bytes) else str(data)
-    return text.strip().lower() in ("s", "stop") or "s" in text.lower()
+    return any(token.strip(".,;:").lower() in ("s", "stop")
+               for token in text.split())
 
 CARET_BLINK_PERIOD = 1.06   # matches the default macOS text-caret blink rate
 CARET_BLINK_ON = 0.53
@@ -1379,6 +1445,35 @@ def tag_cell_for(col, row) -> tuple:
 
 OPPOSITE_DIR = {"up": "down", "down": "up", "left": "right", "right": "left"}
 
+
+# The gripper card currently running an automatic action, if any.
+#
+# update_guidance runs every single video frame and writes to the same
+# serial port the gripper does. While an automatic pickup is descending,
+# the only correct number of bytes for it to send is zero -- u/d/l/r would
+# drive the XY axes out from under a gripper that is already down, and an
+# "s" is worse still, because s is what ENDS the descent. That is what made
+# an automatic pickup stop half way down and fight the correction: the tag
+# drifts a pixel as the head moves, the guidance recomputes, and the stop
+# it sends to end a move it thinks it has finished lands in the middle of
+# the hd.
+#
+# The plan runner's own action steps were already covered, via
+# state.action_label. Nothing covered the PICKUP button on the card, which
+# is the one the operator actually presses -- there is no action_label for
+# that, so the guidance carried on driving the whole time.
+ACTIVE_GRIPPER_PANEL = None
+
+
+def automatic_gripper_busy() -> bool:
+    """Whether an automatic gripper action owns the serial port right now."""
+    panel = ACTIVE_GRIPPER_PANEL
+    if panel is None:
+        return False
+    try:
+        return bool(panel.automatic_busy())
+    except Exception:
+        return False
 
 def unreachable_rows() -> set:
     """Row indices where NO column is reachable, given the gripper offset.
@@ -2217,7 +2312,7 @@ class SettingsPanel:
 
     ROW_H = 42
     PAD = 22
-    WIDTH = 380
+    WIDTH = 520
 
     def __init__(self, cam_settings: CameraSettings, grid: Grid,
                  on_grid_size_changed, state=None):
@@ -2292,16 +2387,12 @@ class SettingsPanel:
             global GRIPPER_AI
             GRIPPER_AI = not GRIPPER_AI
 
-        def step_manual_gripper(_d):
+        def step_automatic_gripper(_d):
             global MANUAL_GRIPPER_STEPS
             MANUAL_GRIPPER_STEPS = not MANUAL_GRIPPER_STEPS
-            # Saved immediately rather than waiting for the panel's own
-            # SAVE button: this flag decides whether the board moves the
-            # gripper on its own or waits for a hand -- turning it on,
-            # forgetting to press SAVE, and having the next launch quietly
-            # revert to the automatic behaviour is a real-hardware surprise,
-            # not a cosmetic one. Every other setting here can wait for
-            # SAVE; this one cannot.
+            # Saved immediately: this decides whether a plan moves the
+            # gripper autonomously or pauses for a manual DONE confirmation,
+            # so the displayed choice must survive the next launch.
             save_settings(self.cam, self.grid)
 
         def step_dexterity_check(_d):
@@ -2358,9 +2449,9 @@ class SettingsPanel:
             SettingRow("gripper_ai", "Gripper AI",
                        lambda: "On" if GRIPPER_AI else "Off", step_gripper_ai,
                        toggle=True),
-            SettingRow("manual_gripper", "Manual gripper steps",
-                       lambda: "On" if MANUAL_GRIPPER_STEPS else "Off",
-                       step_manual_gripper, toggle=True),
+            SettingRow("automatic_gripper", "Automatic gripper actions",
+                       lambda: "On" if not MANUAL_GRIPPER_STEPS else "Off",
+                       step_automatic_gripper, toggle=True),
             SettingRow("board_width", "Board width (in)",
                        lambda: f"{BOARD_WIDTH_IN:g} in", step_board_width,
                        section="VISION"),
@@ -2437,6 +2528,15 @@ class SettingsPanel:
             return ""
         return None
 
+    def dropdown_hit(self, x, y):
+        if not self.visible:
+            return False
+        return False
+
+    def draw_lists(self, frame, mouse=(-1, -1)):
+        if not self.visible:
+            return
+
     def _rect_contains(self, x, y):
         if not self._last_rect:
             return False
@@ -2472,6 +2572,7 @@ class SettingsPanel:
         ph = chrome_h + view_h
         px, py = max(0, (fw - pw) // 2), max(0, (fh - ph) // 2)   # centred
         self._last_rect = (px, py, pw, ph)
+        self._dropdown_origin = (px, vy0 if 'vy0' in locals() else py + 54)
         rect = (px, py, px + pw, py + ph)
 
         margin = 40
@@ -2979,30 +3080,24 @@ def save_settings(cam: CameraSettings, grid: Grid):
             "gripper_dir": GRIPPER_OFFSET_DIR,
         },
         "vision": {"board_width_in": BOARD_WIDTH_IN},
-        "behaviour": {"manual_gripper_steps": MANUAL_GRIPPER_STEPS},
+        "behaviour": {
+            "manual_gripper_steps": MANUAL_GRIPPER_STEPS,
+            "gripper_ai": GRIPPER_AI,
+        },
     }
-    if not ensure_data_dir():
-        return
-    try:
-        with open(SETTINGS_PATH, "w") as fh:
-            json.dump(data, fh, indent=2)
-        print(f"[settings] saved to {SETTINGS_PATH}")
-    except OSError as e:
-        print(f"[settings] could not save: {e}")
+    S1_EMBEDDED_STATE["settings"] = data
+    if persist_embedded_state():
+        print(f"[settings] saved inside {SETTINGS_PATH}")
 
 
 def load_settings():
     """Returns (CameraSettings, (box, frame_size, square_cells, box_rel) or
     None). Grid dimensions are applied to CONFIG as a side effect."""
     cam = CameraSettings()
-    if not os.path.exists(SETTINGS_PATH):
-        return cam, None
-    try:
-        with open(SETTINGS_PATH) as fh:
-            data = json.load(fh)
-    except (OSError, ValueError) as e:
-        print(f"[settings] ignoring unreadable settings file: {e}")
-        return cam, None
+    data = copy.deepcopy(S1_EMBEDDED_STATE.get("settings") or {})
+    if not isinstance(data, dict):
+        print("[settings] ignoring malformed embedded settings")
+        data = {}
 
     c = data.get("camera", {})
     cam.zoom = float(c.get("zoom", cam.zoom))
@@ -3042,9 +3137,11 @@ def load_settings():
     BOARD_WIDTH_IN = float(data.get("vision", {}).get("board_width_in",
                                                       BOARD_WIDTH_IN))
 
-    global MANUAL_GRIPPER_STEPS
-    MANUAL_GRIPPER_STEPS = bool(data.get("behaviour", {}).get(
+    global MANUAL_GRIPPER_STEPS, GRIPPER_AI
+    behaviour = data.get("behaviour", {})
+    MANUAL_GRIPPER_STEPS = bool(behaviour.get(
         "manual_gripper_steps", MANUAL_GRIPPER_STEPS))
+    GRIPPER_AI = bool(behaviour.get("gripper_ai", GRIPPER_AI))
 
     g = data.get("grid", {})
     CONFIG.n_cols = max(MIN_N, min(MAX_N_COLS, int(g.get("n_cols", CONFIG.n_cols))))
@@ -3715,7 +3812,7 @@ class GripperPanel:
     # hand, not glance at and close, so its controls read at a distance.
     ROW_H = 58
     PAD = 28
-    WIDTH = 480
+    WIDTH = 900
 
     GRIP_LO, GRIP_HI = float(GRIP_MIN_DEG), float(GRIP_MAX_DEG)
 
@@ -3738,14 +3835,16 @@ class GripperPanel:
     AUTO_GRIP_WAIT_UP = "wait_up"
     AUTO_GRIP_UP = "up"
     AUTO_GRIP_WAIT_STOP = "wait_stop"
+    AUTO_GRIP_WAIT_HX = "wait_hx"
+    AUTO_GRIP_HX = "hx"
+    AUTO_GRIP_WAIT_G90 = "wait_g90"
+    AUTO_GRIP_WAIT_HU = "wait_hu"
 
     # Why this card exists at all. Red because it is a caveat about the rig,
     # not a description of the controls -- someone opening this expecting an
     # autonomous gripper should find out here rather than by waiting for one
     # to move on its own.
-    NOTE = ("Currently, we have not made the G1 gripper, so gripper control "
-            "is manual. We are constantly working on making the gripper "
-            "autonomous.")
+    NOTE = "Automatic pickup, keep, press and release are available below."
     NOTE_SCALE = 0.4
     NOTE_LINE_H = 18
     # The manual instruction reads larger than anything else on the card --
@@ -3758,7 +3857,7 @@ class GripperPanel:
         self.buttons = []
         self._last_rect = None
         self._anim = 0.0
-        self.grip = 45.0
+        self.grip = 0.0
         self.dragging = None          # slider kind being dragged, or None
         self._grip_sent = None        # last angle confirmed out of the port
         self._grip_tx_at = 0.0
@@ -3769,6 +3868,22 @@ class GripperPanel:
         self.auto_grip_started_at = 0.0
         self.auto_grip_down_duration = 0.0
         self.auto_grip_up_until = 0.0
+        self.auto_pulse_kind = None
+        self.auto_pulse_until = 0.0
+        self.auto_press_started_at = 0.0
+        self.auto_press_duration = 0.0
+        self.offset_phase = "idle"
+        self.offset_action = ""
+        self.offset_until = 0.0
+        # Whether the action that just ended ended badly. Read by anything
+        # that wants to know a "finished" automatic step actually did what
+        # it said -- the card's own read-out, and the plan runner.
+        self.offset_failed = False
+        # When the action in flight has to be over, whatever state it is in.
+        self.offset_deadline = 0.0
+        global ACTIVE_GRIPPER_PANEL
+        ACTIVE_GRIPPER_PANEL = self
+        self.pending_auto_actions = []
         # The result of the most recent button press, shown on the card
         # itself. Without this, a press that is correctly refused (no
         # serial port, a booting board) changes nothing visible ON THE CARD
@@ -3776,10 +3891,9 @@ class GripperPanel:
         # window, which someone looking at just this popup can easily miss
         # and read as "the button did not click" even though it did.
         self.last_msg = ""
-        # A manual step the plan is currently blocked on: what to do by
-        # hand, and whether the run is still waiting to be told it is done.
-        # There is no automatic gripper yet, so pickup/keep/press/release/
-        # pour all land here rather than being carried out by the machine.
+        # A manual step the plan is currently blocked on when the optional
+        # manual-gripper setting is enabled: what to do by hand, and whether
+        # the run is still waiting to be told it is done.
         self.instruction = ""
         self.awaiting_confirm = False
         # The degree sign is mapped to " deg" by ascii_text, and text_size
@@ -3833,6 +3947,15 @@ class GripperPanel:
     def waiting_for_confirm(self) -> bool:
         return self.awaiting_confirm
 
+    def automatic_busy(self) -> bool:
+        return (self.offset_phase != "idle"
+                or self.auto_grip_phase != self.AUTO_GRIP_IDLE
+                or bool(self.pending_auto_actions))
+
+    def start_automatic_action(self, action: str, *, immediate=False) -> str:
+        self.last_msg = self._start_offset_action(action, immediate=immediate)
+        return self.last_msg
+
     # -- values --------------------------------------------------------
     def slider(self, kind):
         for sl in self.sliders:
@@ -3875,10 +3998,16 @@ class GripperPanel:
         if not ARDUINO.connected:
             return "Not connected -- nothing sent."
         cmd = HEIGHT_UP_CMD if up else HEIGHT_DOWN_CMD
+        return self._send_height_command(cmd, "up" if up else "down")
+
+    def _send_height_command(self, cmd: str, direction: str) -> str:
+        """Send a one-shot height command without sensor handling."""
+        if not ARDUINO.connected:
+            return "Not connected -- nothing sent."
         if not ARDUINO.send_command(cmd):
             return f"Could not send {cmd} -- the board may still be booting."
         self._last_height_cmd = cmd
-        return f"Sent {cmd} -- height {'up' if up else 'down'}."
+        return f"Sent {cmd} -- height {direction}."
 
     def _start_jog(self, direction: str) -> str:
         """A tiny, fixed-length jerk: send the direction letter at SLOW_SUFFIX
@@ -3916,7 +4045,53 @@ class GripperPanel:
         if self.jog_dir is not None and time.time() >= self.jog_until:
             ARDUINO.halt()
             self.jog_dir = None
+        if self.auto_pulse_kind is not None and time.monotonic() >= self.auto_pulse_until:
+            ARDUINO.halt()
+            self.last_msg = f"Automatic {self.auto_pulse_kind}: sent s."
+            self.auto_pulse_kind = None
         now = time.monotonic()
+        if (self.offset_phase != "idle" and self.offset_deadline
+                and now >= self.offset_deadline):
+            # Stop whatever is still moving before unwinding the state --
+            # the wedged phase may well be one that left an axis running.
+            ARDUINO.halt()
+            self.auto_grip_phase = self.AUTO_GRIP_IDLE
+            self.auto_grip_down_duration = 0.0
+            self._abort_offset_action(
+                f"Automatic {self.offset_action or 'action'} gave up after "
+                f"{AUTO_ACTION_MAX_S:g}s -- sent s.")
+            return
+        if self.offset_phase == "wait_action" and now >= self.offset_until:
+            self.offset_phase = "action"
+            self._execute_offset_action(self.offset_action)
+        elif self.offset_phase == "action":
+            # A transient serial failure must not eat an automatic-button
+            # press. Stay here and retry until the command is actually sent.
+            self._execute_offset_action(self.offset_action)
+        elif self.offset_phase == "wait_pickup" and self.auto_grip_phase == self.AUTO_GRIP_IDLE:
+            self._schedule_action_complete(now)
+        elif self.offset_phase in ("wait_press", "wait_release") and now >= self.offset_until:
+            if ARDUINO.halt():
+                if self.offset_phase == "wait_press":
+                    self.auto_press_duration = max(0.0, now - self.auto_press_started_at)
+                self._schedule_action_complete(now)
+            else:
+                self.last_msg = "Action duration finished -- retrying lowercase s."
+        elif self.offset_phase == "wait_complete" and now >= self.offset_until:
+            self._complete_offset_action("Automatic action complete.")
+        if (self.auto_grip_phase == self.AUTO_GRIP_DOWN
+                and now - self.auto_grip_started_at >= AUTO_GRIP_DOWN_MAX_S):
+            # No contact packet in AUTO_GRIP_DOWN_MAX_S. Stop the descent
+            # first and report second -- and do not carry on into g90/hu,
+            # because the jaw would be closing on nothing and the lift
+            # would be timed from a descent that never reached anything.
+            ARDUINO.halt()
+            self.auto_grip_phase = self.AUTO_GRIP_IDLE
+            self.auto_grip_down_duration = 0.0
+            self._abort_offset_action(
+                f"Automatic pickup failed: no contact signal in "
+                f"{AUTO_GRIP_DOWN_MAX_S:g}s -- sent s.")
+            return
         if (self.auto_grip_phase == self.AUTO_GRIP_WAIT_DOWN
                 and now >= self.auto_grip_up_until):
             if ARDUINO.send_command(HEIGHT_DOWN_CMD):
@@ -3926,31 +4101,50 @@ class GripperPanel:
             return
         if (self.auto_grip_phase == self.AUTO_GRIP_WAIT_GRIP
                 and now >= self.auto_grip_up_until):
+            if ARDUINO.send_command("hx"):
+                self.auto_grip_phase = self.AUTO_GRIP_HX
+                self.auto_grip_up_until = now + AUTO_PICKUP_HX_S
+                self.last_msg = "Sensor S received -- hx for 0.2s."
+            return
+        if (self.auto_grip_phase == self.AUTO_GRIP_HX
+                and now >= self.auto_grip_up_until):
+            if ARDUINO.halt():
+                self.auto_grip_phase = self.AUTO_GRIP_WAIT_G90
+                self.auto_grip_up_until = now + AUTO_GRIP_COMMAND_DELAY_S
+                self.last_msg = "hx complete -- g90 in 1.0s."
+            else:
+                self.last_msg = "hx complete -- retrying lowercase s."
+            return
+        if (self.auto_grip_phase == self.AUTO_GRIP_WAIT_G90
+                and now >= self.auto_grip_up_until):
             if ARDUINO.send_command(grip_command(GRIP_MAX_DEG)):
                 self.grip = GRIP_MAX_DEG
-                self.auto_grip_phase = self.AUTO_GRIP_WAIT_UP
+                self.auto_grip_phase = self.AUTO_GRIP_WAIT_HU
                 self.auto_grip_up_until = now + AUTO_GRIP_COMMAND_DELAY_S
-                self.last_msg = "Sensor S received -- sent g90; hu scheduled in 1.0s."
+                self.last_msg = "Sent g90 -- hu in 1.0s."
             return
-        if (self.auto_grip_phase == self.AUTO_GRIP_WAIT_UP
+        if (self.auto_grip_phase == self.AUTO_GRIP_WAIT_HU
                 and now >= self.auto_grip_up_until):
             if ARDUINO.send_command(HEIGHT_UP_CMD):
                 self.auto_grip_phase = self.AUTO_GRIP_UP
-                self.auto_grip_up_until = now + self.auto_grip_down_duration
+                self.auto_grip_up_until = now + self.auto_grip_down_duration + AUTO_PICKUP_HX_S
                 self.last_msg = (f"Automatic gripping: sent hu for "
-                                 f"{self.auto_grip_down_duration:.1f}s.")
+                                 f"{self.auto_grip_down_duration + AUTO_PICKUP_HX_S:.1f}s.")
             return
         if (self.auto_grip_phase == self.AUTO_GRIP_UP
                 and now >= self.auto_grip_up_until):
-            self.auto_grip_phase = self.AUTO_GRIP_WAIT_STOP
-            self.auto_grip_up_until = now + AUTO_GRIP_COMMAND_DELAY_S
-            self.last_msg = "Automatic gripping: stop scheduled in 1.0s."
+            if ARDUINO.halt():
+                self.auto_grip_phase = self.AUTO_GRIP_IDLE
+                if self.offset_phase == "wait_pickup":
+                    # Start the final one-second boundary from the exact
+                    # instant the pickup stop was sent, not one video frame
+                    # later on the next call to tick().
+                    self._schedule_action_complete(now)
+                else:
+                    self.last_msg = "Automatic gripping complete -- sent s."
+            else:
+                self.last_msg = "Raise duration finished -- retrying lowercase s."
             return
-        if (self.auto_grip_phase == self.AUTO_GRIP_WAIT_STOP
-                and now >= self.auto_grip_up_until
-                and ARDUINO.halt()):
-            self.auto_grip_phase = self.AUTO_GRIP_IDLE
-            self.last_msg = "Automatic gripping complete -- sent s."
 
     def _stop_jog(self) -> str:
         """The d-pad's centre button: send 's' right now, unconditionally.
@@ -3970,15 +4164,141 @@ class GripperPanel:
             return "Stopped -- sent s."
         return "Could not send s -- the board may still be booting."
 
+    def _start_auto_pulse(self, cmd: str, label: str) -> str:
+        """Run a lowercase HU/HX pulse for exactly 0.1s, then stop."""
+        if not ARDUINO.connected:
+            return "Not connected -- nothing sent."
+        if self.auto_pulse_kind is not None:
+            ARDUINO.halt()
+        cmd = cmd.lower()
+        if not ARDUINO.send_command(cmd):
+            return f"Could not send {cmd} -- the board may still be booting."
+        self.auto_pulse_kind = label
+        self.auto_pulse_until = time.monotonic() + AUTO_PULSE_S
+        return f"Sent {cmd} for {AUTO_PULSE_S:g}s; then s."
+
+    def _start_offset_action(self, action: str, *, immediate=False) -> str:
+        """Run horizontal/vertical offsets once, then the gripper action.
+
+        A press is accepted even while the board is reconnecting. The phase
+        machine retries the first write, so a short reset or boot interval can
+        no longer make an apparently clickable button silently do nothing.
+        """
+        if action not in ("pickup", "keep", "press", "release"):
+            return f"Unknown automatic action: {action}."
+        if self.offset_phase != "idle":
+            self.pending_auto_actions.append(action)
+            return (f"Automatic {action} queued -- it will run after the "
+                    f"current {self.offset_action} finishes.")
+        self.offset_action = action
+        self.offset_failed = False
+        self.offset_deadline = time.monotonic() + AUTO_ACTION_MAX_S
+        if immediate:
+            # Simple Gripper DONE starts the first command in this call.
+            # Later command gaps and retry handling still use the phase machine.
+            self.offset_phase = "action"
+            self._execute_offset_action(action)
+            return self.last_msg
+        # No automatic approach any more. The head is wherever the operator
+        # left it with the Simple Gripper card's jog, and the action runs
+        # from exactly there after the usual one-second gap.
+        self.offset_phase = "wait_action"
+        self.offset_until = time.monotonic() + AUTO_ACTION_GAP_S
+        return f"Automatic {action} in {AUTO_ACTION_GAP_S:.1f}s."
+
+    def _execute_offset_action(self, action: str):
+        now = time.monotonic()
+        if action == "pickup":
+            self.last_msg = self._start_auto_grip()
+            if self.auto_grip_phase != self.AUTO_GRIP_IDLE:
+                self.offset_phase = "wait_pickup"
+        elif action == "keep":
+            if ARDUINO.send_command("g0"):
+                self.grip = 0.0
+                self._grip_sent = "g0"
+                self.last_msg = "Automatic keep: sent g0."
+                self._schedule_action_complete(now)
+            else:
+                self.last_msg = "Automatic keep ready -- waiting to send g0."
+        elif action == "press":
+            if ARDUINO.send_command("hx"):
+                self.auto_press_started_at = now
+                self.offset_phase = "wait_press"
+                self.offset_until = now + AUTO_PICKUP_HX_S
+                self.last_msg = f"Automatic press: hx for {AUTO_PICKUP_HX_S:.1f}s."
+            else:
+                self.last_msg = "Automatic press ready -- waiting to send hx."
+        elif action == "release":
+            # A release is the undo of a press, so it raises by however long
+            # the press drove down. With no press on record that would be
+            # zero seconds -- hu and s in the same breath, nothing moved --
+            # so fall back to a real, if nominal, lift.
+            duration = self.auto_press_duration
+            if duration <= 0.0:
+                duration = AUTO_RELEASE_FALLBACK_S
+            if ARDUINO.send_command("hu"):
+                self.offset_phase = "wait_release"
+                self.offset_until = now + duration
+                self.last_msg = f"Automatic release: hu for {duration:.3f}s."
+            else:
+                self.last_msg = "Automatic release ready -- waiting to send hu."
+
+    def _schedule_action_complete(self, now=None):
+        """Hold for one second after the action."""
+        self.offset_phase = "wait_complete"
+        self.offset_until = (time.monotonic() if now is None else now) + AUTO_ACTION_GAP_S
+        self.last_msg = "Action complete -- waiting 1.0s."
+
+    def abort_automatic_action(self, message=None) -> str:
+        """Stop an automatic action dead, from outside this card.
+
+        This is what the Simple Gripper card's STOP is wired to. It halts
+        first and unwinds second -- whatever phase is running may well have
+        an axis moving -- and it clears the queue too, so a stop does not
+        merely pause before the next queued action starts on its own.
+        """
+        if not self.automatic_busy():
+            return "No automatic action is running."
+        ARDUINO.halt()
+        self.auto_grip_phase = self.AUTO_GRIP_IDLE
+        self.auto_grip_down_duration = 0.0
+        self.pending_auto_actions = []
+        action = self.offset_action or "action"
+        self._abort_offset_action(
+            message or f"Automatic {action} stopped -- sent s.")
+        return self.last_msg
+
+    def _abort_offset_action(self, message):
+        """End the action without pretending it worked.
+
+        Same teardown as a success -- the phase returns to idle and any
+        queued action still runs -- but the card keeps the failure on it
+        rather than being overwritten with "complete", which is the one
+        thing that would let a pickup that gripped nothing look fine.
+        """
+        self.offset_failed = True
+        self._complete_offset_action(message)
+
+    def _complete_offset_action(self, message="Automatic action complete."):
+        self.offset_deadline = 0.0
+        self.offset_phase = "idle"
+        self.offset_action = ""
+        self.last_msg = message
+        if self.pending_auto_actions:
+            next_action = self.pending_auto_actions.pop(0)
+            self.last_msg = self._start_offset_action(next_action)
+
     def _start_auto_grip(self) -> str:
         """Schedule HD, grip, HU, and stop with one-second command gaps."""
-        if not ARDUINO.connected:
-            return "Automatic gripping not started -- not connected."
         if self.auto_grip_phase != self.AUTO_GRIP_IDLE:
             return "Automatic gripping is already running."
-        self.auto_grip_phase = self.AUTO_GRIP_WAIT_DOWN
-        self.auto_grip_up_until = time.monotonic() + AUTO_GRIP_COMMAND_DELAY_S
-        return "Automatic gripping: hd scheduled in 1.0s."
+        if not ARDUINO.send_command(HEIGHT_DOWN_CMD):
+            self.auto_grip_phase = self.AUTO_GRIP_WAIT_DOWN
+            self.auto_grip_up_until = time.monotonic()
+            return "Automatic pickup accepted -- waiting to send hd."
+        self.auto_grip_phase = self.AUTO_GRIP_DOWN
+        self.auto_grip_started_at = time.monotonic()
+        return "Automatic gripping: sent hd; waiting for s/S."
 
     def note_rx(self, data) -> bool:
         """Handle a sensor packet while automatic gripping is descending."""
@@ -3986,12 +4306,17 @@ class GripperPanel:
             return False
         if not has_serial_stop_signal(data):
             return False
-        self.auto_grip_down_duration = max(
-            0.0, time.monotonic() - self.auto_grip_started_at)
+        now = time.monotonic()
+        self.auto_grip_down_duration = max(0.0, now - self.auto_grip_started_at)
+        # The descent is never cut short from here: hd runs until the board's
+        # own IR sensor stops it, and this is simply the report that it did.
+        # Then the usual one-second gap before the next command, the same as
+        # between every other pair in the sequence.
         self.auto_grip_phase = self.AUTO_GRIP_WAIT_GRIP
-        self.auto_grip_up_until = time.monotonic() + AUTO_GRIP_COMMAND_DELAY_S
-        self.last_msg = ("Sensor S received -- g90 scheduled in 1.0s; "
-                         "hu follows after another 1.0s.")
+        self.auto_grip_up_until = now + AUTO_GRIP_COMMAND_DELAY_S
+        self.last_msg = (f"IR sensor tripped after "
+                         f"{self.auto_grip_down_duration:.1f}s -- hx in "
+                         f"{AUTO_GRIP_COMMAND_DELAY_S:.1f}s.")
         return True
 
     def status_line(self) -> str:
@@ -4003,6 +4328,39 @@ class GripperPanel:
         height_bit = (f"last height command {self._last_height_cmd}"
                      if self._last_height_cmd else "height not moved yet")
         return f"Gripper: grip {self.grip:.0f} -- {tail}; {height_bit}."
+
+    def automation_status(self) -> str:
+        """Live, rendered proof of the current phase and remaining wait."""
+        now = time.monotonic()
+        remaining = max(0.0, self.offset_until - now)
+        grip_remaining = max(0.0, self.auto_grip_up_until - now)
+        if self.auto_grip_phase == self.AUTO_GRIP_WAIT_DOWN:
+            message = "Pickup: waiting to send hd"
+        elif self.auto_grip_phase == self.AUTO_GRIP_DOWN:
+            message = "Pickup: hd sent; waiting for sensor s"
+        elif self.auto_grip_phase == self.AUTO_GRIP_WAIT_GRIP:
+            message = f"Pickup: waiting {grip_remaining:.1f}s before hx"
+        elif self.auto_grip_phase == self.AUTO_GRIP_HX:
+            message = f"Pickup: hx has {grip_remaining:.1f}s remaining"
+        elif self.auto_grip_phase == self.AUTO_GRIP_WAIT_G90:
+            message = f"Pickup: waiting {grip_remaining:.1f}s before g90"
+        elif self.auto_grip_phase == self.AUTO_GRIP_WAIT_HU:
+            message = f"Pickup: waiting {grip_remaining:.1f}s before hu"
+        elif self.auto_grip_phase == self.AUTO_GRIP_UP:
+            message = f"Pickup: hu has {grip_remaining:.1f}s remaining"
+        elif self.offset_phase == "action":
+            message = self.last_msg
+        elif self.offset_phase == "wait_action":
+            message = f"Waiting {remaining:.1f}s before {self.offset_action}"
+        elif self.offset_phase in ("wait_press", "wait_release"):
+            message = f"{self.offset_action.title()}: {remaining:.1f}s remaining"
+        elif self.offset_phase == "wait_complete":
+            message = f"Waiting {remaining:.1f}s after {self.offset_action}"
+        else:
+            message = self.last_msg or "Ready."
+        if self.pending_auto_actions:
+            message += f" | queued: {len(self.pending_auto_actions)}"
+        return message
 
     def _rect_contains(self, x, y):
         if not self._last_rect:
@@ -4028,14 +4386,32 @@ class GripperPanel:
                 if b.kind == "grip_close":
                     self.close()
                     return "Gripper closed."
+                if b.kind == "grip_close_top":
+                    self.close()
+                    return "Gripper closed."
                 # Recorded on the card itself (see last_msg's docstring in
                 # __init__) so a press that is correctly REFUSED -- no port,
                 # a booting board -- is still visibly not a no-op.
                 if b.kind == "grip_height":
                     self.last_msg = self._height_step(up=b.value)
                     return self.last_msg
+                if b.kind == "grip_hx":
+                    self.last_msg = self._send_height_command("hx", "press")
+                    return self.last_msg
+                if b.kind == "grip_pulse":
+                    self.last_msg = self._start_auto_pulse(b.value, b.value)
+                    return self.last_msg
                 if b.kind == "grip_auto":
-                    self.last_msg = self._start_auto_grip()
+                    self.last_msg = self._start_offset_action("pickup")
+                    return self.last_msg
+                if b.kind == "grip_auto_keep":
+                    self.last_msg = self._start_offset_action("keep")
+                    return self.last_msg
+                if b.kind == "grip_auto_press":
+                    self.last_msg = self._start_offset_action("press")
+                    return self.last_msg
+                if b.kind == "grip_auto_release":
+                    self.last_msg = self._start_offset_action("release")
                     return self.last_msg
                 if b.kind == "grip_jog":
                     self.last_msg = self._start_jog(b.value)
@@ -4064,6 +4440,11 @@ class GripperPanel:
             return None
         self.set_value(sl.kind, sl.value_at(x))
         return self.status_line()
+
+    def draw_lists(self, frame, mouse=(-1, -1)):
+        if not self.visible:
+            return
+        return
 
     def release(self):
         """True when this ended a drag, so the caller knows the mouse-up was
@@ -4130,17 +4511,17 @@ class GripperPanel:
         note_line_h = S(self.NOTE_LINE_H)
         note_h = len(note_lines) * note_line_h + S(10)
         jog_btn = max(1, int(round(S(self.JOG_BTN))))
-        jog_gap = max(1, int(round(S(self.JOG_GAP))))
+        jog_gap = max(12, int(round(S(self.JOG_GAP))))
         jog_h = S(26) + 3 * jog_btn + 2 * jog_gap
         instr_lines = (wrap_text(self.instruction, pw - 56, instr_scale)
                       if self.instruction else [])
         instr_line_h = S(self.INSTR_LINE_H)
         instr_h = (len(instr_lines) * instr_line_h + S(16)
                   if instr_lines else 0)
-        done_h = row_h + S(10) if self.awaiting_confirm else 0
+        done_h = row_h + S(10)
         ph = int(round(
             self.PAD * 2 + S(44) + instr_h + S(78) + S(26) + row_h
-            + row_h + S(10) + jog_h
+            + row_h + S(20) + jog_h
             + S(30) + note_h + S(26) + done_h + row_h))
         # Centred on the video -- big and meant to be watched while jogging,
         # not tucked in a corner like the smaller reference/status cards.
@@ -4158,20 +4539,23 @@ class GripperPanel:
         glass_card(frame, rect, 28, alpha=0.62)
         draw_text(frame, "Gripper", (px + 28, py + int(S(44))), 0.9 * k,
                   C_TEXT, 2)
-        # Whether a plan step auto-opens this card is a SEPARATE setting
-        # (Settings > Manual gripper steps) from anything else on this
-        # card -- jogging and the sliders work either way. That split is
-        # exactly what is easy to miss, so it is named here rather than
-        # left to be inferred from Settings being scrolled to.
-        auto_label = "AUTO-OPEN: ON" if MANUAL_GRIPPER_STEPS else "AUTO-OPEN: OFF"
+        mx, my = mouse
+        self.buttons = []
+        close_top = Button("X", px + pw - int(S(66)), py + int(S(18)),
+                           px + pw - int(S(20)), py + int(S(58)),
+                           "grip_close_top", style="primary", scale=0.52 * k)
+        close_top.draw(frame, hover=close_top.contains(mx, my), shadow=False)
+        self.buttons.append(close_top)
+        # Plan automation is a separate setting from the offset and manual
+        # controls on this card, so show its state where the action buttons
+        # are visible instead of making the operator infer it.
+        auto_label = "PLAN AUTO: ON" if not MANUAL_GRIPPER_STEPS else "PLAN AUTO: OFF"
         auto_scale = 0.4 * k
-        auto_col = C_GREEN if MANUAL_GRIPPER_STEPS else C_TEXT_DIM
+        auto_col = C_GREEN if not MANUAL_GRIPPER_STEPS else C_TEXT_DIM
         aw, _ = text_size(auto_label, auto_scale, 1)
         draw_text(frame, auto_label, (px + pw - 28 - aw, py + int(S(40))),
                   auto_scale, auto_col, 1)
 
-        mx, my = mouse
-        self.buttons = []
         y = py + S(72)
 
         # --- What the plan is waiting for you to do by hand ------------
@@ -4211,24 +4595,56 @@ class GripperPanel:
         draw_text(frame, hlabel, (px + pw - 28 - hw, int(y + S(18))),
                   hscale, C_ACCENT, 2)
         y += S(26)
-        gap = S(16)
-        half = int((pw - 28 - 28 - gap) // 2)
+        gap = max(12, S(12))
+        third = int((pw - 28 - 28 - 2 * gap) // 3)
         y0, y1 = int(y), int(y + row_h - S(8))
-        down_btn = Button("DOWN (hd)", px + 28, y0, px + 28 + half, y1,
+        down_btn = Button("DOWN (hd)", px + 28, y0, px + 28 + third, y1,
                           "grip_height", value=False, scale=0.52 * k)
-        up_btn = Button("UP (hu)", int(px + 28 + half + gap), y0,
-                        px + pw - 28, y1, "grip_height", value=True,
+        up_x0 = int(px + 28 + third + gap)
+        up_btn = Button("UP (hu)", up_x0, y0, up_x0 + third, y1,
+                "grip_height", value=True,
                         scale=0.52 * k)
+        hx_x0 = int(up_x0 + third + gap)
+        hx_btn = Button("HX", hx_x0, y0, px + pw - 28, y1,
+                "grip_hx", style="accent", scale=0.52 * k)
         down_btn.draw(frame, hover=down_btn.contains(mx, my), shadow=False)
         up_btn.draw(frame, hover=up_btn.contains(mx, my), shadow=False)
-        self.buttons.extend([down_btn, up_btn])
+        hx_btn.draw(frame, hover=hx_btn.contains(mx, my), shadow=False)
+        self.buttons.extend([down_btn, up_btn, hx_btn])
         y += row_h + S(10)
 
-        auto_btn = Button("AUTOMATIC GRIPPING", px + 28, int(y),
-                  px + pw - 28, int(y + row_h - S(8)),
-                  "grip_auto", style="accent", scale=0.48 * k)
-        auto_btn.draw(frame, hover=auto_btn.contains(mx, my), shadow=False)
-        self.buttons.append(auto_btn)
+        # Timed arrow pulses: HU/HX for 0.1s, then lowercase s.
+        pulse_gap = max(12, S(12))
+        half = int((pw - 56 - pulse_gap) // 2)
+        hu_pulse = Button("HU 0.1s", px + 28, int(y),
+                          px + 28 + half, int(y + row_h - S(8)),
+                          "grip_pulse", value="hu", scale=0.5 * k)
+        hx_pulse = Button("HX 0.1s", int(px + 28 + half + pulse_gap), int(y),
+                          px + pw - 28, int(y + row_h - S(8)),
+                          "grip_pulse", value="hx", scale=0.5 * k)
+        hu_pulse.draw(frame, hover=hu_pulse.contains(mx, my), shadow=False)
+        hx_pulse.draw(frame, hover=hx_pulse.contains(mx, my), shadow=False)
+        self.buttons.extend([hu_pulse, hx_pulse])
+        y += row_h + S(10)
+
+        # Button.contains expands each hit target by 5px. Keep more than
+        # 10px between adjacent controls even when the popup is scaled, so
+        # neighbouring automatic buttons never steal one another's clicks.
+        auto_gap = max(12, S(12))
+        auto_width = int((pw - 56 - 3 * auto_gap) // 4)
+        auto_specs = [
+            ("PICKUP", "grip_auto", None),
+            ("KEEP", "grip_auto_keep", None),
+            ("PRESS", "grip_auto_press", None),
+            ("RELEASE", "grip_auto_release", None),
+        ]
+        for i, (label, kind, value) in enumerate(auto_specs):
+            x0 = int(px + 28 + i * (auto_width + auto_gap))
+            btn = Button(label, x0, int(y), x0 + auto_width,
+                         int(y + row_h - S(8)), kind, value=value,
+                         style="accent", scale=0.34 * k)
+            btn.draw(frame, hover=btn.contains(mx, my), shadow=False)
+            self.buttons.append(btn)
         y += row_h + S(10)
 
         # --- Jog: a small d-pad, each press a timed pulse, STOP at centre --
@@ -4268,7 +4684,7 @@ class GripperPanel:
         # a refused press changes nothing else on the card, and looks
         # exactly like the click never registered at all.
         msg_scale = 0.4 * k
-        msg_line = fit_text(self.last_msg or "Ready.", pw - 56, msg_scale)
+        msg_line = fit_text(self.automation_status(), pw - 56, msg_scale)
         draw_text(frame, msg_line, (px + 28, int(y + S(18))), msg_scale,
                   C_TEXT_DIM, 1)
         y += S(28)
@@ -4284,13 +4700,12 @@ class GripperPanel:
                   C_TEXT_DIM, 1)
         y += S(26)
 
-        if self.awaiting_confirm:
-            y0, y1 = int(y + S(6)), int(y + row_h - S(8))
-            done = Button("DONE", px + 28, y0, px + pw - 28, y1,
-                          "grip_done", style="accent", scale=0.56 * k)
-            done.draw(frame, hover=done.contains(mx, my), shadow=False)
-            self.buttons.append(done)
-            y += row_h + S(10)
+        y0, y1 = int(y + S(6)), int(y + row_h - S(8))
+        done = Button("DONE", px + 28, y0, px + pw - 28, y1,
+                      "grip_done", style="accent", scale=0.56 * k)
+        done.draw(frame, hover=done.contains(mx, my), shadow=False)
+        self.buttons.append(done)
+        y += row_h + S(10)
 
         y0, y1 = int(y + S(6)), int(y + row_h - S(8))
         close = Button("CLOSE", px + 28, y0, px + pw - 28, y1,
@@ -4321,13 +4736,9 @@ HOLD_SECONDS = 1.0
 def resolve_api_key() -> str:
     if OPENAI_API_KEY.strip():
         return OPENAI_API_KEY.strip()
-    try:
-        with open(SETTINGS_PATH, "r", encoding="utf-8") as fh:
-            key = str(json.load(fh).get("api_key", "")).strip()
-        if key:
-            return key
-    except (OSError, ValueError, AttributeError):
-        pass
+    key = str(S1_EMBEDDED_STATE.get("api_key", "")).strip()
+    if key:
+        return key
     return os.environ.get("OPENAI_API_KEY", "").strip()
 
 
@@ -4339,7 +4750,7 @@ def make_client():
     key = resolve_api_key()
     if not key:
         raise ModelError("No API key. Put one in OPENAI_API_KEY at the top of "
-                         "S1.py, in S1_settings.json, or in the environment.")
+                         "S1.py or in the environment.")
     if OpenAI is None:
         raise ModelError("The 'openai' package is not installed "
                          "(pip install openai).")
@@ -4975,7 +5386,7 @@ def zoom_region_for(poly, margin_cells=1.5):
     return c0, r0, c1, r1
 
 
-GRIPPER_AI = False
+GRIPPER_AI = True
 
 
 def _poly_span(poly):
@@ -8159,6 +8570,12 @@ def parse_vision_json(raw: str):
 GRIPPER_AI_SYSTEM = """
 You are Gripper AI for a robot with a simple parallel gripper on an overhead gantry.
 
+The left jaw is the moving jaw. Therefore every grasp target MUST be slightly
+to the RIGHT of the object's visual centre as seen in the supplied camera
+image, preferably on its right edge. Never choose the centre, front, or back.
+Use the object's polygon/rightmost TOUCHES cell to select the right-side cell.
+This camera-view rule overrides generic handle or centre-grasp advice below.
+
 You are shown a photo of the workspace and the OBJECT LIST the vision system
 produced for it. Every object line carries its CENTER cell, its TOUCHES cells,
 and its COMPONENTS as name@CELL. For every object the robot might PICK UP, you
@@ -8300,6 +8717,20 @@ def object_cells(o) -> set:
     return cells
 
 
+def right_edge_grip_cell(o) -> str:
+    """Rightmost occupied cell in camera/grid view, biased near mid-height."""
+    parsed = []
+    for cell in object_cells(o):
+        coord = parse_coordinate(cell)
+        if coord is not None:
+            parsed.append((coord[0], coord[1], cell))
+    if not parsed:
+        return str(o.get("center") or "").strip().upper()
+    center = parse_coordinate(str(o.get("center") or ""))
+    center_row = center[1] if center is not None else 0
+    return max(parsed, key=lambda item: (item[0], -abs(item[1] - center_row)))[2]
+
+
 GRIP_CELL_SLACK = 1
 
 
@@ -8437,6 +8868,8 @@ def resolve_grip_cells(grips: list, objs: list) -> list:
         if not cell or not cell_on_object(o, cell):
             continue
 
+        cell = right_edge_grip_cell(o)
+        source = "camera-right-edge"
         override = bool(center and cell != center)
         if not (override or g.get("approach") or avoid or g.get("why")):
             continue
@@ -8453,17 +8886,17 @@ def resolve_grip_cells(grips: list, objs: list) -> list:
         name = str(o.get("name", "object"))
         if name in claimed:
             continue
-        fallback = default_grip_part(o)
-        if not fallback:
+        right_cell = right_edge_grip_cell(o)
+        if not right_cell:
             continue
         center = str(o.get("center") or "").strip().upper()
-        if fallback[1] == center:
+        if right_cell == center:
             continue
         claimed.add(name)
         resolved.append({
-            "object": name, "part": fallback[0], "cell": fallback[1],
+            "object": name, "part": "right edge", "cell": right_cell,
             "center": center, "approach": "", "avoid": [], "why": "",
-            "source": "parts", "override": True,
+            "source": "camera-right-edge", "override": True,
         })
     return resolved
 
@@ -8627,32 +9060,17 @@ GOTO_RE = re.compile(
     r"goto_coordinate\s*[:=]?\s*([A-Za-z]{1,2})\s*,?\s*(\d{1,2})\b", re.I)
 
 
-TRAINING_PATH = data_path("S1_custom_training.json")
-
-
 def load_custom_training():
-    """Standing rules the planner applies to every task. A3-Terra's
-    custom_instructions.json, under this app's own name."""
-    try:
-        with open(TRAINING_PATH, encoding="utf-8") as fh:
-            data = json.load(fh)
-        return [s for s in data if isinstance(s, str) and s.strip()] \
-            if isinstance(data, list) else []
-    except (OSError, ValueError):
-        return []
+    """Standing planner rules stored inside this single-file app."""
+    data = S1_EMBEDDED_STATE.get("custom_training") or []
+    return [s for s in data if isinstance(s, str) and s.strip()] \
+        if isinstance(data, list) else []
 
 
 def save_custom_training(rules):
-    """Written through a temp file: an interrupted save must not truncate."""
-    if not ensure_data_dir():
-        return
-    try:
-        tmp = TRAINING_PATH + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as fh:
-            json.dump(list(rules), fh, indent=2)
-        os.replace(tmp, TRAINING_PATH)
-    except OSError as e:
-        print(f"[training] could not save: {e}")
+    """Persist standing planner rules inside S1.py."""
+    S1_EMBEDDED_STATE["custom_training"] = list(rules)
+    persist_embedded_state()
 
 
 def parse_plan_commands(text: str):
@@ -8754,10 +9172,325 @@ def action_label(cmd: str) -> str:
 SPEAK_WORDS = {"pickup": "pick up", "keep": "keep", "press": "press",
               "release": "release", "pour": "pour"}
 
-# The same five actions, as an instruction for the operator to carry out by
-# hand. There is no automatic gripper yet (see GripperPanel.NOTE), so every
-# one of these is a manual step: the plan stops, the Gripper popup opens
-# saying what to do, and the run only continues once DONE is pressed.
+class SimpleGripperPanel:
+    """The small card a plan opens when it reaches a gripper step.
+
+    The full GripperPanel is a workbench -- jaw slider, height pair, jog
+    d-pad, four automatic buttons, a status block. Popping that open in the
+    middle of a run buries the one decision the operator actually has (is
+    the jaw over the work?) in controls that are wrong to touch mid-plan.
+    This card has only what that decision needs:
+
+      - a jog d-pad that sends "uq"/"dq"/"lq"/"rq" for SIMPLE_JOG_PULSE_S,
+      - STOP, which is live at every moment including while the action
+        itself is running,
+      - DONE, which immediately runs the action for whichever step opened it.
+
+    The card waits while the operator adjusts the head. DONE starts the
+    action without a countdown; STOP remains available while it runs.
+    """
+
+    WIDTH = 380
+    PAD = 22
+    ROW_H = 42
+    JOG_BTN = 52
+    # Wider than Button.contains()'s 5px hit padding on each side, so two
+    # neighbouring pads never share a clickable sliver.
+    JOG_GAP = 16
+    # Clear air between stacked button rows, for the same reason as JOG_GAP.
+    ROW_GAP = 14
+    JOG_LAYOUT = {"up": (0, 1), "left": (1, 0), "right": (1, 2), "down": (2, 1)}
+    JOG_ARROWS = {"up": "^", "down": "v", "left": "<", "right": ">"}
+
+    TITLES = {"pickup": "Pick up", "keep": "Keep", "press": "Press",
+              "release": "Release"}
+
+    def __init__(self):
+        self.visible = False
+        self.action = ""
+        self.automatic = True
+        self.buttons = []
+        self._anim = 0.0
+        self._last_rect = None
+        self.jog_dir = None
+        self.jog_until = 0.0
+        self.handed_off = False
+        self.last_msg = ""
+        # Set by main(): what actually runs the action, what reports whether
+        # it is still running, and how to abort one that is.
+        self.on_run = None
+        self.action_busy = None
+        self.on_abort = None
+
+    # -- opening and closing -------------------------------------------
+    def open_for(self, action: str, automatic: bool = True):
+        """A plan step has arrived. Show the card, and wait.
+
+        The operator can adjust for as long as needed. The action starts
+        immediately when they press DONE.
+        """
+        self.action = str(action or "").lower()
+        self.automatic = bool(automatic)
+        self.visible = True
+        self.handed_off = False
+        self.last_msg = (f"{self.title()}: adjust the head, then press DONE.")
+        return self.last_msg
+
+    def close(self):
+        self.visible = False
+
+    def title(self) -> str:
+        return self.TITLES.get(self.action, self.action.title() or "Action")
+
+    def running(self) -> bool:
+        """Whether the automatic action this card started is still going."""
+        if not self.handed_off or self.action_busy is None:
+            return False
+        try:
+            return bool(self.action_busy())
+        except Exception:
+            return False
+
+    def busy(self) -> bool:
+        """Whether the plan should keep waiting on this card.
+
+        True from the moment it opens until the action it started has
+        finished -- including the whole time it sits cancelled, waiting for
+        someone to press DONE. That wait is the point of cancelling.
+        """
+        if not self.visible:
+            return False
+        if self.running():
+            return True
+        return not self.handed_off
+
+    # -- what the buttons do -------------------------------------------
+    def _jog(self, direction: str) -> str:
+        """One SIMPLE_JOG_PULSE_S pulse of "uq"/"dq"/"lq"/"rq", then s."""
+        if not ARDUINO.connected:
+            return f"Not connected -- {direction} not sent."
+        if self.jog_dir is not None:
+            ARDUINO.halt()
+        letter = DIRECTION_LETTERS[direction] + SLOW_SUFFIX
+        if not ARDUINO.send_command(letter):
+            self.jog_dir = None
+            return f"Could not send {letter} -- the board may still be booting."
+        self.jog_dir = direction
+        self.jog_until = time.monotonic() + SIMPLE_JOG_PULSE_S
+        return f'Jogging {direction} ("{letter}") for {SIMPLE_JOG_PULSE_S:g}s.'
+
+    def stop(self) -> str:
+        """Unconditional stop, live at every moment this card is open.
+
+        Not gated on jog_dir or on whether an action is running.
+        """
+        self.jog_dir = None
+        if self.running() and self.on_abort is not None:
+            # The abort sends its own s on the way out. Sending a second one
+            # here would put two stops on the wire in the same instant for
+            # one press of one button.
+            self.on_abort()
+            self.last_msg = ("Stopped -- sent s and abandoned the running "
+                             f"{self.action or 'action'}.")
+            return self.last_msg
+        if not ARDUINO.connected:
+            self.last_msg = "Not connected -- nothing to stop."
+            return self.last_msg
+        if ARDUINO.halt():
+            self.last_msg = "Stopped -- sent s."
+        else:
+            self.last_msg = "Could not send s -- the board may still be booting."
+        return self.last_msg
+
+    def cancel(self) -> str:
+        """Keep the card waiting for DONE while the operator adjusts."""
+        if not self.handed_off:
+            self.last_msg = f"{self.title()}: adjust the head, then press DONE."
+        return self.last_msg
+
+    def confirm(self) -> str:
+        """DONE: run the action immediately, without a countdown."""
+        return self._run("DONE")
+
+    def _run(self, why: str) -> str:
+        if self.handed_off:
+            self.last_msg = f"{self.title()} is already running."
+            return self.last_msg
+        # End an unfinished adjustment before handing control to the action.
+        # Its old pulse timer must not send a delayed stop into the action.
+        if self.jog_dir is not None:
+            ARDUINO.halt()
+            self.jog_dir = None
+            self.jog_until = 0.0
+        self.handed_off = True
+        if not self.automatic or self.on_run is None:
+            # A manual step: the operator has done it by hand, and the only
+            # thing left is to let the plan move on.
+            self.last_msg = f"{self.title()} confirmed ({why})."
+            return self.last_msg
+        self.last_msg = f"{self.title()} ({why}): {self.on_run(self.action)}"
+        return self.last_msg
+
+    # -- per-frame ------------------------------------------------------
+    def tick(self):
+        now = time.monotonic()
+        if self.jog_dir is not None and now >= self.jog_until:
+            ARDUINO.halt()
+            self.jog_dir = None
+        # Close on its own once the action it started has finished, so the
+        # card does not sit over the board for the rest of the run. It stays
+        # up for as long as anything is still moving -- that is when STOP
+        # has to be reachable.
+        if self.visible and self.handed_off and not self.running():
+            self.close()
+
+    # -- height: the one axis no camera can see -------------------------
+    def _height(self, up: bool) -> str:
+        """A timed hu/hd pulse, the same shape as the jog.
+
+        The big card's height buttons fire hu/hd and leave them running --
+        right there, where the operator is watching the axis and can stop
+        it. On this card, in the middle of a run, a height command that
+        never ends is how a head drives itself into the board, so it is
+        bounded like every other motion here.
+        """
+        cmd = HEIGHT_UP_CMD if up else HEIGHT_DOWN_CMD
+        if not ARDUINO.connected:
+            return f"Not connected -- {cmd} not sent."
+        if self.jog_dir is not None:
+            ARDUINO.halt()
+        if not ARDUINO.send_command(cmd):
+            self.jog_dir = None
+            return f"Could not send {cmd} -- the board may still be booting."
+        self.jog_dir = "up" if up else "down"
+        self.jog_until = time.monotonic() + SIMPLE_JOG_PULSE_S
+        return f"Height {'up' if up else 'down'} ({cmd}) for {SIMPLE_JOG_PULSE_S:g}s."
+
+    # -- input ----------------------------------------------------------
+    def _rect_contains(self, x, y) -> bool:
+        if not self._last_rect:
+            return False
+        px, py, pw, ph = self._last_rect
+        return px <= x <= px + pw and py <= y <= py + ph
+
+    def press(self, x, y):
+        """None when the click was not ours, otherwise a status string."""
+        if not self.visible:
+            return None
+        for b in self.buttons:
+            if not b.contains(x, y):
+                continue
+            if b.kind == "simple_jog":
+                self.last_msg = self._jog(b.value)
+            elif b.kind == "simple_stop":
+                self.stop()
+            elif b.kind == "simple_cancel":
+                self.cancel()
+            elif b.kind == "simple_height":
+                self.last_msg = self._height(b.value == "up")
+            elif b.kind == "simple_done":
+                self.confirm()
+            elif b.kind == "simple_close":
+                self.close()
+            return self.last_msg
+        return "" if self._rect_contains(x, y) else None
+
+    # -- drawing ---------------------------------------------------------
+    def draw(self, frame, mouse=(-1, -1)):
+        self._anim = ease_toward(self._anim, 1.0 if self.visible else 0.0,
+                                 ANIM_RATE)
+        if self._anim < 0.004:
+            self.buttons = []
+            return
+        fh, fw = frame.shape[:2]
+        pw = min(self.WIDTH, fw - 2 * self.PAD)
+        jog_h = 3 * self.JOG_BTN + 2 * self.JOG_GAP
+        ph = (self.PAD * 2 + 64 + jog_h
+              + 3 * self.ROW_H + 2 * self.ROW_GAP + 26)
+        px = (fw - pw) // 2
+        py = max(self.PAD, (fh - ph) // 2)
+        self._last_rect = (px, py, pw, ph)
+        glass_card(frame, (px, py, px + pw, py + ph), 26, alpha=0.66)
+
+        mx, my = mouse
+        self.buttons = []
+        draw_text(frame, f"Simple Gripper - {self.title()}",
+                  (px + 22, py + 34), 0.62, C_TEXT, 2)
+
+        if self.running():
+            line, colour = f"{self.title()} running - STOP is live.", C_ACCENT
+        elif self.handed_off:
+            line, colour = f"{self.title()} sent.", C_TEXT_DIM
+        else:
+            line, colour = ("Adjust the head, then press DONE.", C_TEXT_DIM)
+        draw_text(frame, line, (px + 22, py + 56), 0.42, colour, 1)
+
+        # Divider between the status and jog controls.
+        bar_y = py + 66
+        bar = (px + 22, bar_y, px + pw - 22, bar_y + 5)
+        rounded_rect(frame, bar, 3, C_BORDER, -1)
+
+        # --- the jog pad, STOP in the middle ---------------------------
+        y = bar_y + 18
+        cx = px + pw // 2
+        span = self.JOG_BTN + self.JOG_GAP
+        for direction, (row, col) in self.JOG_LAYOUT.items():
+            bx = cx + (col - 1) * span - self.JOG_BTN // 2
+            by = y + row * span
+            b = Button(self.JOG_ARROWS[direction], bx, by,
+                       bx + self.JOG_BTN, by + self.JOG_BTN, "simple_jog",
+                       value=direction, style="ghost", scale=0.6)
+            b.draw(frame, hover=b.contains(mx, my),
+                   active=self.jog_dir == direction, shadow=False)
+            self.buttons.append(b)
+        sx = cx - self.JOG_BTN // 2
+        sy = y + span
+        stop = Button("STOP", sx, sy, sx + self.JOG_BTN, sy + self.JOG_BTN,
+                      "simple_stop", style="primary", scale=0.4)
+        stop.draw(frame, hover=stop.contains(mx, my), shadow=False)
+        self.buttons.append(stop)
+
+        y += jog_h + 12
+        draw_text(frame, f'Arrows send their letter + "{SLOW_SUFFIX}" for '
+                         f"{SIMPLE_JOG_PULSE_S:g}s, then s.",
+                  (px + 22, y), 0.34, C_TEXT_DIM, 1)
+
+        # --- height: forward and back on the axis nothing can see -------
+        y += 10
+        half = (pw - 22 * 2 - 12) // 2
+        for label, kind_value, x0, x1 in (
+                ("HEIGHT UP  (hu)", "up", px + 22, px + 22 + half),
+                ("HEIGHT DOWN  (hd)", "down", px + 34 + half, px + pw - 22)):
+            b = Button(label, x0, y, x1, y + self.ROW_H - 6, "simple_height",
+                       value=kind_value, style="ghost", scale=0.38)
+            b.draw(frame, hover=b.contains(mx, my), shadow=False)
+            self.buttons.append(b)
+
+        # --- CANCEL / DONE ---------------------------------------------
+        y += self.ROW_H + self.ROW_GAP
+        cancel = Button("CANCEL", px + 22, y, px + 22 + half,
+                        y + self.ROW_H - 6, "simple_cancel", style="ghost",
+                        scale=0.44)
+        done = Button("DONE", px + 34 + half, y, px + pw - 22,
+                      y + self.ROW_H - 6, "simple_done", style="accent",
+                      scale=0.44)
+        cancel.draw(frame, hover=cancel.contains(mx, my), shadow=False)
+        done.draw(frame, hover=done.contains(mx, my), shadow=False)
+        self.buttons.extend((cancel, done))
+
+        y += self.ROW_H + self.ROW_GAP
+        close = Button("CLOSE", px + 22, y, px + pw - 22, y + self.ROW_H - 8,
+                       "simple_close", style="ghost", scale=0.4)
+        close.draw(frame, hover=close.contains(mx, my), shadow=False)
+        self.buttons.append(close)
+
+        if self.last_msg:
+            draw_text(frame, ascii_text(self.last_msg)[:64],
+                      (px + 22, y + self.ROW_H + 12), 0.34, C_TEXT_DIM, 1)
+
+
+# Instructions used only when the optional manual-gripper setting is enabled:
+# the plan stops, opens the Gripper popup, and waits for DONE.
 MANUAL_ACTIONS = {
     "pickup": "Pick this object up.",
     "keep": "Put this object down here.",
@@ -8766,10 +9499,9 @@ MANUAL_ACTIONS = {
     "pour": "Pour from this object.",
 }
 
-# On by default: there is no automatic gripper yet (see GripperPanel.NOTE),
-# so every one of those five steps stops the run and waits for the operator
-# to press DONE on the Gripper card unless this is switched off in Settings.
-MANUAL_GRIPPER_STEPS = True
+# Automatic operation is the default. Manual mode remains available in
+# Settings for calibration or supervised hardware work.
+MANUAL_GRIPPER_STEPS = False
 
 
 class SpeechSpeaker:
@@ -8882,7 +9614,7 @@ SPEECH_MAX_WAIT = 8.0
 
 # Which steps physically touch the board, and so need the gripper lowered
 # and raised again around them.
-PLUNGE_COMMANDS = ("pickup", "keep", "pour", "press")
+PLUNGE_COMMANDS = ("pickup", "pour", "press")
 # How long to wait for the board to report it has finished going down before
 # giving up. Without this a board that never answers would wedge the plan on
 # a step forever, with the gripper left down.
@@ -8952,6 +9684,7 @@ class PlungeSequence:
         self.up_until = time.time() + self.down_duration
         self.status = (f"Raising the gripper ({HEIGHT_UP_CMD}) for "
                        f"{self.down_duration:.2f}s...")
+        ARDUINO.send_command("g90")
         ARDUINO.send_command(HEIGHT_UP_CMD)
         print(f"[plunge] got 's' after {self.down_duration:.2f}s - "
               f"sent {HEIGHT_UP_CMD} for the same")
@@ -9008,15 +9741,18 @@ class PlanRunner:
         self.finished = False
         self.await_speech = False
         self.speech_until = 0.0
-        # Set by main() to the Gripper popup. Every pickup/keep/press/
-        # release/pour is carried out BY HAND -- there is no automatic
-        # gripper yet -- so the run stops on those steps, shows the
-        # instruction on that card, and waits for DONE. Left as None here
-        # so a PlanRunner with no UI attached (tests, headless) runs
-        # straight through exactly as it did before this existed.
+        # Set by main() to the Gripper popup. Automatic mode dispatches
+        # pickup/keep/press/release to its state machine; optional manual
+        # mode opens the instruction card and waits for DONE.
         self.on_manual_action = None   # callable(instruction_text)
         self.manual_wait = None        # callable() -> still waiting?
         self.await_manual = False
+        self.await_auto = False
+        self.on_auto_action = None
+        self.auto_wait = None
+        self.auto_press_started_at = 0.0
+        self.auto_press_duration = 0.0
+        self._auto_stop_until = 0.0
         if not hasattr(self, "plunge"):
             self.plunge = PlungeSequence()
         else:
@@ -9059,6 +9795,7 @@ class PlanRunner:
         card would otherwise sit there after a stop, and the next run would
         start already 'waiting' on a step nobody is doing."""
         self.await_manual = False
+        self.await_auto = False
         panel_clear = getattr(self, "on_manual_clear", None)
         if panel_clear is not None:
             panel_clear()
@@ -9137,11 +9874,35 @@ class PlanRunner:
         # from under a hand that is about to be on the mechanism is exactly
         # the thing manual mode exists to prevent. Board and speech still
         # know nothing about hardware they never move.
-        if bare in PLUNGE_COMMANDS and not manual:
+        panel_auto = (not manual and bare in ("pickup", "keep", "press", "release")
+                      and self.on_auto_action is not None)
+        if bare in PLUNGE_COMMANDS and not manual and not panel_auto:
             self.plunge.start()
+        if panel_auto:
+            self.on_auto_action(bare)
+            self.await_auto = True
+        elif not manual and bare in ("keep", "press", "release"):
+            if bare == "keep":
+                ARDUINO.send_command("g0")
+            elif bare == "press":
+                # hx is a "keep going" command. Nothing here used to stop
+                # it, so the press ran until something else happened to
+                # send an s -- possibly never.
+                ARDUINO.send_command("hx")
+                self.auto_press_started_at = time.monotonic()
+                self.auto_press_duration = AUTO_PICKUP_HX_S
+                self._auto_stop_until = time.monotonic() + AUTO_PICKUP_HX_S
+            else:
+                # Raise by as long as the press DROVE, not by how long ago
+                # the press step was dispatched -- every goto, speech and
+                # hold in between counted toward that, so a release after a
+                # few steps of plan drove hu for many seconds.
+                duration = self.auto_press_duration or AUTO_RELEASE_FALLBACK_S
+                ARDUINO.send_command("hu")
+                self._auto_stop_until = time.monotonic() + duration
         self.await_manual = False
         if manual:
-            self.on_manual_action(MANUAL_ACTIONS[bare])
+            self.on_manual_action(bare)
             self.await_manual = True
         self.await_speech = False
         if bare in SPEAK_WORDS:
@@ -9168,6 +9929,9 @@ class PlanRunner:
             return
         self.plunge.tick()
         now = time.time()
+        if self._auto_stop_until and time.monotonic() >= self._auto_stop_until:
+            ARDUINO.halt()
+            self._auto_stop_until = 0.0
         if self.mode == "move":
             if state.arrived:
                 cell = coordinate_name(state.target_col, state.target_row)
@@ -9195,6 +9959,11 @@ class PlanRunner:
                         f"{self.label}: do it by hand, then press DONE "
                         "on the Gripper card.")
                     return
+            if self.await_auto:
+                if self.auto_wait is not None and self.auto_wait():
+                    state.status_message = f"{self.label}: automatic gripper action in progress."
+                    return
+                self.await_auto = False
             self._advance(state)
 
 
@@ -9777,28 +10546,12 @@ the task outcome matches the description, output {Done_correctly}
 
 
 def append_err_history(record: dict):
-    """Append one verdict to S1_error_rebounds.json.
-
-    Fails open in both directions, like every other sidecar file here: an
-    unreadable file reads as no history, and a write that fails is reported
-    to the console and otherwise ignored. A log that can break a check is
-    worse than no log.
-    """
-    try:
-        with open(ERR_HISTORY_PATH, encoding="utf-8") as fh:
-            entries = json.load(fh)
-        if not isinstance(entries, list):
-            entries = []
-    except (OSError, ValueError):
-        entries = []
+    """Append one verdict to the history embedded inside S1.py."""
+    entries = S1_EMBEDDED_STATE.get("error_rebounds") or []
+    entries = list(entries) if isinstance(entries, list) else []
     entries.append(record)
-    if not ensure_data_dir():
-        return
-    try:
-        with open(ERR_HISTORY_PATH, "w", encoding="utf-8") as fh:
-            json.dump(entries, fh, indent=2)
-    except OSError as e:
-        print(f"[error-rebounds] could not save history: {e}")
+    S1_EMBEDDED_STATE["error_rebounds"] = entries
+    persist_embedded_state()
 
 
 class ErrorReboundJob:
@@ -11270,11 +12023,24 @@ def main():
     gripper_panel = GripperPanel()
     ARDUINO.on_line = console_panel.log
     console_panel.on_rx_bytes = runner.plunge.note_rx
-    # Every pickup/keep/press/release/pour is a manual step: the runner opens
-    # the Gripper card with the instruction and waits there for DONE.
-    runner.on_manual_action = gripper_panel.show_instruction
-    runner.manual_wait = gripper_panel.waiting_for_confirm
-    runner.on_manual_clear = gripper_panel.clear_instruction
+    # Manual mode opens the instruction card and waits for DONE. Automatic
+    # mode routes pickup/keep/press/release through the timed state machine.
+    # Every gripper step a plan reaches -- automatic or manual -- opens the
+    # SMALL card, never the full gripper workbench. The big panel stays what
+    # it always was: something the operator opens themselves from the menu.
+    simple_gripper = SimpleGripperPanel()
+    simple_gripper.on_run = (
+        lambda action: gripper_panel.start_automatic_action(action, immediate=True))
+    simple_gripper.action_busy = gripper_panel.automatic_busy
+    simple_gripper.on_abort = gripper_panel.abort_automatic_action
+    runner.on_manual_action = (
+        lambda action: simple_gripper.open_for(action, automatic=False))
+    runner.manual_wait = simple_gripper.busy
+    runner.on_manual_clear = simple_gripper.close
+    runner.on_auto_action = simple_gripper.open_for
+    # The plan waits for the card from the moment it opens until whatever it
+    # started has stopped moving -- waiting for DONE and the action itself.
+    runner.auto_wait = simple_gripper.busy
 
     def on_serial_bytes(data):
         runner.plunge.note_rx(data)
@@ -11715,10 +12481,17 @@ def main():
                     return
                 if trig_panel.dropdown_hit(vx, vy):
                     return
-                consumed = gripper_panel.press(vx, vy)
+                if settings_panel.dropdown_hit(vx, vy):
+                    return
+                consumed = simple_gripper.press(vx, vy)
+                if consumed is None:
+                    consumed = gripper_panel.press(vx, vy)
                 if consumed is not None:
                     if consumed:
                         state.status_message = consumed
+                    # Persist gripper offset direction/duration immediately,
+                    # including selections made inside the Gripper popup.
+                    save_settings(cam_settings, grid)
                     return
                 consumed = manual_move_panel.hit_test(vx, vy, state, runner, sim)
                 if consumed is not None:
@@ -12088,6 +12861,7 @@ def main():
         finish_simulation()
         runner.tick(state)
         gripper_panel.tick()
+        simple_gripper.tick()
 
         if sim.active:
             grid.highlight_cell(frame, sim.target_col, sim.target_row,
@@ -12116,8 +12890,13 @@ def main():
         console_panel.draw(frame, (mx - video_x, my - video_y))
         manual_move_panel.draw(frame, (mx - video_x, my - video_y))
         gripper_panel.draw(frame, (mx - video_x, my - video_y))
+        gripper_panel.draw_lists(frame, (mx - video_x, my - video_y))
+        # Drawn last so it sits above everything: while it is up it is the
+        # only thing that should be taking clicks.
+        simple_gripper.draw(frame, (mx - video_x, my - video_y))
         manual_move_panel.draw_lists(frame, (mx - video_x, my - video_y))
         trig_panel.draw_lists(frame, (mx - video_x, my - video_y))
+        settings_panel.draw_lists(frame, (mx - video_x, my - video_y))
 
         wash_key = (total_w, total_h, video_x, video_y, w, h,
                     sidebar.x0, sidebar.y0, int(time.time() * 20)) + \
@@ -12266,6 +13045,11 @@ def update_guidance(state: AppState):
     is only ever shown when the tag is actually sitting on the target.
     """
     state.out_of_reach = False
+    if automatic_gripper_busy():
+        # Send NOTHING. Not a direction, and above all not a stop: the
+        # descent is ended by the board's own IR sensor, and an s from here
+        # would cut it short half way down.
+        return
     if state.target_col is None:
         ARDUINO.send_direction(None)
         return
@@ -12646,5 +13430,522 @@ def draw_exec_countdown_popup(frame, seconds_left: float) -> tuple:
     return (cancel_btn.x0, cancel_btn.y0, cancel_btn.x1, cancel_btn.y1)
 
 
+def run_single_file_self_test():
+    """Exercise the critical gripper/state paths without any sidecar files."""
+    class Clock:
+        def __init__(self):
+            self.now = 100.0
+
+        def monotonic(self):
+            return self.now
+
+    class FakeArduino:
+        connected = True
+
+        def __init__(self, clock):
+            self.clock = clock
+            self.commands = []
+            self.directions = []
+            self.failed_writes = 0
+
+        def send_command(self, command):
+            assert command == command.lower(), command
+            if self.failed_writes:
+                self.failed_writes -= 1
+                return False
+            self.commands.append((self.clock.now, command))
+            return True
+
+        def halt(self):
+            self.commands.append((self.clock.now, "s"))
+            return True
+
+        def send_direction(self, direction, slow=False):
+            self.directions.append(direction)
+            self.commands.append((self.clock.now, "<guidance>"))
+            return True
+
+    checks = 0
+
+    def check(condition, message):
+        nonlocal checks
+        checks += 1
+        if not condition:
+            raise AssertionError(message)
+
+    global ARDUINO
+    old = (ARDUINO, time.monotonic)
+    try:
+        clock = Clock()
+        fake = FakeArduino(clock)
+        ARDUINO = fake
+        time.monotonic = clock.monotonic
+        panel = GripperPanel()
+
+        def advance(seconds):
+            clock.now += seconds
+            panel.tick()
+
+        # An automatic pickup is now purely the gripper sequence: there is
+        # no approach jog in front of it at all. Whatever alignment the head
+        # needs was done by hand on the Simple Gripper card before this ran.
+        panel.start_automatic_action("pickup")
+        advance(AUTO_ACTION_GAP_S)
+        clock.now += 0.7
+        check(panel.note_rx(b"S"), "uppercase sensor S was not accepted")
+        advance(AUTO_GRIP_COMMAND_DELAY_S)
+        advance(AUTO_PICKUP_HX_S)
+        advance(AUTO_GRIP_COMMAND_DELAY_S)
+        advance(AUTO_GRIP_COMMAND_DELAY_S)
+        advance(0.9)
+        advance(AUTO_ACTION_GAP_S)
+        commands = [command for _, command in fake.commands]
+        check(commands == ["hd", "hx", "s", "g90", "hu", "s"],
+              f"unexpected pickup sequence: {commands}")
+        check(not any(c in ("u", "d", "l", "r") for c in commands),
+              f"the deleted approach offset still drives the axes: {commands}")
+        times = [at for at, _ in fake.commands]
+        # hd runs straight through to the sensor -- nothing between them.
+        check(times[1] - times[0] >= AUTO_GRIP_COMMAND_DELAY_S,
+              "hx followed the IR sensor without the one-second gap")
+        check(times[2] - times[1] >= AUTO_PICKUP_HX_S, "hx duration was short")
+        check(times[3] - times[2] >= AUTO_GRIP_COMMAND_DELAY_S,
+              "hx-to-g90 wait was short")
+        check(times[4] - times[3] >= AUTO_GRIP_COMMAND_DELAY_S,
+              "g90-to-hu wait was short")
+        check(panel.offset_phase == "idle", "pickup state did not reset")
+
+        clock.now = 200.0
+        fake.commands = []
+        panel = GripperPanel()
+        panel.start_automatic_action("keep")
+        panel.start_automatic_action("keep")
+        for _ in range(20):
+            panel.offset_until = clock.now
+            panel.tick()
+        check([command for _, command in fake.commands] == ["g0", "g0"],
+              "repeated automatic clicks were not queued and replayed")
+        check(not panel.pending_auto_actions and panel.offset_phase == "idle",
+              "repeated automatic action did not return to idle")
+
+        clock.now = 300.0
+        fake.commands = []
+        fake.failed_writes = 2
+        panel = GripperPanel()
+        panel.start_automatic_action("keep")
+        panel.offset_until = clock.now
+        panel.tick()
+        panel.tick()
+        panel.tick()
+        check([command for _, command in fake.commands] == ["g0"],
+              "transient serial writes were not retried")
+
+        panel.visible = True
+        frame = np.zeros((650, 1200, 3), dtype=np.uint8)
+        panel.draw(frame, (0, 0))
+        auto_buttons = sorted(
+            (button for button in panel.buttons
+             if button.kind.startswith("grip_auto")), key=lambda button: button.x0)
+        check(len(auto_buttons) == 4, "automatic gripper buttons are missing")
+        check(all(right.x0 - left.x1 > 10
+                  for left, right in zip(auto_buttons, auto_buttons[1:])),
+              "automatic gripper click targets overlap")
+
+        # -- the contact sensor is a token, not any letter s -------------
+        for packet in (b"S", b"s", b"S\r\n", b"ok S", b"stop"):
+            check(has_serial_stop_signal(packet),
+                  f"real contact packet {packet!r} was not accepted")
+        for packet in (b"sensors ok", b"pos 40", b"status", b"", b"hd"):
+            check(not has_serial_stop_signal(packet),
+                  f"{packet!r} was wrongly read as contact")
+
+        # -- a descent with no contact packet stops itself ---------------
+        clock.now = 400.0
+        fake.commands = []
+        panel = GripperPanel()
+        panel.start_automatic_action("pickup")
+        advance(1.0)
+        check(panel.auto_grip_phase == panel.AUTO_GRIP_DOWN,
+              "pickup did not start descending")
+        advance(AUTO_GRIP_DOWN_MAX_S)
+        commands = [command for _, command in fake.commands]
+        check(commands == ["hd", "s"],
+              f"a sensorless descent did not stop at hd: {commands}")
+        check("g90" not in commands,
+              "the jaw closed even though nothing was ever reached")
+        check(panel.offset_failed, "a failed pickup reported success")
+        check(panel.offset_phase == "idle" and
+              panel.auto_grip_phase == panel.AUTO_GRIP_IDLE,
+              "a failed pickup did not return to idle")
+
+        # -- release with no press to measure still lifts ----------------
+        clock.now = 500.0
+        fake.commands = []
+        panel = GripperPanel()
+        panel.start_automatic_action("release")
+        advance(AUTO_ACTION_GAP_S)
+        check([command for _, command in fake.commands] == ["hu"],
+              "release did not send hu")
+        advance(AUTO_RELEASE_FALLBACK_S / 2.0)
+        check([command for _, command in fake.commands] == ["hu"],
+              "release stopped before it had lifted anything")
+        advance(AUTO_RELEASE_FALLBACK_S)
+        times = dict((command, at) for at, command in fake.commands)
+        commands = [command for _, command in fake.commands]
+        check(commands == ["hu", "s"], f"release did not run hu then s: {commands}")
+        # Compared with a tolerance: the clock is a running float sum, so
+        # 500.0 + 1.0 + 0.4 lands a shade under 501.4 and an exact >= would
+        # fail on the arithmetic rather than on the behaviour.
+        check(times["s"] - times["hu"] > AUTO_RELEASE_FALLBACK_S - 1e-6,
+              "release sent hu and s in the same instant -- nothing moved")
+
+        # -- an automatic action always ends, even against a dead port ---
+        # Every writing phase retries indefinitely on purpose, so that a
+        # board mid-boot does not swallow a click. With no backstop that
+        # same retry never terminated: the card sat on "waiting to send"
+        # and the plan step behind it never came back.
+        clock.now = 700.0
+        fake.commands = []
+        fake.failed_writes = 10 ** 6      # the port is simply gone
+        panel = GripperPanel()
+        panel.start_automatic_action("keep")
+        for _ in range(60):
+            advance(AUTO_ACTION_MAX_S / 20.0)
+            if panel.offset_phase == "idle":
+                break
+        check(panel.offset_phase == "idle",
+              "an automatic action against a dead port never finished")
+        check(panel.offset_failed, "a timed-out action reported success")
+        check(fake.commands and fake.commands[-1][1] == "s",
+              "the watchdog gave up without stopping the axes")
+        fake.failed_writes = 0
+
+        # -- guidance keeps off the port while the gripper is acting -----
+        # update_guidance runs every video frame and writes to the same port
+        # the gripper does. An automatic pickup is a descent that the board
+        # ends itself on its IR sensor, so anything guidance sends into it is
+        # damage: u/d/l/r drives the XY axes while the head is DOWN, and an s
+        # is the very byte that cuts the descent short. Measured before this
+        # check existed: fourteen direction commands landed inside one
+        # descent, because the tag wanders a cell as the carriage works and
+        # the guidance faithfully recomputed every time.
+        clock.now = 900.0
+        fake.commands = []
+        fake.directions = []
+        fake.failed_writes = 0
+        panel = GripperPanel()
+        guided_state = AppState()
+        guided_state.tag_visible = True
+        guided_state.tag_on_grid = True
+        guided_state.last_tag_col, guided_state.last_tag_row = 9, 5
+        # A target is still set, exactly as it is after a GO or a plan's
+        # goto step -- this is what the card's own PICKUP button runs into.
+        guided_state.target_col, guided_state.target_row = 10, 4
+        panel.start_automatic_action("pickup")
+        wander = 0
+        for _ in range(4000):
+            clock.now += 1 / 30.0
+            wander = (wander + 1) % 90
+            guided_state.last_tag_col = 10 if wander > 45 else 9
+            guided_state.last_tag_row = 4 if wander > 45 else 5
+            if panel.auto_grip_phase == panel.AUTO_GRIP_DOWN:
+                if clock.now - panel.auto_grip_started_at >= 6.0:
+                    panel.note_rx(b"S")
+            update_guidance(guided_state)
+            panel.tick()
+            if not panel.automatic_busy():
+                break
+        check(not panel.automatic_busy(),
+              "the guided automatic pickup never finished")
+        check(not fake.directions,
+              f"guidance wrote to the port mid-action: {fake.directions}")
+        sent = [command for _, command in fake.commands]
+        check("<guidance>" not in sent, f"guidance interrupted the action: {sent}")
+        # And the descent itself was one unbroken run of hd -- nothing
+        # between the hd and the hx that follows it.
+        check("hd" in sent and "hx" in sent, f"the pickup did not run: {sent}")
+        between = sent[sent.index("hd") + 1:sent.index("hx")]
+        check(not between,
+              f"the descent was interrupted by {between}")
+
+        # -- no stop sent between the automatic actions ------------------
+        # An s is only ever allowed to be ENDING something. Chaining all
+        # four automatic actions back to back must not put a stop at the
+        # boundary between them, or anywhere else it is not finishing a
+        # motion command that was actually started.
+        clock.now = 800.0
+        fake.commands = []
+        fake.failed_writes = 0
+        panel = GripperPanel()
+        for queued in ("pickup", "keep", "press", "release"):
+            panel.start_automatic_action(queued)
+        for _ in range(4000):
+            advance(0.05)
+            if panel.auto_grip_phase == panel.AUTO_GRIP_DOWN:
+                panel.note_rx(b"S")
+            if panel.offset_phase == "idle" and not panel.pending_auto_actions:
+                break
+        check(panel.offset_phase == "idle" and not panel.pending_auto_actions,
+              "four chained automatic actions did not all finish")
+        check(not panel.offset_failed, "a chained automatic action failed")
+        chain = [command for _, command in fake.commands]
+        moving = ("r", "d", "l", "u", "hd", "hx", "hu")
+        strays = [index for index, command in enumerate(chain)
+                  if command == "s" and (index == 0
+                                         or chain[index - 1] not in moving)]
+        check(not strays,
+              f"stop sent with nothing to stop, at {strays} of {chain}")
+
+        # -- the Simple Gripper card ------------------------------------
+        # A plan's gripper step opens THIS card, not the full workbench,
+        # waits for DONE, and then runs the action immediately.
+        def wire():
+            gp = GripperPanel()
+            card = SimpleGripperPanel()
+            card.on_run = (
+                lambda action: gp.start_automatic_action(action, immediate=True))
+            card.action_busy = gp.automatic_busy
+            card.on_abort = gp.abort_automatic_action
+            return gp, card
+
+        clock.now = 1000.0
+        fake.commands = []
+        fake.failed_writes = 0
+        gp, card = wire()
+        card.open_for("pickup")
+        check(card.visible and card.busy(), "the card did not open and hold")
+        # Opening starts nothing. The operator is still lining the jaw up.
+        check(not card.handed_off and not gp.automatic_busy(),
+              "opening the card started an action on its own")
+        check(not fake.commands, "opening the card already sent something")
+        # However long they take, nothing fires.
+        clock.now += 60.0
+        card.tick()
+        check(not card.handed_off and card.busy(),
+              "the card ran the action while it was still being adjusted")
+        # Jog: one letter + the slow suffix, then s, and nothing else.
+        card._jog("up")
+        check([c for _, c in fake.commands] == ["u" + SLOW_SUFFIX],
+              f"jog sent the wrong token: {fake.commands}")
+        clock.now += SIMPLE_JOG_PULSE_S
+        card.tick()
+        check([c for _, c in fake.commands] == ["u" + SLOW_SUFFIX, "s"],
+              f"the jog pulse did not end with s: {fake.commands}")
+        # Height moves the one axis no camera sees, and is bounded the same
+        # way the jog is: the big card leaves hu/hd running, which is fine
+        # where someone is watching the axis and wrong in the middle of a run.
+        fake.commands = []
+        card._height(True)
+        check([c for _, c in fake.commands] == [HEIGHT_UP_CMD],
+              f"height up sent the wrong token: {fake.commands}")
+        clock.now += SIMPLE_JOG_PULSE_S
+        card.tick()
+        check([c for _, c in fake.commands] == [HEIGHT_UP_CMD, "s"],
+              f"the height pulse never ended: {fake.commands}")
+        fake.commands = []
+        card._height(False)
+        clock.now += SIMPLE_JOG_PULSE_S
+        card.tick()
+        check([c for _, c in fake.commands] == [HEIGHT_DOWN_CMD, "s"],
+              f"height down did not pulse and stop: {fake.commands}")
+        check(not card.handed_off,
+              "adjusting the height ran the action")
+
+        # DONE sends the first command before returning, at the same time.
+        fake.commands = []
+        card.confirm()
+        check(card.handed_off and card.running() and card.busy(),
+              "DONE did not start the action and keep the plan waiting")
+        check(fake.commands == [(clock.now, "hd")],
+              f"DONE did not start pickup immediately: {fake.commands}")
+        card.confirm()
+        check(fake.commands == [(clock.now, "hd")]
+              and not gp.pending_auto_actions,
+              "repeated DONE duplicated or queued the action")
+        for _ in range(400):
+            clock.now += 1 / 30.0
+            if gp.auto_grip_phase == gp.AUTO_GRIP_DOWN:
+                gp.note_rx(b"S")
+            gp.tick()
+            card.tick()
+            if not card.busy():
+                break
+        sent = [c for _, c in fake.commands]
+        check(sent == ["hd", "hx", "s", "g90", "hu", "s"],
+              f"DONE did not run a real pickup: {sent}")
+        check(not card.visible, "the card stayed up after the action finished")
+
+        # CANCEL while adjusting keeps waiting until DONE.
+        clock.now = 1100.0
+        fake.commands = []
+        gp, card = wire()
+        card.open_for("keep")
+        card.cancel()
+        clock.now += 30.0
+        card.tick()
+        check(not card.handed_off,
+              "a cancelled card ran the action anyway")
+        check(card.busy(), "a cancelled card stopped holding the plan")
+        check(not fake.commands, f"a cancelled card sent {fake.commands}")
+        # DONE after cancel still starts immediately.
+        card.confirm()
+        check(fake.commands == [(clock.now, "g0")],
+              f"DONE after cancel did not run keep immediately: {fake.commands}")
+
+        # STOP is live while waiting for DONE and cannot start the action.
+        clock.now = 1200.0
+        fake.commands = []
+        gp, card = wire()
+        card.open_for("pickup")
+        card.stop()
+        check([c for _, c in fake.commands] == ["s"],
+              f"STOP did not send exactly one s: {fake.commands}")
+        clock.now += 30.0
+        card.tick()
+        check(not card.handed_off, "a stopped card started the action anyway")
+
+        # STOP is live DURING the action, and sends exactly one s.
+        clock.now = 1300.0
+        fake.commands = []
+        gp, card = wire()
+        card.open_for("pickup")
+        card.confirm()
+        check([c for _, c in fake.commands] == ["hd"],
+              f"the descent did not start: {fake.commands}")
+        clock.now += 0.5
+        check(card.running(), "the card lost track of the running action")
+        card.stop()
+        check([c for _, c in fake.commands] == ["hd", "s"],
+              f"STOP mid-action did not send exactly one s: {fake.commands}")
+        check(not gp.automatic_busy(), "STOP left the action running")
+        check(not card.busy(), "STOP left the plan waiting forever")
+
+        # A manual step immediately releases the plan without driving hardware.
+        clock.now = 1400.0
+        fake.commands = []
+        gp, card = wire()
+        card.open_for("press", automatic=False)
+        card.confirm()
+        check(card.handed_off and not fake.commands,
+              f"a manual step drove the hardware: {fake.commands}")
+        check(not card.busy(), "a confirmed manual step still held the plan")
+        card.tick()
+        check(not card.visible, "a confirmed manual card did not close")
+
+        # Every automatic action starts on the DONE click. A jog or height
+        # adjustment must stop first and must not stop the new action later.
+        for action, first in (("pickup", "hd"), ("keep", "g0"),
+                              ("press", "hx"), ("release", "hu")):
+            for adjustment in (None, "jog", "height"):
+                clock.now += 10.0
+                fake.commands = []
+                gp, card = wire()
+                card.open_for(action)
+                if adjustment == "jog":
+                    card._jog("left")
+                elif adjustment == "height":
+                    card._height(True)
+                before_done = list(fake.commands)
+                card.confirm()
+                expected = before_done + (
+                    [(clock.now, "s")] if adjustment else []) + [(clock.now, first)]
+                check(fake.commands == expected,
+                      f"{action}/{adjustment} did not start on DONE: {fake.commands}")
+                card.confirm()
+                check(fake.commands == expected and not gp.pending_auto_actions,
+                      f"{action}/{adjustment} duplicated DONE")
+                clock.now += SIMPLE_JOG_PULSE_S
+                card.tick()
+                check(fake.commands == expected,
+                      f"old adjustment timer stopped {action}: {fake.commands}")
+
+        # A failed initial write stays pending and retries on the next tick.
+        for action, first in (("pickup", "hd"), ("keep", "g0"),
+                              ("press", "hx"), ("release", "hu")):
+            clock.now += 10.0
+            fake.commands = []
+            fake.failed_writes = 1
+            gp, card = wire()
+            card.open_for(action)
+            card.confirm()
+            check(card.busy() and not fake.commands,
+                  f"failed {action} write lost the action")
+            gp.tick()
+            check(fake.commands == [(clock.now, first)],
+                  f"{action} did not retry immediately: {fake.commands}")
+            card.stop()
+
+        # The card draws, and every button it draws is one press() handles.
+        card.open_for("pickup")
+        frame = np.zeros((700, 1000, 3), dtype=np.uint8)
+        card.draw(frame, (-1, -1))
+        card.draw(frame, (-1, -1))
+        kinds = {b.kind for b in card.buttons}
+        check(kinds == {"simple_jog", "simple_stop", "simple_height",
+                        "simple_cancel", "simple_done", "simple_close"},
+              f"unexpected Simple Gripper buttons: {sorted(kinds)}")
+        heights = [b for b in card.buttons if b.kind == "simple_height"]
+        check({b.value for b in heights} == {"up", "down"},
+              "the height pair is not up and down")
+        jogs = [b for b in card.buttons if b.kind == "simple_jog"]
+        check(len(jogs) == 4, "the jog pad is not four arrows")
+        check({b.value for b in jogs} == {"up", "down", "left", "right"},
+              "the jog pad is missing a direction")
+        done = next(b for b in card.buttons if b.kind == "simple_done")
+        fake.commands = []
+        card.press((done.x0 + done.x1) // 2, (done.y0 + done.y1) // 2)
+        check(fake.commands == [(clock.now, "hd")],
+              f"the DONE click did not start immediately: {fake.commands}")
+        card.stop()
+        card.open_for("pickup")
+        for b in card.buttons:
+            cx = (b.x0 + b.x1) // 2
+            cy = (b.y0 + b.y1) // 2
+            check(card.press(cx, cy) is not None,
+                  f"the {b.kind} button is drawn but does nothing")
+            if b.kind == "simple_close":
+                card.open_for("pickup")
+        # No two buttons share a clickable point.
+        for i, a in enumerate(card.buttons):
+            for b in card.buttons[i + 1:]:
+                overlap = (a.x0 - 5 <= b.x1 + 5 and b.x0 - 5 <= a.x1 + 5
+                           and a.y0 - 5 <= b.y1 + 5 and b.y0 - 5 <= a.y1 + 5)
+                check(not overlap,
+                      f"{a.kind} and {b.kind} have overlapping hit boxes")
+
+        # The action offset is gone, not merely disabled.
+        for gone in ("GRIPPER_ACTION_OFFSET_ENABLED", "GRIPPER_ACTION_OFFSET_DIR",
+                     "GRIPPER_HORIZONTAL_OFFSET_DIR", "GRIPPER_VERTICAL_OFFSET_DIR"):
+            check(gone not in globals(), f"{gone} survived the offset removal")
+
+        state = S1_EMBEDDED_STATE
+        check(isinstance(state.get("settings"), dict), "embedded settings missing")
+        check(isinstance(state.get("custom_training"), list),
+              "embedded custom training missing")
+        check(isinstance(state.get("error_rebounds"), list),
+              "embedded error history missing")
+    finally:
+        (ARDUINO, time.monotonic) = old
+
+    folder = os.path.dirname(SCRIPT_PATH)
+    extras = sorted(name for name in os.listdir(folder)
+                    if name != os.path.basename(SCRIPT_PATH))
+    check(not extras, f"S1 folder contains extra files: {extras}")
+    print(f"S1 single-file self-test passed ({checks} checks).")
+
+
+def remove_local_bytecode_cache():
+    """Keep the S1 folder single-file even when another script imports S1."""
+    cache = os.path.join(os.path.dirname(SCRIPT_PATH), "__pycache__")
+    if os.path.isdir(cache):
+        shutil.rmtree(cache, ignore_errors=True)
+
+
+remove_local_bytecode_cache()
+
+
 if __name__ == "__main__":
-    main()
+    if "--self-test" in sys.argv:
+        run_single_file_self_test()
+    else:
+        main()

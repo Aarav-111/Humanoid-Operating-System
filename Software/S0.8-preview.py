@@ -58,7 +58,7 @@ DEBUG_INPUT = bool(os.environ.get("S1_DEBUG_INPUT"))
 # and error-rebound history live in this encoded JSON payload and are updated
 # in place when the user saves. No sidecar folder or cache is required.
 SCRIPT_PATH = os.path.abspath(__file__)
-S1_EMBEDDED_STATE_B64 = "eyJzZXR0aW5ncyI6eyJjYW1lcmEiOnsiem9vbSI6MS4wLCJicmlnaHRuZXNzIjowLCJjb250cmFzdCI6MS4wLCJzYXR1cmF0aW9uIjoxLjAsInNoYXJwbmVzcyI6MC4wLCJyb3RhdGlvbiI6MCwibWlycm9yIjpmYWxzZX0sImdyaWQiOnsibl9jb2xzIjoyMCwibl9yb3dzIjoyMCwiYm94IjpbMzIwLjI2MzMwNzMxMDE0OSwzMS4zMjAwMDAwMDAwMDAwNjQsMTMzMi43Njk4MjI1NjkxOTgxLDEwNDQuMF0sInNxdWFyZV9jZWxscyI6dHJ1ZSwiZnJhbWVfc2l6ZSI6WzE4NTcsMTA0NF0sImJveF9yZWwiOlswLjE3MjQ2MjczOTUzMTU4MjY3LDAuMDMwMDAwMDAwMDAwMDAwMDYsMC43MTc3MDA0OTY4MDYyNDU2LDEuMF19LCJ0cmlnX29mZnNldCI6eyJjYW1lcmFfaGVpZ2h0X2luIjozNS4wLCJ0YWdfaGVpZ2h0X2luIjo1LjUsImJvYXJkX2hlaWdodF9pbiI6MC4wLCJwaXZvdF94IjowLjAsInBpdm90X3kiOjAuMCwiZ3JpcHBlcl9jZWxscyI6NiwiZ3JpcHBlcl9kaXIiOiJ1cCJ9LCJ2aXNpb24iOnsiYm9hcmRfd2lkdGhfaW4iOjI0LjB9LCJiZWhhdmlvdXIiOnsibWFudWFsX2dyaXBwZXJfc3RlcHMiOmZhbHNlLCJncmlwcGVyX2FpIjp0cnVlfX0sImN1c3RvbV90cmFpbmluZyI6WyJVc2Ugb25seSB0aGUgYmx1ZSBub3RlcGFkIGZvciB3aXBpbmcuIiwiS2VlcCB0aGUgYmxhY2tzIGFuZCB3aGl0ZXMgdG9nZXRoZXIsIGJ1dCBmYXIgYXdheSBmcm9tIGVhY2ggb3RoZXIsIHRvIGdldCBzZXRzLiJdLCJlcnJvcl9yZWJvdW5kcyI6W3sidGFzayI6InN3YXAgYWxsIHRoZSBvYmplY3RzIG9uIHRoZSBib2FyZCIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJPYmplY3RzIGRpZCBub3Qgc3dhcCBwb3NpdGlvbnM7IHNjcmV3ZHJpdmVyIHJlbWFpbnMgYXQgSDE0IGFuZCB1dGlsaXR5IGtuaWZlIHJlbWFpbnMgYXQgUDExLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDgtMzFUMjA6NDU6MDYifSx7InRhc2siOiJ3YXRlciBteSBwbGFudHMiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiTm8gdmlzaWJsZSBldmlkZW5jZSB0aGUgcGxhbnQgd2FzIHdhdGVyZWQ7IGN1cCBhbmQgcGxhbnQgcmVtYWluIGVzc2VudGlhbGx5IHVuY2hhbmdlZC4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTAxVDE1OjQ2OjEzIn0seyJ0YXNrIjoid2F0ZXIgbXkgcGxhbnRzIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6Ik5vIHZpc2libGUgZXZpZGVuY2UgdGhlIHBsYW50IHdhcyB3YXRlcmVkOyBwbGFudCBhbmQgbXVnIG9ubHkgc2hpZnRlZCBzbGlnaHRseS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTAyVDE0OjMxOjUwIn0seyJ0YXNrIjoiS2VlcCB0aGUgYmxhY2sgc3BvdCBpbiB0aGUgYm9keS4iLCJ2ZXJkaWN0IjoiZG9uZSBjb3JyZWN0bHkiLCJyZWFzb24iOiJibGFjayBzb2NrIHdhcyBtb3ZlZCBpbnRvIHRoZSBib3dsLCB3aXRoIHRoZSBib3dsIHN0aWxsIGNvbnRhaW5pbmcgaXQgaW4gdGhlIGZpbmFsIGltYWdlIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMTo1MToyMiJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNwb3QgaW4gdGhlIGJvZHkuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6ImJsYWNrIHNvY2sgd2FzIG1vdmVkIG5lYXIgSzQgaW5zdGVhZCBvZiBiZWluZyBrZXB0IGluIHRoZSBib3dsL2JvZHkgYXQgUTMiLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDExOjUxOjM2In0seyJ0YXNrIjoic29ydCB0aGUgc29ja2VzIGFuZCBrZWVwIHRoZSB3aGl0ZXMgaW4gdGUgYm93bCIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJXaGl0ZSBzb2NrcyBhcmUgbm90IHZpc2libGUgaW4gdGhlIGJvd2wgaW4gdGhlIGZpbmFsIGltYWdlOyBvbmx5IHRoZSBibGFjayBzb2NrcyByZW1haW4gb24gdGhlIGJvYXJkLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTI6MDM6MDAifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzb2NrcyBzdGFja2VkIHRvZ2V0aGVyLiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJPbmx5IG9uZSBibGFjayBzb2NrIGlzIHZpc2libGUgaW4gdGhlIGZpbmFsIGltYWdlOyB0aGUgdHdvIHNvY2tzIGFyZSBub3QgY29uZmlybWVkIHN0YWNrZWQgdG9nZXRoZXIuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMjowNToxMyJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNvY2tzIHN0YWNrZWQgdG9nZXRoZXIuIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5IiwicmVhc29uIjoiVGhlIHR3byBibGFjayBzb2NrcyBhcmUgc3RhY2tlZCB0b2dldGhlciBpbiB0aGUgZmluYWwgaW1hZ2UuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMjowNToyMyJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNvY2sgaW4gdGhlIGJvd2wuIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5IiwicmVhc29uIjoiYmxhY2sgc29jayBpcyBwbGFjZWQgaW4gdGhlIGdyZWVuIGJvd2wgaW4gdGhlIGZpbmFsIGltYWdlLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTM6MDE6MzQifSx7InRhc2siOiJTb3J0IHRoZSBibGFjayBhbmQgd2hpdGUgc29ja3MsIGFuZCBwdXQgYWxsIHRoZSB3aGl0ZXMgaW4gdGhlIGJvd2wuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6IldoaXRlIHNvY2sgaXMgaW4gdGhlIGJvd2wsIGJ1dCBvbmUgd2hpdGUgc29jayByZW1haW5zIG91dHNpZGUgdGhlIGJvd2wuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxNjoyNzo0OCJ9LHsidGFzayI6IlNvcnQgbXkgY2xvdGhlcyBvciBzb2NrcyBpbnRvIGJsYWNrIGFuZCB3aGl0ZS4gS2VlcCBhbGwgdGhlIGJsYWNrcyBpbiB0aGUgYm93bC4iLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiT25seSBvbmUgYmxhY2sgc29jayBpcyBpbiB0aGUgYm93bDsgdGhlIG90aGVyIGJsYWNrIHNvY2sgaXMgbm90IHZlcmlmaWVkIGluIHRoZSBib3dsLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTY6Mzk6NDIifSx7InRhc2siOiJLZWVwIHRoZSBsZWF2ZXMgaW4gdGhlIGJvd2wuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6IkxlYXZlcyBhcmUgbm90IGZ1bGx5IGluIHRoZSBib3dsOyBwYXJ0IG9mIHRoZSBzcHJpZyByZW1haW5zIG91dHNpZGUgb24gdGhlIHJpbS90YWJsZS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDE2OjQ3OjUyIn1dfQ=="  # S1_EMBEDDED_STATE
+S1_EMBEDDED_STATE_B64 = "eyJzZXR0aW5ncyI6eyJjYW1lcmEiOnsiem9vbSI6MS4wLCJicmlnaHRuZXNzIjowLCJjb250cmFzdCI6MS4wLCJzYXR1cmF0aW9uIjoxLjAsInNoYXJwbmVzcyI6MC4wLCJyb3RhdGlvbiI6MCwibWlycm9yIjpmYWxzZX0sImdyaWQiOnsibl9jb2xzIjoyMCwibl9yb3dzIjoyMCwiYm94IjpbMzIxLjI5ODA4Mzc0NzMzODUsMzEuNDEwMDAwMDAwMDAwMDY0LDEzMzcuMDc2MDI1NTUwMDM1NiwxMDQ3LjBdLCJzcXVhcmVfY2VsbHMiOnRydWUsImZyYW1lX3NpemUiOlsxODYzLDEwNDddLCJib3hfcmVsIjpbMC4xNzI0NjI3Mzk1MzE1ODI2NywwLjAzMDAwMDAwMDAwMDAwMDA2LDAuNzE3NzAwNDk2ODA2MjQ1NiwxLjBdfSwidHJpZ19vZmZzZXQiOnsiY2FtZXJhX2hlaWdodF9pbiI6MzUuMCwidGFnX2hlaWdodF9pbiI6NS41LCJib2FyZF9oZWlnaHRfaW4iOjAuMCwicGl2b3RfeCI6MC4wLCJwaXZvdF95IjowLjAsImdyaXBwZXJfdXBfZG93biI6LTcsImdyaXBwZXJfcmlnaHRfbGVmdCI6LTEsImdyaXBwZXJfdmVydGljYWxfZGlyZWN0aW9uIjoidXAiLCJncmlwcGVyX2hvcml6b250YWxfZGlyZWN0aW9uIjoibGVmdCJ9LCJ2aXNpb24iOnsiYm9hcmRfd2lkdGhfaW4iOjI0LjB9LCJiZWhhdmlvdXIiOnsibWFudWFsX2dyaXBwZXJfc3RlcHMiOmZhbHNlLCJncmlwcGVyX2FpIjp0cnVlfX0sImN1c3RvbV90cmFpbmluZyI6WyJVc2Ugb25seSB0aGUgYmx1ZSBub3RlcGFkIGZvciB3aXBpbmcuIiwiS2VlcCB0aGUgYmxhY2tzIGFuZCB3aGl0ZXMgdG9nZXRoZXIsIGJ1dCBmYXIgYXdheSBmcm9tIGVhY2ggb3RoZXIsIHRvIGdldCBzZXRzLiJdLCJlcnJvcl9yZWJvdW5kcyI6W3sidGFzayI6InN3YXAgYWxsIHRoZSBvYmplY3RzIG9uIHRoZSBib2FyZCIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJPYmplY3RzIGRpZCBub3Qgc3dhcCBwb3NpdGlvbnM7IHNjcmV3ZHJpdmVyIHJlbWFpbnMgYXQgSDE0IGFuZCB1dGlsaXR5IGtuaWZlIHJlbWFpbnMgYXQgUDExLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDgtMzFUMjA6NDU6MDYifSx7InRhc2siOiJ3YXRlciBteSBwbGFudHMiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiTm8gdmlzaWJsZSBldmlkZW5jZSB0aGUgcGxhbnQgd2FzIHdhdGVyZWQ7IGN1cCBhbmQgcGxhbnQgcmVtYWluIGVzc2VudGlhbGx5IHVuY2hhbmdlZC4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTAxVDE1OjQ2OjEzIn0seyJ0YXNrIjoid2F0ZXIgbXkgcGxhbnRzIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6Ik5vIHZpc2libGUgZXZpZGVuY2UgdGhlIHBsYW50IHdhcyB3YXRlcmVkOyBwbGFudCBhbmQgbXVnIG9ubHkgc2hpZnRlZCBzbGlnaHRseS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTAyVDE0OjMxOjUwIn0seyJ0YXNrIjoiS2VlcCB0aGUgYmxhY2sgc3BvdCBpbiB0aGUgYm9keS4iLCJ2ZXJkaWN0IjoiZG9uZSBjb3JyZWN0bHkiLCJyZWFzb24iOiJibGFjayBzb2NrIHdhcyBtb3ZlZCBpbnRvIHRoZSBib3dsLCB3aXRoIHRoZSBib3dsIHN0aWxsIGNvbnRhaW5pbmcgaXQgaW4gdGhlIGZpbmFsIGltYWdlIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMTo1MToyMiJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNwb3QgaW4gdGhlIGJvZHkuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6ImJsYWNrIHNvY2sgd2FzIG1vdmVkIG5lYXIgSzQgaW5zdGVhZCBvZiBiZWluZyBrZXB0IGluIHRoZSBib3dsL2JvZHkgYXQgUTMiLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDExOjUxOjM2In0seyJ0YXNrIjoic29ydCB0aGUgc29ja2VzIGFuZCBrZWVwIHRoZSB3aGl0ZXMgaW4gdGUgYm93bCIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJXaGl0ZSBzb2NrcyBhcmUgbm90IHZpc2libGUgaW4gdGhlIGJvd2wgaW4gdGhlIGZpbmFsIGltYWdlOyBvbmx5IHRoZSBibGFjayBzb2NrcyByZW1haW4gb24gdGhlIGJvYXJkLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTI6MDM6MDAifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzb2NrcyBzdGFja2VkIHRvZ2V0aGVyLiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJPbmx5IG9uZSBibGFjayBzb2NrIGlzIHZpc2libGUgaW4gdGhlIGZpbmFsIGltYWdlOyB0aGUgdHdvIHNvY2tzIGFyZSBub3QgY29uZmlybWVkIHN0YWNrZWQgdG9nZXRoZXIuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMjowNToxMyJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNvY2tzIHN0YWNrZWQgdG9nZXRoZXIuIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5IiwicmVhc29uIjoiVGhlIHR3byBibGFjayBzb2NrcyBhcmUgc3RhY2tlZCB0b2dldGhlciBpbiB0aGUgZmluYWwgaW1hZ2UuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMjowNToyMyJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNvY2sgaW4gdGhlIGJvd2wuIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5IiwicmVhc29uIjoiYmxhY2sgc29jayBpcyBwbGFjZWQgaW4gdGhlIGdyZWVuIGJvd2wgaW4gdGhlIGZpbmFsIGltYWdlLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTM6MDE6MzQifSx7InRhc2siOiJTb3J0IHRoZSBibGFjayBhbmQgd2hpdGUgc29ja3MsIGFuZCBwdXQgYWxsIHRoZSB3aGl0ZXMgaW4gdGhlIGJvd2wuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6IldoaXRlIHNvY2sgaXMgaW4gdGhlIGJvd2wsIGJ1dCBvbmUgd2hpdGUgc29jayByZW1haW5zIG91dHNpZGUgdGhlIGJvd2wuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxNjoyNzo0OCJ9LHsidGFzayI6IlNvcnQgbXkgY2xvdGhlcyBvciBzb2NrcyBpbnRvIGJsYWNrIGFuZCB3aGl0ZS4gS2VlcCBhbGwgdGhlIGJsYWNrcyBpbiB0aGUgYm93bC4iLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiT25seSBvbmUgYmxhY2sgc29jayBpcyBpbiB0aGUgYm93bDsgdGhlIG90aGVyIGJsYWNrIHNvY2sgaXMgbm90IHZlcmlmaWVkIGluIHRoZSBib3dsLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTY6Mzk6NDIifSx7InRhc2siOiJLZWVwIHRoZSBsZWF2ZXMgaW4gdGhlIGJvd2wuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6IkxlYXZlcyBhcmUgbm90IGZ1bGx5IGluIHRoZSBib3dsOyBwYXJ0IG9mIHRoZSBzcHJpZyByZW1haW5zIG91dHNpZGUgb24gdGhlIHJpbS90YWJsZS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDE2OjQ3OjUyIn1dfQ=="  # S1_EMBEDDED_STATE
 try:
     S1_EMBEDDED_STATE = json.loads(
         base64.b64decode(S1_EMBEDDED_STATE_B64).decode("utf-8"))
@@ -947,13 +947,22 @@ AUTO_ACTION_GAP_S = 1.0
 # in AUTO_GRIP_DOWN forever with hd still running, the carriage still
 # descending into whatever was under it, and the plan step never finishing.
 # Generous enough for a full-height descent, short enough to be a stop.
+# The automatic press waits on its limit switch in exactly the same way, so
+# the same bound is what ends a press whose switch never reports.
 AUTO_GRIP_DOWN_MAX_S = 25.0
-# What an automatic release raises by when it has no press to measure --
-# release pressed on its own, or a plan whose press step was skipped.
-# The old code used the measured duration unconditionally, so a release
-# with nothing to measure sent hu and stopped it the same instant: the
-# tool stayed exactly where it was and the step silently did nothing.
-AUTO_RELEASE_FALLBACK_S = 0.4
+# An automatic press drives hx down until the rig's own limit switch at the
+# bottom is hit: the board stops itself there and says so with the same s/S
+# packet the pickup's IR sensor sends. The press then backs off upwards by
+# this much, so the tool comes to rest just clear of the switch rather than
+# standing on it. The press used to be a blind 0.2s of hx from wherever the
+# operator had left the head -- nowhere near the work on a tall object, and
+# driving straight into it on a short one.
+AUTO_PRESS_BACKOFF_S = 0.2
+# An automatic release is not measured against any prior press: it is
+# always hu, straight out the port, for this long. Simpler than trying to
+# undo a specific press's depth, and the same regardless of whether a
+# press ran first, ran short of its limit switch, or never ran at all.
+AUTO_RELEASE_DURATION_S = 3.0
 # The outside limit on one whole automatic action, start to finish.
 # Every phase that writes to the board retries a failed write for as long
 # as it takes -- deliberately, so a board still booting does not eat a
@@ -1394,30 +1403,52 @@ TRIG_PIVOT_Y = 0.0
 # from the tag on the carriage. Everything the vision and the planner say
 # ("the tape is at E8") is about the gripper; everything the camera reports
 # is about the tag. This offset is the conversion between the two, in whole
-# grid cells, in one of the four grid directions.
+# grid cells, independently along both grid axes.
 #
 # Sign convention follows build_path_commands: "down" is a LARGER row index
 # (toward row 20), "right" is a larger column index.
-# Measured on the rig: the gripper sits five cells ABOVE the tag (toward
-# row 1), so a tag on H10 puts the gripper on H5. Was 0/"down" -- zero meant
-# a fresh copy drove the tag itself to the target, and "down" was the wrong
-# way round for this mount, putting the gripper 10 cells from where the app
-# said it was. The count is the one part only the rig can settle: try it,
-# and if the gripper lands a cell out, this is the number to change.
-GRIPPER_OFFSET_CELLS = 5
-GRIPPER_OFFSET_DIR = "up"
-GRIPPER_OFFSET_DIRS = ("up", "down", "left", "right")
-GRIPPER_OFFSET_STEPS = {"up": (0, -1), "down": (0, 1),
-                        "left": (-1, 0), "right": (1, 0)}
+# Independent signed offsets in cells: negative is up/left.
+DEFAULT_GRIPPER_OFFSET_UP_DOWN = -7
+DEFAULT_GRIPPER_OFFSET_RIGHT_LEFT = 0
+GRIPPER_OFFSET_UP_DOWN = DEFAULT_GRIPPER_OFFSET_UP_DOWN
+GRIPPER_OFFSET_RIGHT_LEFT = DEFAULT_GRIPPER_OFFSET_RIGHT_LEFT
+GRIPPER_VERTICAL_DIRECTION = "up"
+GRIPPER_HORIZONTAL_DIRECTION = "right"
 MAX_GRIPPER_OFFSET = 10
 
 
 def gripper_offset() -> tuple:
     """(dcol, drow) from the tag's cell to the gripper's cell."""
-    if GRIPPER_OFFSET_CELLS <= 0:
-        return 0, 0
-    dc, dr = GRIPPER_OFFSET_STEPS.get(GRIPPER_OFFSET_DIR, (0, 0))
-    return dc * GRIPPER_OFFSET_CELLS, dr * GRIPPER_OFFSET_CELLS
+    return GRIPPER_OFFSET_RIGHT_LEFT, GRIPPER_OFFSET_UP_DOWN
+
+
+def load_gripper_offsets(settings):
+    """Load independent axes, migrating the former single-direction setting."""
+    global GRIPPER_OFFSET_UP_DOWN, GRIPPER_OFFSET_RIGHT_LEFT
+    vertical, horizontal = DEFAULT_GRIPPER_OFFSET_UP_DOWN, DEFAULT_GRIPPER_OFFSET_RIGHT_LEFT
+    if "gripper_cells" in settings:
+        count = max(0, min(MAX_GRIPPER_OFFSET, int(settings["gripper_cells"])))
+        direction = settings.get("gripper_dir", "up")
+        if direction in ("up", "down"):
+            vertical, horizontal = count * (-1 if direction == "up" else 1), 0
+        elif direction in ("left", "right"):
+            vertical, horizontal = 0, count * (-1 if direction == "left" else 1)
+    GRIPPER_OFFSET_UP_DOWN = max(-MAX_GRIPPER_OFFSET, min(MAX_GRIPPER_OFFSET,
+        int(settings.get("gripper_up_down", vertical))))
+    GRIPPER_OFFSET_RIGHT_LEFT = max(-MAX_GRIPPER_OFFSET, min(MAX_GRIPPER_OFFSET,
+        int(settings.get("gripper_right_left", horizontal))))
+
+    global GRIPPER_VERTICAL_DIRECTION, GRIPPER_HORIZONTAL_DIRECTION
+    GRIPPER_VERTICAL_DIRECTION = ("up" if GRIPPER_OFFSET_UP_DOWN < 0 else
+        "down" if GRIPPER_OFFSET_UP_DOWN > 0 else
+        "down" if settings.get("gripper_vertical_direction") == "down" else "up")
+    GRIPPER_HORIZONTAL_DIRECTION = ("left" if GRIPPER_OFFSET_RIGHT_LEFT < 0 else
+        "right" if GRIPPER_OFFSET_RIGHT_LEFT > 0 else
+        "left" if settings.get("gripper_horizontal_direction") == "left" else "right")
+
+
+def offset_axis_label(value, negative, positive):
+    return f"{abs(value)} {negative if value < 0 else positive}" if value else "0"
 
 
 def gripper_cell(col, row) -> tuple:
@@ -1557,11 +1588,11 @@ def unreachable_board_note() -> str:
 
 
 def gripper_offset_label() -> str:
-    """"none", or "2 cells down" -- for the panel and the status line."""
-    if GRIPPER_OFFSET_CELLS <= 0:
-        return "none"
-    unit = "cell" if GRIPPER_OFFSET_CELLS == 1 else "cells"
-    return f"{GRIPPER_OFFSET_CELLS} {unit} {GRIPPER_OFFSET_DIR}"
+    """Describe both independent axes for the panel and status line."""
+    dc, dr = gripper_offset()
+    parts = [offset_axis_label(v, neg, pos) for v, neg, pos in
+             ((dr, "up", "down"), (dc, "left", "right")) if v]
+    return " + ".join(parts) + " cells" if parts else "none"
 
 
 def correct_tag_position(cx: float, cy: float, grid: "Grid") -> tuple:
@@ -2108,6 +2139,9 @@ class Dropdown:
         self.open = False
         self._item_rects = []
         self._list_rect = None
+        self.list_columns = None
+        self.list_alpha = GLASS_ALPHA
+        self.list_text_scale = 0.5
 
     def set_items(self, items):
         self.items = items
@@ -2155,6 +2189,9 @@ class Dropdown:
         pad = 10
         span = self.x1 - self.x0
         per_row = max(1, (span - 2 * pad) // self.ITEM_W)
+        if self.list_columns is not None:
+            per_row = min(self.list_columns,
+                          max(1, (img.shape[1] - 16 - 2 * pad) // self.ITEM_W))
         n_rows = (len(self.items) + per_row - 1) // per_row
         lw = per_row * self.ITEM_W + 2 * pad
         lh = n_rows * self.ITEM_H + 2 * pad
@@ -2163,9 +2200,12 @@ class Dropdown:
         if ly0 < 8:
             ly0 = self.y1 + 10
 
+        if self.list_columns is not None:
+            lx0 = max(8, min(lx0, img.shape[1] - lw - 8))
+            ly0 = max(8, min(ly0, img.shape[0] - lh - 8))
         rect = (lx0, ly0, lx0 + lw, ly0 + lh)
         self._list_rect = rect
-        glass_card(img, rect, 20)
+        glass_card(img, rect, 20, alpha=self.list_alpha)
 
         mx, my = mouse
         for i, (value, label) in enumerate(self.items):
@@ -2183,7 +2223,7 @@ class Dropdown:
                 fg = C_ACCENT
             else:
                 fg = C_TEXT
-            draw_text_centred(img, label, (ix0, iy0, ix1, iy1), 0.5, fg,
+            draw_text_centred(img, label, (ix0, iy0, ix1, iy1), self.list_text_scale, fg,
                               2 if selected else 1)
             self._item_rects.append((ix0, iy0, ix1, iy1, value))
 
@@ -2587,6 +2627,10 @@ class SettingsPanel:
 
         mx, my = mouse
         self.buttons = []
+        close_top = Button("X", px + pw - 52, py + 12,
+                           px + pw - 20, py + 44, "close", scale=0.46)
+        close_top.draw(frame, hover=close_top.contains(mx, my), shadow=False)
+        self.buttons.append(close_top)
 
         # --- the scrolling row list ---------------------------------------
         vy0 = py + 54
@@ -2805,6 +2849,10 @@ class PortPanel:
 
         mx, my = mouse
         self.buttons = []
+        close_top = Button("X", px + pw - 52, py + 12,
+                           px + pw - 20, py + 44, "close", scale=0.46)
+        close_top.draw(frame, hover=close_top.contains(mx, my), shadow=False)
+        self.buttons.append(close_top)
         y = py + 74
         if not self.ports:
             draw_text(frame, "No serial ports found.", (px + 24, y + 22), 0.42,
@@ -3043,7 +3091,7 @@ class ConsolePanel:
 
         clear = Button("CLEAR", px + pw - 176, py + 32, px + pw - 96, py + 58,
                        "clear", scale=0.36)
-        close = Button("CLOSE", px + pw - 92, py + 32, px + pw - 24, py + 58,
+        close = Button("X", px + pw - 56, py + 12, px + pw - 24, py + 40,
                        "close", scale=0.36)
         clear.draw(frame, hover=clear.contains(mx, my), shadow=False)
         close.draw(frame, hover=close.contains(mx, my), shadow=False)
@@ -3076,8 +3124,10 @@ def save_settings(cam: CameraSettings, grid: Grid):
             "board_height_in": TRIG_BOARD_HEIGHT_IN,
             "pivot_x": TRIG_PIVOT_X,
             "pivot_y": TRIG_PIVOT_Y,
-            "gripper_cells": GRIPPER_OFFSET_CELLS,
-            "gripper_dir": GRIPPER_OFFSET_DIR,
+            "gripper_up_down": GRIPPER_OFFSET_UP_DOWN,
+            "gripper_right_left": GRIPPER_OFFSET_RIGHT_LEFT,
+            "gripper_vertical_direction": GRIPPER_VERTICAL_DIRECTION,
+            "gripper_horizontal_direction": GRIPPER_HORIZONTAL_DIRECTION,
         },
         "vision": {"board_width_in": BOARD_WIDTH_IN},
         "behaviour": {
@@ -3117,17 +3167,7 @@ def load_settings():
     TRIG_PIVOT_X = float(t.get("pivot_x", TRIG_PIVOT_X))
     TRIG_PIVOT_Y = float(t.get("pivot_y", TRIG_PIVOT_Y))
 
-    global GRIPPER_OFFSET_CELLS, GRIPPER_OFFSET_DIR
-    GRIPPER_OFFSET_CELLS = max(0, min(MAX_GRIPPER_OFFSET,
-                                      int(t.get("gripper_cells",
-                                                GRIPPER_OFFSET_CELLS))))
-    saved_dir = str(t.get("gripper_dir", GRIPPER_OFFSET_DIR))
-    # A direction that is not one of the four would silently disable the
-    # offset inside gripper_offset(), so reject it here where it can be said.
-    if saved_dir in GRIPPER_OFFSET_DIRS:
-        GRIPPER_OFFSET_DIR = saved_dir
-    else:
-        print(f"[settings] ignoring unknown gripper direction {saved_dir!r}")
+    load_gripper_offsets(t)
 
     # A "parallax" block from an older settings file is simply ignored now
     # that the trig formula is the only correction -- reading it back would
@@ -3493,6 +3533,10 @@ class ManualMovePanel:
         y += self.ROW_H
 
         self.buttons = []
+        close_top = Button("X", px + pw - 52, py + 12,
+                           px + pw - 20, py + 44, "close", scale=0.46)
+        close_top.draw(frame, hover=close_top.contains(mx, my), shadow=False)
+        self.buttons.append(close_top)
         text_field = Button("", fx0, fy0, fx1, fy1, "manual_text")
         self.buttons.append(text_field)
         go = Button("GO", px + 24, y + 8, px + 24 + half, y + self.ROW_H + 2,
@@ -3552,6 +3596,14 @@ class ManualMovePanel:
         self.number_dd.draw_list(frame, self.sel_row, mouse)
 
 
+def dispatch_video_dropdowns(x, y, settings_panel, trig_panel, manual_panel):
+    """Match draw_lists order so a lower popup cannot steal an offset click."""
+    for panel in (settings_panel, trig_panel, manual_panel):
+        if panel.dropdown_hit(x, y):
+            return True
+    return False
+
+
 class TrigPanel:
     """A small frosted card, opened from its own "Trigonometry" menu, for
     the two measurements apply_trig_offset() derives its correction from --
@@ -3566,23 +3618,43 @@ class TrigPanel:
 
     ROW_H = 42
     PAD = 22
-    WIDTH = 340
+    WIDTH = 420
 
     def __init__(self):
         self.visible = False
         self.buttons = []
         self._last_rect = None
         self._anim = 0.0
-        self.count_dd = Dropdown("Cells", 0, 0, 0, 0, "trig_off_count")
-        self.dir_dd = Dropdown("Direction", 0, 0, 0, 0, "trig_off_dir")
-        self.count_dd.set_items([(n, str(n))
-                                 for n in range(MAX_GRIPPER_OFFSET + 1)])
-        self.dir_dd.set_items([(d, d) for d in GRIPPER_OFFSET_DIRS])
+        self.vertical_dd = Dropdown("Up/Down cells", 0, 0, 0, 0, "offset_vertical")
+        self.vertical_dir_dd = Dropdown("Direction", 0, 0, 0, 0, "offset_vertical_dir")
+        self.horizontal_dd = Dropdown("Left/Right cells", 0, 0, 0, 0, "offset_horizontal")
+        self.horizontal_dir_dd = Dropdown("Direction", 0, 0, 0, 0, "offset_horizontal_dir")
+        self.offset_dropdowns = (self.vertical_dd, self.vertical_dir_dd,
+                                 self.horizontal_dd, self.horizontal_dir_dd)
+        for dd in self.offset_dropdowns:
+            dd.list_columns = 5
+            dd.ITEM_W = 56
+            dd.ITEM_H = 40
+            dd.list_alpha = 1.0
+            dd.list_text_scale = 0.62
+        for dd in (self.vertical_dd, self.horizontal_dd):
+            dd.set_items([(n, str(n)) for n in range(MAX_GRIPPER_OFFSET + 1)])
+        for dd, directions in ((self.vertical_dir_dd, ("up", "down")),
+                               (self.horizontal_dir_dd, ("left", "right"))):
+            dd.list_columns = 2
+            dd.ITEM_W = 88
+            dd.set_items([(d, d.title()) for d in directions])
+
+    def offset_values(self):
+        return (abs(GRIPPER_OFFSET_UP_DOWN),
+                GRIPPER_VERTICAL_DIRECTION, abs(GRIPPER_OFFSET_RIGHT_LEFT),
+                GRIPPER_HORIZONTAL_DIRECTION)
 
     def toggle(self):
         self.visible = not self.visible
         if not self.visible:
-            self.count_dd.open = self.dir_dd.open = False
+            for dd in self.offset_dropdowns:
+                dd.open = False
 
     def _rect_contains(self, x, y):
         if not self._last_rect:
@@ -3591,43 +3663,54 @@ class TrigPanel:
         return px <= x <= px + pw and py <= y <= py + ph
 
     def dropdown_hit(self, x, y):
-        """Open/close/select for the two offset dropdowns -- same contract as
-        ManualMovePanel.dropdown_hit: True when the click was theirs."""
         if not self.visible:
             return False
-        global GRIPPER_OFFSET_CELLS, GRIPPER_OFFSET_DIR
-        for dd in (self.count_dd, self.dir_dd):
+        global GRIPPER_OFFSET_UP_DOWN, GRIPPER_OFFSET_RIGHT_LEFT
+        global GRIPPER_VERTICAL_DIRECTION, GRIPPER_HORIZONTAL_DIRECTION
+        for dd in self.offset_dropdowns:
             if dd.open:
                 chosen = dd.hit_item(x, y)
-                in_list = dd.list_contains(x, y)
-                on_button = dd.contains(x, y)
+                consumed = dd.list_contains(x, y) or dd.contains(x, y)
                 dd.open = False
                 if chosen is not None:
-                    if dd is self.count_dd:
-                        GRIPPER_OFFSET_CELLS = int(chosen)
+                    if dd is self.vertical_dd:
+                        GRIPPER_OFFSET_UP_DOWN = int(chosen) * (
+                            -1 if GRIPPER_VERTICAL_DIRECTION == "up" else 1)
+                    elif dd is self.horizontal_dd:
+                        GRIPPER_OFFSET_RIGHT_LEFT = int(chosen) * (
+                            -1 if GRIPPER_HORIZONTAL_DIRECTION == "left" else 1)
+                    elif dd is self.vertical_dir_dd:
+                        GRIPPER_VERTICAL_DIRECTION = chosen
+                        GRIPPER_OFFSET_UP_DOWN = abs(GRIPPER_OFFSET_UP_DOWN) * (
+                            -1 if chosen == "up" else 1)
                     else:
-                        GRIPPER_OFFSET_DIR = str(chosen)
+                        GRIPPER_HORIZONTAL_DIRECTION = chosen
+                        GRIPPER_OFFSET_RIGHT_LEFT = abs(GRIPPER_OFFSET_RIGHT_LEFT) * (
+                            -1 if chosen == "left" else 1)
                     return True
-                if in_list or on_button:
+                if consumed:
                     return True
-        for dd in (self.count_dd, self.dir_dd):
+        for dd in self.offset_dropdowns:
             if dd.contains(x, y):
-                was_open = dd.open
-                self.count_dd.open = self.dir_dd.open = False
-                dd.open = not was_open
+                for other in self.offset_dropdowns:
+                    other.open = False
+                dd.open = True
                 return True
         return False
 
     def draw_lists(self, frame, mouse=(-1, -1)):
-        """Painted last, on top of everything else in the video."""
-        if not self.visible:
-            return
-        self.count_dd.draw_list(frame, GRIPPER_OFFSET_CELLS, mouse)
-        self.dir_dd.draw_list(frame, GRIPPER_OFFSET_DIR, mouse)
+        if self.visible:
+            for dd, value in zip(self.offset_dropdowns, self.offset_values()):
+                dd.draw_list(frame, value, mouse)
 
     def hit_test(self, x, y, cam_settings, grid, state, runner=None, sim=None):
         if not self.visible:
             return None
+        before = self.offset_values()
+        if self.dropdown_hit(x, y):
+            if self.offset_values() != before:
+                save_settings(cam_settings, grid)
+            return f"Gripper offset: {gripper_offset_label()}"
         for b in self.buttons:
             if not b.contains(x, y):
                 continue
@@ -3659,7 +3742,7 @@ class TrigPanel:
                 save_settings(cam_settings, grid)
                 return f"Saved to {os.path.basename(SETTINGS_PATH)}"
             if b.kind == "close":
-                self.visible = False
+                self.toggle()
                 return "Trigonometry closed."
         if self._rect_contains(x, y):
             return ""
@@ -3672,11 +3755,8 @@ class TrigPanel:
             return
         fh, fw = frame.shape[:2]
         pw = min(self.WIDTH, fw - 2 * self.PAD)
-        row_h = self.ROW_H
-        # 3 height rows + 2 pivot rows + the derived-values read-out (40) +
-        # the save/close row, plus the custom-offset block (98) and the
-        # calibration block (98).
-        ph = self.PAD * 2 + 34 + row_h * 6 + 40 + 98 + 98
+        row_h = max(26, min(self.ROW_H, (fh - 2 * self.PAD - 200) // 8))
+        ph = 200 + row_h * 8
         px, py = self.PAD, self.PAD
         self._last_rect = (px, py, pw, ph)
         rect = (px, py, px + pw, py + ph)
@@ -3692,6 +3772,10 @@ class TrigPanel:
 
         mx, my = mouse
         self.buttons = []
+        close_top = Button("X", px + pw - 52, py + 12,
+                           px + pw - 20, py + 44, "close", scale=0.46)
+        close_top.draw(frame, hover=close_top.contains(mx, my), shadow=False)
+        self.buttons.append(close_top)
         y = py + 54
         for axis, label, value in (
                 ("camera", "Camera height (in)", TRIG_CAMERA_HEIGHT_IN),
@@ -3731,30 +3815,14 @@ class TrigPanel:
         cv2.line(frame, (px + 24, y + 2), (px + pw - 24, y + 2), C_BORDER, 1)
         draw_text(frame, "Custom offset", (px + 24, y + 24), 0.48, C_TEXT, 1)
         y += 32
-        dd_h = 44
-        self.count_dd.x0, self.count_dd.y0 = px + 24, y
-        self.count_dd.x1, self.count_dd.y1 = px + 24 + half, y + dd_h
-        self.dir_dd.x0, self.dir_dd.y0 = px + 36 + half, y
-        self.dir_dd.x1, self.dir_dd.y1 = px + pw - 24, y + dd_h
-        self.count_dd.draw(frame, GRIPPER_OFFSET_CELLS,
-                           hover=self.count_dd.contains(mx, my))
-        self.dir_dd.draw(frame, GRIPPER_OFFSET_DIR,
-                         hover=self.dir_dd.contains(mx, my))
-        y += dd_h + 6
-
-        # Spelled out both ways round, because which one is meant is exactly
-        # what gets mixed up: the offset is where the GRIPPER is relative to
-        # the tag, so the tag has to stop short by the same amount.
-        if GRIPPER_OFFSET_CELLS <= 0:
-            off_line, off_c = ("Gripper is on the tag -- no offset applied.",
-                               C_TEXT_DIM)
-        else:
-            back = OPPOSITE_DIR[GRIPPER_OFFSET_DIR]
-            off_line = (f"Gripper sits {gripper_offset_label()} of the tag, "
-                        f"so the tag stops {GRIPPER_OFFSET_CELLS} {back}.")
-            off_c = C_ACCENT
-        draw_text(frame, off_line, (px + 24, y + 18), 0.34, off_c, 1)
-        y += 30
+        for i, (dd, value) in enumerate(zip(self.offset_dropdowns, self.offset_values())):
+            x0 = px + 24 if i % 2 == 0 else px + 36 + half
+            x1 = px + 24 + half if i % 2 == 0 else px + pw - 24
+            yy = y + (i // 2) * 52
+            dd.x0, dd.y0, dd.x1, dd.y1 = x0, yy, x1, yy + 44
+            dd.draw(frame, value.title() if isinstance(value, str) else value,
+                    hover=dd.contains(mx, my))
+        y += 106
 
         # A live read-out of what the measurements currently imply, so the
         # numbers above can be sanity-checked without doing any arithmetic.
@@ -3783,6 +3851,7 @@ class TrigPanel:
             drawn = frame[by0:by1, bx0:bx1]
             frame[by0:by1, bx0:bx1] = cv2.addWeighted(
                 drawn, self._anim, under, 1.0 - self._anim, 0)
+        self.draw_lists(frame, mouse)
 
 
 class GripperPanel:
@@ -4070,10 +4139,27 @@ class GripperPanel:
             self._execute_offset_action(self.offset_action)
         elif self.offset_phase == "wait_pickup" and self.auto_grip_phase == self.AUTO_GRIP_IDLE:
             self._schedule_action_complete(now)
-        elif self.offset_phase in ("wait_press", "wait_release") and now >= self.offset_until:
+        elif self.offset_phase == "press_down":
+            if now - self.auto_press_started_at >= AUTO_GRIP_DOWN_MAX_S:
+                # No limit-switch packet. Stop the descent rather than let
+                # hx keep driving into whatever is under the tool -- the
+                # same reasoning, and the same bound, as the pickup's.
+                ARDUINO.halt()
+                self._abort_offset_action(
+                    f"Automatic press failed: no limit-switch signal in "
+                    f"{AUTO_GRIP_DOWN_MAX_S:g}s -- sent s.")
+                return
+        elif self.offset_phase == "press_lift_pending":
+            # The switch already stopped the board; all that is left is the
+            # back-off, whose write is retried here like every other one.
+            if ARDUINO.send_command(HEIGHT_UP_CMD):
+                self.offset_phase = "press_lift"
+                self.offset_until = now + AUTO_PRESS_BACKOFF_S
+                self.last_msg = (f"Automatic press: hu for "
+                                 f"{AUTO_PRESS_BACKOFF_S:.1f}s.")
+        elif (self.offset_phase in ("press_lift", "wait_release")
+                and now >= self.offset_until):
             if ARDUINO.halt():
-                if self.offset_phase == "wait_press":
-                    self.auto_press_duration = max(0.0, now - self.auto_press_started_at)
                 self._schedule_action_complete(now)
             else:
                 self.last_msg = "Action duration finished -- retrying lowercase s."
@@ -4127,9 +4213,12 @@ class GripperPanel:
                 and now >= self.auto_grip_up_until):
             if ARDUINO.send_command(HEIGHT_UP_CMD):
                 self.auto_grip_phase = self.AUTO_GRIP_UP
-                self.auto_grip_up_until = now + self.auto_grip_down_duration + AUTO_PICKUP_HX_S
+                # Raise for exactly the hd-to-sensor descent -- not that
+                # plus the hx grip pulse, which moves the jaw, not the
+                # carriage, and has nothing for hu to undo.
+                self.auto_grip_up_until = now + self.auto_grip_down_duration
                 self.last_msg = (f"Automatic gripping: sent hu for "
-                                 f"{self.auto_grip_down_duration + AUTO_PICKUP_HX_S:.1f}s.")
+                                 f"{self.auto_grip_down_duration:.1f}s.")
             return
         if (self.auto_grip_phase == self.AUTO_GRIP_UP
                 and now >= self.auto_grip_up_until):
@@ -4183,6 +4272,13 @@ class GripperPanel:
         A press is accepted even while the board is reconnecting. The phase
         machine retries the first write, so a short reset or boot interval can
         no longer make an apparently clickable button silently do nothing.
+
+        `immediate` is kept only so existing callers (Simple Gripper's DONE)
+        do not need to change; it no longer skips the wait. DONE used to
+        fire the first command in this same call, the one gap-free step in
+        an otherwise all-one-second sequence -- inconsistent for no reason
+        an operator watching the card could tell. Every trigger now waits
+        the same AUTO_ACTION_GAP_S before its first command.
         """
         if action not in ("pickup", "keep", "press", "release"):
             return f"Unknown automatic action: {action}."
@@ -4193,15 +4289,9 @@ class GripperPanel:
         self.offset_action = action
         self.offset_failed = False
         self.offset_deadline = time.monotonic() + AUTO_ACTION_MAX_S
-        if immediate:
-            # Simple Gripper DONE starts the first command in this call.
-            # Later command gaps and retry handling still use the phase machine.
-            self.offset_phase = "action"
-            self._execute_offset_action(action)
-            return self.last_msg
-        # No automatic approach any more. The head is wherever the operator
-        # left it with the Simple Gripper card's jog, and the action runs
-        # from exactly there after the usual one-second gap.
+        # The head is wherever the operator left it with the Simple Gripper
+        # card's jog, and the action runs from exactly there after the
+        # usual one-second gap.
         self.offset_phase = "wait_action"
         self.offset_until = time.monotonic() + AUTO_ACTION_GAP_S
         return f"Automatic {action} in {AUTO_ACTION_GAP_S:.1f}s."
@@ -4221,25 +4311,25 @@ class GripperPanel:
             else:
                 self.last_msg = "Automatic keep ready -- waiting to send g0."
         elif action == "press":
+            # hx runs until the limit switch at the bottom, which the board
+            # itself acts on -- it stops and sends s/S. Nothing here times
+            # the descent or stops it; note_rx picks the sequence back up
+            # when that packet lands.
             if ARDUINO.send_command("hx"):
                 self.auto_press_started_at = now
-                self.offset_phase = "wait_press"
-                self.offset_until = now + AUTO_PICKUP_HX_S
-                self.last_msg = f"Automatic press: hx for {AUTO_PICKUP_HX_S:.1f}s."
+                self.offset_phase = "press_down"
+                self.last_msg = ("Automatic press: sent hx; waiting for the "
+                                 "limit switch s/S.")
             else:
                 self.last_msg = "Automatic press ready -- waiting to send hx."
         elif action == "release":
-            # A release is the undo of a press, so it raises by however long
-            # the press drove down. With no press on record that would be
-            # zero seconds -- hu and s in the same breath, nothing moved --
-            # so fall back to a real, if nominal, lift.
-            duration = self.auto_press_duration
-            if duration <= 0.0:
-                duration = AUTO_RELEASE_FALLBACK_S
+            # A flat hu for AUTO_RELEASE_DURATION_S -- not measured against
+            # whatever press ran before it.
             if ARDUINO.send_command("hu"):
                 self.offset_phase = "wait_release"
-                self.offset_until = now + duration
-                self.last_msg = f"Automatic release: hu for {duration:.3f}s."
+                self.offset_until = now + AUTO_RELEASE_DURATION_S
+                self.last_msg = (f"Automatic release: hu for "
+                                 f"{AUTO_RELEASE_DURATION_S:.1f}s.")
             else:
                 self.last_msg = "Automatic release ready -- waiting to send hu."
 
@@ -4301,10 +4391,18 @@ class GripperPanel:
         return "Automatic gripping: sent hd; waiting for s/S."
 
     def note_rx(self, data) -> bool:
-        """Handle a sensor packet while automatic gripping is descending."""
-        if self.auto_grip_phase != self.AUTO_GRIP_DOWN:
-            return False
+        """Handle a contact packet: the IR sensor during an automatic
+        pickup's descent, and the limit switch during an automatic press.
+
+        Both are the board reporting that it has ALREADY stopped, so
+        neither path sends an s of its own -- an s here would be a stop
+        with nothing left to stop.
+        """
         if not has_serial_stop_signal(data):
+            return False
+        if self.offset_phase == "press_down":
+            return self._note_press_limit_switch()
+        if self.auto_grip_phase != self.AUTO_GRIP_DOWN:
             return False
         now = time.monotonic()
         self.auto_grip_down_duration = max(0.0, now - self.auto_grip_started_at)
@@ -4317,6 +4415,27 @@ class GripperPanel:
         self.last_msg = (f"IR sensor tripped after "
                          f"{self.auto_grip_down_duration:.1f}s -- hx in "
                          f"{AUTO_GRIP_COMMAND_DELAY_S:.1f}s.")
+        return True
+
+    def _note_press_limit_switch(self) -> bool:
+        """The press's hx reached the switch: back off by AUTO_PRESS_BACKOFF_S.
+
+        What a later release has to undo is the descent MINUS that back-off,
+        since the back-off has already given part of it back -- the same
+        arithmetic the pickup's lift does, where hu runs for the hd descent
+        plus the hx that followed it.
+        """
+        now = time.monotonic()
+        descent = max(0.0, now - self.auto_press_started_at)
+        self.auto_press_duration = max(0.0, descent - AUTO_PRESS_BACKOFF_S)
+        if ARDUINO.send_command(HEIGHT_UP_CMD):
+            self.offset_phase = "press_lift"
+            self.offset_until = now + AUTO_PRESS_BACKOFF_S
+            self.last_msg = (f"Limit switch after {descent:.1f}s -- hu for "
+                             f"{AUTO_PRESS_BACKOFF_S:.1f}s.")
+        else:
+            self.offset_phase = "press_lift_pending"
+            self.last_msg = ("Limit switch tripped -- waiting to send hu.")
         return True
 
     def status_line(self) -> str:
@@ -4352,7 +4471,11 @@ class GripperPanel:
             message = self.last_msg
         elif self.offset_phase == "wait_action":
             message = f"Waiting {remaining:.1f}s before {self.offset_action}"
-        elif self.offset_phase in ("wait_press", "wait_release"):
+        elif self.offset_phase == "press_down":
+            message = "Press: hx sent; waiting for the limit switch s"
+        elif self.offset_phase == "press_lift_pending":
+            message = "Press: limit switch tripped; waiting to send hu"
+        elif self.offset_phase in ("press_lift", "wait_release"):
             message = f"{self.offset_action.title()}: {remaining:.1f}s remaining"
         elif self.offset_phase == "wait_complete":
             message = f"Waiting {remaining:.1f}s after {self.offset_action}"
@@ -6492,7 +6615,7 @@ def build_reachable_note() -> str:
     """The OUT OF REACH section -- told to vision so it never reports an
     object the gripper's own geometry can never put a tool on.
 
-    Empty (no section at all) when GRIPPER_OFFSET_CELLS is 0 and the fixed
+    Empty (no section at all) when both gripper offsets are 0 and the fixed
     cosmetic band is disabled -- most boards have nothing to exclude.
     """
     note = unreachable_board_note()
@@ -6754,7 +6877,11 @@ Fix what fails and answer with the corrected plan. Never emit a plan you have ju
 
 **Coordinate format** - every move MUST be written exactly as: goto_coordinate = X, N (letter, comma, space, number). NEVER fuse the coordinate (H6), NEVER omit the "=". No other spelling is valid.
 
-**Surface coverage** - when cleaning an OBJECT, the contact pass MUST cross every cell in that object's TOUCHES list, not just its CENTER. Cleaning one cell of a multi-cell object is a failure. Stay one cell in from the object's outer edge, though: TOUCHES marks where the object visibly IS, not where the tool should actually make contact, and driving straight onto the outermost boundary cell risks working past the object's real edge instead of on it. For a TOUCHES cell that sits on the object's outer boundary, use the cell one step in toward its CENTER instead - the ring just inside the edge, not the edge itself. An object only one or two cells wide has no inner ring; clean its TOUCHES cells directly in that case.
+**Surface coverage** - when cleaning an OBJECT, the contact pass MUST cross every cell in that object's TOUCHES list, not just its CENTER. Cleaning one cell of a multi-cell object is a failure. Stay in from the object's outer edge, though: TOUCHES marks where the object visibly IS, not where the tool should actually make contact, and driving the CENTER of a wide duster onto the outermost boundary cell drives the duster's own far edge past the object's real edge, off it entirely.
+
+How far in depends on the duster doing the cleaning (cloth, paper, sponge - whatever OBJECT_LIST entry is picked/held for this pass), not on a fixed count: find that duster's own TOUCHES footprint and take half its width in cells, rounded up (a 1-cell duster needs no margin beyond the old default of 1; a duster 3-4 cells across needs 2; one 5-6 cells across needs 3, and so on) - that is the number of cells to come in from the surface's outer boundary on EVERY side the duster's own footprint would otherwise overhang, so the duster's own edges stay on the object being cleaned rather than past it. For a TOUCHES cell that sits on the object's outer boundary, use the cell that many steps in toward its CENTER instead, not the edge itself - and if the object is narrower than twice that margin in some direction, it has no inner ring at all: clean its TOUCHES cells directly there, since pulling in further would miss the object altogether. Two adjacent sides of a corner cell both pull in by this same margin, not just one - a corner TOUCHES cell moves in along BOTH coordinates it borders, not just one, landing it two coordinate-steps from the corner rather than one.
+
+A CAVITY surface (a plate, bowl, dish, sink basin, or any object whose own COMPONENTS list a cavity/interior/basin - the concave case playbook 3b soaps) needs at least 2 cells of margin on every boundary side regardless of what the duster-derived count above comes to, even a duster small enough that the count above is only 1. A cavity's outer TOUCHES ring is its rim wall, not its cleanable floor, so a 1-cell pull-in can still land the tool on the wall instead of inside the cavity; 2 cells reliably clears it. A flat surface with no cavity (a shelf, table, tray, counter, or a plate/dish's own flat rim rather than its interior) has no such wall to clear and uses the duster-derived count above as-is - which is 1 for an ordinary single-cell duster, unchanged from before.
 
 **Serpentine coverage** - a contact pass covering more than one row runs BACK AND FORTH, reversing direction on every row. Cover the first row left to right, step DOWN one row, cover the next row right to left, step down, the next left to right again, and so on to the end of the area. The tool is already at the near end of the next row when it steps down, so the pass never crosses ground it has just covered.
 
@@ -7133,14 +7260,16 @@ keep
 
 To clean a specific OBJECT (a plate, a tray, a chopping board, or a table/
 counter that IS in the OBJECT LIST), run the contact pass over that object's
-own TOUCHES footprint rather than a board region (see **Surface coverage** -
-stay one cell in from the object's outer edge).
+own TOUCHES footprint rather than a board region, pulled in from its outer
+edge by the duster-size and cavity rules under **Surface coverage**.
 
 ## 3b. Wash Dishes (sink)
 
 Soap goes on the DISHES, using each dish's own TOUCHES footprint (see
-**Surface coverage**). Keep the sponge pressed while moving from one dish to
-the next; one pass covers them all.
+**Surface coverage** - a plate or bowl's TOUCHES is its cavity, so this pass
+gets the 2-cell cavity margin, not the plain duster-sized one). Keep the
+sponge pressed while moving from one dish to the next; one pass covers
+them all.
 
 goto_coordinate = SPONGE_COL, SPONGE_ROW      # or dish soap bottle
 pickup
@@ -7435,6 +7564,34 @@ Turn on the stove with a momentary press, move the pot onto it, load each
 solid ingredient into the pot with goto+keep, then pour in any liquid
 ingredient from a jar.
 
+**Boiling a vessel of water alone (glass, cup, mug - "boil the water",
+"boil the glass"):** water is assumed already IN the vessel. Do not pour,
+do not fetch a water source or jar, and do not ask the operator to confirm
+it - a glass named in a boiling task is water the same way a washing
+machine's drum is clothes once the task says "wash" (see **Minimal scope**
+EXCEPTION for the same reasoning). Skip ingredient-loading entirely; there
+is nothing else going in.
+
+goto_coordinate = STOVE_COL, STOVE_ROW
+press                             # turn the stove on
+release
+goto_coordinate = GLASS_COL, GLASS_ROW
+pickup
+goto_coordinate = STOVE_COL, STOVE_ROW
+keep                              # glass now sits on the stove, water and all
+wait_X(90)                        # boil - same default as Kettle boiling
+goto_coordinate = STOVE_COL, STOVE_ROW
+press                             # turn the stove off
+release
+
+The glass is not picked back up afterward unless the task itself says to move
+it, pour it, or serve it - the gripper is already empty (the keep above put
+it down), and relocating it "while you're there" is exactly what **Minimal
+scope** rules out.
+
+Cooking with ingredients (pot/pan, one or more items or a liquid added
+separately) still goes through the full flow below.
+
 goto_coordinate = STOVE_COL, STOVE_ROW
 press                             # turn the stove on
 release
@@ -7664,6 +7821,7 @@ Every task type below reduces to a playbook above.
 - Laundry (basket/washer/dryer load-unload, fold) -> 12, 5, 6, 13
 - Dishwashing -> 12, 3b, 6
 - Cooking (stovetop, oven, toaster, kettle, microwave) -> 11, 6, 12
+- Boiling a glass/cup/mug of water on the stove -> 11 (water assumed already in the vessel - no pour, no water source, no asking)
 - Food preparation -> 12, 13, Move/Stack/Collect
 - Organizing / tidy a room -> 8, 9, Move/Stack/Collect
 - Bathroom -> 12, 15, Move/Stack/Collect
@@ -7742,20 +7900,31 @@ press was meant to perform. Task_Completed is always the final line.
 
 def build_out_of_reach_rule() -> str:
     """The **Out of reach** paragraph's body -- the same union Grid.draw
-    paints red and vision is told to skip, restated for the planner in case
-    an object's TOUCHES still crosses into it (see REACHABLE_NOTE)."""
+    paints red and vision is told to skip, restated for the planner.
+
+    The OBJECT LIST itself can no longer contain a cell in here:
+    restrict_to_reachable() strips every unreachable TOUCHES/CENTER cell
+    out of each object before the planner ever sees the list, so an object
+    resting partly out of reach already shows up with only its reachable
+    cells - nothing left for the planner to notice and skip on its own.
+    What remains genuinely open-ended is a coordinate the planner picks
+    itself rather than copies from an object: a fallback full-board wipe,
+    or a free cell for **Free space**. Those aren't drawn from any list
+    this code can filter, so this paragraph is the only guard they get.
+    """
     note = unreachable_board_note()
     if not note:
         return "The robot can reach every cell on this board."
     return (f"The gripper's own geometry keeps it out of {note}, on every "
-           f"task, regardless of what the OBJECT LIST says - a hard "
-           f"physical limit, not a preference. NEVER write a "
-           f"`goto_coordinate` there, for a contact pass, a pickup, a "
-           f"placement, or free space alike. If an object's own CENTER or "
-           f"TOUCHES falls inside it, that part of the object is genuinely "
-           f"unreachable - cover the rest and skip only that part, rather "
-           f"than skipping the whole step or attempting a coordinate that "
-           f"will never be reached.")
+           f"task - a hard physical limit, not a preference. The OBJECT "
+           f"LIST never contains a cell in there; every object's TOUCHES "
+           f"and CENTER are already restricted to what the gripper can "
+           f"reach before you see them, so an object resting partly in "
+           f"this zone simply shows fewer TOUCHES cells, not a warning to "
+           f"act on. The one place this still needs an explicit rule is a "
+           f"coordinate you choose yourself rather than copy from an "
+           f"object - a fallback full-board wipe, or a **Free space** "
+           f"pick. NEVER choose one there.")
 
 
 def build_planner_system() -> str:
@@ -8394,6 +8563,63 @@ def resolve_overlaps(objects):
     return objects
 
 
+def restrict_to_reachable(objects):
+    """Drop every cell the gripper's own geometry can never reach from each
+    object's TOUCHES (and CENTER, if the cell affected is the centre)
+    before the planner ever sees this object list.
+
+    The old approach put every cell in front of the planner, including ones
+    physically out of reach, and relied on a prompt rule telling it never to
+    write a goto there. That is one more place a plan can go wrong for no
+    reason the operator caused -- the planner has to notice the warning,
+    re-derive which of an object's cells the warning applies to, and never
+    slip. Filtering here removes the choice instead of trusting the
+    planner not to make it: an unreachable coordinate is not one it is
+    told to avoid, it is one that was never offered.
+
+    Same shape as resolve_overlaps, and meant to run right alongside it, on
+    the same objects list, before disambiguate_names/object_list_text.
+    """
+    bad_rows = unreachable_rows() | fixed_unreachable_rows()
+    bad_cols = unreachable_cols()
+    if not bad_rows and not bad_cols:
+        return objects
+
+    def reachable(coord):
+        return coord is not None and coord[1] not in bad_rows and coord[0] not in bad_cols
+
+    kept_objects = []
+    for o in objects:
+        cells = _touch_cells(o)
+        kept = [c for c in cells if reachable(parse_coordinate(c))]
+        centre = str(o.get("center") or "").strip().upper()
+        centre_coord = parse_coordinate(centre)
+        if centre and not reachable(centre_coord):
+            if kept:
+                # The object did not move -- only which of its cells the
+                # gripper can still be sent to changed. Recentre on
+                # whichever surviving cell sits closest to the original.
+                cc, cr = centre_coord or (0, 0)
+                centre = min(kept, key=lambda c: (
+                    (parse_coordinate(c)[0] - cc) ** 2
+                    + (parse_coordinate(c)[1] - cr) ** 2))
+            else:
+                centre = ""
+        if centre and centre not in kept:
+            kept.append(centre)
+        if not kept:
+            print(f"[cells] {o.get('name')}: entirely out of reach -- "
+                 f"dropped from the object list")
+            continue
+        if len(kept) != len(cells):
+            print(f"[cells] {o.get('name')}: {len(cells) - len(kept)} "
+                 f"cell(s) out of reach -- dropped")
+        o["touches"] = ",".join(kept)
+        o["center"] = centre
+        kept_objects.append(o)
+    return kept_objects
+
+
 def _touch_cells(obj):
     raw = obj.get("touches") or ""
     if isinstance(raw, (list, tuple)):
@@ -8570,10 +8796,12 @@ def parse_vision_json(raw: str):
 GRIPPER_AI_SYSTEM = """
 You are Gripper AI for a robot with a simple parallel gripper on an overhead gantry.
 
-The left jaw is the moving jaw. Therefore every grasp target MUST be slightly
-to the RIGHT of the object's visual centre as seen in the supplied camera
-image, preferably on its right edge. Never choose the centre, front, or back.
-Use the object's polygon/rightmost TOUCHES cell to select the right-side cell.
+The left jaw is the moving jaw. Therefore every grasp target MUST be the
+object's TOP-RIGHT corner as seen in the supplied camera image: the rightmost
+column it occupies, and the highest cell in that column. Never choose the
+centre, the front, the back, or any other corner. Use the object's
+polygon/TOUCHES cells to select it, and pick a cell the object actually
+occupies rather than the corner of the box around it.
 This camera-view rule overrides generic handle or centre-grasp advice below.
 
 You are shown a photo of the workspace and the OBJECT LIST the vision system
@@ -8717,8 +8945,15 @@ def object_cells(o) -> set:
     return cells
 
 
-def right_edge_grip_cell(o) -> str:
-    """Rightmost occupied cell in camera/grid view, biased near mid-height."""
+def top_right_grip_cell(o) -> str:
+    """Top-right occupied cell in camera/grid view.
+
+    The rightmost column the object occupies, and the topmost of its cells
+    in that column -- row 0 is the top of the image. Picking a cell the
+    object actually occupies, rather than the corner of its bounding box,
+    keeps the grip on the object for an L or a curve, where that corner is
+    bare board.
+    """
     parsed = []
     for cell in object_cells(o):
         coord = parse_coordinate(cell)
@@ -8726,9 +8961,7 @@ def right_edge_grip_cell(o) -> str:
             parsed.append((coord[0], coord[1], cell))
     if not parsed:
         return str(o.get("center") or "").strip().upper()
-    center = parse_coordinate(str(o.get("center") or ""))
-    center_row = center[1] if center is not None else 0
-    return max(parsed, key=lambda item: (item[0], -abs(item[1] - center_row)))[2]
+    return max(parsed, key=lambda item: (item[0], -item[1]))[2]
 
 
 GRIP_CELL_SLACK = 1
@@ -8868,8 +9101,8 @@ def resolve_grip_cells(grips: list, objs: list) -> list:
         if not cell or not cell_on_object(o, cell):
             continue
 
-        cell = right_edge_grip_cell(o)
-        source = "camera-right-edge"
+        cell = top_right_grip_cell(o)
+        source = "camera-top-right"
         override = bool(center and cell != center)
         if not (override or g.get("approach") or avoid or g.get("why")):
             continue
@@ -8886,17 +9119,17 @@ def resolve_grip_cells(grips: list, objs: list) -> list:
         name = str(o.get("name", "object"))
         if name in claimed:
             continue
-        right_cell = right_edge_grip_cell(o)
-        if not right_cell:
+        corner_cell = top_right_grip_cell(o)
+        if not corner_cell:
             continue
         center = str(o.get("center") or "").strip().upper()
-        if right_cell == center:
+        if corner_cell == center:
             continue
         claimed.add(name)
         resolved.append({
-            "object": name, "part": "right edge", "cell": right_cell,
+            "object": name, "part": "top-right corner", "cell": corner_cell,
             "center": center, "approach": "", "avoid": [], "why": "",
-            "source": "camera-right-edge", "override": True,
+            "source": "camera-top-right", "override": True,
         })
     return resolved
 
@@ -9184,10 +9417,11 @@ class SimpleGripperPanel:
       - a jog d-pad that sends "uq"/"dq"/"lq"/"rq" for SIMPLE_JOG_PULSE_S,
       - STOP, which is live at every moment including while the action
         itself is running,
-      - DONE, which immediately runs the action for whichever step opened it.
+      - DONE, which starts the action for whichever step opened it, after
+        the same one-second gap every later command in that action gets.
 
-    The card waits while the operator adjusts the head. DONE starts the
-    action without a countdown; STOP remains available while it runs.
+    The card waits while the operator adjusts the head. STOP remains
+    available while the action runs.
     """
 
     WIDTH = 380
@@ -9227,12 +9461,21 @@ class SimpleGripperPanel:
         """A plan step has arrived. Show the card, and wait.
 
         The operator can adjust for as long as needed. The action starts
-        immediately when they press DONE.
+        (after the usual one-second gap) when they press DONE.
+
+        Only a pickup gets the card. It is the one action whose outcome
+        depends on where the jaw is -- everything else acts where the head
+        already stands, so an automatic keep, press or release runs straight
+        away rather than stopping the plan on a prompt with nothing to
+        decide.
         """
         self.action = str(action or "").lower()
         self.automatic = bool(automatic)
-        self.visible = True
         self.handed_off = False
+        if self.automatic and self.action != "pickup":
+            self.visible = False
+            return self._run("auto")
+        self.visible = True
         self.last_msg = (f"{self.title()}: adjust the head, then press DONE.")
         return self.last_msg
 
@@ -9257,11 +9500,15 @@ class SimpleGripperPanel:
         True from the moment it opens until the action it started has
         finished -- including the whole time it sits cancelled, waiting for
         someone to press DONE. That wait is the point of cancelling.
+
+        A running action is checked before visibility, since a keep, press
+        or release starts without ever showing the card and the plan still
+        has to wait for it.
         """
-        if not self.visible:
-            return False
         if self.running():
             return True
+        if not self.visible:
+            return False
         return not self.handed_off
 
     # -- what the buttons do -------------------------------------------
@@ -9309,7 +9556,7 @@ class SimpleGripperPanel:
         return self.last_msg
 
     def confirm(self) -> str:
-        """DONE: run the action immediately, without a countdown."""
+        """DONE: start the action, after its usual one-second gap."""
         return self._run("DONE")
 
     def _run(self, why: str) -> str:
@@ -9414,8 +9661,12 @@ class SimpleGripperPanel:
 
         mx, my = mouse
         self.buttons = []
+        close_top = Button("X", px + pw - 52, py + 12,
+                           px + pw - 20, py + 44, "simple_close", scale=0.46)
+        close_top.draw(frame, hover=close_top.contains(mx, my), shadow=False)
+        self.buttons.append(close_top)
         draw_text(frame, f"Simple Gripper - {self.title()}",
-                  (px + 22, py + 34), 0.62, C_TEXT, 2)
+                  (px + 22, py + 34), 0.48, C_TEXT, 2)
 
         if self.running():
             line, colour = f"{self.title()} running - STOP is live.", C_ACCENT
@@ -9893,13 +10144,10 @@ class PlanRunner:
                 self.auto_press_duration = AUTO_PICKUP_HX_S
                 self._auto_stop_until = time.monotonic() + AUTO_PICKUP_HX_S
             else:
-                # Raise by as long as the press DROVE, not by how long ago
-                # the press step was dispatched -- every goto, speech and
-                # hold in between counted toward that, so a release after a
-                # few steps of plan drove hu for many seconds.
-                duration = self.auto_press_duration or AUTO_RELEASE_FALLBACK_S
+                # A flat hu for AUTO_RELEASE_DURATION_S, not measured
+                # against whatever press ran before it.
                 ARDUINO.send_command("hu")
-                self._auto_stop_until = time.monotonic() + duration
+                self._auto_stop_until = time.monotonic() + AUTO_RELEASE_DURATION_S
         self.await_manual = False
         if manual:
             self.on_manual_action(bare)
@@ -10356,6 +10604,7 @@ class AIJob:
             print("\n=== OBJECT LIST (board pass) ===")
             print(object_list_text(objects))
             resolve_overlaps(objects)
+            objects = restrict_to_reachable(objects)
             disambiguate_names(objects)
             self._publish_vision(objects)
 
@@ -10374,6 +10623,7 @@ class AIJob:
                 objects = second_look(client, self.raw_frame, self.grid,
                                       objects, on_stage=self._set_stage)
             resolve_overlaps(objects)
+            objects = restrict_to_reachable(objects)
             disambiguate_names(objects)
             self._publish_vision(objects, final=True)
 
@@ -10699,6 +10949,7 @@ class AppState:
     exec_auto_at: float = 0.0
     exec_cancelled: bool = True
     exec_cancel_rect: Optional[tuple] = None
+    popup_close_rect: Optional[tuple] = None
 
     err_before: Optional[object] = None
     err_task: str = ""
@@ -11167,7 +11418,7 @@ class AISidebar:
         anim = self._history_anim
         pad, row_h = 10, 30
         lw = self.width - 2 * self.PAD
-        lh = pad * 2 + (max(1, len(tasks)) * row_h)
+        lh = pad * 2 + 36 + (max(1, len(tasks)) * row_h)
         lx0 = self.history_btn.x0
         ly0 = self.history_btn.y1 + 8 + int((1.0 - anim) * -10)
         rect = (lx0, ly0, min(lx0 + lw, self.x0 + self.width - self.PAD), ly0 + lh)
@@ -11182,12 +11433,12 @@ class AISidebar:
         under = canvas[by0:by1, bx0:bx1].copy() if fading else None
 
         glass_card(canvas, rect, 16)
-        self._history_rects = []
+        self._history_rects = [(popup_cross(canvas, rect), None)]
         if not tasks:
-            draw_text(canvas, "Nothing sent yet.", (lx0 + pad, ly0 + pad + 14),
+            draw_text(canvas, "Nothing sent yet.", (lx0 + pad, ly0 + pad + 50),
                       0.40, C_TEXT_DIM, 1)
         else:
-            y = ly0 + pad
+            y = ly0 + pad + 36
             for task in tasks:
                 row = (lx0 + 4, y, rect[2] - 4, y + row_h - 4)
                 hovered = row[0] <= mx <= row[2] and row[1] <= my <= row[3]
@@ -11830,6 +12081,16 @@ def focus_macos_app(on_port_settings=None, on_serial_console=None,
         return
     app = NSApplication.sharedApplication()
     try:
+        # A script run outside an .app bundle otherwise keeps whatever
+        # activation policy Cocoa happened to hand it, which on recent
+        # macOS is not reliably "regular" -- so activateIgnoringOtherApps_
+        # below silently no-ops and the menu bar keeps showing whichever
+        # app was frontmost before this one (e.g. a dictation utility)
+        # instead of S1's own menu.
+        app.setActivationPolicy_(0)  # NSApplicationActivationPolicyRegular
+    except Exception as e:
+        print(f"[warn] could not set activation policy: {e}")
+    try:
         if NSMenu is not None and app.mainMenu() is None:
             bar = NSMenu.alloc().init()
             item = NSMenuItem.alloc().init()
@@ -12381,6 +12642,15 @@ def main():
         in_video = 0 <= vy < frame_h and 0 <= vx < frame_w
 
         if event == cv2.EVENT_LBUTTONDOWN:
+            if state.popup_close_rect is not None:
+                bx0, by0, bx1, by1 = state.popup_close_rect
+                if bx0 <= vx <= bx1 and by0 <= vy <= by1:
+                    if sim.active and sim.popup:
+                        sim.popup = ""
+                    else:
+                        cancel_auto_execute()
+                    state.popup_close_rect = None
+                    return
             if state.exec_cancel_rect is not None:
                 bx0, by0, bx1, by1 = state.exec_cancel_rect
                 if bx0 <= vx <= bx1 and by0 <= vy <= by1:
@@ -12477,11 +12747,9 @@ def main():
                 # Asked in reverse painting order, so whatever is visually on
                 # top gets the click: the two dropdown lists paint above every
                 # card, then the Gripper card above the other cards.
-                if manual_move_panel.dropdown_hit(vx, vy):
-                    return
-                if trig_panel.dropdown_hit(vx, vy):
-                    return
-                if settings_panel.dropdown_hit(vx, vy):
+                if dispatch_video_dropdowns(
+                        vx, vy, settings_panel, trig_panel, manual_move_panel):
+                    save_settings(cam_settings, grid)
                     return
                 consumed = simple_gripper.press(vx, vy)
                 if consumed is None:
@@ -12508,13 +12776,13 @@ def main():
                     if consumed:
                         state.status_message = consumed
                     return
-                consumed = settings_panel.hit_test(vx, vy)
+                consumed = trig_panel.hit_test(vx, vy, cam_settings, grid,
+                                              state, runner, sim)
                 if consumed is not None:
                     if consumed:
                         state.status_message = consumed
                     return
-                consumed = trig_panel.hit_test(vx, vy, cam_settings, grid,
-                                              state, runner, sim)
+                consumed = settings_panel.hit_test(vx, vy)
                 if consumed is not None:
                     if consumed:
                         state.status_message = consumed
@@ -12868,8 +13136,9 @@ def main():
                                 sim.colour)
         draw_sim_overlay(frame, grid, sim)
         draw_guidance_banner(frame, state)
+        state.popup_close_rect = None
         if sim.active and sim.popup:
-            draw_sim_popup(frame, sim.popup)
+            state.popup_close_rect = draw_sim_popup(frame, sim.popup)
             state.exec_cancel_rect = None
         elif (state.exec_pending and not state.exec_cancelled
               and not sim.active and not runner.active):
@@ -12880,6 +13149,7 @@ def main():
             else:
                 state.exec_cancel_rect = draw_exec_countdown_popup(
                     frame, remaining)
+                state.popup_close_rect = countdown_cross_rect(frame, remaining)
         else:
             state.exec_cancel_rect = None
 
@@ -13390,6 +13660,22 @@ def draw_sim_overlay(frame, grid: Grid, sim):
     draw_text_centred(frame, label, rect, 0.6, colour, 2)
 
 
+def popup_cross(frame, rect):
+    x0, y0, x1, y1 = rect
+    button = Button("X", x1 - 42, y0 + 8, x1 - 10, y0 + 40,
+                    "popup_close", scale=0.46)
+    button.draw(frame, shadow=False)
+    return (button.x0, button.y0, button.x1, button.y1)
+
+
+def countdown_cross_rect(frame, seconds_left):
+    text = f"Executing physically in {max(0, math.ceil(seconds_left))}s..."
+    fh, fw = frame.shape[:2]
+    bw = max(text_size(text, 0.8, 2)[0] + 96, 320)
+    return ((fw + bw) // 2 - 42, (fh - 150) // 2 + 8,
+            (fw + bw) // 2 - 10, (fh - 150) // 2 + 40)
+
+
 def draw_sim_popup(frame, text: str):
     """A3-Terra's centred pop-up -- the unstacker stages, and the hand-off."""
     if not text:
@@ -13402,6 +13688,7 @@ def draw_sim_popup(frame, text: str):
     glass_card(frame, rect, 26, alpha=0.75)
     rounded_rect(frame, rect, 26, C_ACCENT, 2)
     draw_text_centred(frame, text, rect, 0.86, C_TEXT, 2)
+    return popup_cross(frame, rect)
 
 
 def draw_exec_countdown_popup(frame, seconds_left: float) -> tuple:
@@ -13427,6 +13714,7 @@ def draw_exec_countdown_popup(frame, seconds_left: float) -> tuple:
     cancel_btn = Button("CANCEL", x0 + (bw - btn_w) // 2, y1 - 60,
                         x0 + (bw - btn_w) // 2 + btn_w, y1 - 20, "cancel_exec")
     cancel_btn.draw(frame, shadow=False)
+    popup_cross(frame, rect)
     return (cancel_btn.x0, cancel_btn.y0, cancel_btn.x1, cancel_btn.y1)
 
 
@@ -13493,11 +13781,24 @@ def run_single_file_self_test():
         advance(AUTO_ACTION_GAP_S)
         clock.now += 0.7
         check(panel.note_rx(b"S"), "uppercase sensor S was not accepted")
+        descent = panel.auto_grip_down_duration
         advance(AUTO_GRIP_COMMAND_DELAY_S)
         advance(AUTO_PICKUP_HX_S)
         advance(AUTO_GRIP_COMMAND_DELAY_S)
         advance(AUTO_GRIP_COMMAND_DELAY_S)
-        advance(0.9)
+        # hu is now sent; check its planned raise time before fast-forwarding
+        # past it, since advancing in one jump only proves the halt landed
+        # SOMEWHERE inside the jump, not what duration it was aimed at.
+        hu_sent_at = clock.now
+        check(fake.commands[-1][1] == "hu", "hu was not sent on schedule")
+        # hu raises for exactly the hd-to-sensor descent -- not that plus
+        # the hx grip pulse, which moved the jaw, not the carriage, and
+        # left nothing for hu to undo.
+        planned_raise = panel.auto_grip_up_until - hu_sent_at
+        check(abs(planned_raise - descent) < 1e-6,
+              f"hu was scheduled to raise for {planned_raise:.3f}s, "
+              f"expected the {descent:.3f}s descent")
+        advance(descent + 0.05)
         advance(AUTO_ACTION_GAP_S)
         commands = [command for _, command in fake.commands]
         check(commands == ["hd", "hx", "s", "g90", "hu", "s"],
@@ -13578,7 +13879,9 @@ def run_single_file_self_test():
               panel.auto_grip_phase == panel.AUTO_GRIP_IDLE,
               "a failed pickup did not return to idle")
 
-        # -- release with no press to measure still lifts ----------------
+        # -- release is a flat hu for AUTO_RELEASE_DURATION_S -------------
+        # Not measured against any press -- the same duration whether a
+        # press ran first, ran short, or never ran at all.
         clock.now = 500.0
         fake.commands = []
         panel = GripperPanel()
@@ -13586,18 +13889,91 @@ def run_single_file_self_test():
         advance(AUTO_ACTION_GAP_S)
         check([command for _, command in fake.commands] == ["hu"],
               "release did not send hu")
-        advance(AUTO_RELEASE_FALLBACK_S / 2.0)
+        advance(AUTO_RELEASE_DURATION_S / 2.0)
         check([command for _, command in fake.commands] == ["hu"],
-              "release stopped before it had lifted anything")
-        advance(AUTO_RELEASE_FALLBACK_S)
+              "release stopped before its full duration")
+        advance(AUTO_RELEASE_DURATION_S)
         times = dict((command, at) for at, command in fake.commands)
         commands = [command for _, command in fake.commands]
         check(commands == ["hu", "s"], f"release did not run hu then s: {commands}")
         # Compared with a tolerance: the clock is a running float sum, so
-        # 500.0 + 1.0 + 0.4 lands a shade under 501.4 and an exact >= would
-        # fail on the arithmetic rather than on the behaviour.
-        check(times["s"] - times["hu"] > AUTO_RELEASE_FALLBACK_S - 1e-6,
-              "release sent hu and s in the same instant -- nothing moved")
+        # an exact >= would fail on the arithmetic rather than the behaviour.
+        check(times["s"] - times["hu"] > AUTO_RELEASE_DURATION_S - 1e-6,
+              f"release ran for less than {AUTO_RELEASE_DURATION_S:.1f}s")
+
+        # -- an automatic press runs down to the limit switch ------------
+        # The press used to be a blind 0.2s of hx from wherever the head
+        # happened to be: nowhere near the work on a tall object, driving
+        # into it on a short one. It now runs hx until the limit switch at
+        # the bottom, which the BOARD acts on -- it stops itself and says
+        # so with s/S -- and then backs off with hu for 0.2s so the tool
+        # rests just clear of the switch instead of standing on it.
+        clock.now = 600.0
+        fake.commands = []
+        panel = GripperPanel()
+        panel.start_automatic_action("press")
+        advance(AUTO_ACTION_GAP_S)
+        check([c for _, c in fake.commands] == ["hx"],
+              f"press did not start with hx: {fake.commands}")
+        # However long the descent takes, nothing on this side ends it.
+        for _ in range(40):
+            advance(0.1)
+        check([c for _, c in fake.commands] == ["hx"],
+              f"press cut its own descent short: {fake.commands}")
+        check(panel.offset_phase == "press_down",
+              "press left the descent without a limit switch")
+        descent = clock.now - panel.auto_press_started_at
+        check(panel.note_rx(b"s"), "the lowercase limit-switch s was refused")
+        check([c for _, c in fake.commands] == ["hx", "hu"],
+              f"the limit switch did not start the back-off: {fake.commands}")
+        advance(AUTO_PRESS_BACKOFF_S / 2.0)
+        check([c for _, c in fake.commands] == ["hx", "hu"],
+              "the back-off stopped before it had lifted anything")
+        advance(AUTO_PRESS_BACKOFF_S)
+        commands = [c for _, c in fake.commands]
+        check(commands == ["hx", "hu", "s"],
+              f"press did not run hx, then hu, then s: {commands}")
+        times = [at for at, _ in fake.commands]
+        check(times[2] - times[1] > AUTO_PRESS_BACKOFF_S - 1e-6,
+              "the back-off sent hu and s in the same instant")
+        advance(AUTO_ACTION_GAP_S)
+        check(panel.offset_phase == "idle" and not panel.offset_failed,
+              "press did not finish cleanly")
+        # What the press recorded is still the descent LESS the back-off
+        # that already gave part of it back -- kept on the card as a
+        # diagnostic, even though release no longer reads it.
+        expected_recorded = descent - AUTO_PRESS_BACKOFF_S
+        check(abs(panel.auto_press_duration - expected_recorded) < 1e-6,
+              f"press recorded {panel.auto_press_duration:.3f}s, "
+              f"expected {expected_recorded:.3f}s")
+        # A release after a press still runs the same flat duration -- not
+        # whatever the press happened to record.
+        fake.commands = []
+        panel.start_automatic_action("release")
+        advance(AUTO_ACTION_GAP_S)
+        check([c for _, c in fake.commands] == ["hu"], "release did not lift")
+        advance(AUTO_RELEASE_DURATION_S / 2.0)
+        check([c for _, c in fake.commands] == ["hu"],
+              "release stopped before its full duration")
+        advance(AUTO_RELEASE_DURATION_S)
+        commands = [c for _, c in fake.commands]
+        check(commands == ["hu", "s"], f"release did not end: {commands}")
+
+        # -- a press whose switch never reports stops itself -------------
+        clock.now = 650.0
+        fake.commands = []
+        panel = GripperPanel()
+        panel.start_automatic_action("press")
+        advance(AUTO_ACTION_GAP_S)
+        check(panel.offset_phase == "press_down", "press did not descend")
+        advance(AUTO_GRIP_DOWN_MAX_S)
+        commands = [c for _, c in fake.commands]
+        check(commands == ["hx", "s"],
+              f"a switchless press did not stop at hx: {commands}")
+        check("hu" not in commands,
+              "the press backed off from a switch it never reached")
+        check(panel.offset_failed, "a failed press reported success")
+        check(panel.offset_phase == "idle", "a failed press did not reset")
 
         # -- an automatic action always ends, even against a dead port ---
         # Every writing phase retries indefinitely on purpose, so that a
@@ -13683,6 +14059,8 @@ def run_single_file_self_test():
             advance(0.05)
             if panel.auto_grip_phase == panel.AUTO_GRIP_DOWN:
                 panel.note_rx(b"S")
+            if panel.offset_phase == "press_down":
+                panel.note_rx(b"S")
             if panel.offset_phase == "idle" and not panel.pending_auto_actions:
                 break
         check(panel.offset_phase == "idle" and not panel.pending_auto_actions,
@@ -13695,6 +14073,51 @@ def run_single_file_self_test():
                                          or chain[index - 1] not in moving)]
         check(not strays,
               f"stop sent with nothing to stop, at {strays} of {chain}")
+        # Spelled out, because the four actions only LOOK finished: an
+        # action that gives up sets offset_failed and the next queued one
+        # clears it again on the way in, so the chain's own commands are
+        # the only proof that each action actually ran to its end.
+        check(chain == ["hd", "hx", "s", "g90", "hu", "s",      # pickup
+                        "g0",                                    # keep
+                        "hx", "hu", "s",                         # press
+                        "hu", "s"],                              # release
+              f"the chained actions did not all run: {chain}")
+
+        # -- where the gripper closes on an object ------------------------
+        # Every grip is the object's TOP-RIGHT cell: the rightmost column it
+        # occupies, then the highest cell in that column (row 1 is the top).
+        box = {"name": "box", "center": "D4",
+               "touches": "C3,D3,E3,C4,D4,E4,C5,D5,E5"}
+        check(top_right_grip_cell(box) == "E3",
+              f"square did not grip top-right: {top_right_grip_cell(box)}")
+        # An L whose bounding-box corner is bare board: the grip must stay on
+        # a cell the object actually occupies.
+        ell = {"name": "ell", "center": "C5", "touches": "C3,C4,C5,D5,E5"}
+        check(top_right_grip_cell(ell) == "E5",
+              f"L-shape grip left the object: {top_right_grip_cell(ell)}")
+        # Ties on the rightmost column resolve upward, never to mid-height.
+        tall = {"name": "tall", "center": "B6",
+                "touches": "B2,B6,B10"}
+        check(top_right_grip_cell(tall) == "B2",
+              f"tie did not resolve to the top: {top_right_grip_cell(tall)}")
+        # No cells at all: fall back to the centre rather than inventing one.
+        check(top_right_grip_cell({"name": "bare", "center": "H8"}) == "H8",
+              "a cell-less object did not fall back to its centre")
+
+        # The resolver overrides whatever the model returned. Even a model
+        # answer naming a real part on a real cell is moved to the corner.
+        grips = [{"object": "box", "part": "body", "cell": "D4",
+                  "approach": "top", "why": "flat lid"}]
+        resolved = resolve_grip_cells(grips, [box])
+        check(len(resolved) == 1 and resolved[0]["cell"] == "E3",
+              f"the model's cell was not moved to the corner: {resolved}")
+        check(resolved[0]["source"] == "camera-top-right",
+              f"wrong grip source: {resolved}")
+        # An object the model said nothing about still gets a corner grip.
+        silent = resolve_grip_cells([], [box])
+        check(len(silent) == 1 and silent[0]["cell"] == "E3"
+              and silent[0]["part"] == "top-right corner",
+              f"a skipped object did not get a corner grip: {silent}")
 
         # -- the Simple Gripper card ------------------------------------
         # A plan's gripper step opens THIS card, not the full workbench,
@@ -13751,16 +14174,17 @@ def run_single_file_self_test():
         check(not card.handed_off,
               "adjusting the height ran the action")
 
-        # DONE sends the first command before returning, at the same time.
+        # DONE waits the usual one-second gap before its first command,
+        # the same as every later command in the action -- it used to fire
+        # hd in the same call, the one gap-free step in an otherwise
+        # all-one-second sequence.
         fake.commands = []
         card.confirm()
         check(card.handed_off and card.running() and card.busy(),
               "DONE did not start the action and keep the plan waiting")
-        check(fake.commands == [(clock.now, "hd")],
-              f"DONE did not start pickup immediately: {fake.commands}")
+        check(not fake.commands, f"DONE sent a command before its gap: {fake.commands}")
         card.confirm()
-        check(fake.commands == [(clock.now, "hd")]
-              and not gp.pending_auto_actions,
+        check(not fake.commands and not gp.pending_auto_actions,
               "repeated DONE duplicated or queued the action")
         for _ in range(400):
             clock.now += 1 / 30.0
@@ -13779,7 +14203,7 @@ def run_single_file_self_test():
         clock.now = 1100.0
         fake.commands = []
         gp, card = wire()
-        card.open_for("keep")
+        card.open_for("pickup")
         card.cancel()
         clock.now += 30.0
         card.tick()
@@ -13787,10 +14211,14 @@ def run_single_file_self_test():
               "a cancelled card ran the action anyway")
         check(card.busy(), "a cancelled card stopped holding the plan")
         check(not fake.commands, f"a cancelled card sent {fake.commands}")
-        # DONE after cancel still starts immediately.
+        # DONE after cancel still starts the action, after its usual gap.
         card.confirm()
-        check(fake.commands == [(clock.now, "g0")],
-              f"DONE after cancel did not run keep immediately: {fake.commands}")
+        check(not fake.commands,
+              f"DONE after cancel skipped its gap: {fake.commands}")
+        clock.now += AUTO_ACTION_GAP_S
+        gp.tick()
+        check(fake.commands == [(clock.now, "hd")],
+              f"DONE after cancel did not run pickup: {fake.commands}")
 
         # STOP is live while waiting for DONE and cannot start the action.
         clock.now = 1200.0
@@ -13810,6 +14238,9 @@ def run_single_file_self_test():
         gp, card = wire()
         card.open_for("pickup")
         card.confirm()
+        check(card.running(), "the card lost track of the action during its gap")
+        clock.now += AUTO_ACTION_GAP_S
+        gp.tick()
         check([c for _, c in fake.commands] == ["hd"],
               f"the descent did not start: {fake.commands}")
         clock.now += 0.5
@@ -13832,10 +14263,9 @@ def run_single_file_self_test():
         card.tick()
         check(not card.visible, "a confirmed manual card did not close")
 
-        # Every automatic action starts on the DONE click. A jog or height
+        # An automatic pickup starts on the DONE click. A jog or height
         # adjustment must stop first and must not stop the new action later.
-        for action, first in (("pickup", "hd"), ("keep", "g0"),
-                              ("press", "hx"), ("release", "hu")):
+        for action, first in (("pickup", "hd"),):
             for adjustment in (None, "jog", "height"):
                 clock.now += 10.0
                 fake.commands = []
@@ -13848,18 +14278,63 @@ def run_single_file_self_test():
                 before_done = list(fake.commands)
                 card.confirm()
                 expected = before_done + (
-                    [(clock.now, "s")] if adjustment else []) + [(clock.now, first)]
+                    [(clock.now, "s")] if adjustment else [])
                 check(fake.commands == expected,
-                      f"{action}/{adjustment} did not start on DONE: {fake.commands}")
+                      f"{action}/{adjustment} sent a command before its gap: {fake.commands}")
                 card.confirm()
                 check(fake.commands == expected and not gp.pending_auto_actions,
                       f"{action}/{adjustment} duplicated DONE")
+                # The old adjustment's pulse timer must not fire into the
+                # action once it starts.
                 clock.now += SIMPLE_JOG_PULSE_S
                 card.tick()
                 check(fake.commands == expected,
                       f"old adjustment timer stopped {action}: {fake.commands}")
+                clock.now += AUTO_ACTION_GAP_S
+                gp.tick()
+                expected = expected + [(clock.now, first)]
+                check(fake.commands == expected,
+                      f"{action}/{adjustment} did not start on DONE: {fake.commands}")
 
-        # A failed initial write stays pending and retries on the next tick.
+        # An automatic keep, press or release never shows the card: it hands
+        # off the moment the plan reaches it, and still holds the plan until
+        # the action it started has finished.
+        for action, first in (("keep", "g0"), ("press", "hx"),
+                              ("release", "hu")):
+            clock.now += 10.0
+            fake.commands = []
+            gp, card = wire()
+            card.open_for(action)
+            check(not card.visible, f"automatic {action} opened the card")
+            check(card.handed_off, f"automatic {action} did not hand off")
+            check(not fake.commands,
+                  f"automatic {action} sent a command before its gap: {fake.commands}")
+            check(card.busy(), f"automatic {action} did not hold the plan")
+            clock.now += AUTO_ACTION_GAP_S
+            gp.tick()
+            check(fake.commands == [(clock.now, first)],
+                  f"automatic {action} did not run on its own: {fake.commands}")
+            for _ in range(400):
+                clock.now += 1 / 30.0
+                if gp.offset_phase == "press_down":
+                    gp.note_rx(b"S")
+                gp.tick()
+                card.tick()
+                if not card.busy():
+                    break
+            check(not card.busy(),
+                  f"automatic {action} held the plan after it finished")
+            check(not card.visible, f"automatic {action} left the card up")
+
+        # A manual step is unaffected: it still opens the card and waits.
+        clock.now += 10.0
+        fake.commands = []
+        gp, card = wire()
+        card.open_for("keep", automatic=False)
+        check(card.visible and not card.handed_off,
+              "a manual keep did not open the card and wait")
+
+        # A failed initial write stays pending and retries after its gap.
         for action, first in (("pickup", "hd"), ("keep", "g0"),
                               ("press", "hx"), ("release", "hu")):
             clock.now += 10.0
@@ -13870,9 +14345,13 @@ def run_single_file_self_test():
             card.confirm()
             check(card.busy() and not fake.commands,
                   f"failed {action} write lost the action")
-            gp.tick()
+            clock.now += AUTO_ACTION_GAP_S
+            for _ in range(2):
+                if fake.commands:
+                    break
+                gp.tick()
             check(fake.commands == [(clock.now, first)],
-                  f"{action} did not retry immediately: {fake.commands}")
+                  f"{action} did not retry: {fake.commands}")
             card.stop()
 
         # The card draws, and every button it draws is one press() handles.
@@ -13894,8 +14373,12 @@ def run_single_file_self_test():
         done = next(b for b in card.buttons if b.kind == "simple_done")
         fake.commands = []
         card.press((done.x0 + done.x1) // 2, (done.y0 + done.y1) // 2)
+        check(not fake.commands,
+              f"the DONE click skipped its gap: {fake.commands}")
+        clock.now += AUTO_ACTION_GAP_S
+        gp.tick()
         check(fake.commands == [(clock.now, "hd")],
-              f"the DONE click did not start immediately: {fake.commands}")
+              f"the DONE click did not start after its gap: {fake.commands}")
         card.stop()
         card.open_for("pickup")
         for b in card.buttons:
@@ -13926,6 +14409,123 @@ def run_single_file_self_test():
               "embedded error history missing")
     finally:
         (ARDUINO, time.monotonic) = old
+
+    # -- restrict_to_reachable: unreachable cells are removed, not flagged --
+    global GRIPPER_OFFSET_UP_DOWN, GRIPPER_OFFSET_RIGHT_LEFT
+    old_offset = (GRIPPER_OFFSET_UP_DOWN, GRIPPER_OFFSET_RIGHT_LEFT)
+    try:
+        GRIPPER_OFFSET_UP_DOWN, GRIPPER_OFFSET_RIGHT_LEFT = -5, 0
+        # With this offset, unreachable_rows() | fixed_unreachable_rows()
+        # excludes rows 16-20 (0-indexed 15-19) on the default 20-row
+        # board; every column stays reachable.
+        objs = [
+            # Straddles the line: rows 14-18, only 14-15 survive.
+            {"name": "shelf", "center": "A17",
+             "touches": "A14,A15,A16,A17,A18"},
+            # Entirely inside the excluded band -- dropped outright.
+            {"name": "ghost", "center": "A20", "touches": "A19,A20"},
+            # Entirely reachable -- untouched.
+            {"name": "mug", "center": "B1", "touches": "B1,B2"},
+        ]
+        kept = restrict_to_reachable(objs)
+        names = [o["name"] for o in kept]
+        check(names == ["shelf", "mug"],
+              f"restrict_to_reachable kept the wrong objects: {names}")
+        shelf = kept[0]
+        check(shelf["touches"] == "A14,A15",
+              f"unreachable TOUCHES cells were not dropped: {shelf['touches']}")
+        check(shelf["center"] == "A15",
+              f"an unreachable CENTER was not recentred onto a kept cell: "
+              f"{shelf['center']}")
+        mug = kept[1]
+        check(mug["touches"] == "B1,B2" and mug["center"] == "B1",
+              f"a fully reachable object was altered: {mug}")
+    finally:
+        GRIPPER_OFFSET_UP_DOWN, GRIPPER_OFFSET_RIGHT_LEFT = old_offset
+
+    # Both axes compose, persist independently, and stay within the UI limits.
+    global persist_embedded_state
+    global GRIPPER_VERTICAL_DIRECTION, GRIPPER_HORIZONTAL_DIRECTION
+    old_directions = (GRIPPER_VERTICAL_DIRECTION, GRIPPER_HORIZONTAL_DIRECTION)
+    old_persist = persist_embedded_state
+    old_settings = copy.deepcopy(S1_EMBEDDED_STATE.get("settings"))
+    old_offset = (GRIPPER_OFFSET_UP_DOWN, GRIPPER_OFFSET_RIGHT_LEFT)
+    saved = []
+    persist_embedded_state = lambda: saved.append(True)  # No source writes in tests.
+    try:
+        load_gripper_offsets({})
+        check(gripper_offset() == (0, -7), "offset defaults changed")
+        for vertical in range(-10, 11):
+            for horizontal in range(-10, 11):
+                load_gripper_offsets({"gripper_up_down": vertical,
+                                      "gripper_right_left": horizontal})
+                check(gripper_offset() == (horizontal, vertical), "axes not combined")
+                stop = tag_cell_for(9, 9)
+                check(stop == (9 - horizontal, 9 - vertical), "wrong tag stop")
+                check(gripper_cell(*stop) == (9, 9), "offset inverse failed")
+        for direction, expected in (("up", (0, -4)), ("down", (0, 4)),
+                                    ("left", (-4, 0)), ("right", (4, 0))):
+            load_gripper_offsets({"gripper_cells": 4, "gripper_dir": direction})
+            check(gripper_offset() == expected, "legacy migration failed")
+        for width, height in ((400, 480), (640, 480), (1280, 720)):
+            load_gripper_offsets({})
+            canvas = np.zeros((height, width, 3), dtype=np.uint8)
+            panel = TrigPanel()
+            panel.visible = True
+            panel._anim = 1.0
+            panel.draw(canvas)
+            grid = Grid(width, height)
+            manual = ManualMovePanel()
+            manual.visible = True
+            manual.draw(canvas)
+            settings = SettingsPanel(CameraSettings(), grid, lambda: None)
+            def click(x, y):
+                consumed = dispatch_video_dropdowns(x, y, settings, panel, manual)
+                if consumed:
+                    save_settings(CameraSettings(), grid)
+                return consumed
+            check(panel.offset_values() == (7, "up", 0, "right"), "four defaults wrong")
+            for index, dd in enumerate(panel.offset_dropdowns):
+                for value, _ in dd.items:
+                    before = panel.offset_values()
+                    check(click((dd.x0+dd.x1)//2, (dd.y0+dd.y1)//2) and dd.open,
+                          "dropdown did not open")
+                    manual.letter_dd.open = True
+                    manual.draw_lists(canvas)
+                    panel.draw_lists(canvas)
+                    r = next(r for r in dd._item_rects if r[4] == value)
+                    check(0 <= r[0] < r[2] < width and 0 <= r[1] < r[3] < height,
+                          "dropdown choice clipped")
+                    check(click((r[0]+r[2])//2, (r[1]+r[3])//2), "selection missed")
+                    expected = list(before)
+                    expected[index] = value
+                    check(panel.offset_values() == tuple(expected) and not dd.open,
+                          "selection changed another field")
+                    load_gripper_offsets(S1_EMBEDDED_STATE["settings"]["trig_offset"])
+                    check(panel.offset_values() == tuple(expected), "four fields did not persist")
+                    manual.letter_dd.open = False
+            # Zero must retain its direction when a number is selected later.
+            for index, value in ((0, 0), (1, "down"), (0, 3),
+                                 (2, 0), (3, "left"), (2, 2), (2, 1)):
+                dd = panel.offset_dropdowns[index]
+                panel.hit_test((dd.x0+dd.x1)//2, (dd.y0+dd.y1)//2,
+                               CameraSettings(), grid, None)
+                panel.draw(canvas)
+                r = next(r for r in dd._item_rects if r[4] == value)
+                panel.hit_test((r[0]+r[2])//2, (r[1]+r[3])//2,
+                               CameraSettings(), grid, None)
+                load_gripper_offsets(S1_EMBEDDED_STATE["settings"]["trig_offset"])
+                check(panel.offset_values()[index] == value, "direct selection failed")
+            check(gripper_offset() == (-1, 3), "number and direction did not compose")
+            panel.vertical_dd.open = True
+            panel.toggle()
+            check(not any(dd.open for dd in panel.offset_dropdowns), "hidden popup stayed open")
+        check(len(saved) >= 156, "dropdown choices were not saved")
+    finally:
+        persist_embedded_state = old_persist
+        GRIPPER_VERTICAL_DIRECTION, GRIPPER_HORIZONTAL_DIRECTION = old_directions
+        S1_EMBEDDED_STATE["settings"] = old_settings
+        GRIPPER_OFFSET_UP_DOWN, GRIPPER_OFFSET_RIGHT_LEFT = old_offset
 
     folder = os.path.dirname(SCRIPT_PATH)
     extras = sorted(name for name in os.listdir(folder)

@@ -58,43 +58,110 @@ DEBUG_INPUT = bool(os.environ.get("S1_DEBUG_INPUT"))
 # and error-rebound history live in this encoded JSON payload and are updated
 # in place when the user saves. No sidecar folder or cache is required.
 SCRIPT_PATH = os.path.abspath(__file__)
-S1_EMBEDDED_STATE_B64 = "eyJzZXR0aW5ncyI6eyJjYW1lcmEiOnsiem9vbSI6MS4wLCJicmlnaHRuZXNzIjowLCJjb250cmFzdCI6MS4wLCJzYXR1cmF0aW9uIjoxLjAsInNoYXJwbmVzcyI6MC4wLCJyb3RhdGlvbiI6MCwibWlycm9yIjpmYWxzZX0sImdyaWQiOnsibl9jb2xzIjoyMCwibl9yb3dzIjoyMCwiYm94IjpbMzIxLjI5ODA4Mzc0NzMzODUsMzEuNDEwMDAwMDAwMDAwMDY0LDEzMzcuMDc2MDI1NTUwMDM1NiwxMDQ3LjBdLCJzcXVhcmVfY2VsbHMiOnRydWUsImZyYW1lX3NpemUiOlsxODYzLDEwNDddLCJib3hfcmVsIjpbMC4xNzI0NjI3Mzk1MzE1ODI2NywwLjAzMDAwMDAwMDAwMDAwMDA2LDAuNzE3NzAwNDk2ODA2MjQ1NiwxLjBdfSwidHJpZ19vZmZzZXQiOnsiY2FtZXJhX2hlaWdodF9pbiI6MzUuMCwidGFnX2hlaWdodF9pbiI6NS41LCJib2FyZF9oZWlnaHRfaW4iOjAuMCwicGl2b3RfeCI6MC4wLCJwaXZvdF95IjowLjAsImdyaXBwZXJfdXBfZG93biI6LTcsImdyaXBwZXJfcmlnaHRfbGVmdCI6LTEsImdyaXBwZXJfdmVydGljYWxfZGlyZWN0aW9uIjoidXAiLCJncmlwcGVyX2hvcml6b250YWxfZGlyZWN0aW9uIjoibGVmdCJ9LCJ2aXNpb24iOnsiYm9hcmRfd2lkdGhfaW4iOjI0LjB9LCJiZWhhdmlvdXIiOnsibWFudWFsX2dyaXBwZXJfc3RlcHMiOmZhbHNlLCJncmlwcGVyX2FpIjp0cnVlfX0sImN1c3RvbV90cmFpbmluZyI6WyJVc2Ugb25seSB0aGUgYmx1ZSBub3RlcGFkIGZvciB3aXBpbmcuIiwiS2VlcCB0aGUgYmxhY2tzIGFuZCB3aGl0ZXMgdG9nZXRoZXIsIGJ1dCBmYXIgYXdheSBmcm9tIGVhY2ggb3RoZXIsIHRvIGdldCBzZXRzLiJdLCJlcnJvcl9yZWJvdW5kcyI6W3sidGFzayI6InN3YXAgYWxsIHRoZSBvYmplY3RzIG9uIHRoZSBib2FyZCIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJPYmplY3RzIGRpZCBub3Qgc3dhcCBwb3NpdGlvbnM7IHNjcmV3ZHJpdmVyIHJlbWFpbnMgYXQgSDE0IGFuZCB1dGlsaXR5IGtuaWZlIHJlbWFpbnMgYXQgUDExLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDgtMzFUMjA6NDU6MDYifSx7InRhc2siOiJ3YXRlciBteSBwbGFudHMiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiTm8gdmlzaWJsZSBldmlkZW5jZSB0aGUgcGxhbnQgd2FzIHdhdGVyZWQ7IGN1cCBhbmQgcGxhbnQgcmVtYWluIGVzc2VudGlhbGx5IHVuY2hhbmdlZC4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTAxVDE1OjQ2OjEzIn0seyJ0YXNrIjoid2F0ZXIgbXkgcGxhbnRzIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6Ik5vIHZpc2libGUgZXZpZGVuY2UgdGhlIHBsYW50IHdhcyB3YXRlcmVkOyBwbGFudCBhbmQgbXVnIG9ubHkgc2hpZnRlZCBzbGlnaHRseS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTAyVDE0OjMxOjUwIn0seyJ0YXNrIjoiS2VlcCB0aGUgYmxhY2sgc3BvdCBpbiB0aGUgYm9keS4iLCJ2ZXJkaWN0IjoiZG9uZSBjb3JyZWN0bHkiLCJyZWFzb24iOiJibGFjayBzb2NrIHdhcyBtb3ZlZCBpbnRvIHRoZSBib3dsLCB3aXRoIHRoZSBib3dsIHN0aWxsIGNvbnRhaW5pbmcgaXQgaW4gdGhlIGZpbmFsIGltYWdlIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMTo1MToyMiJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNwb3QgaW4gdGhlIGJvZHkuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6ImJsYWNrIHNvY2sgd2FzIG1vdmVkIG5lYXIgSzQgaW5zdGVhZCBvZiBiZWluZyBrZXB0IGluIHRoZSBib3dsL2JvZHkgYXQgUTMiLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDExOjUxOjM2In0seyJ0YXNrIjoic29ydCB0aGUgc29ja2VzIGFuZCBrZWVwIHRoZSB3aGl0ZXMgaW4gdGUgYm93bCIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJXaGl0ZSBzb2NrcyBhcmUgbm90IHZpc2libGUgaW4gdGhlIGJvd2wgaW4gdGhlIGZpbmFsIGltYWdlOyBvbmx5IHRoZSBibGFjayBzb2NrcyByZW1haW4gb24gdGhlIGJvYXJkLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTI6MDM6MDAifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzb2NrcyBzdGFja2VkIHRvZ2V0aGVyLiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJPbmx5IG9uZSBibGFjayBzb2NrIGlzIHZpc2libGUgaW4gdGhlIGZpbmFsIGltYWdlOyB0aGUgdHdvIHNvY2tzIGFyZSBub3QgY29uZmlybWVkIHN0YWNrZWQgdG9nZXRoZXIuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMjowNToxMyJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNvY2tzIHN0YWNrZWQgdG9nZXRoZXIuIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5IiwicmVhc29uIjoiVGhlIHR3byBibGFjayBzb2NrcyBhcmUgc3RhY2tlZCB0b2dldGhlciBpbiB0aGUgZmluYWwgaW1hZ2UuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMjowNToyMyJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNvY2sgaW4gdGhlIGJvd2wuIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5IiwicmVhc29uIjoiYmxhY2sgc29jayBpcyBwbGFjZWQgaW4gdGhlIGdyZWVuIGJvd2wgaW4gdGhlIGZpbmFsIGltYWdlLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTM6MDE6MzQifSx7InRhc2siOiJTb3J0IHRoZSBibGFjayBhbmQgd2hpdGUgc29ja3MsIGFuZCBwdXQgYWxsIHRoZSB3aGl0ZXMgaW4gdGhlIGJvd2wuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6IldoaXRlIHNvY2sgaXMgaW4gdGhlIGJvd2wsIGJ1dCBvbmUgd2hpdGUgc29jayByZW1haW5zIG91dHNpZGUgdGhlIGJvd2wuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxNjoyNzo0OCJ9LHsidGFzayI6IlNvcnQgbXkgY2xvdGhlcyBvciBzb2NrcyBpbnRvIGJsYWNrIGFuZCB3aGl0ZS4gS2VlcCBhbGwgdGhlIGJsYWNrcyBpbiB0aGUgYm93bC4iLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiT25seSBvbmUgYmxhY2sgc29jayBpcyBpbiB0aGUgYm93bDsgdGhlIG90aGVyIGJsYWNrIHNvY2sgaXMgbm90IHZlcmlmaWVkIGluIHRoZSBib3dsLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTY6Mzk6NDIifSx7InRhc2siOiJLZWVwIHRoZSBsZWF2ZXMgaW4gdGhlIGJvd2wuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6IkxlYXZlcyBhcmUgbm90IGZ1bGx5IGluIHRoZSBib3dsOyBwYXJ0IG9mIHRoZSBzcHJpZyByZW1haW5zIG91dHNpZGUgb24gdGhlIHJpbS90YWJsZS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDE2OjQ3OjUyIn1dfQ=="  # S1_EMBEDDED_STATE
+S1_EMBEDDED_STATE_B64 = "eyJzZXR0aW5ncyI6eyJjYW1lcmEiOnsiem9vbSI6MS4wLCJicmlnaHRuZXNzIjowLCJjb250cmFzdCI6MS4wLCJzYXR1cmF0aW9uIjoxLjAsInNoYXJwbmVzcyI6MC4wLCJyb3RhdGlvbiI6MCwibWlycm9yIjpmYWxzZX0sImdyaWQiOnsibl9jb2xzIjoyMCwibl9yb3dzIjoyMCwiYm94IjpbMzIwLjI2MzMwNzMxMDE0OSwzMS4zMjAwMDAwMDAwMDAwNjQsMTMzMi43Njk4MjI1NjkxOTgxLDEwNDQuMF0sInNxdWFyZV9jZWxscyI6dHJ1ZSwiZnJhbWVfc2l6ZSI6WzE4NTcsMTA0NF0sImJveF9yZWwiOlswLjE3MjQ2MjczOTUzMTU4MjY3LDAuMDMwMDAwMDAwMDAwMDAwMDYsMC43MTc3MDA0OTY4MDYyNDU2LDEuMF19LCJ0cmlnX29mZnNldCI6eyJjYW1lcmFfaGVpZ2h0X2luIjozNS4wLCJ0YWdfaGVpZ2h0X2luIjo1LjUsImJvYXJkX2hlaWdodF9pbiI6MC4wLCJwaXZvdF94IjowLjAsInBpdm90X3kiOjAuMCwiZ3JpcHBlcl91cF9kb3duIjotNywiZ3JpcHBlcl9yaWdodF9sZWZ0IjowLCJncmlwcGVyX3ZlcnRpY2FsX2RpcmVjdGlvbiI6InVwIiwiZ3JpcHBlcl9ob3Jpem9udGFsX2RpcmVjdGlvbiI6ImxlZnQiLCJudWRnZV9zIjowLjIsIm51ZGdlX2RpcmVjdGlvbiI6InJpZ2h0IiwibnVkZ2VfYWN0aW9ucyI6eyJwaWNrdXAiOnRydWUsImtlZXAiOmZhbHNlLCJwcmVzcyI6ZmFsc2UsInJlbGVhc2UiOnRydWV9fSwidmlzaW9uIjp7ImJvYXJkX3dpZHRoX2luIjoyNC4wfSwiYmVoYXZpb3VyIjp7Im1hbnVhbF9ncmlwcGVyX3N0ZXBzIjpmYWxzZSwiZ3JpcHBlcl9haSI6dHJ1ZX19LCJjdXN0b21fdHJhaW5pbmciOlsiVXNlIG9ubHkgdGhlIGJsdWUgbm90ZXBhZCBmb3Igd2lwaW5nLiIsIktlZXAgdGhlIGJsYWNrcyBhbmQgd2hpdGVzIHRvZ2V0aGVyLCBidXQgZmFyIGF3YXkgZnJvbSBlYWNoIG90aGVyLCB0byBnZXQgc2V0cy4iXSwiZXJyb3JfcmVib3VuZHMiOlt7InRhc2siOiJzd2FwIGFsbCB0aGUgb2JqZWN0cyBvbiB0aGUgYm9hcmQiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiT2JqZWN0cyBkaWQgbm90IHN3YXAgcG9zaXRpb25zOyBzY3Jld2RyaXZlciByZW1haW5zIGF0IEgxNCBhbmQgdXRpbGl0eSBrbmlmZSByZW1haW5zIGF0IFAxMS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA4LTMxVDIwOjQ1OjA2In0seyJ0YXNrIjoid2F0ZXIgbXkgcGxhbnRzIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6Ik5vIHZpc2libGUgZXZpZGVuY2UgdGhlIHBsYW50IHdhcyB3YXRlcmVkOyBjdXAgYW5kIHBsYW50IHJlbWFpbiBlc3NlbnRpYWxseSB1bmNoYW5nZWQuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0wMVQxNTo0NjoxMyJ9LHsidGFzayI6IndhdGVyIG15IHBsYW50cyIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJObyB2aXNpYmxlIGV2aWRlbmNlIHRoZSBwbGFudCB3YXMgd2F0ZXJlZDsgcGxhbnQgYW5kIG11ZyBvbmx5IHNoaWZ0ZWQgc2xpZ2h0bHkuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0wMlQxNDozMTo1MCJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNwb3QgaW4gdGhlIGJvZHkuIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5IiwicmVhc29uIjoiYmxhY2sgc29jayB3YXMgbW92ZWQgaW50byB0aGUgYm93bCwgd2l0aCB0aGUgYm93bCBzdGlsbCBjb250YWluaW5nIGl0IGluIHRoZSBmaW5hbCBpbWFnZSIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTE6NTE6MjIifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzcG90IGluIHRoZSBib2R5LiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJibGFjayBzb2NrIHdhcyBtb3ZlZCBuZWFyIEs0IGluc3RlYWQgb2YgYmVpbmcga2VwdCBpbiB0aGUgYm93bC9ib2R5IGF0IFEzIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMTo1MTozNiJ9LHsidGFzayI6InNvcnQgdGhlIHNvY2tlcyBhbmQga2VlcCB0aGUgd2hpdGVzIGluIHRlIGJvd2wiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiV2hpdGUgc29ja3MgYXJlIG5vdCB2aXNpYmxlIGluIHRoZSBib3dsIGluIHRoZSBmaW5hbCBpbWFnZTsgb25seSB0aGUgYmxhY2sgc29ja3MgcmVtYWluIG9uIHRoZSBib2FyZC4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDEyOjAzOjAwIn0seyJ0YXNrIjoiS2VlcCB0aGUgYmxhY2sgc29ja3Mgc3RhY2tlZCB0b2dldGhlci4iLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiT25seSBvbmUgYmxhY2sgc29jayBpcyB2aXNpYmxlIGluIHRoZSBmaW5hbCBpbWFnZTsgdGhlIHR3byBzb2NrcyBhcmUgbm90IGNvbmZpcm1lZCBzdGFja2VkIHRvZ2V0aGVyLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTI6MDU6MTMifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzb2NrcyBzdGFja2VkIHRvZ2V0aGVyLiIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsInJlYXNvbiI6IlRoZSB0d28gYmxhY2sgc29ja3MgYXJlIHN0YWNrZWQgdG9nZXRoZXIgaW4gdGhlIGZpbmFsIGltYWdlLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTI6MDU6MjMifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzb2NrIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsInJlYXNvbiI6ImJsYWNrIHNvY2sgaXMgcGxhY2VkIGluIHRoZSBncmVlbiBib3dsIGluIHRoZSBmaW5hbCBpbWFnZS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDEzOjAxOjM0In0seyJ0YXNrIjoiU29ydCB0aGUgYmxhY2sgYW5kIHdoaXRlIHNvY2tzLCBhbmQgcHV0IGFsbCB0aGUgd2hpdGVzIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJXaGl0ZSBzb2NrIGlzIGluIHRoZSBib3dsLCBidXQgb25lIHdoaXRlIHNvY2sgcmVtYWlucyBvdXRzaWRlIHRoZSBib3dsLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTY6Mjc6NDgifSx7InRhc2siOiJTb3J0IG15IGNsb3RoZXMgb3Igc29ja3MgaW50byBibGFjayBhbmQgd2hpdGUuIEtlZXAgYWxsIHRoZSBibGFja3MgaW4gdGhlIGJvd2wuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6Ik9ubHkgb25lIGJsYWNrIHNvY2sgaXMgaW4gdGhlIGJvd2w7IHRoZSBvdGhlciBibGFjayBzb2NrIGlzIG5vdCB2ZXJpZmllZCBpbiB0aGUgYm93bC4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDE2OjM5OjQyIn0seyJ0YXNrIjoiS2VlcCB0aGUgbGVhdmVzIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJMZWF2ZXMgYXJlIG5vdCBmdWxseSBpbiB0aGUgYm93bDsgcGFydCBvZiB0aGUgc3ByaWcgcmVtYWlucyBvdXRzaWRlIG9uIHRoZSByaW0vdGFibGUuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxNjo0Nzo1MiJ9XX0="  # S1_EMBEDDED_STATE
 try:
     S1_EMBEDDED_STATE = json.loads(
         base64.b64decode(S1_EMBEDDED_STATE_B64).decode("utf-8"))
 except (ValueError, UnicodeDecodeError):
     S1_EMBEDDED_STATE = {
         "settings": {}, "custom_training": [], "error_rebounds": []}
-_EMBEDDED_STATE_LOCK = threading.RLock()
+_EMBEDDED_STATE_PATTERN = re.compile(
+    r'^S1_EMBEDDED_STATE_B64 = "[A-Za-z0-9+/=]*"'
+    r'  # S1_EMBEDDED_STATE$', re.MULTILINE)
+# Guards both the pending snapshot below and the file write itself, so two
+# saves landing close together can never interleave their writes to S1.py.
+_PERSIST_COND = threading.Condition()
+_PERSIST_PENDING = None
+_PERSIST_THREAD = None
+# Set once the writer has drained _PERSIST_PENDING and is idle, so a clean
+# shutdown can wait for a save still in flight instead of racing it.
+_PERSIST_IDLE = threading.Event()
+_PERSIST_IDLE.set()
 
 
-def persist_embedded_state() -> bool:
-    """Persist mutable application state by replacing one line in S1.py."""
-    encoded = base64.b64encode(json.dumps(
-        S1_EMBEDDED_STATE, separators=(",", ":"), ensure_ascii=False
-    ).encode("utf-8")).decode("ascii")
+def _write_embedded_state(encoded: str) -> bool:
+    """The slow part: read this ~600KB file, rewrite one line, fsync.
+
+    Runs only on the persist worker thread -- see persist_embedded_state.
+    """
     replacement = (
         f'S1_EMBEDDED_STATE_B64 = "{encoded}"  # S1_EMBEDDED_STATE')
-    pattern = re.compile(
-        r'^S1_EMBEDDED_STATE_B64 = "[A-Za-z0-9+/=]*"'
-        r'  # S1_EMBEDDED_STATE$', re.MULTILINE)
     try:
-        with _EMBEDDED_STATE_LOCK:
-            with open(SCRIPT_PATH, "r+", encoding="utf-8") as fh:
-                source = fh.read()
-                updated, count = pattern.subn(replacement, source, count=1)
-                if count != 1:
-                    raise OSError("embedded state marker is missing")
-                fh.seek(0)
-                fh.write(updated)
-                fh.truncate()
-                fh.flush()
-                os.fsync(fh.fileno())
+        with open(SCRIPT_PATH, "r+", encoding="utf-8") as fh:
+            source = fh.read()
+            updated, count = _EMBEDDED_STATE_PATTERN.subn(
+                replacement, source, count=1)
+            if count != 1:
+                raise OSError("embedded state marker is missing")
+            fh.seek(0)
+            fh.write(updated)
+            fh.truncate()
+            fh.flush()
+            os.fsync(fh.fileno())
         print(f"[state] saved inside {SCRIPT_PATH}")
         return True
     except OSError as e:
         print(f"[state] could not update {SCRIPT_PATH}: {e}")
         return False
+
+
+def _persist_worker():
+    """Write whatever the newest queued snapshot is, forever.
+
+    A snapshot queued while a write is already running replaces the one
+    waiting rather than queuing behind it -- only the final state is worth
+    putting on disk, and catching up on every intermediate one a fast
+    sequence of clicks produced would only fall further behind.
+    """
+    global _PERSIST_PENDING
+    while True:
+        with _PERSIST_COND:
+            while _PERSIST_PENDING is None:
+                _PERSIST_COND.wait()
+            encoded = _PERSIST_PENDING
+            _PERSIST_PENDING = None
+            _PERSIST_IDLE.clear()
+        _write_embedded_state(encoded)
+        with _PERSIST_COND:
+            if _PERSIST_PENDING is None:
+                _PERSIST_IDLE.set()
+
+
+def persist_embedded_state() -> bool:
+    """Queue the current embedded state to be written into S1.py.
+
+    Reading and rewriting this whole file, then fsync, used to happen right
+    here on whatever thread called this -- the main/render thread for
+    every settings change a click makes. On a slow or momentarily busy
+    disk that is a stall the operator feels as the window freezing the
+    instant they click. The actual write now happens on its own thread;
+    this call only has to serialize the (small, fast) in-memory state,
+    which is done before it returns.
+    """
+    global _PERSIST_PENDING, _PERSIST_THREAD
+    encoded = base64.b64encode(json.dumps(
+        S1_EMBEDDED_STATE, separators=(",", ":"), ensure_ascii=False
+    ).encode("utf-8")).decode("ascii")
+    with _PERSIST_COND:
+        _PERSIST_PENDING = encoded
+        _PERSIST_IDLE.clear()
+        if _PERSIST_THREAD is None:
+            _PERSIST_THREAD = threading.Thread(
+                target=_persist_worker, daemon=True)
+            _PERSIST_THREAD.start()
+        _PERSIST_COND.notify()
+    return True
+
+
+def flush_embedded_state(timeout=2.0):
+    """Block until any queued or in-flight save has actually reached disk.
+
+    Called once, on the way out of main(), so quitting right after a
+    settings change can no longer race the background write that change
+    queued -- the daemon thread would otherwise simply be killed with the
+    process, mid-write or never having started at all.
+    """
+    _PERSIST_IDLE.wait(timeout)
 
 
 SETTINGS_PATH = SCRIPT_PATH
@@ -280,14 +347,28 @@ def blur_band(frame, a, b, c, d):
     inverted rect; the kernel is capped to the band's own smaller side so a
     sliver strip (the board dragged to the very edge of the frame) never
     hands cv2 a kernel bigger than the pixels it is blurring.
+
+    Downsampled first, the same way glass_card blurs a panel's backdrop --
+    at full resolution this ran a 45px-kernel GaussianBlur over up to the
+    whole frame, four times, every frame: ~43ms on a 2000x1200 canvas, on
+    its own most of a frame's entire budget at 60fps and the single biggest
+    thing slowing down how quickly a click's own result reached the screen.
+    A blurred-out background band has no fine detail for the downsample to
+    lose, so the result looks the same at a fraction of the cost.
     """
     if b >= d or a >= c:
         return
     band = frame[b:d, a:c]
-    k = min(45, (d - b) | 1, (c - a) | 1)
+    bh, bw = d - b, c - a
+    k = min(45, bh | 1, bw | 1)
     if k < 3:
         return
-    frame[b:d, a:c] = cv2.GaussianBlur(band, (k, k), 0)
+    sw, sh = max(1, bw // 8), max(1, bh // 8)
+    small = cv2.resize(band, (sw, sh), interpolation=cv2.INTER_AREA)
+    sk = min(k // 8 | 1, sw | 1, sh | 1)
+    if sk >= 3:
+        small = cv2.GaussianBlur(small, (sk, sk), 0)
+    frame[b:d, a:c] = cv2.resize(small, (bw, bh), interpolation=cv2.INTER_LINEAR)
 
 
 def glass_card(img, rect, radius, alpha=GLASS_ALPHA, blur=True, shadow=True):
@@ -783,31 +864,72 @@ class CameraManager:
         Walking the full range unconditionally made macOS print an
         "out device of bound" error for every index past the last real
         camera, which looked like a failure and was only noise.
+
+        isOpened() alone is not proof of a working camera: on macOS, an
+        index cv2 has opened but has no camera permission for (or that
+        another app already has open) still reports isOpened() == True,
+        and every read() from it then fails forever. A few real read
+        attempts, not just the one the old check made, are what actually
+        tell the two apart from a camera that is merely slow to wake up --
+        a printed reason is the only way "camera 0 shows nothing" is
+        distinguishable from "camera 0 was never offered" from the
+        console, since either looks identical from inside the app itself.
         """
         found, misses = [], 0
         for idx in range(max_index_to_probe):
             cap = cv2.VideoCapture(idx)
-            alive = cap is not None and cap.isOpened() and cap.read()[0]
+            opened = cap is not None and cap.isOpened()
+            alive = False
+            if opened:
+                for attempt in range(5):
+                    alive = cap.read()[0]
+                    if alive:
+                        break
+                    time.sleep(0.1)
             if cap is not None:
                 cap.release()
             if alive:
                 found.append(idx)
                 misses = 0
             else:
+                if opened:
+                    print(f"[camera] index {idx} opened but sent no frame -- "
+                         f"check System Settings > Privacy & Security > "
+                         f"Camera for this app, and that no other app "
+                         f"(Zoom, FaceTime, Photo Booth...) already has it open")
                 misses += 1
                 if misses >= 2 and found:
                     break
         return found
 
     def _open_current(self):
-        """Open the camera at current_pos. Returns whether it came up alive."""
+        """Open the camera at current_pos. Returns whether it came up alive.
+
+        isOpened() is not enough here either -- see _probe_cameras -- so
+        this waits (briefly; this only ever runs from a deliberate camera
+        switch, never every frame) for a real frame the same way, rather
+        than reporting a switch as successful when the feed is about to
+        sit frozen.
+        """
         with self._lock:
             if self.cap is not None:
                 self.cap.release()
             idx = self.available_indices[self.current_pos]
             self.cap = cv2.VideoCapture(idx)
             ok = self.cap.isOpened()
-            self._latest = None
+            frame = None
+            if ok:
+                for attempt in range(5):
+                    got, frame = self.cap.read()
+                    if got:
+                        break
+                    time.sleep(0.1)
+                ok = got
+            self._latest = frame if ok else None
+        if self.cap.isOpened() and not ok:
+            print(f"[camera] index {idx} opened but sent no frame -- "
+                 f"check System Settings > Privacy & Security > Camera "
+                 f"for this app, and that no other app already has it open")
         return ok
 
     def _grab_loop(self):
@@ -939,7 +1061,7 @@ SLOW_APPROACH_CELLS = 1
 TAG_HOLD_SECONDS = 0.35
 AUTO_GRIP_COMMAND_DELAY_S = 1.0
 AUTO_PULSE_S = 0.1
-AUTO_PICKUP_HX_S = 0.2
+AUTO_PICKUP_HX_S = 3.0
 AUTO_ACTION_GAP_S = 1.0
 # How long the automatic pickup will drive DOWN before giving up on the
 # contact sensor. There was no limit at all: if the packet never arrived --
@@ -973,6 +1095,34 @@ AUTO_RELEASE_DURATION_S = 3.0
 # true: comfortably longer than the longest real action (offset legs, a
 # full descent, the one-second gaps, the lift), and still an end.
 AUTO_ACTION_MAX_S = 90.0
+
+# A small timed jog fired immediately before an automatic action's own first
+# command -- e.g. 0.2s left before an automatic pickup closes. Unlike
+# GRIPPER_OFFSET_UP_DOWN/RIGHT_LEFT (a whole-cell correction between the tag
+# and the gripper, applied to WHERE the head stops), this is a fine trim on
+# TOP of wherever it already stopped, timed rather than counted in cells, so
+# it does not need the offset math to understand half a cell.
+GRIPPER_NUDGE_S = 0.2
+GRIPPER_NUDGE_DIRECTION = "left"
+# Which automatic actions get the nudge before their first command. Only
+# pickup by default -- keep/press/release act wherever the head already is,
+# so a nudge there would move the head instead of trimming a grasp.
+GRIPPER_NUDGE_ACTIONS = {"pickup": True, "keep": False,
+                         "press": False, "release": False}
+
+
+def load_gripper_nudge(settings):
+    global GRIPPER_NUDGE_S, GRIPPER_NUDGE_DIRECTION
+    GRIPPER_NUDGE_S = max(0.0, min(2.0, float(
+        settings.get("nudge_s", GRIPPER_NUDGE_S))))
+    direction = str(settings.get("nudge_direction", GRIPPER_NUDGE_DIRECTION))
+    if direction in DIRECTION_LETTERS:
+        GRIPPER_NUDGE_DIRECTION = direction
+    saved_actions = settings.get("nudge_actions")
+    if isinstance(saved_actions, dict):
+        for action in GRIPPER_NUDGE_ACTIONS:
+            if action in saved_actions:
+                GRIPPER_NUDGE_ACTIONS[action] = bool(saved_actions[action])
 
 
 def has_serial_stop_signal(data) -> bool:
@@ -2091,6 +2241,11 @@ class Button:
     scale: float = 0.5
 
     def contains(self, x, y):
+        # 5px, not more: JOG_COARSE_MOVE, JOG_GAP and the +/- pairs
+        # scattered through the panels are all spaced to keep neighbouring
+        # buttons from sharing a clickable pixel at exactly this padding --
+        # see JOG_GAP's own comment. Widening it here would make adjacent
+        # jog/direction buttons overlap.
         pad = 5
         return (self.x0 - pad <= x <= self.x1 + pad
                 and self.y0 - pad <= y <= self.y1 + pad)
@@ -2212,9 +2367,17 @@ class Dropdown:
             row, col = divmod(i, per_row)
             ix0 = lx0 + pad + col * self.ITEM_W
             iy0 = ly0 + pad + row * self.ITEM_H
-            ix1, iy1 = ix0 + self.ITEM_W - 4, iy0 + self.ITEM_H - 4
+            # The clickable area is the WHOLE cell -- up to the next item's
+            # own cell, not just the pill drawn inside it -- so the thin
+            # gap between items is not a dead zone a click can land in and
+            # do nothing. Only the painted pill is inset, by a couple of
+            # pixels rather than the old 4, so cells still read as
+            # separate without shrinking what actually responds to a click.
+            hx0, hy0 = ix0, iy0
+            hx1, hy1 = ix0 + self.ITEM_W, iy0 + self.ITEM_H
+            ix1, iy1 = hx1 - 2, hy1 - 2
             selected = (value == current)
-            hovered = ix0 <= mx <= ix1 and iy0 <= my <= iy1
+            hovered = hx0 <= mx <= hx1 and hy0 <= my <= hy1
             if selected:
                 rounded_rect(img, (ix0, iy0, ix1, iy1), 12, C_ACCENT, -1)
                 fg = C_BTN_FG
@@ -2225,7 +2388,7 @@ class Dropdown:
                 fg = C_TEXT
             draw_text_centred(img, label, (ix0, iy0, ix1, iy1), self.list_text_scale, fg,
                               2 if selected else 1)
-            self._item_rects.append((ix0, iy0, ix1, iy1, value))
+            self._item_rects.append((hx0, hy0, hx1, hy1, value))
 
 
 
@@ -3128,6 +3291,9 @@ def save_settings(cam: CameraSettings, grid: Grid):
             "gripper_right_left": GRIPPER_OFFSET_RIGHT_LEFT,
             "gripper_vertical_direction": GRIPPER_VERTICAL_DIRECTION,
             "gripper_horizontal_direction": GRIPPER_HORIZONTAL_DIRECTION,
+            "nudge_s": GRIPPER_NUDGE_S,
+            "nudge_direction": GRIPPER_NUDGE_DIRECTION,
+            "nudge_actions": dict(GRIPPER_NUDGE_ACTIONS),
         },
         "vision": {"board_width_in": BOARD_WIDTH_IN},
         "behaviour": {
@@ -3168,6 +3334,7 @@ def load_settings():
     TRIG_PIVOT_Y = float(t.get("pivot_y", TRIG_PIVOT_Y))
 
     load_gripper_offsets(t)
+    load_gripper_nudge(t)
 
     # A "parallax" block from an older settings file is simply ignored now
     # that the trig formula is the only correction -- reading it back would
@@ -3644,16 +3811,27 @@ class TrigPanel:
             dd.list_columns = 2
             dd.ITEM_W = 88
             dd.set_items([(d, d.title()) for d in directions])
+        self.nudge_dir_dd = Dropdown("Direction", 0, 0, 0, 0, "nudge_dir")
+        self.nudge_dir_dd.list_columns = 4
+        self.nudge_dir_dd.ITEM_W = 70
+        self.nudge_dir_dd.ITEM_H = 40
+        self.nudge_dir_dd.list_alpha = 1.0
+        self.nudge_dir_dd.list_text_scale = 0.62
+        self.nudge_dir_dd.set_items([(d, d.title()) for d in
+                                     ("up", "down", "left", "right")])
 
     def offset_values(self):
         return (abs(GRIPPER_OFFSET_UP_DOWN),
                 GRIPPER_VERTICAL_DIRECTION, abs(GRIPPER_OFFSET_RIGHT_LEFT),
                 GRIPPER_HORIZONTAL_DIRECTION)
 
+    def _all_dropdowns(self):
+        return self.offset_dropdowns + (self.nudge_dir_dd,)
+
     def toggle(self):
         self.visible = not self.visible
         if not self.visible:
-            for dd in self.offset_dropdowns:
+            for dd in self._all_dropdowns():
                 dd.open = False
 
     def _rect_contains(self, x, y):
@@ -3667,7 +3845,8 @@ class TrigPanel:
             return False
         global GRIPPER_OFFSET_UP_DOWN, GRIPPER_OFFSET_RIGHT_LEFT
         global GRIPPER_VERTICAL_DIRECTION, GRIPPER_HORIZONTAL_DIRECTION
-        for dd in self.offset_dropdowns:
+        global GRIPPER_NUDGE_DIRECTION
+        for dd in self._all_dropdowns():
             if dd.open:
                 chosen = dd.hit_item(x, y)
                 consumed = dd.list_contains(x, y) or dd.contains(x, y)
@@ -3683,16 +3862,18 @@ class TrigPanel:
                         GRIPPER_VERTICAL_DIRECTION = chosen
                         GRIPPER_OFFSET_UP_DOWN = abs(GRIPPER_OFFSET_UP_DOWN) * (
                             -1 if chosen == "up" else 1)
-                    else:
+                    elif dd is self.horizontal_dir_dd:
                         GRIPPER_HORIZONTAL_DIRECTION = chosen
                         GRIPPER_OFFSET_RIGHT_LEFT = abs(GRIPPER_OFFSET_RIGHT_LEFT) * (
                             -1 if chosen == "left" else 1)
+                    else:
+                        GRIPPER_NUDGE_DIRECTION = chosen
                     return True
                 if consumed:
                     return True
-        for dd in self.offset_dropdowns:
+        for dd in self._all_dropdowns():
             if dd.contains(x, y):
-                for other in self.offset_dropdowns:
+                for other in self._all_dropdowns():
                     other.open = False
                 dd.open = True
                 return True
@@ -3702,15 +3883,19 @@ class TrigPanel:
         if self.visible:
             for dd, value in zip(self.offset_dropdowns, self.offset_values()):
                 dd.draw_list(frame, value, mouse)
+            self.nudge_dir_dd.draw_list(frame, GRIPPER_NUDGE_DIRECTION, mouse)
 
     def hit_test(self, x, y, cam_settings, grid, state, runner=None, sim=None):
         if not self.visible:
             return None
-        before = self.offset_values()
+        before = self.offset_values() + (GRIPPER_NUDGE_DIRECTION,)
         if self.dropdown_hit(x, y):
-            if self.offset_values() != before:
+            after = self.offset_values() + (GRIPPER_NUDGE_DIRECTION,)
+            if after != before:
                 save_settings(cam_settings, grid)
-            return f"Gripper offset: {gripper_offset_label()}"
+            if after[:4] != before[:4]:
+                return f"Gripper offset: {gripper_offset_label()}"
+            return f"Nudge direction: {GRIPPER_NUDGE_DIRECTION}"
         for b in self.buttons:
             if not b.contains(x, y):
                 continue
@@ -3738,6 +3923,18 @@ class TrigPanel:
                 else:
                     TRIG_PIVOT_Y = max(-400.0, min(400.0, TRIG_PIVOT_Y + delta))
                 return f"Pivot {TRIG_PIVOT_X:+.0f}, {TRIG_PIVOT_Y:+.0f}px"
+            if b.kind == "nudge_step":
+                global GRIPPER_NUDGE_S
+                GRIPPER_NUDGE_S = round(max(0.0, min(2.0,
+                    GRIPPER_NUDGE_S + b.value)), 2)
+                save_settings(cam_settings, grid)
+                return f"Nudge: {GRIPPER_NUDGE_S:g}s {GRIPPER_NUDGE_DIRECTION}"
+            if b.kind == "nudge_toggle":
+                action = b.value
+                GRIPPER_NUDGE_ACTIONS[action] = not GRIPPER_NUDGE_ACTIONS[action]
+                save_settings(cam_settings, grid)
+                state_word = "on" if GRIPPER_NUDGE_ACTIONS[action] else "off"
+                return f"Nudge before {action}: {state_word}"
             if b.kind == "save":
                 save_settings(cam_settings, grid)
                 return f"Saved to {os.path.basename(SETTINGS_PATH)}"
@@ -3756,7 +3953,7 @@ class TrigPanel:
         fh, fw = frame.shape[:2]
         pw = min(self.WIDTH, fw - 2 * self.PAD)
         row_h = max(26, min(self.ROW_H, (fh - 2 * self.PAD - 200) // 8))
-        ph = 200 + row_h * 8
+        ph = 200 + row_h * 8 + 210
         px, py = self.PAD, self.PAD
         self._last_rect = (px, py, pw, ph)
         rect = (px, py, px + pw, py + ph)
@@ -3823,6 +4020,46 @@ class TrigPanel:
             dd.draw(frame, value.title() if isinstance(value, str) else value,
                     hover=dd.contains(mx, my))
         y += 106
+
+        # --- Pre-action nudge: a short timed jog fired right before an
+        # automatic action's own first command -- see GRIPPER_NUDGE_S. -----
+        cv2.line(frame, (px + 24, y + 2), (px + pw - 24, y + 2), C_BORDER, 1)
+        draw_text(frame, "Pre-action nudge", (px + 24, y + 24), 0.48, C_TEXT, 1)
+        y += 32
+
+        draw_text(frame, "Duration (s)", (px + 24, y + 26), 0.48, C_TEXT, 1)
+        dtext = f"{GRIPPER_NUDGE_S:g}"
+        dw, _ = text_size(dtext, 0.48, 2)
+        draw_text(frame, dtext, (px + pw - 128 - dw, y + 26), 0.48, C_ACCENT, 2)
+        nminus = Button("-", px + pw - 116, y + 4, px + pw - 78, y + row_h - 6,
+                        "nudge_step", -0.05, style="ghost", scale=0.62)
+        nplus = Button("+", px + pw - 68, y + 4, px + pw - 30, y + row_h - 6,
+                       "nudge_step", +0.05, style="ghost", scale=0.62)
+        nminus.draw(frame, hover=nminus.contains(mx, my), shadow=False)
+        nplus.draw(frame, hover=nplus.contains(mx, my), shadow=False)
+        self.buttons.extend([nminus, nplus])
+        y += row_h
+
+        draw_text(frame, "Direction", (px + 24, y + 22), 0.48, C_TEXT, 1)
+        self.nudge_dir_dd.x0, self.nudge_dir_dd.y0 = px + 24 + half, y
+        self.nudge_dir_dd.x1, self.nudge_dir_dd.y1 = px + pw - 24, y + 44
+        self.nudge_dir_dd.draw(frame, GRIPPER_NUDGE_DIRECTION.title(),
+                               hover=self.nudge_dir_dd.contains(mx, my))
+        y += 52
+
+        draw_text(frame, "Nudge before:", (px + 24, y + 26), 0.42, C_TEXT_DIM, 1)
+        y += 30
+        toggle_w = (pw - 48 - 3 * 8) // 4
+        tx = px + 24
+        for action, short in (("pickup", "Pickup"), ("keep", "Keep"),
+                              ("press", "Press"), ("release", "Release")):
+            on = GRIPPER_NUDGE_ACTIONS[action]
+            btn = Button(short, tx, y, tx + toggle_w, y + row_h - 6,
+                        "nudge_toggle", action, style="ghost", scale=0.42)
+            btn.draw(frame, hover=btn.contains(mx, my), active=on, shadow=False)
+            self.buttons.append(btn)
+            tx += toggle_w + 8
+        y += row_h + 4
 
         # A live read-out of what the measurements currently imply, so the
         # numbers above can be sanity-checked without doing any arithmetic.
@@ -4130,7 +4367,14 @@ class GripperPanel:
                 f"Automatic {self.offset_action or 'action'} gave up after "
                 f"{AUTO_ACTION_MAX_S:g}s -- sent s.")
             return
-        if self.offset_phase == "wait_action" and now >= self.offset_until:
+        if self.offset_phase == "nudge" and now >= self.offset_until:
+            if ARDUINO.halt():
+                self.offset_phase = "wait_action"
+                self.offset_until = now + AUTO_ACTION_GAP_S
+                self.last_msg = f"Nudge complete -- automatic {self.offset_action} in {AUTO_ACTION_GAP_S:.1f}s."
+            else:
+                self.last_msg = "Nudge duration finished -- retrying lowercase s."
+        elif self.offset_phase == "wait_action" and now >= self.offset_until:
             self.offset_phase = "action"
             self._execute_offset_action(self.offset_action)
         elif self.offset_phase == "action":
@@ -4190,7 +4434,7 @@ class GripperPanel:
             if ARDUINO.send_command("hx"):
                 self.auto_grip_phase = self.AUTO_GRIP_HX
                 self.auto_grip_up_until = now + AUTO_PICKUP_HX_S
-                self.last_msg = "Sensor S received -- hx for 0.2s."
+                self.last_msg = f"Sensor S received -- hx for {AUTO_PICKUP_HX_S:g}s."
             return
         if (self.auto_grip_phase == self.AUTO_GRIP_HX
                 and now >= self.auto_grip_up_until):
@@ -4289,6 +4533,15 @@ class GripperPanel:
         self.offset_action = action
         self.offset_failed = False
         self.offset_deadline = time.monotonic() + AUTO_ACTION_MAX_S
+        if GRIPPER_NUDGE_ACTIONS.get(action) and GRIPPER_NUDGE_S > 0:
+            letter = DIRECTION_LETTERS[GRIPPER_NUDGE_DIRECTION] + SLOW_SUFFIX
+            if ARDUINO.send_command(letter):
+                self.offset_phase = "nudge"
+                self.offset_until = time.monotonic() + GRIPPER_NUDGE_S
+                return (f"Automatic {action}: nudging "
+                        f"{GRIPPER_NUDGE_DIRECTION} for {GRIPPER_NUDGE_S:g}s.")
+            # Could not even start the nudge (board still booting) -- fall
+            # through to the usual gap-then-action rather than lose the step.
         # The head is wherever the operator left it with the Simple Gripper
         # card's jog, and the action runs from exactly there after the
         # usual one-second gap.
@@ -4467,6 +4720,9 @@ class GripperPanel:
             message = f"Pickup: waiting {grip_remaining:.1f}s before hu"
         elif self.auto_grip_phase == self.AUTO_GRIP_UP:
             message = f"Pickup: hu has {grip_remaining:.1f}s remaining"
+        elif self.offset_phase == "nudge":
+            message = (f"Nudging {GRIPPER_NUDGE_DIRECTION} -- "
+                      f"{remaining:.1f}s before {self.offset_action}")
         elif self.offset_phase == "action":
             message = self.last_msg
         elif self.offset_phase == "wait_action":
@@ -4857,12 +5113,21 @@ HOLD_SECONDS = 1.0
 
 
 def resolve_api_key() -> str:
-    if OPENAI_API_KEY.strip():
-        return OPENAI_API_KEY.strip()
-    key = str(S1_EMBEDDED_STATE.get("api_key", "")).strip()
+    """The API key, environment first.
+
+    The environment is checked BEFORE the literal at the top of this file so
+    a key can be rotated without editing source -- and, more to the point,
+    so the literal can be emptied out without the app losing its key. A key
+    written into a file that lives in a git repository is a published key:
+    anyone who ever gets a copy of S1.py has it, and it stays valid until
+    somebody notices. Export OPENAI_API_KEY and blank the constant.
+    """
+    key = os.environ.get("OPENAI_API_KEY", "").strip()
     if key:
         return key
-    return os.environ.get("OPENAI_API_KEY", "").strip()
+    if OPENAI_API_KEY.strip():
+        return OPENAI_API_KEY.strip()
+    return str(S1_EMBEDDED_STATE.get("api_key", "")).strip()
 
 
 class ModelError(RuntimeError):
@@ -4878,6 +5143,19 @@ def make_client():
         raise ModelError("The 'openai' package is not installed "
                          "(pip install openai).")
     return OpenAI(api_key=key, timeout=API_TIMEOUT_S, max_retries=0)
+
+
+def _finish_reason(resp) -> str:
+    """The reply's finish_reason, or "" when the shape is unfamiliar.
+
+    Deliberately forgiving: a stub client in the tests, or an SDK that
+    names this differently, must not turn into an exception on the one
+    path every model call goes through.
+    """
+    try:
+        return str(resp.choices[0].finish_reason or "").lower()
+    except (AttributeError, IndexError, TypeError):
+        return ""
 
 
 def call_model(client, *, model, messages, max_tokens, stage="request"):
@@ -4896,6 +5174,17 @@ def call_model(client, *, model, messages, max_tokens, stage="request"):
                 text = (resp.choices[0].message.content or "").strip()
             except (AttributeError, IndexError):
                 text = ""
+            # A reply cut off at the token cap is the one failure that does
+            # not look like one: the JSON it was in the middle of writing
+            # will not parse (_first_json_object needs balanced braces), so
+            # the caller reports "found no usable objects" and the real
+            # cause -- the cap -- is never mentioned. On a reasoning model
+            # the cap covers reasoning AND output, so a board with a few
+            # more objects on it than usual is exactly when this bites.
+            if _finish_reason(resp) == "length":
+                raise ModelError(
+                    f"{stage}: the model hit its {max_tokens}-token cap "
+                    f"before finishing. Raise the cap for this stage.")
             if not text:
                 raise ModelError(f"{stage}: the model returned nothing.")
             return text
@@ -5100,6 +5389,33 @@ Report every DISCRETE PHYSICAL OBJECT resting on the board - the things a
 robot could pick up, move, open, operate or clean: small objects (bottles,
 cups, pens, clothes, tools, food, sponges, plates, cutlery, toys) and large
 items (appliances, furniture, bins, baskets).
+
+### PALE OBJECTS ON A PALE BOARD - THE MISS THAT ACTUALLY HAPPENS
+
+The board is light. A white, cream, grey or clear object on it has almost no
+colour difference to catch your eye, and it is the single thing this job most
+often misses entirely - a white sock beside a black one gets reported as one
+sock, not two, and the operator is then told their white laundry is not on
+the board while they are looking straight at it.
+
+A pale object does not announce itself by colour. Find it by:
+- its SHADOW and the soft grey seam where it meets the board,
+- its TEXTURE - weave, ribbing, folds, creases, print - against the board's
+  flat, even surface,
+- its OUTLINE interrupting the grid lines drawn underneath it.
+
+Before you answer, sweep the board once more looking ONLY for pale things,
+and once more for anything whose colour is close to the board's own. Every
+pale region that has a shadow or a texture of its own is an object. Report it.
+
+### COUNT REPEATS - SIMILAR THINGS SIDE BY SIDE ARE SEPARATE OBJECTS
+
+Several similar items in a row (four socks, three cups, a line of blocks) are
+that many objects, each with its own entry and its own outline - never one
+entry covering the group, and never "the black ones" as a single object. Count
+them in the picture, then count the entries you are about to send: the two
+numbers must match. Two of them the same colour and two a different colour is
+FOUR objects, not two.
 
 Report ALL of them, not only the interesting ones and not only the ones that
 look useful for some task - every object on the board, each as its own entry.
@@ -5727,6 +6043,147 @@ def _blob_escapes(keep):
     return float(rim.mean()) > FIT_EDGE_FRAC
 
 
+# A blob has to be at least this many cells' worth of pixels before it is
+# worth mentioning -- below that it is a crumb, a shadow edge or sensor
+# noise, and crying wolf about those would make the warning worthless.
+MISSED_MIN_CELLS = 0.8
+# How much each reported outline is grown before being subtracted. Outlines
+# are approximate, and a blob peeking out from behind one that is a little
+# tight is the same object, not a new one. Measured: this absorbs an outline
+# inset by up to about a third of a cell.
+MISSED_OUTLINE_GROW = 1.15
+# Foreground strength a pixel needs to be considered part of an object.
+MISSED_FG_LEVEL = 0.45
+# A blob that reaches the picture's rim came from OUTSIDE the board -- the
+# board edge, the table past it, or the robot's own gantry reaching in --
+# and never a free object sitting on the board, which is enclosed by the
+# crop on all four sides. A few pixels of contact is blur and noise; more
+# than that and the blob runs off the picture. The cost of this rule is an
+# object genuinely overhanging the grid edge, which goes unmentioned: a
+# quiet miss, chosen over a false alarm that would teach the operator to
+# ignore the warning entirely.
+MISSED_RIM_TOUCH_PX = 4
+# How many times the board's own variation a pixel must differ by before it
+# counts as something ON the board, and the smallest scale that difference
+# is ever measured against. See _board_deviation_map.
+MISSED_NOISE_MULT = 3.0
+MISSED_NOISE_FLOOR = 8.0
+
+
+def _board_deviation_map(frame_bgr, grid: Grid):
+    """How far each pixel sits from the BOARD, measured in board-noise units.
+
+    _foreground_map divides by the 99th percentile of the colour distance,
+    which is the right scale for comparing one outline against another but
+    is the wrong one for deciding whether something is there at all: the
+    figure it divides by is set by the most extreme thing in the picture,
+    so one black sock pushes the scale to ~330 and a white sock 28 units
+    off the board scores 0.08 -- indistinguishable from bare board. That is
+    the arithmetic behind a pale object going unreported, and no amount of
+    prompt wording fixes it.
+
+    Here the scale is the board's OWN variation instead, so "different from
+    the board" is judged against how much the board varies on its own. A
+    pale object clears that easily, and what else is on the board cannot
+    change the verdict.
+
+    Returns (map, origin, contrast), contrast being the same raw 99th
+    percentile _foreground_map reports, so MIN_BOARD_CONTRAST still means
+    what it always did.
+    """
+    x0, y0 = grid.grid_to_pixel(0, 0)
+    x1, y1 = grid.grid_to_pixel(CONFIG.n_cols, CONFIG.n_rows)
+    h, w = frame_bgr.shape[:2]
+    ix0, iy0 = max(0, int(x0)), max(0, int(y0))
+    ix1, iy1 = min(w, int(x1)), min(h, int(y1))
+    if ix1 - ix0 < 8 or iy1 - iy0 < 8:
+        return None
+    board = frame_bgr[iy0:iy1, ix0:ix1]
+    blur = cv2.GaussianBlur(board, (5, 5), 0)
+    bg = np.median(blur.reshape(-1, 3), axis=0)
+    diff = np.linalg.norm(blur.astype(np.float32) - bg, axis=2)
+    contrast = float(np.percentile(diff, 99))
+    # The median is bare board wherever most of the board is bare, which is
+    # the case this exists for. The floor keeps a synthetically clean image
+    # (and a board photographed almost edge to edge in objects) from
+    # dividing by nearly nothing and calling sensor noise an object.
+    noise = float(np.median(diff))
+    scale = max(MISSED_NOISE_FLOOR, MISSED_NOISE_MULT * noise)
+    return np.clip(diff / scale, 0.0, 1.0), (ix0, iy0), contrast
+
+
+def find_unreported_blobs(frame_bgr, grid: Grid, objects, fgmap=None):
+    """Board content that no reported outline covers, as [(cell, cells_area)].
+
+    The vision pass can simply not mention something -- reliably so for a
+    pale object on this pale board, where there is little colour difference
+    to catch a model's eye. Nothing downstream could tell: an object that
+    was never reported leaves no trace, so the operator is told their white
+    laundry is not on the board while they are looking straight at it.
+
+    The pixels know better. _foreground_map already scores every pixel on
+    how much it looks like an object rather than board; anything that scores
+    high and lies under none of the reported outlines is something the pass
+    missed. This does not try to name or outline it -- only to say that the
+    list is short, and roughly where.
+
+    Deliberately conservative. A false alarm teaches the operator to ignore
+    the warning, which costs more than the miss it was meant to catch, so
+    specks, half-covered blobs and anything touching the rim are dropped.
+    """
+    prepared = fgmap if fgmap is not None else _board_deviation_map(frame_bgr, grid)
+    if prepared is None:
+        return []
+    fg, origin, contrast = prepared
+    if contrast < MIN_BOARD_CONTRAST:
+        return []
+
+    binary = (fg > MISSED_FG_LEVEL).astype(np.uint8)
+    if not int(binary.sum()):
+        return []
+
+    # Everything already reported, painted out. Outlines are approximate, so
+    # each is grown slightly before being subtracted -- a blob peeking out
+    # from behind an outline that is a few pixels tight is not a new object.
+    claimed = np.zeros(binary.shape, np.uint8)
+    for o in objects or ():
+        poly = o.get("polygon") if isinstance(o, dict) else None
+        if not poly or len(poly) < 3:
+            continue
+        cx, cy = _poly_centroid(poly)
+        grown = _transform_poly(poly, 0.0, 0.0, MISSED_OUTLINE_GROW,
+                                MISSED_OUTLINE_GROW, cx, cy)
+        claimed |= _fill_poly_mask(binary.shape, _poly_pixels(grid, grown, origin))
+    loose = binary & (1 - claimed)
+
+    cell_px = abs(grid.cell_w * grid.cell_h)
+    if cell_px < 1.0:
+        return []
+    min_px = MISSED_MIN_CELLS * cell_px
+
+    count, labels = cv2.connectedComponents(loose)
+    found = []
+    for lab in range(1, count):
+        blob = labels == lab
+        area = float(blob.sum())
+        if area < min_px:
+            continue
+        ys, xs = np.nonzero(blob)
+        h_px, w_px = blob.shape
+        rim_hits = int((xs == 0).sum() + (ys == 0).sum()
+                       + (xs == w_px - 1).sum() + (ys == h_px - 1).sum())
+        if rim_hits > MISSED_RIM_TOUCH_PX:
+            continue
+        col, row = grid.pixel_to_grid(float(xs.mean()) + origin[0],
+                                      float(ys.mean()) + origin[1])
+        ci, ri = int(col), int(row)
+        if not (0 <= ci < CONFIG.n_cols and 0 <= ri < CONFIG.n_rows):
+            continue
+        found.append((coordinate_name(ci, ri), area / cell_px))
+    found.sort(key=lambda f: -f[1])
+    return found
+
+
 def fit_polygon_to_content(frame_bgr, grid: Grid, poly, fgmap=None,
                            others=None):
     """Put an outline where the pixels say the object is, AT ITS SIZE.
@@ -5949,7 +6406,15 @@ def object_is_grounded(frame_bgr, grid: Grid, obj, fgmap=None):
     poly = obj.get("polygon")
     if not poly or len(poly) < 3:
         return True
-    prepared = fgmap if fgmap is not None else _foreground_map(frame_bgr, grid)
+    # NOT _foreground_map: it scales every pixel by the 99th-percentile
+    # colour distance over the WHOLE board, so one dark object sets a scale
+    # that a pale one cannot clear -- this is the same arithmetic that made
+    # a reported, correctly-placed white sock read as "nothing under this
+    # outline" and get dropped, purely because a black sock sat elsewhere
+    # on the same board. _board_deviation_map scales against the board's
+    # own variation instead, so what else is present cannot change the
+    # verdict on this outline.
+    prepared = fgmap if fgmap is not None else _board_deviation_map(frame_bgr, grid)
     if prepared is None:
         return True
     fg, origin, contrast = prepared
@@ -6118,9 +6583,20 @@ def second_look(client, frame_bgr, grid: Grid, objects, on_stage=None):
     if objects:
         print(f"[snap] board pass: {snapped}/{len(objects)} outline(s) moved "
               f"cell in {(time.time() - t0) * 1000:.0f} ms")
+    # A SEPARATE map for the grounded check below, not the one snapping just
+    # used: _foreground_map scales by the 99th-percentile colour distance
+    # over the whole board, so one dark object sets a scale a pale one
+    # cannot clear, and object_is_grounded would drop a correctly-placed
+    # pale outline as "nothing under this outline" for no reason but what
+    # else is on the board. _board_deviation_map scales against the board's
+    # own variation instead. Snapping keeps the percentile map -- it is
+    # comparing one outline's fit against another's, where that scale is
+    # the right one; only the grounded check, which asks "is anything here
+    # at all", needs the other.
+    ground_map = _board_deviation_map(frame_bgr, grid)
     kept = []
     for o in objects:
-        if object_is_grounded(frame_bgr, grid, o, fgmap):
+        if object_is_grounded(frame_bgr, grid, o, ground_map):
             kept.append(o)
         else:
             print(f"[second-look] {o.get('name')}: nothing under this outline "
@@ -9463,16 +9939,17 @@ class SimpleGripperPanel:
         The operator can adjust for as long as needed. The action starts
         (after the usual one-second gap) when they press DONE.
 
-        Only a pickup gets the card. It is the one action whose outcome
-        depends on where the jaw is -- everything else acts where the head
-        already stands, so an automatic keep, press or release runs straight
-        away rather than stopping the plan on a prompt with nothing to
-        decide.
+        No automatic action gets the card, pickup included: the head is
+        wherever the operator (or the Simple Gripper card's own earlier
+        jog) already left it, and every automatic action -- pickup, keep,
+        press, release -- now runs straight through on its own rather than
+        stopping the plan on a prompt. Manual mode still opens the card and
+        waits, since there the operator IS the action.
         """
         self.action = str(action or "").lower()
         self.automatic = bool(automatic)
         self.handed_off = False
-        if self.automatic and self.action != "pickup":
+        if self.automatic:
             self.visible = False
             return self._run("auto")
         self.visible = True
@@ -10488,6 +10965,9 @@ class AIJob:
         self.vision_ready = False
         self.vision_final = False
         self.vision_shown = False
+        # Board areas no reported object covers -- see find_unreported_blobs.
+        # Set here too so a job that fails before the check still has it.
+        self.missed = []
 
         self.questions = []
         self.answers = None
@@ -10595,7 +11075,12 @@ class AIJob:
                     "detail": "high"}})
             self._set_stage(f"Vision - identifying objects ({VISION_MODEL})...")
             raw = call_model(
-                client, model=VISION_MODEL, max_tokens=8000, stage="Vision",
+                # Reasoning and output share this cap. Every object costs a
+                # long "looks_like", a 16-point polygon and its components,
+                # so a board with five or six things on it was running the
+                # budget down to where the cheapest way to finish was to
+                # report fewer objects.
+                client, model=VISION_MODEL, max_tokens=24000, stage="Vision",
                 messages=[{"role": "user", "content": content}])
             objects = parse_vision_json(raw)
             if not objects:
@@ -10626,6 +11111,22 @@ class AIJob:
             objects = restrict_to_reachable(objects)
             disambiguate_names(objects)
             self._publish_vision(objects, final=True)
+
+            # Whatever the model did or did not mention, the pixels still
+            # show what is on the board. Anything left over here was missed,
+            # and saying so is the difference between "your white laundry is
+            # not on the board" and knowing to look again.
+            self.missed = []
+            if self.raw_frame is not None and self.grid is not None:
+                try:
+                    self.missed = find_unreported_blobs(
+                        self.raw_frame, self.grid, objects)
+                except Exception as e:
+                    print(f"[vision] missed-object check failed ({e})")
+                if self.missed:
+                    where = ", ".join(cell for cell, _ in self.missed[:4])
+                    print(f"[vision] {len(self.missed)} area(s) of the board "
+                          f"are not covered by any reported object: {where}")
 
             objects_text = object_list_text(self.objects)
             task = self.task
@@ -12381,6 +12882,18 @@ def main():
             return
         state.ai_objects = objects
         chat_say(state, "assistant", vision_report_text(objects))
+        # Said straight after the object list, where it can be read against
+        # it: "3 objects" plus "something is at F8 that is not one of them"
+        # is the whole story, and either half alone is misleading.
+        missed = list(getattr(job, "missed", None) or ())
+        if missed:
+            where = ", ".join(cell for cell, _ in missed[:4])
+            more = "" if len(missed) <= 4 else f", +{len(missed) - 4} more"
+            chat_say(state, "assistant",
+                     f"Heads up: {len(missed)} area(s) of the board are not "
+                     f"covered by any object above ({where}{more}). Vision may "
+                     f"have missed something -- pale objects on this board are "
+                     f"the usual cause. Press CHECK to look again.")
 
     def pump_questions():
         """Put the clarity stage's question to the operator, one at a time."""
@@ -13253,6 +13766,7 @@ def main():
     ARDUINO.disconnect()
     tracker.stop()
     cam_mgr.release()
+    flush_embedded_state()
     cv2.destroyAllWindows()
 
 
@@ -13720,6 +14234,193 @@ def draw_exec_countdown_popup(frame, seconds_left: float) -> tuple:
 
 def run_single_file_self_test():
     """Exercise the critical gripper/state paths without any sidecar files."""
+    checks_top = 0
+
+    def check_top(condition, message):
+        nonlocal checks_top
+        checks_top += 1
+        if not condition:
+            raise AssertionError(message)
+
+    # -- blur_band: downsampled, not a per-frame cost that scales with the
+    # canvas -- see its own docstring for why this one mattered: at full
+    # resolution it was ~43ms of every single frame, on its own most of
+    # the frame budget at 60fps, regardless of anything being clicked.
+    for a, b, c, d in [(0, 0, 100, 0), (10, 10, 10, 20), (0, 0, 1, 1),
+                       (0, 0, 2, 100), (50, 0, 100, 3), (0, 97, 100, 100)]:
+        frame = np.zeros((100, 100, 3), dtype=np.uint8)
+        blur_band(frame, a, b, c, d)
+    check_top(True, "degenerate blur_band rects did not crash")
+
+    frame = np.random.randint(0, 255, (400, 600, 3), dtype=np.uint8).astype(np.uint8)
+    before_var = frame[50:350, 50:550].astype(np.float64).var()
+    blur_band(frame, 50, 50, 550, 350)
+    after_var = frame[50:350, 50:550].astype(np.float64).var()
+    check_top(after_var < before_var * 0.5,
+              f"blur_band no longer visibly smooths its band: "
+              f"{before_var:.1f} -> {after_var:.1f}")
+    frame2 = np.full((400, 600, 3), 200, dtype=np.uint8)
+    corner_before = frame2[0:20, 0:20].copy()
+    blur_band(frame2, 50, 50, 550, 350)
+    check_top(np.array_equal(frame2[0:20, 0:20], corner_before),
+              "blur_band touched pixels outside its own rect")
+
+    # -- a reply cut off at the token cap is named, not silently empty ----
+    # The failure this catches: a truncated JSON body cannot parse (the
+    # brace never closes), so without the finish_reason check the caller
+    # reported "found no usable objects" and the cap was never mentioned.
+    class _Bag:
+        def __init__(self, **kw):
+            self.__dict__.update(kw)
+
+    def _fake_resp(text, finish="stop", with_reason=True):
+        msg = _Bag(content=text)
+        choice = (_Bag(message=msg, finish_reason=finish)
+                  if with_reason else _Bag(message=msg))
+        return _Bag(choices=[choice])
+
+    def _fake_client(resp):
+        return _Bag(chat=_Bag(completions=_Bag(create=lambda **kw: resp)))
+
+    truncated = '{"objects": [{"name": "white sock", "center": "D6"'
+    check_top(parse_vision_json(truncated) == [],
+              "a truncated reply no longer parses to nothing -- this test's "
+              "premise is stale")
+    try:
+        call_model(_fake_client(_fake_resp(truncated, "length")),
+                   model="x", messages=[], max_tokens=8000, stage="Vision")
+        check_top(False, "a length-capped reply was accepted as a real answer")
+    except ModelError as e:
+        check_top("cap" in str(e).lower(),
+                  f"the truncation error does not name the cap: {e}")
+    check_top(call_model(_fake_client(_fake_resp('{"objects": []}')),
+                         model="x", messages=[], max_tokens=10) == '{"objects": []}',
+              "a normal reply stopped going through")
+    # An unfamiliar response shape must not break every model call.
+    check_top(call_model(_fake_client(_fake_resp("hi", with_reason=False)),
+                         model="x", messages=[], max_tokens=10) == "hi",
+              "a response without finish_reason raised instead of passing")
+
+    # -- the vision prompt still assembles, with nothing left unsubstituted --
+    prompt = build_vision_prompt("put the whites in the tray", None,
+                                 two_plates=True)
+    leftover = re.findall(r"\{[A-Z_]+\}", prompt)
+    check_top(not leftover, f"vision prompt has unsubstituted slots: {leftover}")
+    for phrase in ("PALE OBJECTS ON A PALE BOARD", "COUNT REPEATS"):
+        check_top(phrase in prompt, f"vision prompt lost its {phrase} section")
+
+    # -- the missed-object check: pale things on a pale board ------------
+    # The failure behind "your white laundry is not on the board" while the
+    # operator is looking straight at it. _foreground_map divides by the
+    # 99th percentile, so one black sock sets the scale and a white one
+    # scores near zero; _board_deviation_map measures against the board's
+    # own variation instead, where what else is present cannot change the
+    # verdict. These build synthetic boards rather than trusting a model.
+    _BW, _BH = 600, 460
+    _bgrid = Grid(_BW, _BH, [50, 40, 550, 420])
+
+    def _blank_board(noise=3):
+        rng = np.random.default_rng(7)
+        f = np.full((_BH, _BW, 3), 225, np.int16)
+        f += rng.integers(-noise, noise + 1, f.shape)
+        return np.clip(f, 0, 255).astype(np.uint8)
+
+    def _put(f, c0, r0, c1, r1, colour):
+        x0, y0 = _bgrid.grid_to_pixel(c0, r0)
+        x1, y1 = _bgrid.grid_to_pixel(c1, r1)
+        cv2.rectangle(f, (int(x0), int(y0)), (int(x1), int(y1)), colour, -1)
+
+    def _rect(c0, r0, c1, r1):
+        return [[c0, r0], [c1, r0], [c1, r1], [c0, r1]]
+
+    PALE, DARK = (198, 200, 202), (35, 35, 35)
+
+    # The real case: four socks, two pale, and only the dark pair reported.
+    four = _blank_board()
+    for _c0 in (2, 5, 8, 11):
+        _put(four, _c0, 5, _c0 + 2, 11, DARK if _c0 in (2, 8) else PALE)
+    reported = [{"polygon": _rect(2, 5, 4, 11)}, {"polygon": _rect(8, 5, 10, 11)}]
+    missed = find_unreported_blobs(four, _bgrid, reported)
+    check_top(len(missed) == 2,
+              f"the two pale objects were not flagged as missed: {missed}")
+    # And it must go quiet the moment they ARE reported -- a warning that
+    # never turns off is one the operator learns to ignore.
+    every = reported + [{"polygon": _rect(5, 5, 7, 11)},
+                        {"polygon": _rect(11, 5, 13, 11)}]
+    check_top(not find_unreported_blobs(four, _bgrid, every),
+              "the check still complained once every object was reported")
+
+    # A pale object is exactly as findable as a dark one: the whole point.
+    for _name, _colour in (("pale", PALE), ("dark", DARK)):
+        one = _blank_board()
+        _put(one, 5, 5, 8, 11, _colour)
+        check_top(len(find_unreported_blobs(one, _bgrid, [])) == 1,
+                  f"an unreported {_name} object was not found")
+        check_top(not find_unreported_blobs(
+                      one, _bgrid, [{"polygon": _rect(5, 5, 8, 11)}]),
+                  f"a correctly reported {_name} object was flagged anyway")
+
+    # Things that must NEVER raise a warning, or the warning is worthless.
+    check_top(not find_unreported_blobs(_blank_board(), _bgrid, []),
+              "a bare board reported a missed object")
+    check_top(not find_unreported_blobs(_blank_board(noise=8), _bgrid, []),
+              "sensor noise alone reported a missed object")
+    speck = _blank_board()
+    _put(speck, 7, 7, 7.3, 7.3, DARK)
+    check_top(not find_unreported_blobs(speck, _bgrid, []),
+              "a crumb-sized speck was reported as a missed object")
+    for _label, _box in (("corner", (0, 0, 3, 2)), ("top bar", (0, 0, 20, 1.2)),
+                         ("side rail", (17, 0, 20, 20))):
+        rig = _blank_board()
+        _put(rig, *_box, (70, 70, 70))
+        check_top(not find_unreported_blobs(rig, _bgrid, []),
+                  f"the gantry/board edge ({_label}) was called a missed object")
+    tight = _blank_board()
+    _put(tight, 5, 5, 8, 11, PALE)
+    check_top(not find_unreported_blobs(
+                  tight, _bgrid, [{"polygon": _rect(5.2, 5.3, 7.8, 10.7)}]),
+              "an outline a little tight was treated as a fresh discovery")
+
+    # Malformed object lists must not take the whole vision pass down.
+    for _bad in (None, [], [{}], [{"polygon": None}], [{"polygon": [[1, 1]]}]):
+        find_unreported_blobs(_blank_board(), _bgrid, _bad)
+    check_top(True, "a malformed object list crashed the missed-object check")
+
+    # -- object_is_grounded: second_look's own drop-if-nothing-there check --
+    # The failure this catches was worse than a missed report: a white sock
+    # the model correctly reported and correctly outlined got REMOVED two
+    # steps later, purely because a black sock sat elsewhere on the same
+    # board. Same percentile-99 disease as find_unreported_blobs, in a
+    # different function, on the pass that runs after every single one.
+    two = _blank_board()
+    _put(two, 2, 5, 4, 11, DARK)
+    _put(two, 5, 5, 7, 11, PALE)
+    pale_obj = {"name": "white sock", "polygon": _rect(5, 5, 7, 11)}
+    dark_obj = {"name": "black sock", "polygon": _rect(2, 5, 4, 11)}
+    gmap = _board_deviation_map(two, _bgrid)
+    check_top(object_is_grounded(two, _bgrid, pale_obj, gmap),
+              "a correctly outlined pale object was dropped as ungrounded "
+              "because a dark object sits elsewhere on the same board")
+    check_top(object_is_grounded(two, _bgrid, dark_obj, gmap),
+              "a correctly outlined dark object was not grounded")
+    # A genuine hallucination -- an outline over bare board -- must still
+    # be caught, or this check would just always answer True.
+    ghost = {"name": "ghost", "polygon": _rect(11, 5, 13, 11)}
+    check_top(not object_is_grounded(two, _bgrid, ghost, gmap),
+              "an outline over bare board was called grounded")
+
+    # Through the real caller, not just the function in isolation -- a check
+    # that only calls object_is_grounded directly with a map IT built would
+    # keep passing even if second_look went back to wiring in the wrong one.
+    # client=None is safe here: nothing is left unclaimed for it to call.
+    kept_names = {o["name"] for o in
+                 second_look(None, two, _bgrid,
+                             [dict(pale_obj), dict(dark_obj)])}
+    check_top(kept_names == {"white sock", "black sock"},
+              f"second_look dropped a real object: kept {kept_names}")
+
+    print(f"[blur_band] {checks_top} checks passed")
+
     class Clock:
         def __init__(self):
             self.now = 100.0
@@ -13763,6 +14464,13 @@ def run_single_file_self_test():
 
     global ARDUINO
     old = (ARDUINO, time.monotonic)
+    global GRIPPER_NUDGE_S, GRIPPER_NUDGE_ACTIONS
+    old_nudge = (GRIPPER_NUDGE_S, dict(GRIPPER_NUDGE_ACTIONS))
+    # Off for the bulk of the suite below, which times an automatic action's
+    # OWN sequence against AUTO_ACTION_GAP_S and friends -- exactly what the
+    # nudge's own tests, further down, turn back on to check in isolation.
+    GRIPPER_NUDGE_S = 0.0
+    GRIPPER_NUDGE_ACTIONS = {k: False for k in GRIPPER_NUDGE_ACTIONS}
     try:
         clock = Clock()
         fake = FakeArduino(clock)
@@ -14120,8 +14828,10 @@ def run_single_file_self_test():
               f"a skipped object did not get a corner grip: {silent}")
 
         # -- the Simple Gripper card ------------------------------------
-        # A plan's gripper step opens THIS card, not the full workbench,
-        # waits for DONE, and then runs the action immediately.
+        # No automatic action ever shows this card any more -- see
+        # open_for's own docstring. It still opens for a MANUAL step (the
+        # operator does the action by hand and presses DONE to say so),
+        # and its jog/height/cancel/stop mechanics are exercised there.
         def wire():
             gp = GripperPanel()
             card = SimpleGripperPanel()
@@ -14135,7 +14845,7 @@ def run_single_file_self_test():
         fake.commands = []
         fake.failed_writes = 0
         gp, card = wire()
-        card.open_for("pickup")
+        card.open_for("pickup", automatic=False)
         check(card.visible and card.busy(), "the card did not open and hold")
         # Opening starts nothing. The operator is still lining the jaw up.
         check(not card.handed_off and not gp.automatic_busy(),
@@ -14174,36 +14884,22 @@ def run_single_file_self_test():
         check(not card.handed_off,
               "adjusting the height ran the action")
 
-        # DONE waits the usual one-second gap before its first command,
-        # the same as every later command in the action -- it used to fire
-        # hd in the same call, the one gap-free step in an otherwise
-        # all-one-second sequence.
+        # DONE on a manual step hands off without driving any hardware --
+        # the operator already did the action by hand -- and the card
+        # closes on its own right away.
         fake.commands = []
         card.confirm()
-        check(card.handed_off and card.running() and card.busy(),
-              "DONE did not start the action and keep the plan waiting")
-        check(not fake.commands, f"DONE sent a command before its gap: {fake.commands}")
-        card.confirm()
-        check(not fake.commands and not gp.pending_auto_actions,
-              "repeated DONE duplicated or queued the action")
-        for _ in range(400):
-            clock.now += 1 / 30.0
-            if gp.auto_grip_phase == gp.AUTO_GRIP_DOWN:
-                gp.note_rx(b"S")
-            gp.tick()
-            card.tick()
-            if not card.busy():
-                break
-        sent = [c for _, c in fake.commands]
-        check(sent == ["hd", "hx", "s", "g90", "hu", "s"],
-              f"DONE did not run a real pickup: {sent}")
-        check(not card.visible, "the card stayed up after the action finished")
+        check(card.handed_off and not card.running() and not card.busy(),
+              "DONE on a manual step did not release the plan")
+        check(not fake.commands, f"a manual DONE drove hardware: {fake.commands}")
+        card.tick()
+        check(not card.visible, "the card stayed up after a manual DONE")
 
         # CANCEL while adjusting keeps waiting until DONE.
         clock.now = 1100.0
         fake.commands = []
         gp, card = wire()
-        card.open_for("pickup")
+        card.open_for("pickup", automatic=False)
         card.cancel()
         clock.now += 30.0
         card.tick()
@@ -14211,45 +14907,21 @@ def run_single_file_self_test():
               "a cancelled card ran the action anyway")
         check(card.busy(), "a cancelled card stopped holding the plan")
         check(not fake.commands, f"a cancelled card sent {fake.commands}")
-        # DONE after cancel still starts the action, after its usual gap.
         card.confirm()
-        check(not fake.commands,
-              f"DONE after cancel skipped its gap: {fake.commands}")
-        clock.now += AUTO_ACTION_GAP_S
-        gp.tick()
-        check(fake.commands == [(clock.now, "hd")],
-              f"DONE after cancel did not run pickup: {fake.commands}")
+        check(card.handed_off and not fake.commands,
+              f"DONE after cancel drove hardware: {fake.commands}")
 
         # STOP is live while waiting for DONE and cannot start the action.
         clock.now = 1200.0
         fake.commands = []
         gp, card = wire()
-        card.open_for("pickup")
+        card.open_for("pickup", automatic=False)
         card.stop()
         check([c for _, c in fake.commands] == ["s"],
               f"STOP did not send exactly one s: {fake.commands}")
         clock.now += 30.0
         card.tick()
         check(not card.handed_off, "a stopped card started the action anyway")
-
-        # STOP is live DURING the action, and sends exactly one s.
-        clock.now = 1300.0
-        fake.commands = []
-        gp, card = wire()
-        card.open_for("pickup")
-        card.confirm()
-        check(card.running(), "the card lost track of the action during its gap")
-        clock.now += AUTO_ACTION_GAP_S
-        gp.tick()
-        check([c for _, c in fake.commands] == ["hd"],
-              f"the descent did not start: {fake.commands}")
-        clock.now += 0.5
-        check(card.running(), "the card lost track of the running action")
-        card.stop()
-        check([c for _, c in fake.commands] == ["hd", "s"],
-              f"STOP mid-action did not send exactly one s: {fake.commands}")
-        check(not gp.automatic_busy(), "STOP left the action running")
-        check(not card.busy(), "STOP left the plan waiting forever")
 
         # A manual step immediately releases the plan without driving hardware.
         clock.now = 1400.0
@@ -14263,44 +14935,11 @@ def run_single_file_self_test():
         card.tick()
         check(not card.visible, "a confirmed manual card did not close")
 
-        # An automatic pickup starts on the DONE click. A jog or height
-        # adjustment must stop first and must not stop the new action later.
-        for action, first in (("pickup", "hd"),):
-            for adjustment in (None, "jog", "height"):
-                clock.now += 10.0
-                fake.commands = []
-                gp, card = wire()
-                card.open_for(action)
-                if adjustment == "jog":
-                    card._jog("left")
-                elif adjustment == "height":
-                    card._height(True)
-                before_done = list(fake.commands)
-                card.confirm()
-                expected = before_done + (
-                    [(clock.now, "s")] if adjustment else [])
-                check(fake.commands == expected,
-                      f"{action}/{adjustment} sent a command before its gap: {fake.commands}")
-                card.confirm()
-                check(fake.commands == expected and not gp.pending_auto_actions,
-                      f"{action}/{adjustment} duplicated DONE")
-                # The old adjustment's pulse timer must not fire into the
-                # action once it starts.
-                clock.now += SIMPLE_JOG_PULSE_S
-                card.tick()
-                check(fake.commands == expected,
-                      f"old adjustment timer stopped {action}: {fake.commands}")
-                clock.now += AUTO_ACTION_GAP_S
-                gp.tick()
-                expected = expected + [(clock.now, first)]
-                check(fake.commands == expected,
-                      f"{action}/{adjustment} did not start on DONE: {fake.commands}")
-
-        # An automatic keep, press or release never shows the card: it hands
-        # off the moment the plan reaches it, and still holds the plan until
-        # the action it started has finished.
-        for action, first in (("keep", "g0"), ("press", "hx"),
-                              ("release", "hu")):
+        # No automatic action shows the card, pickup included: each hands
+        # off the moment the plan reaches it, and still holds the plan
+        # until the action it started has finished.
+        for action, first in (("pickup", "hd"), ("keep", "g0"),
+                              ("press", "hx"), ("release", "hu")):
             clock.now += 10.0
             fake.commands = []
             gp, card = wire()
@@ -14318,6 +14957,8 @@ def run_single_file_self_test():
                 clock.now += 1 / 30.0
                 if gp.offset_phase == "press_down":
                     gp.note_rx(b"S")
+                if gp.auto_grip_phase == gp.AUTO_GRIP_DOWN:
+                    gp.note_rx(b"S")
                 gp.tick()
                 card.tick()
                 if not card.busy():
@@ -14334,7 +14975,9 @@ def run_single_file_self_test():
         check(card.visible and not card.handed_off,
               "a manual keep did not open the card and wait")
 
-        # A failed initial write stays pending and retries after its gap.
+        # A failed initial write stays pending and retries after its gap --
+        # open_for itself hands an automatic action off, so there is no
+        # DONE left to click here, only the retry to watch for.
         for action, first in (("pickup", "hd"), ("keep", "g0"),
                               ("press", "hx"), ("release", "hu")):
             clock.now += 10.0
@@ -14342,7 +14985,6 @@ def run_single_file_self_test():
             fake.failed_writes = 1
             gp, card = wire()
             card.open_for(action)
-            card.confirm()
             check(card.busy() and not fake.commands,
                   f"failed {action} write lost the action")
             clock.now += AUTO_ACTION_GAP_S
@@ -14354,8 +14996,9 @@ def run_single_file_self_test():
                   f"{action} did not retry: {fake.commands}")
             card.stop()
 
-        # The card draws, and every button it draws is one press() handles.
-        card.open_for("pickup")
+        # The card draws, and every button it draws is one press() handles --
+        # exercised in manual mode, the only mode that still shows this card.
+        card.open_for("pickup", automatic=False)
         frame = np.zeros((700, 1000, 3), dtype=np.uint8)
         card.draw(frame, (-1, -1))
         card.draw(frame, (-1, -1))
@@ -14373,21 +15016,16 @@ def run_single_file_self_test():
         done = next(b for b in card.buttons if b.kind == "simple_done")
         fake.commands = []
         card.press((done.x0 + done.x1) // 2, (done.y0 + done.y1) // 2)
-        check(not fake.commands,
-              f"the DONE click skipped its gap: {fake.commands}")
-        clock.now += AUTO_ACTION_GAP_S
-        gp.tick()
-        check(fake.commands == [(clock.now, "hd")],
-              f"the DONE click did not start after its gap: {fake.commands}")
-        card.stop()
-        card.open_for("pickup")
+        check(card.handed_off and not fake.commands,
+              f"the manual DONE click drove hardware: {fake.commands}")
+        card.open_for("pickup", automatic=False)
         for b in card.buttons:
             cx = (b.x0 + b.x1) // 2
             cy = (b.y0 + b.y1) // 2
             check(card.press(cx, cy) is not None,
                   f"the {b.kind} button is drawn but does nothing")
             if b.kind == "simple_close":
-                card.open_for("pickup")
+                card.open_for("pickup", automatic=False)
         # No two buttons share a clickable point.
         for i, a in enumerate(card.buttons):
             for b in card.buttons[i + 1:]:
@@ -14407,8 +15045,78 @@ def run_single_file_self_test():
               "embedded custom training missing")
         check(isinstance(state.get("error_rebounds"), list),
               "embedded error history missing")
+
+        # -- the pre-action nudge -----------------------------------------
+        # Enabled here, in isolation, for exactly the one action it applies
+        # to -- every test above ran with it off so its own timing did not
+        # have to account for a nudge on top.
+        GRIPPER_NUDGE_S = 0.2
+        GRIPPER_NUDGE_ACTIONS = {"pickup": True, "keep": False,
+                                 "press": False, "release": False}
+        clock.now += 10.0
+        start_at = clock.now
+        fake.commands = []
+        gp = GripperPanel()
+        gp.start_automatic_action("pickup")
+        letter = DIRECTION_LETTERS[GRIPPER_NUDGE_DIRECTION] + SLOW_SUFFIX
+        check(fake.commands == [(start_at, letter)],
+              f"the nudge did not fire immediately: {fake.commands}")
+        check(gp.automatic_busy(), "the nudge did not hold the plan")
+        clock.now = start_at + GRIPPER_NUDGE_S * 0.5
+        gp.tick()
+        check(fake.commands == [(start_at, letter)],
+              f"the nudge stopped early: {fake.commands}")
+        # Overshoot rather than land exactly on the boundary -- two floats a
+        # fixed duration apart are not guaranteed >= after being reached by
+        # different paths of addition.
+        clock.now = start_at + GRIPPER_NUDGE_S * 2
+        gp.tick()
+        check(fake.commands[-1] == (clock.now, "s"),
+              f"the nudge did not stop on its own: {fake.commands}")
+        clock.now += AUTO_ACTION_GAP_S
+        gp.tick()
+        check(fake.commands[-1] == (clock.now, "hd"),
+              f"the action did not start after the nudge's own gap: {fake.commands}")
+
+        # A disabled action (keep, by default) is unaffected: no nudge, the
+        # first command fires straight after the usual gap.
+        clock.now += 10.0
+        fake.commands = []
+        gp = GripperPanel()
+        gp.start_automatic_action("keep")
+        check(not fake.commands, f"a disabled nudge still fired: {fake.commands}")
+        clock.now += AUTO_ACTION_GAP_S
+        gp.tick()
+        check(fake.commands == [(clock.now, "g0")],
+              f"keep without a nudge did not run normally: {fake.commands}")
+
+        # A zero duration is the same as disabled, whatever the toggle says.
+        clock.now += 10.0
+        fake.commands = []
+        GRIPPER_NUDGE_S = 0.0
+        GRIPPER_NUDGE_ACTIONS["keep"] = True
+        gp = GripperPanel()
+        gp.start_automatic_action("keep")
+        check(not fake.commands, f"a zero-length nudge still fired: {fake.commands}")
+
+        # A board that refuses the nudge write falls through to the normal
+        # gap-then-action sequence rather than losing the step.
+        clock.now += 10.0
+        fake.commands = []
+        fake.failed_writes = 1
+        GRIPPER_NUDGE_S = 0.2
+        gp = GripperPanel()
+        gp.start_automatic_action("keep")
+        check(not fake.commands, "a failed nudge write was recorded as sent")
+        check(gp.offset_phase == "wait_action",
+              "a failed nudge write did not fall through to the normal wait")
+        clock.now += AUTO_ACTION_GAP_S
+        gp.tick()
+        check(fake.commands == [(clock.now, "g0")],
+              f"the action did not still run after a failed nudge: {fake.commands}")
     finally:
         (ARDUINO, time.monotonic) = old
+        GRIPPER_NUDGE_S, GRIPPER_NUDGE_ACTIONS = old_nudge
 
     # -- restrict_to_reachable: unreachable cells are removed, not flagged --
     global GRIPPER_OFFSET_UP_DOWN, GRIPPER_OFFSET_RIGHT_LEFT
@@ -14496,6 +15204,17 @@ def run_single_file_self_test():
                     r = next(r for r in dd._item_rects if r[4] == value)
                     check(0 <= r[0] < r[2] < width and 0 <= r[1] < r[3] < height,
                           "dropdown choice clipped")
+                    # A click 1px inside the cell's own far corner -- the
+                    # nominal ITEM_W x ITEM_H allotment, computed from r's
+                    # top-left rather than read back from r itself, so a
+                    # regression that shrinks the hit rect again changes
+                    # what this checks against, not just what it reports.
+                    far_x = r[0] + dd.ITEM_W - 1
+                    far_y = r[1] + dd.ITEM_H - 1
+                    corner_hit = dd.hit_item(far_x, far_y)
+                    check(corner_hit == value,
+                          f"a click in the cell's gap missed the item: "
+                          f"got {corner_hit!r}, wanted {value!r}")
                     check(click((r[0]+r[2])//2, (r[1]+r[3])//2), "selection missed")
                     expected = list(before)
                     expected[index] = value

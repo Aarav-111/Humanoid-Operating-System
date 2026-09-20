@@ -181,7 +181,6 @@ Simulation is how the HOS team tests planning behavior before committing it to a
 | **A2** | Expanded A1 with vision-prompt AI. |
 | **A2.3 - A2.6-Sol** | Progressive physical-simulation iterations; A2.6-Sol established the direction for richer task planning in a physical simulator. |
 | **A3-Terra** | Current A-series evolution, emphasizing robust image intake, measured scene localization, component-level reasoning, gripper guidance, simulation-first review, and guarded hardware connection. |
-
 | **A4-Astra** | Upcoming A-series evolution, for complex 3D manuplation |
 
 ---

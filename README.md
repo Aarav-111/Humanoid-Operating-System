@@ -79,36 +79,7 @@ Each stage has a distinct job:
 4. **Dexterity and gripper reasoning** evaluate whether the interaction is plausible and help select a safer contact or grip location.
 5. **Planning** turns the operator's requested outcome into an ordered sequence of board-aware actions. If an object is missing from the visible scene, the system should report that limitation instead of inventing a location.
 6. **Simulation and hardware output** use the same parsed command sequence. The simulator is the default rehearsal surface; USB output is a separately armed action.
-
----
-
-## A3-Terra at a glance
-
-A3-Terra is the current A-series physical-simulation and operator-control environment. It is designed as a light, glassmorphism-style desktop interface: the scene, grid, AI conversation, action state, and controls remain visible without competing for attention.
-
-### Key capabilities
-
-| Area | A3-Terra capability |
-| --- | --- |
-| **Scene sources** | Import JPG, PNG, BMP, TIFF, and WEBP images, or use a USB camera feed. |
-| **Measured workspace** | Converts the visible scene to a 20 x 11 coordinate board, with a square ruler canvas used to improve spatial measurement before mapping back to the original image. |
-| **Object overlays** | Draws object boundaries and board coverage so an operator can check what the system believes it sees. |
-| **Task input** | Supports typed tasks, voice dictation, editable transcripts, standing instructions, examples, and natural-language requests. |
-| **Planning stack** | Separates vision, component inspection, dexterity checking, gripper reasoning, and planning rather than treating one model call as the entire control system. |
-| **Simulation** | Replays the parsed command sequence with adjustable playback speed, visible action state, re-run support, and a stop control. |
-| **Hardware link** | Offers serial-port discovery, selectable baud rates, explicit connection state, and a separate switch to arm command transmission. |
-| **Configuration** | Exposes settings for simulation, detection, model roles, voice cleanup, retry behavior, and reset-to-defaults recovery. |
-
-### Operator workflow
-
-1. **Load a scene.** Import a clear photo or connect a camera. Keep the complete working area, intended object, and likely destination visible.
-2. **Inspect the board.** Confirm that the overlay contains the intended object and that its grid footprint looks plausible.
-3. **Describe the goal.** Use outcome-oriented language, such as “pick up the knife by its handle” or “move the blue cup to the clear left area.”
-4. **Review the proposed action.** Check the generated sequence, grip/contact point, destination, waits, and any follow-up movements.
-5. **Simulate first.** Rehearse the exact command interpretation on screen. Stop, improve the scene, or revise the request if the result is not convincing.
-6. **Calibrate and connect.** Before physical execution, align the workspace with AprilTag calibration and confirm the intended serial device.
-7. **Arm only when ready.** USB sending remains disabled until explicitly enabled. Continue supervising execution after arming.
-
+7. 
 ---
 
 ## How the planning loop works
@@ -186,26 +157,6 @@ This repository captures a research journey across multiple simulator and hardwa
 
 ---
 
-## What is new in A3-Terra
-
-A3-Terra builds on the A2.6-Sol physical-simulator direction with a more robust scene-to-action workflow.
-
-| A3-Terra improvement | Why it matters in practice |
-| --- | --- |
-| **Measured square canvas with rulers** | Rather than assuming an arbitrary image is square, A3-Terra letterboxes the scene to a square measurement canvas and uses ruler coordinates before mapping results back to the displayed image. This reduces aspect-ratio bias in board placement. |
-| **More careful object coverage** | Polygon coverage is sampled across grid cells, constrained by photo boundaries, and limited by a maximum cell claim. The goal is to make an object footprint useful for action planning rather than merely decorative. |
-| **Background-aware filtering** | Large image regions that behave like background are filtered separately from intentional large subjects such as beds, cars, sofas, or appliances. |
-| **Optional pixel snapping** | Segmentation-based snapping is available for clean, high-contrast scenes, but is deliberately off by default where shadows, reflections, or low contrast could create a confident wrong contour. |
-| **Component-level interaction** | Planning can reason about actionable sub-parts - for example, a handle, rim, or start control - instead of only the containing object. |
-| **Gripper-aware planning** | Grip reasoning can suggest a safer cell, such as a knife handle instead of its center. |
-| **Voice input safeguards** | Dictation detects unavailable, silent, and too-quiet microphone input; transcription runs away from the UI thread and can apply a cleanup pass. |
-| **Deliberate serial safety boundary** | Connecting a port does not itself send commands. A device must be open and the hardware-send switch must be deliberately enabled before commands are transmitted. |
-| **Error Rebounce AI** | Introduced in A3-Terra, Error Rebounce AI provides a dedicated framework for responding to errors encountered during planning or execution, so recovery can be treated as part of the operating workflow rather than as an afterthought. |
-| **Modernized model roles** | The supplied A3-Terra source assigns separate configurable roles to vision, planning, dexterity, dictation cleanup, and speech transcription. |
-| **Glassmorphism UI system** | Translucent panels, fine borders, soft shadows, and color-coded operating states make scene information, conversation, and motion status easier to scan together. |
-
----
-
 ## Simulator history
 
 Simulation is how the HOS team tests planning behavior before committing it to a physical robot. The series below records the evolution of the project rather than claiming feature parity across every version.
@@ -230,6 +181,7 @@ Simulation is how the HOS team tests planning behavior before committing it to a
 | **A2** | Expanded A1 with vision-prompt AI. |
 | **A2.3 - A2.6-Sol** | Progressive physical-simulation iterations; A2.6-Sol established the direction for richer task planning in a physical simulator. |
 | **A3-Terra** | Current A-series evolution, emphasizing robust image intake, measured scene localization, component-level reasoning, gripper guidance, simulation-first review, and guarded hardware connection. |
+
 | **A4-Astra** | Upcoming A-series evolution, for complex 3D manuplation |
 
 ---
@@ -247,15 +199,14 @@ Roadmap items are research goals, not shipping commitments.
 - [x] A3-Terra launch
 - [ ] S1-SRC
 - [ ] HOS 1
-- [ ] K9D
-- [ ] A4-Astra
 - [ ] HOS-2.0
 
 ### Planned physical robot versions
 
 | Version | Direction | Illustrative goals |
 | --- | --- | --- |
-| **v2.0** | Full Robotic arm 3D system | General tabletop manipulation: preparing vegetables, retrieving water, sorting and loading laundry. |
+| **v1** | Basic Cartesian system | General tabletop manipulation: Sweeping, sorting and loading laundry, folding clothes, dusting etc.|
+| **v2.0** | Full Robotic arm 3D system | Tabletop manipulation: better Physical accuracy, full error recovery system, interactive robot|
 | **v3.0** | Advanced intelligence | Stronger high-level planners, error recovery, and contextual task planning. |
 | **v4.0** | Wheeled humanoid navigation | Wheels, LiDAR, and cameras for a controlled mini-room environment. |
 | **v5.0** | Full-room humanoid autonomy | Legged navigation in a full-sized room with upgraded perception and correction loops. |

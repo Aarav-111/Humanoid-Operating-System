@@ -196,8 +196,8 @@ Roadmap items are research goals, not shipping commitments.
 - [x] Hardware connector integrated into the physical-simulator workflow
 - [x] A2.6-Sol physical-simulation milestone
 - [x] A3-Terra launch
-- [ ] S1-SRC (Software Robot Control)
-- [ ] HOS 1
+- [x] S1-SRC (Software Robot Control)
+- [x] HOS 1
 - [ ] HOS-2.0
 
 ### Planned physical robot versions

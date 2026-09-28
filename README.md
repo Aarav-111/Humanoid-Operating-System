@@ -197,7 +197,9 @@ Roadmap items are research goals, not shipping commitments.
 - [x] A2.6-Sol physical-simulation milestone
 - [x] A3-Terra launch
 - [x] S1-SRC (Software Robot Control)
-- [x] HOS 1
+- [ ] HOS 1
+- [ ] S1.5-SRC
+- [ ] HOS 1.5
 - [ ] HOS-2.0
 
 ### Planned physical robot versions

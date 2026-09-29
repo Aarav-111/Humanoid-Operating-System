@@ -6843,6 +6843,22 @@ def _separating_labels(group, kind):
     "the white one" and cut the field in half. Requiring uniqueness threw
     colour away in exactly the case it helps most.
     """
+    # The model's own names first: "black sock" and "white sock" already
+    # say which is which, in the words the operator will use. Only number
+    # within a name that is still shared.
+    own = [clean_object_name(o.get("name")) for o in group]
+    if all(own) and all(n != kind for n in own) and len(set(own)) >= 2:
+        out = [""] * len(group)
+        for val in set(own):
+            idxs = [i for i, v in enumerate(own) if v == val]
+            if len(idxs) == 1:
+                out[idxs[0]] = val
+                continue
+            for rank, i in enumerate(sorted(idxs,
+                                            key=lambda j: _reading_order(group[j])),
+                                     start=1):
+                out[i] = f"{val} {rank}"
+        return out, "their own names then position"
     for attr, tag in (("color", "colour"), ("size", "size")):
         vals = _attr_values(group, attr)
         if not vals or len(set(vals)) < 2:
@@ -6864,10 +6880,14 @@ def _separating_labels(group, kind):
                 out[i] = f"{val} {kind} {rank}"
         return out, f"{tag} then position"
 
+    # Nothing visible divides them. Keep the name they share -- "metal ring
+    # 1" and "metal ring 2", not "ring 1" -- so what the operator can see
+    # (the material, the colour) is still in it.
+    shared = own[0] if all(own) and len(set(own)) == 1 else kind
     order = sorted(range(len(group)), key=lambda i: _reading_order(group[i]))
     labels = [""] * len(group)
     for rank, idx in enumerate(order, start=1):
-        labels[idx] = f"{kind} {rank}"
+        labels[idx] = f"{shared} {rank}"
     return labels, "position"
 
 
@@ -7949,7 +7969,8 @@ middle of the cell labelled {SAMPLE_CELL} is {SAMPLE_POINT}.
 
 ## WHAT IS ALREADY KNOWN
 
-These objects are ALREADY reported and must NOT be reported again:
+These objects are ALREADY reported, each at the cell given, and must NOT be
+reported again:
 {KNOWN}
 
 ## WHAT TO DO
@@ -7958,7 +7979,19 @@ Look at what is in the middle of this crop.
 
 Report it ONLY if it is a discrete physical object resting on the board - a
 thing the robot could pick up, move, open, operate or clean - AND it is not
-one of the already-known objects above, or a part of one.
+one of the already-known objects above (at the cell given), or a part of one.
+
+ANOTHER ONE OF A KNOWN KIND IS A NEW OBJECT. Boards often hold two or three
+of the same thing - two socks of one colour, two identical metal rings. If
+what sits in this crop LOOKS like one of the known objects but is not AT that
+object's cell, it is a second one: report it, and give it the SAME kind of
+name the known one has ("metal ring", "white sock") so the operator's words
+match both. Do not invent a different name for it just because the known
+list already uses that one.
+
+AN OBJECT CUT OFF BY THE EDGE OF THE PICTURE is still that object - name it
+by what the visible part shows (a curved shiny metal rim with a hole is the
+same metal ring as a whole one), not by the odd shape the cut leaves.
 
 Answer with an empty list if what you see is any of these:
 - bare board, a shadow, a reflection, a stain, a scratch, or glare,
@@ -8004,11 +8037,25 @@ Something there:
 """
 
 
+def _known_line(k) -> str:
+    """One known object for the second-look prompt: name, cell and look."""
+    if isinstance(k, dict):
+        bits = [str(k.get("name") or "object")]
+        if k.get("center"):
+            bits.append(f"at {k['center']}")
+        look = str(k.get("desc") or "").strip()
+        if look:
+            bits.append(f"- {look}")
+        return " ".join(bits)
+    return str(k)
+
+
 def build_unclaimed_prompt(region, known_names=()) -> str:
     c0, r0, c1, r1 = region
     sample_c = min(c1 - 1, c0 + (c1 - c0) // 2)
     sample_r = min(r1 - 1, r0 + (r1 - r0) // 2)
-    known = "\n".join(f"- {n}" for n in known_names if n) or "- (nothing yet)"
+    known = "\n".join(f"- {_known_line(n)}" for n in known_names if n) \
+        or "- (nothing yet)"
     return (UNCLAIMED_PROMPT
             .replace("{FIRST_COL}", CONFIG.columns[c0])
             .replace("{FIRST_ROW}", str(CONFIG.rows[r0]))
@@ -8056,14 +8103,32 @@ def identify_unclaimed(client, frame_bgr, grid: Grid, regions, known_names=()):
     for t in threads:
         t.join(timeout=API_TIMEOUT_S + 10)
 
+    # A find is a duplicate when it sits ON a known object -- judged by WHERE
+    # it is, never by what it is called. Dropping a find because its name
+    # matched a known one threw away exactly the case this pass exists for:
+    # a second sock, a second ring, correctly named after the first, the
+    # one the board pass missed. (Only a misnamed copy used to survive.)
+    known_objs = [k for k in known_names
+                  if isinstance(k, dict) and k.get("polygon")]
+    known_plain = {clean_object_name(k) for k in known_names
+                   if not isinstance(k, dict)}
     out = []
-    known = {clean_object_name(k) for k in known_names}
     for raw in replies:
         if raw is None:
             continue
         for obj in parse_vision_json(raw):
             name = clean_object_name(obj.get("name"))
-            if not name or name in known:
+            if not name:
+                continue
+            if obj.get("polygon") and known_objs:
+                on_known = next((k for k in known_objs
+                                 if _outline_overlap(obj, k) >= READ_DUP_OVERLAP),
+                                None)
+                if on_known is not None:
+                    print(f"[second-look] '{name}' is the known "
+                          f"{on_known.get('name')} - not a new object")
+                    continue
+            elif name in known_plain:
                 continue
             print(f"[second-look] found '{name}' at {obj.get('center')} - "
                   f"the board pass missed it")
@@ -8125,7 +8190,9 @@ def second_look(client, frame_bgr, grid: Grid, objects, on_stage=None,
     if regions:
         if on_stage:
             on_stage(f"Second look at {len(regions)} unreported area(s)...")
-        known = [str(o.get("name") or "") for o in kept]
+        known = [{"name": o.get("name"), "center": o.get("center"),
+                  "desc": o.get("desc"), "polygon": o.get("polygon")}
+                 for o in kept]
         kept.extend(identify_unclaimed(client, frame_bgr, grid, regions, known))
     return kept
 
@@ -9159,7 +9226,13 @@ def verify_cloth_fold_points_for_all(client, frame_bgr, grid, objects, task,
 
 def _flat_recipe(obj, out, kind="flat item", note=""):
     """The cloth fold: left side's middle onto the right side's middle, then
-    the bottom-right corner up onto the top-right corner."""
+    the bottom-right corner up onto the top-right corner - EXCEPT a very
+    elongated outline (a sock- or scarf-shaped item that fell through to
+    "flat" for want of landmarks, or simply a long thin towel), which folds
+    end-to-end along its length instead: the corner fold's own left_mid and
+    right_mid can land in the SAME grid cell on a shape this narrow (found
+    by fuzzing _outline_fold_moves' sibling path, 2026-09-27), which is not
+    a fold at all - picking up and putting down at the same spot."""
     out["family"] = "flat"
     out["flat"] = True
     out["kind"] = kind
@@ -9168,7 +9241,32 @@ def _flat_recipe(obj, out, kind="flat item", note=""):
     if pts is None:
         out["missing"] = ["the cloth's four corners (its outline is unusable)"]
         return out
-
+    c = pts["corners"]
+    cw, ch = cell_size_in()
+    width = math.hypot((c["top_right"][0] - c["top_left"][0]) * cw,
+                       (c["top_right"][1] - c["top_left"][1]) * ch)
+    length = math.hypot((c["bottom_left"][0] - c["top_left"][0]) * cw,
+                        (c["bottom_left"][1] - c["top_left"][1]) * ch)
+    out["length_in"], out["width_in"] = max(length, width), min(length, width)
+    long_span, short_span = max(length, width), min(length, width)
+    if long_span < FOLD_MIN_IN:
+        # Too small for any fold move to mean anything -- a corner fold's
+        # own left_mid/right_mid can land in the SAME grid cell on
+        # something this small (found by fuzzing, 2026-09-27), which is
+        # not a fold, it's picking up and putting down at the same spot.
+        out["note"] = ((note + "; ") if note else "") + \
+            "already compact - no fold needed"
+        return out
+    if short_span > 0 and long_span / short_span >= 1.8:
+        moves = _outline_fold_moves(obj, {}, "simple item", short_span)
+        if moves:
+            out["moves"] = moves
+            out["note"] = ((note + "; ") if note else "") + \
+                "elongated - folded end to end instead of by its corners"
+            return out
+    # Not narrow enough to need the end-to-end fold, or that path found
+    # nothing usable (e.g. cloth_fold_points itself failed inside it) --
+    # the ordinary two-move corner fold.
     def at(name, pt):
         return {"name": name, "cell": parse_coordinate(_fold_point_name(pt)),
                 "pt": pt}
@@ -9181,13 +9279,6 @@ def _flat_recipe(obj, out, kind="flat item", note=""):
                    "top-right corner", at("top_right", pts["top_right"]),
                    "length: the bottom-right corner up onto the top-right corner"),
     ]
-    c = pts["corners"]
-    cw, ch = cell_size_in()
-    width = math.hypot((c["top_right"][0] - c["top_left"][0]) * cw,
-                       (c["top_right"][1] - c["top_left"][1]) * ch)
-    length = math.hypot((c["bottom_left"][0] - c["top_left"][0]) * cw,
-                        (c["bottom_left"][1] - c["top_left"][1]) * ch)
-    out["length_in"], out["width_in"] = length, width
     return out
 
 
@@ -9367,7 +9458,123 @@ def fold_recipe(obj, grid=None):
     out["moves"] = moves
     out["missing"] = missing
     out["note"] = out["note"].rstrip("; ")
+    if missing:
+        # Vision did not find every landmark this garment is normally folded
+        # by (recover_fold_landmarks has usually retried by now). A vision
+        # miss must never cost the operator the fold, so the garment is
+        # folded from its own OUTLINE instead: `missing` is kept, so the
+        # landmark retry still fires first, but the recipe always has moves.
+        fallback = _outline_fold_moves(obj, marks, kind, width_in)
+        if fallback:
+            out["moves"] = fallback
+            out["fallback"] = True
+            out["note"] = ((out["note"] + "; ") if out["note"] else "") + (
+                "not every fold landmark was found - folded by its outline")
     return out
+
+
+def _clamp_to_board(pt):
+    """A (col, row) point pulled inside the grid's own bounds. minAreaRect's
+    fitted rectangle can extend past the point cloud it was fit to (a
+    diagonal or irregular quad, or one clipped at the board edge) -- a
+    pick/place point that landed off the board would send the gantry
+    somewhere it cannot go and _fold_point_name's own cell-clamp alone
+    does not fix the raw pt other code reads (pick_pt/place_pt)."""
+    return (max(0.0, min(float(CONFIG.n_cols), pt[0])),
+           max(0.0, min(float(CONFIG.n_rows), pt[1])))
+
+
+def _pull_inside_polygon(pt, poly, centroid, steps=12):
+    """`pt` moved toward `centroid` until it is inside `poly` (or has moved
+    all the way there) -- for when a fitted rectangle's own endpoint falls
+    outside the actual outline it was fit to."""
+    if _point_in_poly(pt[0], pt[1], poly):
+        return pt
+    x, y = pt
+    cx, cy = centroid
+    for i in range(1, steps + 1):
+        t = i / float(steps)
+        cand = (x + (cx - x) * t, y + (cy - y) * t)
+        if _point_in_poly(cand[0], cand[1], poly):
+            return cand
+    return centroid
+
+
+def _outline_fold_moves(obj, marks, kind, width_in):
+    """Fold moves from a garment's outline alone, for when its landmarks are
+    incomplete. A long narrow item (sock, scarf, tie) is folded in half end
+    to end along its long axis; anything else gets the plain-cloth fold
+    (middle of the left side onto the middle of the right side, then
+    bottom-right onto top-right). [] if the outline is unusable."""
+    poly = obj.get("polygon") or []
+    if len(poly) < 3:
+        return []
+    try:
+        pts = np.array([[float(x), float(y)] for x, y in poly], np.float32)
+        poly_f = [(float(x), float(y)) for x, y in poly]
+    except (TypeError, ValueError):
+        return []
+    (cx, cy), (w, h), ang = cv2.minAreaRect(pts)
+    centroid = _poly_centroid(poly_f)
+    long_len, short_len = max(w, h), min(w, h)
+    narrow = (kind == "simple item" or width_in < FOLD_NARROW_IN
+              or (short_len > 0 and long_len / short_len >= 1.8))
+
+    def settle(pt):
+        # Board first (a point off the grid is unusable however it got
+        # there), then pulled back onto the garment's own outline if the
+        # fitted rectangle overshot it -- centroid is always inside a
+        # simple polygon, so this always terminates on real cloth.
+        return _clamp_to_board(_pull_inside_polygon(pt, poly_f, centroid))
+
+    if narrow and long_len > 0:
+        a = math.radians(ang if w >= h else ang + 90.0)
+        ux, uy = math.cos(a), math.sin(a)
+        half = long_len / 2.0
+        end_a = (cx + ux * half, cy + uy * half)
+        end_b = (cx - ux * half, cy - uy * half)
+        # Pick up the end nearer a located bottom landmark (the toe/hem),
+        # else the one away from a located top landmark (the cuff/collar),
+        # else the lower one on screen (the right one if it lies flat).
+        def near(pt, mark):
+            return math.hypot(pt[0] - mark["pt"][0], pt[1] - mark["pt"][1])
+        bottom = next((m for k, m in marks.items() if k.startswith("bottom")), None)
+        top = next((m for k, m in marks.items() if k.startswith("top")), None)
+        if bottom is not None:
+            pick, place = ((end_a, end_b) if near(end_a, bottom) <= near(end_b, bottom)
+                           else (end_b, end_a))
+        elif top is not None:
+            pick, place = ((end_b, end_a) if near(end_a, top) <= near(end_b, top)
+                           else (end_a, end_b))
+        elif abs(end_a[1] - end_b[1]) >= abs(end_a[0] - end_b[0]):
+            pick, place = (end_a, end_b) if end_a[1] > end_b[1] else (end_b, end_a)
+        else:
+            pick, place = (end_a, end_b) if end_a[0] > end_b[0] else (end_b, end_a)
+        pick = settle(_inset(pick, (cx, cy), CLOTH_GRIP_INSET))
+        place = settle(_inset(place, (cx, cy), CLOTH_GRIP_INSET))
+
+        def at(name, pt):
+            return {"name": name, "cell": parse_coordinate(_fold_point_name(pt)),
+                    "pt": pt}
+        return [_fold_move("one end", at("one end (by its outline)", pick),
+                           "the other end", at("the other end (by its outline)", place),
+                           "length: folded in half end to end, by its outline")]
+    pts_fold = cloth_fold_points({"polygon": poly})
+    if pts_fold is None:
+        return []
+
+    def at(name, pt):
+        pt = settle(pt)
+        return {"name": name, "cell": parse_coordinate(_fold_point_name(pt)),
+                "pt": pt}
+    return [
+        _fold_move("middle of the left side", at("left side, middle", pts_fold["left_mid"]),
+                   "middle of the right side", at("right side, middle", pts_fold["right_mid"]),
+                   "side: left half over onto the right half, by its outline"),
+        _fold_move("bottom-right corner", at("bottom_right", pts_fold["bottom_right"]),
+                   "top-right corner", at("top_right", pts_fold["top_right"]),
+                   "length: bottom-right up onto top-right, by its outline"),
+    ]
 
 
 def fold_landmark_gaps(obj):
@@ -9410,7 +9617,7 @@ def fold_recipe_text(objects, grid=None) -> str:
         if where:
             head += f", {where}"
         head += f", about {rec['length_in']:.0f} x {rec['width_in']:.0f} in"
-        if rec["missing"]:
+        if rec["missing"] and not rec["moves"]:
             lines.append(f"{head}: CANNOT FOLD - not located: "
                          + ", ".join(rec["missing"]))
             continue
@@ -10108,7 +10315,16 @@ MOVABLE_SURFACES = (
     "couch", "ottoman", "bed", "rug", "mat", "doormat", "carpet",
 )
 
-CONTACT_VERBS = ("wipe", "clean", "sweep", "mop", "scrub", "polish", "dust")
+# Every verb whose physical action is "hold something against a surface and
+# move it across every cell that needs it" (playbook 3c) - cleaning verbs
+# AND the general apply/spread/coat class. A task naming any of these but no
+# target object means the surface itself IS the target (see
+# task_named_surfaces below) - true whether the substance is dirt coming off
+# or butter/wax/paint going on, so this list is not cleaning-specific.
+CONTACT_VERBS = ("wipe", "clean", "sweep", "mop", "scrub", "polish", "dust",
+                 "apply", "spread", "coat", "butter", "oil", "wax", "ice",
+                 "frost", "glaze", "season", "chalk", "paint", "rub", "smear",
+                 "dab", "glue", "sunscreen", "lotion")
 IMPLIED_SURFACES = ("table", "countertop", "counter", "worktop", "desk")
 
 
@@ -10246,30 +10462,19 @@ and not the other, look again - it is in both.
 
 
 def build_reachable_note() -> str:
-    """The OUT OF REACH section -- told to vision so it never reports an
-    object the gripper's own geometry can never put a tool on.
+    """Nothing, on purpose: vision is never told to skip part of the board.
 
-    Empty (no section at all) when both gripper offsets are 0 and the fixed
-    cosmetic band is disabled -- most boards have nothing to exclude.
+    It used to be told "Do not report an object there" for every row the
+    gripper cannot reach -- including the purely cosmetic bottom band
+    (fixed_unreachable_rows), which on a 10-row board is three rows of it.
+    That was a deliberate, built-in vision miss: an object the operator can
+    see was left out of the list, and the planner then reported it MISSING.
+    Seeing is vision's whole job. What the gripper can reach is decided in
+    code (restrict_to_reachable), and an object that is genuinely out of
+    reach is reported to the planner and the operator as OUT OF REACH --
+    never as missing.
     """
-    note = unreachable_board_note()
-    if not note:
-        return ""
-    return REACHABLE_NOTE.format(NOTE=note)
-
-
-REACHABLE_NOTE = """
-## OUT OF REACH - {NOTE}
-
-The gripper sits a fixed distance from the tag the camera tracks, so the
-robot's own geometry keeps it out of {NOTE} no matter how the tag is driven -
-a hard physical limit, not a rule, and the same one on every task. Do not
-report an object there: outlining it only hands the planner a target it can
-never act on. Skip anything whose full extent sits inside that area. If an
-object straddles the line, outline it as it really is - the part on the
-reachable side is still real and still worth reporting.
-
-"""
+    return ""
 
 
 def build_vision_prompt(task_text=None, grid=None, two_plates=False):
@@ -10507,6 +10712,27 @@ Fix what fails and answer with the corrected plan. Never emit a plan you have ju
 
 **Prefer a plan to a refusal.** The operator is looking at this board and asking for something ordinary. If a reading of their task exists that the board supports, take it and plan it - say which reading you took in a `#` comment. Refuse only when no object on the board could serve, under any reasonable reading. Bouncing an everyday request back over vocabulary, or over a detail you could have decided yourself, wastes the operator's time and teaches them nothing about what the robot can do.
 
+**YOU CANNOT ASK THE OPERATOR ANYTHING.** There is no reply channel: your answer is either executed or thrown away. A question, a request to "specify", or a comment explaining why you did not plan is a FAILED TASK, not a polite pause - the operator gets nothing done and nothing to answer. Every decision below is yours to make, and you make it in a `#` comment, then plan:
+- WHICH ONE? The task names a kind in the SINGULAR ("the black sock", "a sock", "the white one") and several listed objects fit. Pick ONE - never refuse: if the task gives a destination, take the fitting object whose CENTER is closest to that destination; otherwise take the first in reading order (smallest row number, then leftmost column). Write which you chose: `# two black socks - moving black sock 1 (closest to A1)`. A PLURAL or "all"/"every"/"the socks" means every fitting object.
+- THE WORD MATCHES NO NAME. The operator's word for a thing ("iron", "coaster", "rag", "tray") is not any object's name, ALSO_KNOWN_AS or DESC. Vision named every object from a photo and its names are guesses - the operator is looking at the real thing. Take the listed object that the word could most plausibly describe by what it LOOKS like and what it is MADE of (DESC, COLOR, SIZE, shape): "the iron" on a board whose only metal object is a "silver trivet" IS that trivet; "the coaster" is the flat round object; "the towel" is the flat fabric one. Say so: `# "iron" = the silver trivet (the only metal object)`. Only when NO listed object could plausibly be the thing - a "red cup" on a board of socks and a metal disc - is it MISSING.
+- ALREADY DONE. The task's goal is already true on the board (it is already tidy, the object is already at that cell, the sock is already beside the disc). Then write exactly `# ALREADY DONE: <one short reason>` and `Task_Completed`, and nothing else. That is a success, not a refusal - never use it to avoid a task that still has work in it.
+
+WORKED EXAMPLE - two black socks at C5 and H6, task "move the black sock to A1":
+# two black socks - moving black sock 1 (C5, closest to A1)
+1. goto_coordinate = C, 5
+2. pickup
+3. goto_coordinate = A, 1
+4. keep
+Task_Completed
+
+WORKED EXAMPLE - no object is named "iron"; the board has two socks and a "silver trivet (DESC: rounded triangular metal piece with a centre hole)"; task "put the iron at P10":
+# "iron" = the silver trivet (the only metal object on the board)
+1. goto_coordinate = M, 7
+2. pickup
+3. goto_coordinate = P, 10
+4. keep
+Task_Completed
+
 **Coordinates** - always use the exact CENTER from the OBJECT LIST. NEVER invent a coordinate.
 
 **Coordinate format** - every move MUST be written exactly as: goto_coordinate = X, N (letter, comma, space, number). NEVER fuse the coordinate (H6), NEVER omit the "=". No other spelling is valid.
@@ -10559,7 +10785,7 @@ Writing every row in the same direction doubles the travel and drags the tool ba
 
 **Object matching** - match user words to objects using name, ALSO_KNOWN_AS, description, color, size, and COMPONENTS. A phrase like "start button" or "drum" that matches a component of "washing machine" means that part of the washing machine. Use the component's @CELL when present for goto/press; otherwise use the parent CENTER. Resolve silently. Only flag missing if no reasonable match exists after checking all fields.
 
-**NAME_CONFIDENCE: low** means vision itself could not settle on a name for that object - the crop was too small or ambiguous to identify with confidence, not that the object is unclear to you. Do not treat its name as fact: match the operator's words against ALSO_KNOWN_AS and DESC (what it actually looks like) at least as hard as against name, since the real object may be one of the alternatives listed there rather than the name shown. If the operator's task depends on which specific thing it is and none of name/aka/desc clearly matches, say so rather than guessing silently - "the metal object at Q11 could not be identified with confidence (candidates: cd stand, trivet, cover plate) - tell me which it is, or what to do with it" beats confidently doing the wrong thing to it.
+**NAME_CONFIDENCE: low** means vision itself could not settle on a name for that object - the crop was too small or ambiguous to identify with confidence, not that the object is unclear to you. Do not treat its name as fact: match the operator's words against ALSO_KNOWN_AS and DESC (what it actually looks like) at least as hard as against name, since the real object may be one of the alternatives listed there rather than the name shown. If the operator's task depends on which specific thing it is and none of name/aka/desc clearly matches, take the most plausible reading yourself and say it in a comment - `# the metal object at Q11 (vision unsure: cd stand / trivet / cover plate) - treating it as the "iron" the task names` - there is no way to ask the operator (see **YOU CANNOT ASK THE OPERATOR ANYTHING**).
 
 **The operator is describing the board in front of them, not a catalogue.** Their word for a thing and vision's word for it will often differ, and vision's is not automatically right - it named the object from a photo, they are looking at it. Match on WHAT THE THING IS FOR, not on the noun:
 - ONE CANDIDATE MEANS IT IS THE ONE. If the task needs something to hold liquid and the board has exactly one vessel, that vessel is what they mean - whether they called it a bottle, a cup, a mug, a jug, a glass or a can, and whatever vision called it. The same goes for one cloth ("rag", "towel", "wipe"), one broom ("brush", "sweeper"), one knife ("blade", "cutter"). Resolve it silently and plan the task.
@@ -10694,8 +10920,8 @@ task and board don't support (that's still **Take nothing as assumed**,
 above) - it only means don't under-deliver on a goal just because the
 operator trusted you to fill in the obvious rest without being told. If the
 "obvious rest" isn't actually obvious - it could reasonably go more than one
-way - that's a real fork, not an assumption to quietly resolve; see the
-clarity rule at the end of this section.
+way - that's a real fork: decide it openly in a `#` comment rather than
+quietly; see the clarity rule at the end of this section.
 
 **Work out the full approach before writing a single line.** Break the
 request into its actual sub-goals. Decide the order those sub-goals need to
@@ -10727,8 +10953,10 @@ fix the plan before finishing; don't hand over a plan that only looks right.
 
 **When a careful, literal reading of the request already resolves the
 question, resolve it that way and proceed - don't stall on an ambiguity a
-plain reading already answers.** Save asking for the cases where a careful,
-literal reading genuinely still leaves more than one reasonable answer.
+plain reading already answers.** When a careful reading genuinely still
+leaves more than one reasonable answer, you still decide: pick the most
+plausible one, say which in a `#` comment, and plan it. There is no way to
+ask the operator - a plan that stops to ask is a failed task.
 
 ---
 
@@ -11091,6 +11319,208 @@ release
 goto_coordinate = SPONGE_COL, SPONGE_ROW
 keep
 
+## 3c. Apply / Spread / Coat a substance across a surface
+
+THE PHYSICAL SHAPE, NOT THE WORD, IS WHAT MATTERS HERE. "Apply butter to the
+bread", "spread frosting on the cake", "put sunscreen on the tray", "butter
+the pan", "dust the shelf", "soap the plate", "oil the pan", "glue the two
+pieces", "paint the panel", "ice the cake", "wax the table", "chalk the
+board" - every one of these is the SAME motion as wiping or dusting (playbook
+3): hold a tool or a charged source against a surface and move it across
+every cell that needs the substance. You do not need a specific playbook
+entry for "butter" or "frosting" to plan this - if the request is "take a
+[tool/source] and cause [substance] to cover [surface/object]", it is this
+shape, whatever verb the operator used. NEVER refuse a task, or say it has
+not been covered, because its exact verb is not named anywhere in this
+prompt - a verb this playbook has never seen is not a reason to stop; the
+motion it describes almost always is.
+
+Recognise the shape from the sentence, not the dictionary: an operator names
+a SUBSTANCE (butter, soap, dust, oil, glue, frosting, paint, wax) or an
+ACTION THAT SPREADS ONE (apply, spread, coat, rub, smear, butter, oil, ice,
+wax, dust, polish, glaze, season) and a SURFACE OR OBJECT it goes onto. If
+the board has a tool built to carry and spread that particular substance
+(a butter knife, a pastry brush, a roller, a sponge, a cloth, a rag), pick
+that one up; otherwise the substance's own container is what you press
+against the surface (a bar of soap, a block of butter, a tube - see
+**Soap and detergent are ALWAYS pour**, below, for the liquid/granular
+case, which this is NOT: butter, wax, glue and frosting are spread as a
+solid smear, never poured).
+
+goto_coordinate = TOOL_COL, TOOL_ROW      # the spreading tool, or the
+pickup                                    # substance's own container
+goto_coordinate = SURFACE_TOUCH1_COL, SURFACE_TOUCH1_ROW
+press                                     # substance makes contact
+goto_coordinate = SURFACE_TOUCH2_COL, SURFACE_TOUCH2_ROW
+...one goto per cell of the surface/object's TOUCHES (or the named area/
+   full board, exactly as playbook 3's surface-coverage rules), zigzagging
+   across more than one row (**Serpentine coverage**)
+release                                   # lift clear
+goto_coordinate = TOOL_COL, TOOL_ROW
+keep                                      # return the tool/container
+
+Worked example - "spread butter on the bread": bread CENTER F6 with TOUCHES
+E5-G5,E6-G6,E7-G7, butter knife at C3.
+goto_coordinate = C, 3
+pickup
+goto_coordinate = E, 5
+press                    # butter makes contact
+goto_coordinate = F, 5
+goto_coordinate = G, 5
+goto_coordinate = G, 6
+goto_coordinate = F, 6
+goto_coordinate = E, 6
+goto_coordinate = E, 7
+goto_coordinate = F, 7
+goto_coordinate = G, 7
+release
+goto_coordinate = C, 3
+keep
+
+This is the general case playbook 3 (wipe) and playbook 6's soaping step are
+both drawn from: a contact pass is "hold a tool/source against a surface and
+visit every cell it must touch" for ANY reason, cleaning included but not
+limited to it. When a task is ambiguous between cleaning and applying (e.g.
+"polish the table" could be lifting old wax off or laying new wax on), take
+the reading the object list and task wording support and say which in a `#`
+comment - both are this same shape either way.
+
+### Similar tasks - transferring one playbook's knowledge to a new verb
+
+Every playbook above is keyed to a PHYSICAL MOTION SHAPE, not to the specific
+verb or object in its name. A task whose verb never appears anywhere in this
+prompt is not a new problem to refuse - it is almost always an already-solved
+shape wearing an unfamiliar word. Before reaching for MISSING, ask: which
+motion in playbooks 1-18 does this task's physical action actually match?
+Same shape, same plan - only the OBJECT LIST cells and the tool change.
+
+Concretely, dusting a shelf, wiping a counter, soaping a plate, waxing a
+table, and applying butter to bread are ALL the same "hold something against
+a surface and drag it across every cell that needs it" shape (playbook 3c
+above) - the operator's choice of "dust" vs "butter" changes nothing about
+the plan's structure, only which tool gets picked up and which surface's
+TOUCHES cells get visited. Concrete transfer examples, all sharing one shape:
+
+- "Dust the shelf" and "spread frosting on the cake" - both: pick up the
+  tool that carries the substance (duster / offset spatula), press it to the
+  surface, visit every TOUCHES cell, release, return the tool.
+- "Apply sunscreen to the tray" and "wax the table" - both: no dedicated
+  tool exists for either verb specifically, so the substance's own container
+  (tube / can) is what gets pressed and dragged, exactly like the butter
+  knife example above.
+- "Chalk the board" and "oil the pan" - both: small or irregularly-shaped
+  target, same contact-and-drag motion, coverage limited to that object's own
+  TOUCHES rather than the full board.
+- "Season the steak" and "glue the two pieces" - both: a granular/solid
+  substance rubbed on by hand-held container or brush, same contact-and-drag
+  motion as butter-on-bread even though nothing here is food or edible.
+- "Shine the shoes" and "grease the hinge" - both: a small dedicated
+  applicator (shoe brush / oil can nozzle) pressed against a small target's
+  own TOUCHES cells, never the full board.
+
+None of "season", "glue", "shine", or "grease" appear as their own playbook
+entry anywhere in this prompt - they don't need to. Each is recognised purely
+from the sentence shape "take a [tool/container] and cause [a
+substance/finish] to cover [a surface/object]", which is playbook 3c's
+trigger regardless of which noun or verb fills the blanks.
+
+The rule generalizes past playbook 3c too - EVERY playbook in this prompt is
+a motion shape wearing one example verb, and every one of them is meant to be
+reused this same way for a task whose own wording never matches that example:
+
+- **Press-release** (playbook shape 1, momentary): "turn on the lamp" and
+  "press the doorbell" and "close the drawer" and "flip the light switch off"
+  are all: goto the control, press, release. Nothing about a lamp, a
+  doorbell, a drawer or a switch is playbook-specific - the shape is
+  "make one momentary contact with a control."
+- **On -> wait_X -> off** (playbook 6): "brew a pot of coffee," "run the
+  dishwasher," "steep the tea," "microwave the leftovers," and "charge my
+  phone" are all: press on, wait the appropriate duration, press off. A
+  charger and a rice cooker share nothing in appearance but share this exact
+  three-step shape.
+- **Contact-and-drag** (playbook 3/3b/3c): covered above - wiping, dusting,
+  soaping, buttering, waxing, seasoning, greasing, shining, chalking, icing,
+  glazing, polishing.
+- **Pickup-pour-return** (playbook 7/13/18): "water the plant," "fill the
+  kettle," "pour cereal into the bowl," and "top off the birdbath" are all:
+  pick up the source, goto the destination, pour, return the source. A
+  watering can and a cereal box are unrelated objects that still share this
+  identical plan shape.
+- **Pickup-slice-return** (playbook 4): "slice the bread," "cut the cake,"
+  "chop the cucumber," and "halve the apple" are all one `slice(NAME, N)`
+  line bracketed by pickup/return of the knife - the count N is the only
+  thing that changes between them.
+- **Pickup-fold-keep** (playbook 5a/5b): "fold the towel," "fold my shirt,"
+  and "fold the pillowcase closed" all reduce to the same TUCK/SIDE/LENGTH
+  framework (or the plain-cloth side-then-length recipe) regardless of the
+  garment's name - see [[s1-fold-playbook]].
+- **Collect-toward-a-point** (playbook 1/1b): "sweep the floor," "brush the
+  crumbs off the table," and "rake the leaves into a pile" are all: pickup
+  the bristled tool, run consecutive lanes that converge on one shared point
+  (a dustpan, a tray, or a bare pile cell), keep the tool.
+- **Pickup-move-place** (playbook 8, Collect/Stack): "put the toy away,"
+  "stack the plates," "move the mug to the sink," and "gather the pens into
+  the cup" are all: pickup, goto destination, keep/release, one object at a
+  time.
+- **Tidy / reset a zone** (playbook 9): "clean up this corner," "put the
+  kitchen back in order," and "reset the desk" are all the SAME shape as
+  playbook 9's worked example even though none of them names a specific
+  object - the task describes a zone and an implied "normal" state, and the
+  plan is one pickup-move-place cycle per out-of-place object in that zone.
+  "Tidy the playroom" and "straighten up the bathroom" transfer identically.
+- **Swap two positions** (playbook 10): "switch the salt and pepper," "swap
+  the two mugs," and "trade places of the red and blue block" are all: move
+  the first object to a temporary holding cell, move the second into the
+  first's old spot, move the first into the second's old spot - regardless
+  of what the two objects are.
+- **Cook on a burner** (playbook 11): "fry an egg," "boil the pasta," "sear
+  the steak," and "saute the onions" are all: goto the pot/pan, turn the
+  burner on, wait the appropriate duration, turn it off - the same
+  on-wait-off shape as playbook 6's appliance cycle, just with a stovetop
+  dial standing in for a machine's button.
+- **Store without a power cycle** (playbook 12): "put the milk in the
+  fridge," "put the cans in the pantry," and "load the bread into the bread
+  box" are all: open the container if needed, pickup the item, place it
+  inside, close the container - no on/off step, unlike playbook 6.
+- **Tilt-pour a bag/box/can** (playbook 13): "pour the cereal into the
+  bowl," "empty the chip bag into the dish," and "dump the rice into the
+  pot" are all: pickup the bag/box/can, goto the container, tilt/pour,
+  return it - distinct from playbook 7's bottle-pour only in the grip, not
+  the shape.
+- **Push a heavy/wheeled object** (playbook 14): "roll the trash bin to the
+  curb," "push the cart to the door," and "wheel the suitcase to the closet"
+  are all: goto behind the object, push it along a path to the destination,
+  release - never a pickup, since the object is too large or wheeled to
+  lift.
+- **Replace a consumable** (playbook 15): "change the batteries," "replace
+  the air filter," and "swap in a fresh roll of paper towels" are all:
+  remove the old one, discard/set aside, insert the new one - regardless of
+  what the consumable is.
+- **Fill from a tap** (playbook 17): "fill the kettle from the sink,"
+  "fill the pot with water," and "top up the water bottle at the faucet"
+  are all: goto the vessel under the tap, turn the tap on, wait until full,
+  turn it off, remove the vessel - only needed when no full vessel already
+  exists on the board (otherwise playbook 18 applies directly).
+
+The list above is not exhaustive and is not meant to be memorised as a fixed
+table - it is proof that the same handful of shapes covers the household, so
+that the NEXT unfamiliar verb (not listed here either) gets matched by
+motion, not by keyword search. If a task's physical action does not cleanly
+match any shape above, say so honestly with a `#` comment describing the
+closest shape and proceed, or flag `MISSING:` only if the board truly lacks
+what that shape requires - never because the exact verb was never written
+out anywhere in this prompt.
+
+Whenever a task's verb is unfamiliar, do not search this prompt for that
+literal word - it will not be there, and its absence is not a reason to
+refuse or say the task is unsupported. Instead identify which of the motion
+shapes above the task's physical action actually matches, find the playbook
+built for that shape, and reuse its structure with this task's own OBJECT
+LIST cells and tool. The APPENDIX table below is the fastest way to find that
+shape; read the "physical action" language in each row, not just the example
+verbs, since the row's shape - not its sample verb - is what actually
+matches.
+
 ## 4. Cut / Slice
 
 `slice(NAME, N)` is ONE COMPLETE ACTION. The robot lowers the blade onto the
@@ -11224,7 +11654,9 @@ one entry per garment, computed from the landmarks vision actually located,
 by exactly this framework, with the cells worked out. Write its moves as
 pickup/keep pairs IN THAT ORDER WITH THOSE CELLS, one pair per line of the
 recipe, and add nothing - no extra press, smoothing, shoulder-to-shoulder,
-stacking or finishing move. A recipe that says CANNOT FOLD is a `MISSING:`
+stacking or finishing move. A recipe whose note says it was "folded by its
+outline" (vision did not find every landmark) is a normal recipe - write its
+moves exactly like any other. A recipe that says CANNOT FOLD is a `MISSING:`
 line naming the landmarks it lists; do not substitute an unrelated part or
 a guessed cell, and do not fall back to 5a. Only when a garment has no
 recipe entry at all do you apply the three phases yourself from its
@@ -11760,21 +12192,40 @@ Every task type below reduces to a playbook above.
 
 ## APPENDIX B - task shape reference
 
-Every household task title reduces to one of the shapes below. Match the
-operator's wording to the shape, then reuse the matching playbook/worked
-example with the real OBJECT LIST cells. NEVER invent a new command or
-pattern for a task not listed here; fall back to the nearest shape by what
-physical action is being described.
+EVERY physical task reduces to one of a SMALL number of MOTION SHAPES - not
+to a list of named chores. The shapes below are worked examples of those
+motions, not an exhaustive catalogue of tasks: a task whose exact verb or
+substance is not written out anywhere in this prompt is normal, not an
+error, and is never a reason to stop, refuse, or say the task is
+unsupported. Read what the operator is physically asking the robot's body
+to do - hold something and touch it to a place once, hold something and
+move it across many places, carry something from A to B, tip something out,
+cut into something, fold something flat - match THAT to the nearest shape
+below by the PHYSICAL ACTION alone, and reuse its worked example with the
+real OBJECT LIST cells. A household is full of verbs (butter, ice, chalk,
+polish, season, glaze, dab, smear, coat, rub, oil, wax, glue, sunscreen,
+paint) that all reduce to the same handful of shapes - recognising that is
+the job, not matching a verb to a name.
 
 - **Momentary press -> release**: turning any appliance on/off, opening/closing any door/lid/drawer, pressing any switch/button, turning any dial, squeezing any dispenser, actuating any lever. -> playbook shape 1 (press/release section).
 - **press -> wait_X -> release, on/off pair**: any full appliance cycle (wash, dry, dishwasher, brew, bake, microwave, steep, simmer, rice cooker, air fryer, toast, charge). -> playbook 6.
 - **pickup broom/brush -> consecutive collecting lanes -> keep broom/brush**: any sweep (room/floor/table). Leave the collector in place. Sweep its full-width rectangle exactly five steps outward from the opening lip, using every valid head lane one step apart from one side edge to the other. Verify that the translated bristles cover every target cell; do not reduce the task to two nearby strokes. Align outside the lip, then enter front-on and release at the shared point inside the tray. Apply head-to-CENTER offsets; the top-right grip correction is applied automatically later. No collector: use one shared pile cell. No cloth, bottle or serpentine. -> playbook 1/1b.
 - **pickup mop -> contact pass -> keep mop**: mopping. -> playbook 2.
-- **pickup cloth -> contact pass -> keep cloth**: wiping, scrubbing, soaping, washing any surface, dish, or glass. -> playbooks 3, 3b. NEVER use a spray bottle for any of these.
+- **pickup cloth/tool/source -> contact pass over every cell -> keep it**: ANY task whose physical action is "hold something against a surface and move it across every cell that needs it" - wiping, scrubbing, soaping, washing, dusting a surface/dish/glass, AND JUST AS MUCH spreading, coating or applying any substance across a surface or object with a tool or its own container (butter on bread, frosting on a cake, oil in a pan, sunscreen on a tray, wax on a table, glue between two pieces, paint on a panel, chalk on a board) - it is the identical motion regardless of which of those words the operator used. NEVER use a spray bottle for any of these. -> playbooks 3, 3b, 3c.
 - **pickup source -> goto destination -> pour -> return source**: pouring any liquid or granular/solid substance into a container, and watering any plant. -> playbooks 7, 13, 18.
 - **pickup knife -> goto object CENTER -> slice(NAME, N) -> return knife**: slicing anything. ONE slice line per object, never wrapped in keep/pickup and never repeated per cell - the cut count lives in N. -> playbook 4.
 - **two pickup/keep pairs, side then length**: folding a plain cloth (cloth, rag, towel, washcloth, napkin, handkerchief, pillowcase, sheet, blanket): FIRST middle of the left side onto the middle of the right side, THEN the bottom-right corner onto the top-right corner - never starting from a corner, cells from the FOLD RECIPES block. Never press/release to fold. Missing landmarks never make a shaped garment a plain cloth. -> playbook 5a.
 - **fold framework pickup/keep pairs**: folding ANY shaped garment (t-shirt, shirt, sweater, hoodie, jacket, dress, skirt, tank top, pants, shorts, leggings, sock, scarf, underwear, or a garment vision could not name). TUCK what sticks off the top (hood onto collar), SIDE (one side's handle onto the other: sleeve onto sleeve, strap onto strap, cuff onto cuff, hem corner onto hem corner; both ends for a long garment), LENGTH (receiving-side bottom end up onto its top end). The FOLD RECIPES block in the input has the exact pairs and cells - transcribe it, add nothing, and a CANNOT FOLD entry is a MISSING: line. Never press/release a shaped garment. -> playbook 5b.
+
+**A task that names no object or tool anywhere in this list still has a
+shape.** Match the SUBSTANCE or GOAL word to whatever the OBJECT LIST offers
+that could plausibly serve (see **NO TRUE MEMBER OF THE CLASS** above - the
+same rule that lets a sock stand in for a cloth lets any flat graspable
+object stand in for a spreading tool, and any object of the right texture
+stand in for the named substance's container) before ever writing MISSING.
+The shape of the motion is what this appendix teaches; which specific
+object plays which role in it is decided fresh, from the real board, every
+time - never memorised per task name.
 
 ---
 
@@ -11826,7 +12277,8 @@ press was meant to perform. Task_Completed is the final line of an action plan.
 
 def build_out_of_reach_rule() -> str:
     """The **Out of reach** paragraph's body -- the same union Grid.draw
-    paints red and vision is told to skip, restated for the planner.
+    paints red, restated for the planner (vision is never told to skip it;
+    see build_reachable_note).
 
     The OBJECT LIST itself can no longer contain a cell in here:
     restrict_to_reachable() strips every unreachable TOUCHES/CENTER cell
@@ -11841,16 +12293,15 @@ def build_out_of_reach_rule() -> str:
     note = unreachable_board_note()
     if not note:
         return "The robot can reach every cell on this board."
-    return (f"The gripper's own geometry keeps it out of {note}, on every "
-           f"task - a hard physical limit, not a preference. The OBJECT "
-           f"LIST never contains a cell in there; every object's TOUCHES "
-           f"and CENTER are already restricted to what the gripper can "
-           f"reach before you see them, so an object resting partly in "
-           f"this zone simply shows fewer TOUCHES cells, not a warning to "
-           f"act on. The one place this still needs an explicit rule is a "
-           f"coordinate you choose yourself rather than copy from an "
-           f"object - a fallback full-board wipe, or a **Free space** "
-           f"pick. NEVER choose one there.")
+    return (f"The gripper cannot work in {note}. That limits ONLY the "
+           f"coordinates you choose yourself - a free cell to put "
+           f"something down, a fallback full-board wipe: NEVER choose one "
+           f"there. It does NOT limit the objects: every object in the "
+           f"OBJECT LIST can be reached and acted on wherever it lies, "
+           f"because anything the gripper truly cannot reach has already "
+           f"been taken out of the list (and is named under OUT OF REACH "
+           f"if the input has that line). Never skip, refuse or MISSING a "
+           f"listed object because of where it is.")
 
 
 def build_planner_system() -> str:
@@ -12524,7 +12975,7 @@ def resolve_overlaps(objects):
     return objects
 
 
-def restrict_to_reachable(objects):
+def restrict_to_reachable(objects, dropped=None):
     """Drop every cell the gripper's own geometry can never reach from each
     object's TOUCHES (and CENTER, if the cell affected is the centre)
     before the planner ever sees this object list.
@@ -12579,6 +13030,13 @@ def restrict_to_reachable(objects):
         if not kept:
             print(f"[cells] {o.get('name')}: entirely out of reach -- "
                  f"dropped from the object list")
+            # Seen, but out of reach -- the planner and the operator are
+            # told so by name, so it is never reported as MISSING.
+            if dropped is not None:
+                entry = {"name": o.get("name"), "center": o.get("center"),
+                         "aka": list(o.get("aka") or [])}
+                if all(d.get("name") != entry["name"] for d in dropped):
+                    dropped.append(entry)
             continue
         if len(kept) != len(cells):
             print(f"[cells] {o.get('name')}: {len(cells) - len(kept)} "
@@ -13652,6 +14110,58 @@ def missing_objects(text: str):
         if name and name not in names:
             names.append(name)
     return names
+
+
+def _same_object_word(missing_name: str, obj) -> bool:
+    """Does a MISSING: line's name refer to this (seen) object?"""
+    m = clean_object_name(missing_name)
+    names = [clean_object_name(obj.get("name"))] + [
+        clean_object_name(a) for a in (obj.get("aka") or [])]
+    return any(n and (n == m or n in m or m in n) for n in names)
+
+
+ALREADY_DONE_RE = re.compile(r"^\s*#?\s*ALREADY DONE\s*[:\-]\s*(.*)$", re.I | re.M)
+
+
+def plan_already_done(text: str) -> str:
+    """The planner's reason when the task's goal is already true, else "".
+
+    Only counts when the plan has no real actions -- an ALREADY DONE comment
+    beside real commands is the planner narrating, and the commands run.
+    """
+    m = ALREADY_DONE_RE.search(text or "")
+    if not m or has_plan_actions(parse_plan_commands(text)):
+        return ""
+    return m.group(1).strip() or "the task's goal is already met"
+
+
+def no_action_retry_note(plan: str) -> str:
+    """The corrective message for a planner answer that planned nothing."""
+    reason = extract_plan_summary(plan)
+    missing = missing_objects(plan)
+    said = []
+    if reason:
+        said.append(f'you said: "{reason}"')
+    if missing:
+        said.append("you wrote MISSING for: " + ", ".join(missing))
+    return (
+        "Your answer contains NO executable commands"
+        + (" (" + "; ".join(said) + ")" if said else "")
+        + ", so the robot would do nothing and the task fails. You cannot "
+        "ask the operator anything - there is no reply channel. Re-read "
+        "YOU CANNOT ASK THE OPERATOR ANYTHING and answer again:\n"
+        "- If several objects fit a singular description, PICK ONE by the "
+        "rule (closest to the destination, else first in reading order), "
+        "say which in a # comment, and plan it.\n"
+        "- If the operator's word for an object matches no name, choose the "
+        "listed object it most plausibly describes by look, material, size "
+        "and shape (vision's names are guesses), say so, and plan it.\n"
+        "- If the goal is already true on the board, answer only "
+        "`# ALREADY DONE: <reason>` and Task_Completed.\n"
+        "- Only if NO listed object could plausibly be something the task "
+        "needs, keep a MISSING: line for that thing - and still plan every "
+        "other part of the task.\n"
+        "Answer with the command sequence only.")
 
 
 def has_plan_actions(commands):
@@ -15047,6 +15557,12 @@ class AIJob:
         self.rejected = ""
         self.memory_rule = ""
         self.grips_applied = []
+        # Set when the planner reports the task's goal is already true on
+        # the board -- a success with nothing to run, not a failure.
+        self.already_done = ""
+        # Objects vision SAW that the gripper cannot reach at all -- told to
+        # the planner and the operator by name, never reported as missing.
+        self.out_of_reach = []
         self._answered = threading.Event()
         self._thread = threading.Thread(target=self._run, daemon=True)
 
@@ -15192,7 +15708,7 @@ class AIJob:
                 objects = pixel_refine_objects(self.raw_frame, self.grid,
                                                objects)
                 resolve_overlaps(objects)
-            objects = restrict_to_reachable(objects)
+            objects = restrict_to_reachable(objects, self.out_of_reach)
             disambiguate_names(objects)
             self._publish_vision(objects)
 
@@ -15221,7 +15737,7 @@ class AIJob:
             # parts pass quotes those names back, and before the planner
             # ever sees them.
             resolve_overlaps(objects)
-            objects = restrict_to_reachable(objects)
+            objects = restrict_to_reachable(objects, self.out_of_reach)
             disambiguate_names(objects)
 
             # Pass 3 -- parts, one object at a time, on a crop of that object
@@ -15270,11 +15786,20 @@ class AIJob:
             objects = recover_fold_landmarks(
                 client, self.raw_frame, self.grid, objects, self.task,
                 on_stage=self._set_stage)
-            objects = restrict_to_reachable(objects)
+            objects = restrict_to_reachable(objects, self.out_of_reach)
             self._publish_vision(objects, final=True)
-            landmark_error = fold_landmark_error(objects, self.task)
-            if landmark_error:
-                raise ModelError(landmark_error)
+            # A garment still missing its fold landmarks after the retry
+            # above is NOT grounds to abort the whole task -- fold_recipe_
+            # text already reports it as "CANNOT FOLD - not located: ..."
+            # for exactly that garment, and the planner is instructed to
+            # turn that into one MISSING: line while still folding whatever
+            # else it can and doing anything the task also asked for beyond
+            # folding. Vision missing one landmark on one garment must never
+            # mean the operator gets nothing done; see fold_landmark_error's
+            # own docstring history for why this used to raise here.
+            gap_note = fold_landmark_error(objects, self.task)
+            if gap_note:
+                print(f"[fold] {gap_note}")
 
             # Whatever the model did or did not mention, the pixels still
             # show what is on the board. Anything left over here was missed,
@@ -15331,21 +15856,75 @@ class AIJob:
                     recipes = fold_recipe_text(self.objects, self.grid)
                 except Exception as e:
                     print(f"[fold] recipe failed ({e}) - planner works from parts")
+            reach_note = ""
+            if self.out_of_reach:
+                reach_note = (
+                    "OUT OF REACH (on the board and seen, but the gripper "
+                    "cannot reach any part of them - never write MISSING for "
+                    "these; say in a # comment that they are out of reach "
+                    "and plan the rest of the task): "
+                    + ", ".join(f"{d['name']} at {d['center']}"
+                                for d in self.out_of_reach) + "\n\n")
             user = (f"{history_note}"
                     f"OBJECT LIST:\n{objects_text}\n\n"
+                    + reach_note
                     + (f"{recipes}\n\n" if recipes else "")
                     + f"Task: {task}")
             print("\n=== PLANNER INPUT ===")
             print(user)
 
+            system = build_planner_system()
             self.plan = call_model(
                 client, model=PLANNER_MODEL, max_tokens=6000, stage="Planner",
-                messages=[{"role": "system", "content": build_planner_system()},
+                messages=[{"role": "system", "content": system},
                           {"role": "user", "content": user}])
             print("\n=== PLAN ===")
             print(self.plan)
+            # A plan with no actions is a failed task -- unless the goal was
+            # already true. Before giving up, ask ONCE more, telling the
+            # planner exactly what it did wrong: the usual cause is not a
+            # missing object but a planner that stopped to "ask" (which
+            # cheapens to nothing, there is no reply channel) or refused
+            # because vision's name for a thing did not match the
+            # operator's word for it.
+            if (not has_plan_actions(parse_plan_commands(self.plan))
+                    and not plan_already_done(self.plan)):
+                note = no_action_retry_note(self.plan)
+                print(f"[planner] no actions - retrying once ({note[:80]}...)")
+                self._set_stage(f"Planning again ({PLANNER_MODEL})...")
+                retry = call_model(
+                    client, model=PLANNER_MODEL, max_tokens=6000,
+                    stage="Planner (retry)",
+                    messages=[{"role": "system", "content": system},
+                              {"role": "user", "content": user},
+                              {"role": "assistant", "content": self.plan},
+                              {"role": "user", "content": note}])
+                print("\n=== PLAN (retry) ===")
+                print(retry)
+                if (has_plan_actions(parse_plan_commands(retry))
+                        or plan_already_done(retry)):
+                    self.plan = retry
+                elif missing_objects(retry) and not missing_objects(self.plan):
+                    self.plan = retry
+            if plan_already_done(self.plan):
+                self.already_done = plan_already_done(self.plan)
+                return
             if not has_plan_actions(parse_plan_commands(self.plan)):
                 reason = extract_plan_summary(self.plan)
+                missing = missing_objects(self.plan)
+                far = [d["name"] for d in self.out_of_reach
+                       if any(_same_object_word(m, d) for m in missing)]
+                missing = [m for m in missing if not any(
+                    _same_object_word(m, d) for d in self.out_of_reach)]
+                if far and not missing:
+                    raise ModelError(
+                        "Not able to complete this task -- "
+                        + ", ".join(far) + " is on the board but out of the "
+                        "gripper's reach.")
+                if missing:
+                    raise ModelError(
+                        "Not able to complete this task -- "
+                        + ", ".join(missing) + " not found on the board.")
                 raise ModelError((reason + " " if reason else "")
                                  + "No physical actions were planned; "
                                  "the task has not been completed.")
@@ -15614,6 +16193,13 @@ class AppState:
     exec_cancelled: bool = True
     exec_cancel_rect: Optional[tuple] = None
     popup_close_rect: Optional[tuple] = None
+
+    # A task-blocking MISSING:/out-of-reach result: instead of just erroring
+    # out, offer to add the object and restart the same task. Holds
+    # {"task": str, "names": [str, ...]} while the popup is up.
+    missing_popup: Optional[dict] = None
+    missing_popup_done_rect: Optional[tuple] = None
+    missing_popup_cancel_rect: Optional[tuple] = None
 
     err_before: Optional[object] = None
     err_task: str = ""
@@ -17491,26 +18077,63 @@ def main():
                      f"{os.path.basename(TRAINING_PATH)}.")
         try:
             collect_vision_result()
-            missing = missing_objects(job.plan)
-            if missing:
-                why = ("Not able to complete task -- " + ", ".join(missing)
-                       + " not on the board.")
-                chat_say(state, "error", why)
-                state.status_message = why
+            if job.already_done:
+                runner.load("")
+                sim.load([])
+                state.exec_pending = False
+                msg = f"Nothing to do -- {job.already_done}."
+                chat_say(state, "assistant", msg)
+                state.status_message = msg
                 return
+            # A MISSING: line names ONE sub-task the planner could not do --
+            # it is never grounds to throw away a plan that also has real
+            # actions in it for everything else. Vision misses or
+            # hallucinates an object often enough that "one thing wasn't
+            # found" must never mean "do nothing" -- parse_plan_commands
+            # already strips MISSING: lines out of what actually runs, so
+            # runner.load() below loads exactly the sub-tasks that ARE
+            # doable. missing_objects() only decides whether to show a note
+            # alongside them, never whether to run them.
+            missing = missing_objects(job.plan)
+            far = [d["name"] for d in job.out_of_reach
+                   if any(_same_object_word(m, d) for m in missing)]
+            missing = [m for m in missing
+                       if not any(_same_object_word(m, d) for d in job.out_of_reach)]
             if runner.load(job.plan) == 0:
                 summary = extract_plan_summary(job.plan)
-                why = ((summary + " ") if summary else "") + (
-                    "No physical actions were planned; the task has not "
-                    "been completed.")
+                if far and not missing:
+                    why = ("Not able to complete this task -- " +
+                          ", ".join(far) + " is on the board but out of "
+                          "the gripper's reach.")
+                elif missing:
+                    why = ("Not able to complete this task -- " +
+                          ", ".join(missing) + " not found on the board.")
+                else:
+                    why = ((summary + " ") if summary else "") + (
+                        "No physical actions were planned; the task has not "
+                        "been completed.")
                 sim.load([])
                 state.exec_pending = False
                 chat_say(state, "error", why)
                 state.status_message = why
+                if missing:
+                    # A missing OBJECT, not an out-of-reach one or a plan
+                    # with no actions at all -- those still just error out,
+                    # since adding an object to the board can't fix them.
+                    state.missing_popup = {"task": job.task, "names": missing}
                 return
             summary = extract_plan_summary(job.plan)
             if summary:
                 chat_say(state, "assistant", summary)
+            if missing:
+                chat_say(state, "assistant",
+                        "Note: could not find " + ", ".join(missing) +
+                        " -- that part was skipped, the rest of the task "
+                        "still ran.")
+            if far:
+                chat_say(state, "assistant",
+                        "Note: " + ", ".join(far) + " is out of the "
+                        "gripper's reach -- that part was skipped.")
             if job.grips_applied:
                 lines = gripper_target_lines(job.grips_applied)
                 chat_say(state, "assistant",
@@ -17765,6 +18388,24 @@ def main():
         in_video = 0 <= vy < frame_h and 0 <= vx < frame_w
 
         if event == cv2.EVENT_LBUTTONDOWN:
+            if state.missing_popup is not None:
+                task = state.missing_popup["task"]
+                if state.missing_popup_done_rect is not None:
+                    bx0, by0, bx1, by1 = state.missing_popup_done_rect
+                    if bx0 <= vx <= bx1 and by0 <= vy <= by1:
+                        state.missing_popup = None
+                        state.ai_task = task
+                        launch_ai()
+                        return
+                if state.missing_popup_cancel_rect is not None:
+                    bx0, by0, bx1, by1 = state.missing_popup_cancel_rect
+                    if bx0 <= vx <= bx1 and by0 <= vy <= by1:
+                        state.missing_popup = None
+                        chat_say(state, "assistant",
+                                "Task cancelled.")
+                        state.status_message = "Task cancelled."
+                        return
+                return
             if state.popup_close_rect is not None:
                 bx0, by0, bx1, by1 = state.popup_close_rect
                 if bx0 <= vx <= bx1 and by0 <= vy <= by1:
@@ -18001,6 +18642,11 @@ def main():
         if manual_move_panel.handle_nav_key(key, state, runner, sim):
             return None
 
+        if key == 27 and state.missing_popup is not None:
+            state.missing_popup = None
+            chat_say(state, "assistant", "Task cancelled.")
+            state.status_message = "Task cancelled."
+            return None
         if key == 27 and state.exec_cancel_rect is not None:
             cancel_auto_execute()
             return None
@@ -18293,6 +18939,13 @@ def main():
                 state.popup_close_rect = countdown_cross_rect(frame, remaining)
         else:
             state.exec_cancel_rect = None
+
+        state.missing_popup_done_rect = None
+        state.missing_popup_cancel_rect = None
+        if state.missing_popup is not None:
+            (state.missing_popup_done_rect,
+             state.missing_popup_cancel_rect) = draw_missing_popup(
+                frame, state.missing_popup["names"])
 
         mx, my = state.mouse
         settings_panel.draw(frame, (mx - video_x, my - video_y))
@@ -18866,6 +19519,38 @@ def draw_exec_countdown_popup(frame, seconds_left: float) -> tuple:
     cancel_btn.draw(frame, shadow=False)
     popup_cross(frame, rect)
     return (cancel_btn.x0, cancel_btn.y0, cancel_btn.x1, cancel_btn.y1)
+
+
+def draw_missing_popup(frame, names) -> tuple:
+    """The whole task was blocked for want of an object -- offer to add it
+    and try again, rather than just erroring out. Returns
+    (done_rect, cancel_rect) in this frame's own pixels, for on_mouse to
+    hit-test the same way every other panel here does.
+
+    DONE is the big, primary action (add the object, then restart the same
+    task from scratch); CANCEL is a small X cross, not a text button, so it
+    is never mistaken for the expected next step.
+    """
+    what = ", ".join(names) if names else "the missing object"
+    line1 = "Add this object"
+    line2 = f"({what}), then press Done to try again."
+    fh, fw = frame.shape[:2]
+    tw = max(text_size(line1, 0.9, 2)[0], text_size(line2, 0.62, 1)[0])
+    bw, bh = max(tw + 96, 360), 190
+    rect = ((fw - bw) // 2, (fh - bh) // 2, (fw + bw) // 2, (fh + bh) // 2)
+    x0, y0, x1, y1 = rect
+    drop_shadow(frame, rect, 26, spread=14, strength=0.22)
+    glass_card(frame, rect, 26, alpha=0.78)
+    rounded_rect(frame, rect, 26, C_ACCENT, 2)
+    draw_text_centred(frame, line1, (x0, y0 + 16, x1, y0 + 58), 0.9, C_TEXT, 2)
+    draw_text_centred(frame, line2, (x0, y0 + 58, x1, y0 + 92), 0.62, C_TEXT, 1)
+    done_w = 190
+    done_btn = Button("Done", x0 + (bw - done_w) // 2, y1 - 66,
+                      x0 + (bw - done_w) // 2 + done_w, y1 - 20,
+                      "missing_popup_done", style="accent", scale=0.72)
+    done_btn.draw(frame, shadow=False)
+    cancel_rect = popup_cross(frame, rect)
+    return ((done_btn.x0, done_btn.y0, done_btn.x1, done_btn.y1), cancel_rect)
 
 
 def run_single_file_self_test():
@@ -20187,7 +20872,11 @@ def run_single_file_self_test():
             check(failed[0] is broken_top,
                   "invalid recovery replaced the garment with guessed geometry")
             check("No folding plan was started" in fold_landmark_error(
-                failed, "fold my shirt"), "missing landmarks did not block folding")
+                failed, "fold my shirt"),
+                "fold_landmark_error's own gap-reporting text changed "
+                "(AIJob no longer raises it -- see fold_landmark_error's "
+                "call site -- but the string is still what fold_recipe_text "
+                "turns into a per-garment CANNOT FOLD/MISSING: line)")
     with patch.object(module, "call_model", side_effect=ModelError("test timeout")), \
             patch.object(module, "render_vision_board",
                          return_value=np.zeros((64, 64, 3), np.uint8)):

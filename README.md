@@ -44,6 +44,8 @@ HOS is organized around two physical roles:
 
 The A-series physical simulators concentrate first on the arm-and-workspace layer: a bounded, camera-visible scene where perception and action can be measured, rehearsed, and improved before deployment to a broader robot platform.
 
+**Latest development — 4 October 2026:** [S1.5-SRC preview](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Software/S1.5-SRC-Preview.py) adds live-camera ERR-3 verification, an explicit cannot-verify verdict, and optional step or task checks; automatic checking is off by default, and failed-step replanning is bounded to two automatic attempts. [Shell 1.5 firmware](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Shell_1.5.ino) adds VL53L0X distance sensing, saved distance targets, and distance telemetry. S1-SRC also improves recognition of multiple similar objects and outline-based folding fallbacks. These source-level advances strengthen the connection between scene understanding, execution feedback, and operator review; the preview is not a completed release or proof of hardware reliability.
+
 ---
 
 ## System architecture
@@ -135,6 +137,7 @@ This repository captures a research journey across multiple simulator and hardwa
 | [README.md](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/README.md) | Project purpose, system architecture, roadmap, simulator history, benchmarks, and team context. | Begin here if you are new to HOS. |
 | [Simulation](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Simulation) | Virtual-simulator work and the evolution of planning experiments. | Use this track to understand the Pro, K-series, and simulation-first research direction. |
 | [Physical Simulators](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Physical%20Simulators) | Physical-simulator implementations and iterations across the A-series. | Start here for camera-to-grid operation and real-world arm experimentation. |
+| [Software](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Software) | S1-SRC and the S1.5-SRC preview, including camera-grounded planning and execution verification. | Use this track for the SRC software-control workflow and its current preview. |
 | [Hardware](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware) | Hardware-related material for robot and simulator integration. | Use this when working on controllers, mechanical systems, connections, or physical setup. |
 | [Benchmarks](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Benchmarks) | Benchmark assets and supporting material. | Use this to understand evaluation inputs and reported results. |
 | [Benchmarking tasks](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Benchmarking%20tasks) | Task definitions used in benchmarking. | Use this when reproducing, extending, or reviewing task-level evaluation. |
@@ -159,7 +162,7 @@ This repository captures a research journey across multiple simulator and hardwa
 
 ## Simulator history
 
-Simulation is how the HOS team tests planning behavior before committing it to a physical robot. The series below records the evolution of the project rather than claiming feature parity across every version.
+Simulation is how the HOS team tests planning behavior before committing it to a physical robot. The series below records the evolution of the project rather than claiming feature parity across every version. Some early A-series files and older Shell/auxiliary directories were removed from the current tree on 4 October 2026; use Git history to inspect those archived implementations.
 
 ### Virtual simulator series
 
@@ -198,7 +201,7 @@ Roadmap items are research goals, not shipping commitments.
 - [x] A3-Terra launch
 - [x] S1-SRC (Software Robot Control)
 - [ ] HOS 1
-- [ ] S1.5-SRC
+- [ ] S1.5-SRC (preview source available; full release pending)
 - [ ] HOS 1.5
 - [ ] HOS-2.0
 

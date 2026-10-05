@@ -92,13 +92,25 @@ const uint16_t MOTOR_FULL_STEPS_PER_REV = 200;
 const uint8_t MICROSTEP = 16;
 const uint8_t A_MICROSTEP = 1;
 
+// Confirmed screw: 2 mm pitch, 8 mm lead (four starts). Use LEAD for travel.
+constexpr float Z_SCREW_PITCH_MM = 2.0f; // Informational; not the mm/revolution.
+constexpr float Z_LEAD_MM_PER_REV = 8.0f;
+constexpr uint16_t Z_STEPS_PER_MM = (uint16_t)(
+  (float)MOTOR_FULL_STEPS_PER_REV * MICROSTEP / Z_LEAD_MM_PER_REV + 0.5f);
+static_assert(Z_LEAD_MM_PER_REV > 0 && Z_STEPS_PER_MM > 0,
+              "Z lead and steps/mm must be positive.");
+
+const long A_STEPS_PER_REV =
+  (long)MOTOR_FULL_STEPS_PER_REV * A_MICROSTEP;
+
 const unsigned long STEP_HALF_PERIOD_US = 167;
 const unsigned long SLOW_STEP_HALF_PERIOD_US =
   STEP_HALF_PERIOD_US * 3;
 
-const unsigned long Z_CRUISE_STEP_HALF_PERIOD_US = 167UL;
-const unsigned long Z_START_STEP_HALF_PERIOD_US = 1000UL;
-const unsigned long Z_ACCEL_MICROSTEPS = 800UL;
+// Manual/HX Z uses this fixed rate; P3 uses it as its maximum speed.
+// 83 us HIGH + 83 us LOW requests about 6024 microsteps/second.
+// Actual throughput also depends on sensor/I2C and background servicing.
+const uint32_t Z_STEP_HALF_PERIOD_US = 83UL;
 
 const unsigned long A_START_STEP_DELAY_US = 12000UL;
 const unsigned long A_CRUISE_STEP_DELAY_US = 3000UL;
@@ -115,12 +127,13 @@ const unsigned long G_COMMAND_WAIT_US = 20000;
 
 // ToF uses Uno I2C SDA=A4, SCL=A5; all original pins are unchanged.
 // P1 saves a filtered mm target in RAM until reset/power-off (S does not erase it).
-// P3 or N/n descends at HX speed to P1; SW pauses/resumes it.
-// Target completion cancels travel, with no automatic restart on sensor noise.
+// P3 or N/n enables continuous bidirectional height following at saved P1.
+// U/R/L/D/Q retain P3; HU/HD/HX and S cancel it. SW pauses P3 and XY.
 // HX stops on a valid raw reading <=40 mm; invalid/stale readings do not cancel HX.
 // Manual down uses the same 40 mm rule as HX.
 // HD retains the 35 mm and invalid/stale-reading stops.
-// P3/N continues through missing readings; stops at raw <= P1 or the 35 mm floor.
+// P3 pauses Z and XY on missing readings and resumes when feedback recovers.
+// P3 targets below 35 mm are rejected; <=35 mm forces upward recovery.
 // ToF status streams every 100 ms; MM/RAW=-1 means unavailable.
 // After a ToF stop, centre the joystick or issue a new serial command to restart.
 // Stabilization from usl.ino: median of 7, 50/50 smoothing,
@@ -132,10 +145,92 @@ const float TOF_SMOOTHING_ALPHA = 0.5f;
 const uint16_t TOF_SAFETY_MM = 35;
 const uint16_t HX_STOP_MM = 40;
 const uint32_t TOF_PRINT_MS = 100;
-uint32_t tofPrintedAt = 0;
-const uint16_t TOF_APPROACH_MM = 20;
 const uint32_t TOF_STALE_MS = 200;
 const uint32_t TOF_POLL_US = 2000;
+const uint16_t TOF_FILTER_MIN_MM = 20;
+const uint16_t TOF_MAX_MM = 1200;
+const uint16_t TOF_CONTINUOUS_PERIOD_MS = 40;
+const uint32_t I2C_TIMEOUT_US = 3000;
+const uint32_t Z_DIRECTION_SETUP_US = 5;
+
+// P3 uses displayed TOF:MM with a hold band to tolerate the 3 mm display jumps.
+// Larger corrections approach HX speed; near-target corrections are gentler.
+// P3 alone ramps its pulse rate and waits before reversing to let feedback catch up.
+// S, HU/HD/HX, or a replacement P1 cancels following.
+const int P3_HOLD_BAND_MM = 2;
+const int P3_RESTART_BAND_MM = 3;
+const int P3_PLANAR_PAUSE_ERROR_MM = 3;
+const float P3_SPEED_PER_ERROR_MM = 600.0f; // steps/s per mm outside hold band
+const float P3_MIN_SPEED_STEPS_S = 400.0f;  // 1 mm/s at 400 steps/mm
+const float P3_FLOOR_RECOVERY_STEPS_S = 1200.0f; // upward recovery at 3 mm/s
+const float P3_ACCEL_STEPS_S2 = 8000.0f;   // P3 only; HX remains unchanged
+const uint32_t P3_REVERSE_WAIT_MS = 320;
+const uint32_t P3_SPEED_UPDATE_US = 2000;
+const uint32_t P3_STEP_HALF_PERIOD_US = Z_STEP_HALF_PERIOD_US;
+static_assert(P3_RESTART_BAND_MM > P3_HOLD_BAND_MM,
+              "P3 restart band must exceed hold band.");
+static_assert(P3_HOLD_BAND_MM >= 0 && P3_PLANAR_PAUSE_ERROR_MM > 0,
+              "P3 distance bands must be valid.");
+
+// -----------------------------------------------------------------------------
+// CONTROLLER TYPES AND GLOBAL STATE (all persistent variables are here)
+// -----------------------------------------------------------------------------
+struct JoystickAxis {
+  bool moving = false;
+  bool high = false;
+  bool direction = false;
+  bool stoppedUntilCenter = false;
+  uint32_t lastEdge = 0;
+};
+
+enum class P3PauseReason : uint8_t { NONE, INIT, FILTER_INVALID, FILTER_STALE, SW, STOP, Z_BUSY, REVERSAL };
+
+struct HeightFollowState {
+  bool moving = false;
+  bool stepHigh = false;
+  bool planarPaused = true;
+  bool acquired = false;
+  int8_t direction = 0; // +1 upward, -1 downward, 0 stopped/paused.
+  uint32_t lastEdgeUs = 0;
+  int8_t lastDirection = 0;
+  uint32_t stoppedAtMs = 0;
+  uint32_t speedUpdatedUs = 0;
+  P3PauseReason pauseReason = P3PauseReason::NONE;
+  float speedStepsS = 0;
+  uint32_t halfPeriodUs = 0;
+};
+
+class HXPauseResumeModule {
+public:
+  void cancel(char reason = 0);
+  void begin(uint8_t direction);
+  void planarCommand();
+  void explicitHDCommand();
+  void gripperCommand();
+  void gripperFinished();
+  bool checkLimit();
+  void service(bool primaryZBusy, bool stopPrefixQueued);
+  bool isEnabled() const;
+  bool isMoving() const;
+  bool isHDOverride() const;
+  void printStatus() const;
+private:
+  bool enabled_ = false;
+  bool moving_ = false;
+  bool stepHigh_ = false;
+  bool hdOverride_ = false;
+  bool gripperBusy_ = false;
+  char cancelReason_ = 0;
+  bool contactReported_ = false;
+
+  uint8_t direction_ = LOW;
+  uint32_t lastStepAt_ = 0;
+
+
+  void pausePulses();
+  void startSegment(uint32_t now);
+};
+
 Adafruit_VL53L0X tof;
 float samples[SAMPLE_COUNT];
 uint8_t sampleIndex = 0, sampleCount = 0;
@@ -150,6 +245,60 @@ uint8_t tofRangeStatus = 255;
 uint32_t tofLastValidMs = 0, tofPollAt = 0;
 bool p1Saved = false, targetTravel = false;
 uint16_t p1DistanceMm = 0;
+
+uint32_t stopGeneration = 0;
+
+bool running = false;
+bool hdActive = false;
+bool irStopLatched = false;
+
+uint8_t activeStepPin = X_STEP_PIN;
+uint8_t activeDirPin = X_DIR_PIN;
+
+unsigned long activeStepHalfPeriodUs = STEP_HALF_PERIOD_US;
+unsigned long lastStepMicros = 0;
+
+long currentASteps = 0;
+
+bool gripperCommandActive = false;
+JoystickAxis joystickZ, joystickA;
+int joystickX = JOYSTICK_CENTER_X;
+int joystickY = JOYSTICK_CENTER_Y;
+uint32_t joystickSampleAt = 0;
+bool joystickDownReported = false;
+
+bool joystickReadX = true;
+bool switchRawPressed = false;
+bool switchStablePressed = false;
+bool firstSwitchPressPending = false;
+
+uint32_t switchChangedAt = 0;
+uint32_t firstSwitchPressAt = 0;
+
+uint32_t tofPrintedAt = 0;
+HeightFollowState p3State;
+HXPauseResumeModule hxHold;
+
+// -----------------------------------------------------------------------------
+// FUNCTION DECLARATIONS
+// -----------------------------------------------------------------------------
+void releaseJoystick(JoystickAxis &axis, uint8_t stepPin);
+void jogAxis(JoystickAxis &axis, uint8_t stepPin, uint8_t dirPin,
+             int value, int center, bool invert, bool serialBusy,
+             bool protectDown, uint32_t slowUs, uint32_t fastUs);
+void serviceBackground();
+void emergencyStop();
+void serviceSwitch();
+bool waitWithMotion(uint32_t duration);
+void stopJoystick();
+void releaseJoystickZ();
+void releaseJoystickA();
+void serviceToFStops();
+void startTargetTravel();
+void processPCommand();
+void pauseHeightPulses();
+void cancelHeightFollow();
+void serviceHeightFollow(bool stopPrefixQueued);
 
 bool hxCanDescend() {
   // Do not interpret an invalid/missing reading as an obstacle.
@@ -198,12 +347,12 @@ void serviceToF() {
 
   // Raw stop checks require a fully valid sensor result. Valid readings below
   // 20 mm still stop HX/JOG even though usl.ino excludes them from its filter.
-  tofValid = tofRangeStatus == 0 && rawDistance <= 1200;
+  tofValid = tofRangeStatus == 0 && rawDistance <= TOF_MAX_MM;
   if (tofValid) tofLastValidMs = millis();
 
   // Match the acceptance and stabilization path in usl.ino exactly.
   filterSampleValid = tofRangeStatus != 4 &&
-    rawDistance >= 20 && rawDistance <= 1200;
+    rawDistance >= TOF_FILTER_MIN_MM && rawDistance <= TOF_MAX_MM;
   if (!filterSampleValid) return; // Preserve the existing filter history.
   filterLastValidMs = millis();
 
@@ -246,18 +395,24 @@ void printTofStatus() {
   Serial.println(tofRangeStatus);
 }
 
-bool targetReached() {
-  // Exact crossing: P1=60 stops at 60 or below, never at 61/62/63.
-  return targetTravel && tofValid &&
-    (uint32_t)(millis() - tofLastValidMs) <= TOF_STALE_MS &&
-    rawDistance <= p1DistanceMm;
+bool filteredFeedbackFresh(uint32_t now) {
+  return tofReady && displayReady && filterSampleValid &&
+    (uint32_t)(now - filterLastValidMs) <= TOF_STALE_MS;
 }
 
-bool targetCanDescend() {
-  // Missing measurements do not cancel the saved-target run.
-  const bool fresh = tofValid &&
-    (uint32_t)(millis() - tofLastValidMs) <= TOF_STALE_MS;
-  return tofReady && !(fresh && rawDistance <= TOF_SAFETY_MM);
+const char* p3StatusLabel() {
+  if (!targetTravel) return "OFF";
+  switch (p3State.pauseReason) {
+    case P3PauseReason::INIT: return "PAUSED:INIT";
+    case P3PauseReason::FILTER_INVALID: return "PAUSED:INVALID";
+    case P3PauseReason::FILTER_STALE: return "PAUSED:STALE";
+    case P3PauseReason::SW: return "PAUSED:SW";
+    case P3PauseReason::STOP: return "PAUSED:STOP";
+    case P3PauseReason::Z_BUSY: return "PAUSED:Z_BUSY";
+    case P3PauseReason::REVERSAL: return "PAUSED:REVERSE";
+    default: break;
+  }
+  return p3State.moving ? (p3State.direction > 0 ? "UP" : "DOWN") : "HOLD";
 }
 
 void streamTofStatus() {
@@ -269,82 +424,21 @@ void streamTofStatus() {
   if (Serial.availableForWrite() < 60) return;
   const bool fresh = tofReady && tofValid &&
     (uint32_t)(now - tofLastValidMs) <= TOF_STALE_MS;
-  const bool filteredFresh = tofReady && displayReady && filterSampleValid &&
-    (uint32_t)(now - filterLastValidMs) <= TOF_STALE_MS;
+  const bool filteredFresh = filteredFeedbackFresh(now);
   char line[64];
   const int length = snprintf(line, sizeof(line),
-    "TOF:MM=%d RAW=%d VALID=%u P1=%d P3=%u\n",
+    "TOF:MM=%d RAW=%d VALID=%u P1=%d P3=%s\n",
     filteredFresh ? displayedDistance : -1,
     fresh ? (int)rawDistance : -1,
     (unsigned int)fresh,
     p1Saved ? (int)p1DistanceMm : -1,
-    (unsigned int)targetTravel);
+    p3StatusLabel());
   if (length > 0 && length < (int)sizeof(line) &&
       Serial.availableForWrite() >= length)
     Serial.write((const uint8_t*)line, (size_t)length);
 }
 
-uint32_t tofDownHalfPeriod(uint32_t requested) {
-  uint16_t threshold = targetTravel ? p1DistanceMm : TOF_SAFETY_MM;
-  if (threshold < TOF_SAFETY_MM) threshold = TOF_SAFETY_MM;
-  if (rawDistance <= threshold + TOF_APPROACH_MM &&
-      requested < Z_START_STEP_HALF_PERIOD_US)
-    return Z_START_STEP_HALF_PERIOD_US;
-  return requested;
-}
-
-void serviceToFStops();
-void startTargetTravel();
-void processPCommand();
-
-uint32_t stopGeneration = 0;
-
-bool running = false;
-bool hdActive = false;
-bool irStopLatched = false;
-
-uint8_t activeStepPin = X_STEP_PIN;
-uint8_t activeDirPin = X_DIR_PIN;
-
-unsigned long activeStepHalfPeriodUs = STEP_HALF_PERIOD_US;
-unsigned long lastStepMicros = 0;
-unsigned long zAccelerationMicrosteps = 0;
-
-const long A_STEPS_PER_REV =
-  (long)MOTOR_FULL_STEPS_PER_REV * A_MICROSTEP;
-
-long currentASteps = 0;
-
-struct JoystickAxis {
-  bool moving = false;
-  bool high = false;
-  bool direction = false;
-  bool stoppedUntilCenter = false;
-  uint32_t lastEdge = 0;
-};
-
-void releaseJoystick(JoystickAxis &axis, uint8_t stepPin);
-void jogAxis(JoystickAxis &axis, uint8_t stepPin, uint8_t dirPin,
-             int value, int center, bool invert, bool serialBusy,
-             bool protectDown, uint32_t slowUs, uint32_t fastUs);
-void serviceBackground();
-void emergencyStop();
-void serviceSwitch();
-bool waitWithMotion(uint32_t duration);
-void stopJoystick();
-void releaseJoystickZ();
-void releaseJoystickA();
-
-bool gripperCommandActive = false;
-
-// -----------------------------------------------------------------------------
-// HX PAUSE / RESUME MODULE
-// -----------------------------------------------------------------------------
-
-class HXPauseResumeModule {
-public:
-  void cancel(char reason = 0) {
-    targetTravel = false;
+void HXPauseResumeModule::cancel(char reason) {
     pausePulses();
     enabled_ = false;
     cancelReason_ = reason;
@@ -353,7 +447,7 @@ public:
     contactReported_ = false;
   }
 
-  void begin(uint8_t direction) {
+void HXPauseResumeModule::begin(uint8_t direction) {
     cancel();
 
     direction_ = direction;
@@ -367,26 +461,26 @@ public:
     }
   }
 
-  void planarCommand() {
+void HXPauseResumeModule::planarCommand() {
     // Preserve the previous HX behavior across X/Y commands.
     if (enabled_) hdOverride_ = false;
   }
 
-  void explicitHDCommand() {
+void HXPauseResumeModule::explicitHDCommand() {
     pausePulses();
     if (enabled_) hdOverride_ = true;
   }
 
-  void gripperCommand() {
+void HXPauseResumeModule::gripperCommand() {
     pausePulses();
     gripperBusy_ = true;
   }
 
-  void gripperFinished() {
+void HXPauseResumeModule::gripperFinished() {
     gripperBusy_ = false;
   }
 
-  bool checkLimit() {
+bool HXPauseResumeModule::checkLimit() {
     if (!enabled_ || hdOverride_ || gripperBusy_) return false;
 
     if (digitalRead(Z_LIMIT_PIN) != LIMIT_SWITCH_PRESSED_LEVEL) {
@@ -407,7 +501,7 @@ public:
     return true;
   }
 
-  void service(bool primaryZBusy, bool stopPrefixQueued) {
+void HXPauseResumeModule::service(bool primaryZBusy, bool stopPrefixQueued) {
     if (!enabled_ || hdOverride_ || gripperBusy_) return;
 
     if (primaryZBusy) {
@@ -429,14 +523,13 @@ public:
       return;
     }
 
-    if (!(targetTravel ? targetCanDescend() : hxCanDescend()) || targetReached()) {
+    if (!hxCanDescend()) {
       serviceToFStops();
       return;
     }
 
-    // P3/N uses the same acceleration and cruise speed as ordinary HX.
-    // Target checking above still runs before every new pulse edge.
-    if ((uint32_t)(now - lastStepAt_) < halfPeriodUs_) {
+    // HX runs at the fixed Z pulse rate from its very first step.
+    if ((uint32_t)(now - lastStepAt_) < Z_STEP_HALF_PERIOD_US) {
       return;
     }
 
@@ -446,22 +539,16 @@ public:
     digitalWrite(Z_STEP_PIN, stepHigh_ ? HIGH : LOW);
     lastStepAt_ = now;
 
-    if (!stepHigh_ && accelerationSteps_ < Z_ACCEL_MICROSTEPS) {
-      ++accelerationSteps_;
 
-      const uint32_t reduction =
-        ((Z_START_STEP_HALF_PERIOD_US - Z_CRUISE_STEP_HALF_PERIOD_US) *
-         accelerationSteps_) / Z_ACCEL_MICROSTEPS;
-
-      halfPeriodUs_ = Z_START_STEP_HALF_PERIOD_US - reduction;
-    }
   }
 
-  bool isEnabled() const { return enabled_; }
-  bool isMoving() const { return moving_; }
-  bool isHDOverride() const { return hdOverride_; }
+bool HXPauseResumeModule::isEnabled() const { return enabled_; }
 
-  void printStatus() const {
+bool HXPauseResumeModule::isMoving() const { return moving_; }
+
+bool HXPauseResumeModule::isHDOverride() const { return hdOverride_; }
+
+void HXPauseResumeModule::printStatus() const {
     if (!enabled_) {
       if (cancelReason_ == 's') {
         Serial.println(F("HX:CANCELLED_BY_S"));
@@ -481,44 +568,21 @@ public:
     }
   }
 
-private:
-  bool enabled_ = false;
-  bool moving_ = false;
-  bool stepHigh_ = false;
-  bool hdOverride_ = false;
-  bool gripperBusy_ = false;
-  char cancelReason_ = 0;
-  bool contactReported_ = false;
-
-  uint8_t direction_ = LOW;
-  uint32_t lastStepAt_ = 0;
-  uint32_t halfPeriodUs_ = Z_START_STEP_HALF_PERIOD_US;
-  uint32_t accelerationSteps_ = 0;
-
-  void pausePulses() {
+void HXPauseResumeModule::pausePulses() {
     if (moving_) digitalWrite(Z_STEP_PIN, LOW);
 
     moving_ = false;
     stepHigh_ = false;
   }
 
-  void startSegment(uint32_t now) {
+void HXPauseResumeModule::startSegment(uint32_t now) {
     digitalWrite(Z_STEP_PIN, LOW);
     digitalWrite(Z_DIR_PIN, direction_);
 
     stepHigh_ = false;
     moving_ = true;
-    halfPeriodUs_ = Z_START_STEP_HALF_PERIOD_US;
-    accelerationSteps_ = 0;
     lastStepAt_ = now;
   }
-};
-
-HXPauseResumeModule hxHold;
-
-// -----------------------------------------------------------------------------
-// EXISTING SERIAL MOTION AND SENSOR LOGIC
-// -----------------------------------------------------------------------------
 
 void stopAll() {
   running = false;
@@ -566,6 +630,7 @@ bool serviceSafetyStops() {
 }
 
 void startMotion(char cmd, bool slow) {
+  if (running) digitalWrite(activeStepPin, LOW);
   hxHold.planarCommand();
   hdActive = false;
 
@@ -613,12 +678,16 @@ void startMotion(char cmd, bool slow) {
 
   running = true;
   lastStepMicros = micros();
-  digitalWrite(activeStepPin, HIGH);
+  // A newly received planar command must also respect an existing P3 pause.
+  digitalWrite(activeStepPin,
+    (targetTravel && p3State.planarPaused) ? LOW : HIGH);
 }
 
 void startZMotion(char cmd) {
+  // End the previous primary axis pulse before handing ownership to Z.
+  if (running) digitalWrite(activeStepPin, LOW);
+  cancelHeightFollow();
   releaseJoystickZ();
-  targetTravel = false;
   if ((cmd == 'x' && !hxCanDescend()) ||
       (cmd == 'd' && !tofCanDescend())) {
     hxHold.cancel();
@@ -666,12 +735,11 @@ void startZMotion(char cmd) {
 
   activeStepPin = Z_STEP_PIN;
   activeDirPin = Z_DIR_PIN;
-  activeStepHalfPeriodUs = Z_START_STEP_HALF_PERIOD_US;
-  zAccelerationMicrosteps = 0;
+  activeStepHalfPeriodUs = Z_STEP_HALF_PERIOD_US;
 
   digitalWrite(Z_STEP_PIN, LOW);
   digitalWrite(activeDirPin, dirLevel);
-  delayMicroseconds(5);
+  delayMicroseconds(Z_DIRECTION_SETUP_US);
 
   running = true;
   lastStepMicros = micros();
@@ -863,6 +931,9 @@ void processCommand(char cmd) {
       isLimitSwitchPressed() ? "LIMIT:PRESSED" : "LIMIT:RELEASED"
     );
     hxHold.printStatus();
+    Serial.println(!targetTravel ? F("P3:OFF") :
+      (p3State.direction > 0 ? F("P3:UP") :
+       p3State.direction < 0 ? F("P3:DOWN") : F("P3:HOLD_OR_PAUSED")));
     return;
   }
 
@@ -954,22 +1025,16 @@ void setup() {
   Serial.begin(SERIAL_BAUD);
   Wire.begin();
 #if defined(WIRE_HAS_TIMEOUT)
-  Wire.setWireTimeout(3000, true);
+  Wire.setWireTimeout(I2C_TIMEOUT_US, true);
 #endif
   tofReady = tof.begin();
-  if (tofReady) tofReady = tof.startRangeContinuous(40);
+  if (tofReady) tofReady = tof.startRangeContinuous(TOF_CONTINUOUS_PERIOD_MS);
   if (!tofReady) Serial.println(F("ERR:TOF_INIT_DOWN_DISABLED"));
 }
 
 // -----------------------------------------------------------------------------
 // JOYSTICK
 // -----------------------------------------------------------------------------
-
-JoystickAxis joystickZ, joystickA;
-int joystickX = JOYSTICK_CENTER_X;
-int joystickY = JOYSTICK_CENTER_Y;
-uint32_t joystickSampleAt = 0;
-bool joystickDownReported = false;
 
 void releaseJoystick(JoystickAxis &axis, uint8_t stepPin) {
   if (axis.moving) digitalWrite(stepPin, LOW);
@@ -1068,15 +1133,13 @@ void serviceJoystick() {
   uint32_t now = (uint32_t)micros();
 
   if ((uint32_t)(now - joystickSampleAt) >= JOYSTICK_SAMPLE_US) {
-    static bool readX = true;
-
-    if (readX) {
+    if (joystickReadX) {
       joystickX = analogRead(JOYSTICK_X_PIN);
     } else {
       joystickY = analogRead(JOYSTICK_Y_PIN);
     }
 
-    readX = !readX;
+    joystickReadX = !joystickReadX;
     joystickSampleAt = now;
   }
 
@@ -1095,7 +1158,7 @@ void serviceJoystick() {
 
   if (downwardGesture && !joystickDownReported &&
       !(running && activeStepPin == Z_STEP_PIN) &&
-      !hxHold.isEnabled() &&
+      !hxHold.isEnabled() && !targetTravel &&
       !joystickZ.stoppedUntilCenter) {
     Serial.println(F("hx"));
     joystickDownReported = true;
@@ -1110,7 +1173,7 @@ void serviceJoystick() {
     joystickX,
     JOYSTICK_CENTER_X,
     INVERT_Z_DIRECTION,
-    (running && activeStepPin == Z_STEP_PIN) || hxHold.isEnabled(),
+    (running && activeStepPin == Z_STEP_PIN) || hxHold.isEnabled() || targetTravel,
     false,
     JOYSTICK_Z_SLOW_US,
     JOYSTICK_Z_FAST_US
@@ -1136,16 +1199,10 @@ void serviceJoystick() {
 
 // Debouncing counts separate presses.
 // Original serial HD/HX logic still reads SW directly.
-bool switchRawPressed = false;
-bool switchStablePressed = false;
-bool firstSwitchPressPending = false;
-
-uint32_t switchChangedAt = 0;
-uint32_t firstSwitchPressAt = 0;
-
 void emergencyStop() {
   ++stopGeneration;
 
+  cancelHeightFollow();
   hxHold.cancel('s');
   stopAll();
   stopJoystick();
@@ -1213,6 +1270,13 @@ bool waitWithMotion(uint32_t duration) {
 }
 
 void serviceBackground() {
+  // Consume an already-buffered stop before any sensor work or motor edge.
+  // This applies to primary Z, X/Y and joystick motion as well as HX/P3.
+  if (Serial.peek() == 'S' || Serial.peek() == 's') {
+    Serial.read();
+    emergencyStop();
+    return;
+  }
   serviceSwitch();
   serviceToF();
   serviceToFStops();
@@ -1231,8 +1295,10 @@ void serviceBackground() {
     nextCommand == 's' || nextCommand == 'S' ||
     nextCommand == 'h' || nextCommand == 'H';
 
+  serviceHeightFollow(stopPrefixQueued);
+
   hxHold.service(
-    running && activeStepPin == Z_STEP_PIN,
+    (running && activeStepPin == Z_STEP_PIN) || targetTravel,
     stopPrefixQueued
   );
 
@@ -1240,31 +1306,18 @@ void serviceBackground() {
   if (running) {
     unsigned long now = micros();
 
-    if ((unsigned long)(now - lastStepMicros) >=
-        (hdActive ? tofDownHalfPeriod(activeStepHalfPeriodUs) : activeStepHalfPeriodUs)) {
+    if (targetTravel && p3State.planarPaused && activeStepPin != Z_STEP_PIN) {
+      digitalWrite(activeStepPin, LOW);
+      lastStepMicros = now;
+    } else if ((unsigned long)(now - lastStepMicros) >=
+        activeStepHalfPeriodUs) {
       lastStepMicros = now;
 
       bool currentState = digitalRead(activeStepPin);
       bool nextState = !currentState;
       digitalWrite(activeStepPin, nextState);
 
-      if (activeStepPin == Z_STEP_PIN && nextState == LOW &&
-          activeStepHalfPeriodUs > Z_CRUISE_STEP_HALF_PERIOD_US) {
-        if (zAccelerationMicrosteps < Z_ACCEL_MICROSTEPS) {
-          zAccelerationMicrosteps++;
-        }
 
-        unsigned long periodReduction =
-          ((Z_START_STEP_HALF_PERIOD_US - Z_CRUISE_STEP_HALF_PERIOD_US) *
-           zAccelerationMicrosteps) / Z_ACCEL_MICROSTEPS;
-
-        activeStepHalfPeriodUs =
-          Z_START_STEP_HALF_PERIOD_US - periodReduction;
-
-        if (activeStepHalfPeriodUs < Z_CRUISE_STEP_HALF_PERIOD_US) {
-          activeStepHalfPeriodUs = Z_CRUISE_STEP_HALF_PERIOD_US;
-        }
-      }
     }
   }
 
@@ -1274,24 +1327,137 @@ void serviceBackground() {
 
 
 // Stop only downward Z, leaving independent planar/gripper work intact.
+// -----------------------------------------------------------------------------
+// P3 CONTINUOUS HEIGHT FOLLOWING (independent of the X/Y pulse generator)
+// -----------------------------------------------------------------------------
+void pauseHeightPulses() {
+  if (p3State.moving) {
+    digitalWrite(Z_STEP_PIN, LOW);
+    p3State.stoppedAtMs = millis();
+  }
+  p3State.speedStepsS = 0;
+  p3State.moving = false;
+  p3State.stepHigh = false;
+  p3State.direction = 0;
+}
+
+void cancelHeightFollow() {
+  pauseHeightPulses();
+  targetTravel = false;
+  p3State = HeightFollowState();
+  p3State.planarPaused = false;
+}
+
+void serviceHeightFollow(bool stopPrefixQueued) {
+  if (!targetTravel) return;
+  const uint32_t nowMs = millis();
+  const bool rawFresh = tofReady && tofValid &&
+    (uint32_t)(nowMs - tofLastValidMs) <= TOF_STALE_MS;
+  const bool atFloor = rawFresh && rawDistance <= TOF_SAFETY_MM;
+  // Ordinary P3 motion uses exactly the same acceptance/freshness rule as TOF:MM.
+  // A raw reading can override this only when valid, fresh and at the safety floor.
+  p3State.pauseReason = !tofReady ? P3PauseReason::INIT :
+    isLimitSwitchPressed() ? P3PauseReason::SW :
+    stopPrefixQueued ? P3PauseReason::STOP :
+    (running && activeStepPin == Z_STEP_PIN) ? P3PauseReason::Z_BUSY :
+    (!atFloor && !filteredFeedbackFresh(nowMs)) ?
+      ((uint32_t)(nowMs - filterLastValidMs) > TOF_STALE_MS ?
+        P3PauseReason::FILTER_STALE : P3PauseReason::FILTER_INVALID) :
+    P3PauseReason::NONE;
+  if (p3State.pauseReason != P3PauseReason::NONE) {
+    pauseHeightPulses();
+    p3State.planarPaused = true;
+    return;
+  }
+
+  // P1=35 holds just above the floor instead of cycling into safety recovery.
+  const int followTargetMm = p1DistanceMm <= TOF_SAFETY_MM
+    ? TOF_SAFETY_MM + 1 : p1DistanceMm;
+  // Follow exactly TOF:MM (median + smoothing + display hysteresis), like P1.
+  // Raw validity gates only the immediate floor override, not ordinary following.
+  // At the floor, upward recovery takes priority even if the filter excludes
+  // a reading below 20 mm; never let an old displayed value command descent.
+  const int errorMm = displayedDistance - followTargetMm;
+  const int magnitudeMm = errorMm < 0 ? -errorMm : errorMm;
+  int8_t desired = errorMm < 0 ? 1 : -1;
+  if (magnitudeMm <= P3_HOLD_BAND_MM ||
+      (!p3State.moving && magnitudeMm < P3_RESTART_BAND_MM)) desired = 0;
+  if (atFloor) desired = 1; // Raw floor recovery always overrides the hold band.
+
+  // Protect planar travel when lifting or when Z is too far from its target.
+  // Keep lateral travel paused during reversal settling as well.
+  p3State.planarPaused = desired > 0 || atFloor ||
+    magnitudeMm >= P3_PLANAR_PAUSE_ERROR_MM;
+  if (desired == 0) {
+    pauseHeightPulses();
+    p3State.acquired = true;
+    return; // Stay armed: a later surface change immediately starts a correction.
+  }
+
+  const uint32_t now = micros();
+  if (p3State.moving && p3State.direction != desired) pauseHeightPulses();
+  if (!p3State.moving) {
+    if (!atFloor && p3State.lastDirection != 0 &&
+        p3State.lastDirection != desired &&
+        (uint32_t)(millis() - p3State.stoppedAtMs) < P3_REVERSE_WAIT_MS) {
+      p3State.planarPaused = true;
+      p3State.pauseReason = P3PauseReason::REVERSAL;
+      return;
+    }
+    digitalWrite(Z_STEP_PIN, LOW);
+    const bool upward = desired > 0;
+    digitalWrite(Z_DIR_PIN, (upward ^ INVERT_Z_DIRECTION) ? HIGH : LOW);
+    p3State.direction = p3State.lastDirection = desired;
+    p3State.stepHigh = false;
+    p3State.moving = true;
+    p3State.lastEdgeUs = p3State.speedUpdatedUs = now;
+    p3State.speedStepsS = P3_MIN_SPEED_STEPS_S;
+    p3State.halfPeriodUs = (uint32_t)(500000.0f / P3_MIN_SPEED_STEPS_S + 0.5f);
+    return;
+  }
+
+  const uint32_t elapsed = now - p3State.speedUpdatedUs;
+  if (elapsed >= P3_SPEED_UPDATE_US) {
+    const float maximumSpeed = 500000.0f / P3_STEP_HALF_PERIOD_US;
+    float requestedSpeed = (magnitudeMm - P3_HOLD_BAND_MM) * P3_SPEED_PER_ERROR_MM;
+    if (atFloor) requestedSpeed = P3_FLOOR_RECOVERY_STEPS_S;
+    if (requestedSpeed < P3_MIN_SPEED_STEPS_S) requestedSpeed = P3_MIN_SPEED_STEPS_S;
+    if (requestedSpeed > maximumSpeed) requestedSpeed = maximumSpeed;
+    // Bound acceleration after a busy background call; never catch up in a burst.
+    const uint32_t bounded = elapsed > 10000UL ? 10000UL : elapsed;
+    const float change = P3_ACCEL_STEPS_S2 * bounded / 1000000.0f;
+    if (requestedSpeed < p3State.speedStepsS) {
+      // Reduce commanded speed promptly when delayed feedback gets near target.
+      p3State.speedStepsS = requestedSpeed;
+    } else {
+      p3State.speedStepsS += change;
+      if (p3State.speedStepsS > requestedSpeed) p3State.speedStepsS = requestedSpeed;
+    }
+    p3State.speedUpdatedUs = now;
+    p3State.halfPeriodUs = (uint32_t)(500000.0f / p3State.speedStepsS + 0.5f);
+  }
+  if ((uint32_t)(now - p3State.lastEdgeUs) < p3State.halfPeriodUs) return;
+  p3State.stepHigh = !p3State.stepHigh;
+  digitalWrite(Z_STEP_PIN, p3State.stepHigh ? HIGH : LOW);
+  p3State.lastEdgeUs = now;
+}
+
 void serviceToFStops() {
+  if (targetTravel) return; // P3 owns its saved-target and sensor checks.
   const bool downSerial = running && activeStepPin == Z_STEP_PIN && hdActive;
   const bool downManual = joystickZ.moving &&
     joystickZ.direction == (bool)(LOW ^ INVERT_Z_DIRECTION);
   if (!downSerial && !downManual && !hxHold.isEnabled()) return;
   const bool plainHX = hxHold.isEnabled() && !targetTravel && !downSerial;
-  const bool safe = targetTravel ? targetCanDescend() :
-    ((plainHX || downManual) ? hxCanDescend() : tofCanDescend());
-  const bool reached = targetReached();
-  if (safe && !reached) return;
+  const bool safe = (plainHX || downManual) ? hxCanDescend() : tofCanDescend();
+  if (safe) return;
   hxHold.cancel();
   if (downSerial) { running = false; hdActive = false; }
   releaseJoystickZ();
   joystickZ.stoppedUntilCenter = true;
   digitalWrite(Z_STEP_PIN, LOW);
   Serial.println(F("S"));
-  if (reached) Serial.println(F("P3:TARGET_REACHED"));
-  else if (!tofReady) Serial.println(F("TOF:INIT_FAILED"));
+  if (!tofReady) Serial.println(F("TOF:INIT_FAILED"));
   else if (plainHX) Serial.println(F("HX:STOP_AT_OR_BELOW_40_MM"));
   else if (downManual) Serial.println(F("JOG:STOP_AT_OR_BELOW_40_MM"));
   else if (!tofValid || (uint32_t)(millis() - tofLastValidMs) > TOF_STALE_MS)
@@ -1307,16 +1473,15 @@ void startTargetTravel() {
     Serial.println(F("ERR:P1_BELOW_SAFETY_35_MM"));
     return;
   }
-  // A missing reading does not reject P3; wait for a valid crossing while moving.
+  cancelHeightFollow();
   releaseJoystickZ();
-  stopAll();
-  hxHold.begin(INVERT_Z_DIRECTION ? HIGH : LOW);
+  hxHold.cancel();
+  if (running && activeStepPin == Z_STEP_PIN) stopAll();
+  digitalWrite(Z_STEP_PIN, LOW);
   targetTravel = true;
-  serviceToFStops();
-  if (targetTravel) {
-    Serial.print(F("P3:RUN_TO_MM="));
-    Serial.println(p1DistanceMm);
-  }
+  p3State.planarPaused = true;
+  Serial.print(F("P3:FOLLOW_MM="));
+  Serial.println(p1DistanceMm);
 }
 
 void processPCommand() {
@@ -1336,7 +1501,7 @@ void processPCommand() {
   }
   // Cancel an existing target run before replacing its destination.
   if (targetTravel) {
-    hxHold.cancel();
+    cancelHeightFollow();
     releaseJoystickZ();
     joystickZ.stoppedUntilCenter = true;
   }

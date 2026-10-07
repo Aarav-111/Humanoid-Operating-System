@@ -20,7 +20,6 @@ if FASTSAM_BUILD_FLAG not in sys.argv:
     sys.modules.setdefault("torch", None)
 
 import base64
-import colorsys
 import copy
 import datetime
 import io
@@ -34,6 +33,7 @@ import subprocess
 import tempfile
 import threading
 import time
+import traceback
 import wave
 from dataclasses import dataclass, field, replace as dc_replace
 from multiprocessing import shared_memory
@@ -62,12 +62,12 @@ try:
     from AppKit import (NSApplication, NSBundle, NSMenu, NSMenuItem,
                         NSProcessInfo, NSScreen, NSEvent, NSPasteboard,
                         NSPasteboardTypeString, NSObject, NSSpeechSynthesizer,
-                        NSImage)
+                        NSImage, NSColorSpace)
 except ImportError:
     NSApplication = NSBundle = NSMenu = NSMenuItem = None
     NSProcessInfo = NSScreen = None
     NSEvent = NSPasteboard = NSPasteboardTypeString = None
-    NSImage = None
+    NSImage = NSColorSpace = None
     NSObject = None
     NSSpeechSynthesizer = None
 
@@ -106,7 +106,7 @@ ALPHABET = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 DEBUG_INPUT = bool(os.environ.get("S1_DEBUG_INPUT"))
 
 SCRIPT_PATH = os.path.abspath(__file__)
-S1_EMBEDDED_STATE_B64 = "eyJzZXR0aW5ncyI6eyJjYW1lcmEiOnsiem9vbSI6MS4xLCJicmlnaHRuZXNzIjowLCJjb250cmFzdCI6MS4wLCJzYXR1cmF0aW9uIjoxLjAsInNoYXJwbmVzcyI6MC4wLCJyb3RhdGlvbiI6MCwibWlycm9yIjpmYWxzZX0sImdyaWQiOnsibl9jb2xzIjoyMCwibl9yb3dzIjoyMCwiYm94IjpbMjEzLjAsNy43NTk5OTk5OTk5OTk5OTEsOTkwLjI0LDc4NS4wXSwic3F1YXJlX2NlbGxzIjp0cnVlLCJmcmFtZV9zaXplIjpbMTQwOSw3OTJdLCJib3hfcmVsIjpbMC4xNTExNzEwNDMyOTMxMTU2OCwwLjAwOTc5Nzk3OTc5Nzk3OTc4NiwwLjcwMjc5NjMwOTQzOTMxODcsMC45OTExNjE2MTYxNjE2MTYxXX0sInRyaWdfb2Zmc2V0Ijp7ImNhbWVyYV9oZWlnaHRfaW4iOjM1LjAsInRhZ19oZWlnaHRfaW4iOjUuNSwiYm9hcmRfaGVpZ2h0X2luIjowLjAsInBpdm90X3giOjAuMCwicGl2b3RfeSI6MC4wLCJncmlwcGVyX3VwX2Rvd24iOi03LCJncmlwcGVyX3JpZ2h0X2xlZnQiOjAsImdyaXBwZXJfdmVydGljYWxfZGlyZWN0aW9uIjoidXAiLCJncmlwcGVyX2hvcml6b250YWxfZGlyZWN0aW9uIjoibGVmdCIsIm51ZGdlX3MiOjAuMiwibnVkZ2VfZGlyZWN0aW9uIjoicmlnaHQiLCJudWRnZV9hY3Rpb25zIjp7InBpY2t1cCI6dHJ1ZSwia2VlcCI6ZmFsc2UsInByZXNzIjpmYWxzZSwicmVsZWFzZSI6dHJ1ZX19LCJ2aXNpb24iOnsiYm9hcmRfd2lkdGhfaW4iOjI0LjAsImNvbmZfdGhyZXMiOjAuMjUsImlvdV90aHJlcyI6MC43LCJtYXhfYXJlYSI6MC41LCJvdXRsaW5lX3B4IjoyLCJtYXJrX3BhcnRzIjp0cnVlLCJzaG93X25hbWVzIjp0cnVlLCJhdXRvX25hbWUiOnRydWUsIm5hbWVyX21vZGVsIjoiZ3B0LTUuNC1taW5pIiwicHJpb3JpdHlfbmFtaW5nIjp0cnVlLCJtYXhfZnBzIjoxMC4wLCJzY2VuZV9oaW50IjoiVGhlIHBob3RvIHNob3dzIHRoZSB3b3JrIGFyZWEgb2YgYSBzbWFsbCBnYW50cnkgcm9ib3QsIHNvIGl0IG1heSBob2xkIHBhcnRzIG9mIHRoZSByb2JvdCBpdHNlbGYgKGFsdW1pbml1bSBmcmFtZSByYWlscywgbGVhZCBzY3Jld3MsIHNtb290aCByb2RzLCBzdGVwcGVyIG1vdG9ycywgYmVsdHMsIHB1bGxleXMsIGEgZ3JpcHBlciwgY2FibGVzKSBhcyB3ZWxsIGFzIGV2ZXJ5ZGF5IG9iamVjdHMuIn0sImJlaGF2aW91ciI6eyJtYW51YWxfZ3JpcHBlcl9zdGVwcyI6ZmFsc2UsImdyaXBwZXJfYWkiOnRydWUsImVycl92ZXJzaW9uIjoiRVJSLTMifX0sImN1c3RvbV90cmFpbmluZyI6W10sImVycm9yX3JlYm91bmRzIjpbeyJ0YXNrIjoic3dhcCBhbGwgdGhlIG9iamVjdHMgb24gdGhlIGJvYXJkIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6Ik9iamVjdHMgZGlkIG5vdCBzd2FwIHBvc2l0aW9uczsgc2NyZXdkcml2ZXIgcmVtYWlucyBhdCBIMTQgYW5kIHV0aWxpdHkga25pZmUgcmVtYWlucyBhdCBQMTEuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOC0zMVQyMDo0NTowNiJ9LHsidGFzayI6IndhdGVyIG15IHBsYW50cyIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJObyB2aXNpYmxlIGV2aWRlbmNlIHRoZSBwbGFudCB3YXMgd2F0ZXJlZDsgY3VwIGFuZCBwbGFudCByZW1haW4gZXNzZW50aWFsbHkgdW5jaGFuZ2VkLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMDFUMTU6NDY6MTMifSx7InRhc2siOiJ3YXRlciBteSBwbGFudHMiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiTm8gdmlzaWJsZSBldmlkZW5jZSB0aGUgcGxhbnQgd2FzIHdhdGVyZWQ7IHBsYW50IGFuZCBtdWcgb25seSBzaGlmdGVkIHNsaWdodGx5LiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMDJUMTQ6MzE6NTAifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzcG90IGluIHRoZSBib2R5LiIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsInJlYXNvbiI6ImJsYWNrIHNvY2sgd2FzIG1vdmVkIGludG8gdGhlIGJvd2wsIHdpdGggdGhlIGJvd2wgc3RpbGwgY29udGFpbmluZyBpdCBpbiB0aGUgZmluYWwgaW1hZ2UiLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDExOjUxOjIyIn0seyJ0YXNrIjoiS2VlcCB0aGUgYmxhY2sgc3BvdCBpbiB0aGUgYm9keS4iLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiYmxhY2sgc29jayB3YXMgbW92ZWQgbmVhciBLNCBpbnN0ZWFkIG9mIGJlaW5nIGtlcHQgaW4gdGhlIGJvd2wvYm9keSBhdCBRMyIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTE6NTE6MzYifSx7InRhc2siOiJzb3J0IHRoZSBzb2NrZXMgYW5kIGtlZXAgdGhlIHdoaXRlcyBpbiB0ZSBib3dsIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6IldoaXRlIHNvY2tzIGFyZSBub3QgdmlzaWJsZSBpbiB0aGUgYm93bCBpbiB0aGUgZmluYWwgaW1hZ2U7IG9ubHkgdGhlIGJsYWNrIHNvY2tzIHJlbWFpbiBvbiB0aGUgYm9hcmQuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMjowMzowMCJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNvY2tzIHN0YWNrZWQgdG9nZXRoZXIuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6Ik9ubHkgb25lIGJsYWNrIHNvY2sgaXMgdmlzaWJsZSBpbiB0aGUgZmluYWwgaW1hZ2U7IHRoZSB0d28gc29ja3MgYXJlIG5vdCBjb25maXJtZWQgc3RhY2tlZCB0b2dldGhlci4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDEyOjA1OjEzIn0seyJ0YXNrIjoiS2VlcCB0aGUgYmxhY2sgc29ja3Mgc3RhY2tlZCB0b2dldGhlci4iLCJ2ZXJkaWN0IjoiZG9uZSBjb3JyZWN0bHkiLCJyZWFzb24iOiJUaGUgdHdvIGJsYWNrIHNvY2tzIGFyZSBzdGFja2VkIHRvZ2V0aGVyIGluIHRoZSBmaW5hbCBpbWFnZS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDEyOjA1OjIzIn0seyJ0YXNrIjoiS2VlcCB0aGUgYmxhY2sgc29jayBpbiB0aGUgYm93bC4iLCJ2ZXJkaWN0IjoiZG9uZSBjb3JyZWN0bHkiLCJyZWFzb24iOiJibGFjayBzb2NrIGlzIHBsYWNlZCBpbiB0aGUgZ3JlZW4gYm93bCBpbiB0aGUgZmluYWwgaW1hZ2UuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMzowMTozNCJ9LHsidGFzayI6IlNvcnQgdGhlIGJsYWNrIGFuZCB3aGl0ZSBzb2NrcywgYW5kIHB1dCBhbGwgdGhlIHdoaXRlcyBpbiB0aGUgYm93bC4iLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiV2hpdGUgc29jayBpcyBpbiB0aGUgYm93bCwgYnV0IG9uZSB3aGl0ZSBzb2NrIHJlbWFpbnMgb3V0c2lkZSB0aGUgYm93bC4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDE2OjI3OjQ4In0seyJ0YXNrIjoiU29ydCBteSBjbG90aGVzIG9yIHNvY2tzIGludG8gYmxhY2sgYW5kIHdoaXRlLiBLZWVwIGFsbCB0aGUgYmxhY2tzIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJPbmx5IG9uZSBibGFjayBzb2NrIGlzIGluIHRoZSBib3dsOyB0aGUgb3RoZXIgYmxhY2sgc29jayBpcyBub3QgdmVyaWZpZWQgaW4gdGhlIGJvd2wuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxNjozOTo0MiJ9LHsidGFzayI6IktlZXAgdGhlIGxlYXZlcyBpbiB0aGUgYm93bC4iLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiTGVhdmVzIGFyZSBub3QgZnVsbHkgaW4gdGhlIGJvd2w7IHBhcnQgb2YgdGhlIHNwcmlnIHJlbWFpbnMgb3V0c2lkZSBvbiB0aGUgcmltL3RhYmxlLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTY6NDc6NTIifSx7InRhc2siOiJtb2UgdGhlIGJrb29rIHRvIGl0J3MgbGVmdCIsInZlcnNpb24iOiJFUlItMyIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJvYmplY3RzIjpbIm5vdGVib29rPXdyb25nIl0sInJlYXNvbiI6IlRoZSBub3RlYm9vayByZW1haW5zIGluIHRoZSBzYW1lIHBvc2l0aW9uIGFzIGluIHRoZSBzdGFydCBpbWFnZXMgYW5kIHdhcyBub3QgbW92ZWQgbGVmdC4iLCJuZXh0IjoiRklYOiBtb3ZlIHRoZSBub3RlYm9vayBsZWZ0IGZyb20gaXRzIGN1cnJlbnQgcG9zaXRpb24gYW5kIHJlbGVhc2UgaXQgdGhlcmUiLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTAyVDE4OjA0OjAwIn0seyJ0YXNrIjoibW9lIHRoZSBia29vayB0byBpdCdzIGxlZnQiLCJ2ZXJzaW9uIjoiRVJSLTMiLCJ2ZXJkaWN0IjoiZG9uZSBjb3JyZWN0bHkiLCJvYmplY3RzIjpbIm5vdGVib29rPW9rIl0sInJlYXNvbiI6IlRoZSBibGFjayBub3RlYm9vayBpcyB2aXNpYmx5IHNoaWZ0ZWQgbGVmdCBmcm9tIGl0cyBzdGFydCBwb3NpdGlvbiAoZnJvbSBhYm91dCBHLUwgY29sdW1ucyB0byBhYm91dCBELUogY29sdW1ucykgYW5kIGlzIHJlc3Rpbmcgb24gdGhlIGJvYXJkIHdpdGggbm8gZ3JpcHBlciBob2xkaW5nIGl0OyBubyBvdGhlciB0YXNrIGNvbnN0cmFpbnRzIGFyZSB2aXNpYmx5IHZpb2xhdGVkLiIsIm5leHQiOiIiLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTAyVDE4OjA0OjIyIn1dfQ=="  # S1_EMBEDDED_STATE
+S1_EMBEDDED_STATE_B64 = "eyJzZXR0aW5ncyI6eyJjYW1lcmEiOnsiem9vbSI6MS4xLCJicmlnaHRuZXNzIjowLCJjb250cmFzdCI6MS4wLCJzYXR1cmF0aW9uIjoxLjAsInNoYXJwbmVzcyI6MC4wLCJyb3RhdGlvbiI6MCwibWlycm9yIjpmYWxzZX0sImdyaWQiOnsibl9jb2xzIjoyMCwibl9yb3dzIjoyMCwiYm94IjpbMjE2LjAyMzQyMDg2NTg2MjMsNy44Njc3Nzc3Nzc3Nzc3NjksMTAwNC4yOTU5MjYxODg3ODY0LDc5NS45MDI3Nzc3Nzc3Nzc3XSwic3F1YXJlX2NlbGxzIjp0cnVlLCJmcmFtZV9zaXplIjpbMTQyOSw4MDNdLCJib3hfcmVsIjpbMC4xNTExNzEwNDMyOTMxMTU2OCwwLjAwOTc5Nzk3OTc5Nzk3OTc4NiwwLjcwMjc5NjMwOTQzOTMxODcsMC45OTExNjE2MTYxNjE2MTYxXX0sInRyaWdfb2Zmc2V0Ijp7ImNhbWVyYV9oZWlnaHRfaW4iOjM1LjAsInRhZ19oZWlnaHRfaW4iOjUuNSwiYm9hcmRfaGVpZ2h0X2luIjowLjAsInBpdm90X3giOjAuMCwicGl2b3RfeSI6MC4wLCJncmlwcGVyX3VwX2Rvd24iOi03LCJncmlwcGVyX3JpZ2h0X2xlZnQiOjAsImdyaXBwZXJfdmVydGljYWxfZGlyZWN0aW9uIjoidXAiLCJncmlwcGVyX2hvcml6b250YWxfZGlyZWN0aW9uIjoibGVmdCIsIm51ZGdlX3MiOjAuMiwibnVkZ2VfZGlyZWN0aW9uIjoicmlnaHQiLCJudWRnZV9hY3Rpb25zIjp7InBpY2t1cCI6dHJ1ZSwia2VlcCI6ZmFsc2UsInByZXNzIjpmYWxzZSwicmVsZWFzZSI6dHJ1ZX19LCJ2aXNpb24iOnsiYm9hcmRfd2lkdGhfaW4iOjI0LjAsImNvbmZfdGhyZXMiOjAuMjUsImlvdV90aHJlcyI6MC43LCJtYXhfYXJlYSI6MC41LCJvdXRsaW5lX3B4IjoyLCJtYXJrX3BhcnRzIjp0cnVlLCJzaG93X25hbWVzIjp0cnVlLCJuYW1lcl9tb2RlbCI6ImdwdC01LjQtbWluaSIsInByaW9yaXR5X25hbWluZyI6dHJ1ZSwibWF4X2ZwcyI6MTAuMCwic2NlbmVfaGludCI6IlRoZSBwaG90byBzaG93cyB0aGUgd29yayBhcmVhIG9mIGEgc21hbGwgZ2FudHJ5IHJvYm90LCBzbyBpdCBtYXkgaG9sZCBwYXJ0cyBvZiB0aGUgcm9ib3QgaXRzZWxmIChhbHVtaW5pdW0gZnJhbWUgcmFpbHMsIGxlYWQgc2NyZXdzLCBzbW9vdGggcm9kcywgc3RlcHBlciBtb3RvcnMsIGJlbHRzLCBwdWxsZXlzLCBhIGdyaXBwZXIsIGNhYmxlcykgYXMgd2VsbCBhcyBldmVyeWRheSBvYmplY3RzLiJ9LCJiZWhhdmlvdXIiOnsibWFudWFsX2dyaXBwZXJfc3RlcHMiOmZhbHNlLCJncmlwcGVyX2FpIjp0cnVlLCJlcnJfYXV0byI6Im9mZiIsInBsYW5uZXJfZWZmb3J0IjoibG93In19LCJjdXN0b21fdHJhaW5pbmciOltdLCJlcnJvcl9yZWJvdW5kcyI6W3sidGFzayI6InN3YXAgYWxsIHRoZSBvYmplY3RzIG9uIHRoZSBib2FyZCIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJPYmplY3RzIGRpZCBub3Qgc3dhcCBwb3NpdGlvbnM7IHNjcmV3ZHJpdmVyIHJlbWFpbnMgYXQgSDE0IGFuZCB1dGlsaXR5IGtuaWZlIHJlbWFpbnMgYXQgUDExLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDgtMzFUMjA6NDU6MDYifSx7InRhc2siOiJ3YXRlciBteSBwbGFudHMiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiTm8gdmlzaWJsZSBldmlkZW5jZSB0aGUgcGxhbnQgd2FzIHdhdGVyZWQ7IGN1cCBhbmQgcGxhbnQgcmVtYWluIGVzc2VudGlhbGx5IHVuY2hhbmdlZC4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTAxVDE1OjQ2OjEzIn0seyJ0YXNrIjoid2F0ZXIgbXkgcGxhbnRzIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6Ik5vIHZpc2libGUgZXZpZGVuY2UgdGhlIHBsYW50IHdhcyB3YXRlcmVkOyBwbGFudCBhbmQgbXVnIG9ubHkgc2hpZnRlZCBzbGlnaHRseS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTAyVDE0OjMxOjUwIn0seyJ0YXNrIjoiS2VlcCB0aGUgYmxhY2sgc3BvdCBpbiB0aGUgYm9keS4iLCJ2ZXJkaWN0IjoiZG9uZSBjb3JyZWN0bHkiLCJyZWFzb24iOiJibGFjayBzb2NrIHdhcyBtb3ZlZCBpbnRvIHRoZSBib3dsLCB3aXRoIHRoZSBib3dsIHN0aWxsIGNvbnRhaW5pbmcgaXQgaW4gdGhlIGZpbmFsIGltYWdlIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMTo1MToyMiJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNwb3QgaW4gdGhlIGJvZHkuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6ImJsYWNrIHNvY2sgd2FzIG1vdmVkIG5lYXIgSzQgaW5zdGVhZCBvZiBiZWluZyBrZXB0IGluIHRoZSBib3dsL2JvZHkgYXQgUTMiLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDExOjUxOjM2In0seyJ0YXNrIjoic29ydCB0aGUgc29ja2VzIGFuZCBrZWVwIHRoZSB3aGl0ZXMgaW4gdGUgYm93bCIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJXaGl0ZSBzb2NrcyBhcmUgbm90IHZpc2libGUgaW4gdGhlIGJvd2wgaW4gdGhlIGZpbmFsIGltYWdlOyBvbmx5IHRoZSBibGFjayBzb2NrcyByZW1haW4gb24gdGhlIGJvYXJkLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTI6MDM6MDAifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzb2NrcyBzdGFja2VkIHRvZ2V0aGVyLiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJPbmx5IG9uZSBibGFjayBzb2NrIGlzIHZpc2libGUgaW4gdGhlIGZpbmFsIGltYWdlOyB0aGUgdHdvIHNvY2tzIGFyZSBub3QgY29uZmlybWVkIHN0YWNrZWQgdG9nZXRoZXIuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMjowNToxMyJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNvY2tzIHN0YWNrZWQgdG9nZXRoZXIuIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5IiwicmVhc29uIjoiVGhlIHR3byBibGFjayBzb2NrcyBhcmUgc3RhY2tlZCB0b2dldGhlciBpbiB0aGUgZmluYWwgaW1hZ2UuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMjowNToyMyJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNvY2sgaW4gdGhlIGJvd2wuIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5IiwicmVhc29uIjoiYmxhY2sgc29jayBpcyBwbGFjZWQgaW4gdGhlIGdyZWVuIGJvd2wgaW4gdGhlIGZpbmFsIGltYWdlLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTM6MDE6MzQifSx7InRhc2siOiJTb3J0IHRoZSBibGFjayBhbmQgd2hpdGUgc29ja3MsIGFuZCBwdXQgYWxsIHRoZSB3aGl0ZXMgaW4gdGhlIGJvd2wuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6IldoaXRlIHNvY2sgaXMgaW4gdGhlIGJvd2wsIGJ1dCBvbmUgd2hpdGUgc29jayByZW1haW5zIG91dHNpZGUgdGhlIGJvd2wuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxNjoyNzo0OCJ9LHsidGFzayI6IlNvcnQgbXkgY2xvdGhlcyBvciBzb2NrcyBpbnRvIGJsYWNrIGFuZCB3aGl0ZS4gS2VlcCBhbGwgdGhlIGJsYWNrcyBpbiB0aGUgYm93bC4iLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiT25seSBvbmUgYmxhY2sgc29jayBpcyBpbiB0aGUgYm93bDsgdGhlIG90aGVyIGJsYWNrIHNvY2sgaXMgbm90IHZlcmlmaWVkIGluIHRoZSBib3dsLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTY6Mzk6NDIifSx7InRhc2siOiJLZWVwIHRoZSBsZWF2ZXMgaW4gdGhlIGJvd2wuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6IkxlYXZlcyBhcmUgbm90IGZ1bGx5IGluIHRoZSBib3dsOyBwYXJ0IG9mIHRoZSBzcHJpZyByZW1haW5zIG91dHNpZGUgb24gdGhlIHJpbS90YWJsZS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDE2OjQ3OjUyIn0seyJ0YXNrIjoibW9lIHRoZSBia29vayB0byBpdCdzIGxlZnQiLCJ2ZXJzaW9uIjoiRVJSLTMiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5Iiwib2JqZWN0cyI6WyJub3RlYm9vaz13cm9uZyJdLCJyZWFzb24iOiJUaGUgbm90ZWJvb2sgcmVtYWlucyBpbiB0aGUgc2FtZSBwb3NpdGlvbiBhcyBpbiB0aGUgc3RhcnQgaW1hZ2VzIGFuZCB3YXMgbm90IG1vdmVkIGxlZnQuIiwibmV4dCI6IkZJWDogbW92ZSB0aGUgbm90ZWJvb2sgbGVmdCBmcm9tIGl0cyBjdXJyZW50IHBvc2l0aW9uIGFuZCByZWxlYXNlIGl0IHRoZXJlIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0xMC0wMlQxODowNDowMCJ9LHsidGFzayI6Im1vZSB0aGUgYmtvb2sgdG8gaXQncyBsZWZ0IiwidmVyc2lvbiI6IkVSUi0zIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5Iiwib2JqZWN0cyI6WyJub3RlYm9vaz1vayJdLCJyZWFzb24iOiJUaGUgYmxhY2sgbm90ZWJvb2sgaXMgdmlzaWJseSBzaGlmdGVkIGxlZnQgZnJvbSBpdHMgc3RhcnQgcG9zaXRpb24gKGZyb20gYWJvdXQgRy1MIGNvbHVtbnMgdG8gYWJvdXQgRC1KIGNvbHVtbnMpIGFuZCBpcyByZXN0aW5nIG9uIHRoZSBib2FyZCB3aXRoIG5vIGdyaXBwZXIgaG9sZGluZyBpdDsgbm8gb3RoZXIgdGFzayBjb25zdHJhaW50cyBhcmUgdmlzaWJseSB2aW9sYXRlZC4iLCJuZXh0IjoiIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0xMC0wMlQxODowNDoyMiJ9XX0="  # S1_EMBEDDED_STATE
 try:
     S1_EMBEDDED_STATE = json.loads(
         base64.b64decode(S1_EMBEDDED_STATE_B64).decode("utf-8"))
@@ -209,8 +209,6 @@ def flush_embedded_state(timeout=2.0):
 
 
 SETTINGS_PATH = SCRIPT_PATH
-TRAINING_PATH = SCRIPT_PATH
-ERR_HISTORY_PATH = SCRIPT_PATH
 
 
 class GridConfig:
@@ -356,39 +354,58 @@ def ease_toward(current: float, target: float, rate: float = ANIM_RATE) -> float
     return target if abs(value - target) < 0.002 else value
 
 
-C_BG        = _bgr("#f4f6fb")
+# ChatGPT's light theme, as chatgpt.com's own markup and stylesheets set
+# it (archived 2026-10-03, rendered in Chrome and read back with
+# getComputedStyle): a #fcfcfc page under white cards, #0d0d0d ink,
+# #5d5d5d / #8f8f8f secondary text, 10%-black hairlines, #f3f3f3 hovers,
+# #e8e8e8 for what you sent, black pill buttons that hover to #212121 and
+# outlined ones with a 20%-black edge. C_OVERLAY is for what is drawn ON
+# the camera picture, where black would vanish: ChatGPT's blue.
+C_BG        = _bgr("#fcfcfc")
 C_CARD      = _bgr("#ffffff")
-C_CARD_SOFT = _bgr("#f7f8fc")
-C_BORDER    = _bgr("#e2e6f0")
-C_TEXT      = _bgr("#1f2430")
-C_TEXT_DIM  = _bgr("#6b7280")
-C_ACCENT    = _bgr("#8b5cf6")
-C_ACCENT_SO = _bgr("#ede9fe")
-C_GREEN     = _bgr("#10b981")
+C_CARD_SOFT = _bgr("#f3f3f3")
+C_BORDER    = _bgr("#e5e5e5")
+C_DIVIDER   = _bgr("#ececec")
+C_RULE      = _bgr("#e3e3e3")       # 10% black on the page: the panel's edge
+C_TEXT      = _bgr("#0d0d0d")
+C_TEXT_DIM  = _bgr("#5d5d5d")
+C_TEXT_FAINT = _bgr("#8f8f8f")
+C_ACCENT    = _bgr("#0d0d0d")
+C_SELECTED  = _bgr("#ececec")
+C_BUBBLE    = _bgr("#e8e8e8")
+C_BUBBLE_EDGE = _bgr("#dcdcdc")     # its 5%-black edge
+C_GREEN     = _bgr("#10a37f")
 C_AMBER     = _bgr("#f59e0b")
-C_RED       = _bgr("#ef4444")
-C_BLUE      = _bgr("#3b82f6")
-C_BTN       = _bgr("#111114")
-C_BTN_HOVER = _bgr("#2b2b31")
+C_RED       = _bgr("#d8241a")
+C_BLUE      = _bgr("#0385ff")
+C_OVERLAY   = C_BLUE
+C_ERROR_TEXT = _bgr("#ba2623")
+C_ERROR_BG  = _bgr("#fff1f0")
+C_SWITCH_OFF = _bgr("#e3e3e3")
+C_BTN       = _bgr("#0d0d0d")
+C_BTN_HOVER = _bgr("#212121")
 C_BTN_FG    = _bgr("#ffffff")
 C_GHOST     = _bgr("#ffffff")
-C_GHOST_HOV = _bgr("#eef0f6")
+C_GHOST_HOV = _bgr("#f3f3f3")
+C_OUTLINE   = _bgr("#cccccc")       # 20% black: an outlined button's edge
+
+
+def css_baseline(px, line_h):
+    """Where CSS puts the baseline of SF Pro text `px` high in a line box
+    `line_h` tall, from the box's top: the font's ascent under half the
+    leading -- ascent and descent (hhea: 1980/432 per 2048) rounded to whole
+    pixels, the half-leading floored, as Blink lays a line out."""
+    asc = math.floor(px * 1980 / 2048 + 0.5)
+    desc = math.floor(px * 432 / 2048 + 0.5)
+    return float(asc + math.floor((line_h - (asc + desc)) / 2.0))
+
+
+BUTTON_SPACING = -0.08      # ChatGPT's buttons: letter-spacing -0.08px
+
 
 FONT = cv2.FONT_HERSHEY_SIMPLEX
 
 GLASS_ALPHA = 0.10
-GLASS_EDGE = _bgr("#ffffff")
-
-
-def glass_fill(backdrop=C_BG, alpha=GLASS_ALPHA, tint=C_CARD):
-    """The colour a glass card leaves over a flat backdrop.
-
-    Panels that sit on the window wash can be filled with this directly --
-    blurring a flat colour returns the same colour, so the expensive part is
-    skipped and the result is identical.
-    """
-    return tuple(int(round(backdrop[i] * (1 - alpha) + tint[i] * alpha))
-                 for i in range(3))
 
 
 def blur_band(frame, a, b, c, d):
@@ -432,30 +449,19 @@ _CARD_STAMPS = {}
 
 
 def glass_card(img, rect, radius, alpha=GLASS_ALPHA, blur=True, shadow=True):
-    """A floating pane: blurred backdrop, white wash, hairline edge.
+    """A floating pane, the way ChatGPT draws its menus and dialogs: an
+    opaque white card, a 10%-black hairline and a faint neutral shadow.
 
-    The blur shrinks a whole number of 6x6 blocks (INTER_AREA's fast path --
-    the general path was ~5 ms of every frame the Settings card was open),
-    and the wash and edge are an AffineStamp per card size.
+    (The name and the alpha/blur arguments are from when panels were
+    frosted glass; ChatGPT's are solid, so both are accepted and ignored.)
+    The card and its edge are an AffineStamp per size.
     """
     if shadow:
-        drop_shadow(img, rect, radius, spread=14, strength=0.16)
+        drop_shadow(img, rect, radius, spread=16, strength=0.20)
     rx0, ry0, rx1, ry1 = (int(round(v)) for v in rect)
-    h, w = img.shape[:2]
-    x0, y0 = max(0, rx0), max(0, ry0)
-    x1, y1 = min(w, rx1), min(h, ry1)
-    if blur and x1 > x0 and y1 > y0:
-        patch = img[y0:y1, x0:x1]
-        pw, ph = x1 - x0, y1 - y0
-        sw, sh = max(1, pw // 6), max(1, ph // 6)
-        src = patch[:sh * 6, :sw * 6] if pw >= 6 and ph >= 6 else patch
-        small = cv2.resize(src, (sw, sh), interpolation=cv2.INTER_AREA)
-        small = cv2.blur(small, (5, 5))
-        img[y0:y1, x0:x1] = cv2.resize(small, (pw, ph),
-                                       interpolation=cv2.INTER_LINEAR)
     if rx1 <= rx0 or ry1 <= ry0:
         return
-    key = (rx1 - rx0, ry1 - ry0, int(radius), round(float(alpha), 4))
+    key = (rx1 - rx0, ry1 - ry0, int(radius))
     stamp = _CARD_STAMPS.get(key)
     if stamp is None:
         if len(_CARD_STAMPS) >= 64:
@@ -463,9 +469,7 @@ def glass_card(img, rect, radius, alpha=GLASS_ALPHA, blur=True, shadow=True):
         cw, ch = rx1 - rx0, ry1 - ry0
 
         def paint(im):
-            local = (3, 3, 3 + cw, 3 + ch)
-            rounded_rect(im, local, radius, C_CARD, -1, alpha=alpha)
-            rounded_rect(im, local, radius, GLASS_EDGE, 1)
+            css_rect(im, (3, 3, 3 + cw, 3 + ch), radius, C_CARD, C_BORDER)
 
         stamp = _CARD_STAMPS[key] = AffineStamp(cw + 7, ch + 7, paint)
     stamp.apply(img, rx0 - 3, ry0 - 3)
@@ -526,6 +530,48 @@ def rounded_rect(img, rect, radius, colour, thickness=-1, alpha=1.0,
 
     if blend:
         img[ry0:ry1, rx0:rx1] = cv2.addWeighted(layer, alpha, base, 1 - alpha, 0)
+
+
+def _box_coverage(w, h, x0, y0, x1, y1, r):
+    """Coverage, over a w x h grid, of a box with edges at x0..x1, y0..y1
+    (pixel edges, not centres) and corner radius r: exact along its straight
+    edges, analytic on its corners."""
+    ys, xs = np.mgrid[0:h, 0:w].astype(np.float32)
+    xs += 0.5
+    ys += 0.5
+    bx, by = (x1 - x0) / 2.0, (y1 - y0) / 2.0
+    r = max(0.0, min(r, bx, by))
+    qx = np.abs(xs - (x0 + x1) / 2.0) - (bx - r)
+    qy = np.abs(ys - (y0 + y1) / 2.0) - (by - r)
+    d = (np.hypot(np.maximum(qx, 0), np.maximum(qy, 0))
+         + np.minimum(np.maximum(qx, qy), 0) - r)
+    return np.clip(0.5 - d, 0.0, 1.0)
+
+
+def css_rect(img, rect, radius, fill=None, border=None, alpha=1.0):
+    """A CSS box as a browser paints it: `rect` (x0, y0, x1, y1) as edges,
+    snapped to whole pixels the way Blink snaps a box for painting, crisp
+    along its sides, anti-aliased only on its `radius` corners; `fill`
+    under, `border` as its outermost 1px ring."""
+    snap = lambda v: int(math.floor(v + 0.5))
+    x0, y0, x1, y1 = (snap(v) for v in rect)
+    H, W = img.shape[:2]
+    rx0, ry0, rx1, ry1 = max(0, x0), max(0, y0), min(W, x1), min(H, y1)
+    if rx1 <= rx0 or ry1 <= ry0:
+        return
+    w, h = rx1 - rx0, ry1 - ry0
+    outer = _box_coverage(w, h, x0 - rx0, y0 - ry0, x1 - rx0, y1 - ry0, radius)
+    roi = img[ry0:ry1, rx0:rx1]
+    f = roi.astype(np.float32)
+    if fill is not None:
+        a = (outer * alpha)[..., None]
+        f += (np.asarray(fill, np.float32) - f) * a
+    if border is not None:
+        inner = _box_coverage(w, h, x0 - rx0 + 1, y0 - ry0 + 1, x1 - rx0 - 1,
+                              y1 - ry0 - 1, max(0.0, radius - 1))
+        a = (np.clip(outer - inner, 0.0, 1.0) * alpha)[..., None]
+        f += (np.asarray(border, np.float32) - f) * a
+    roi[:] = (f + 0.5).astype(np.uint8)
 
 
 class AffineStamp:
@@ -599,6 +645,7 @@ class AffineStamp:
 
 _SHADOW_STAMPS = {}
 _BUTTON_STAMPS = {}
+SHADOW_SOFTEN = 0.32
 BUTTON_STAMP_CACHE = 512
 SHADOW_STAMP_CACHE = 256
 SHADOW_STAMP_MAX_PIXELS = 3_000_000
@@ -607,9 +654,10 @@ SHADOW_STAMP_MAX_PIXELS = 3_000_000
 def drop_shadow(img, rect, radius, spread=10, strength=0.16):
     """A few expanding translucent rings under a card -- cheap soft shadow.
 
-    Only the band outside the card is committed: the caller paints the card
-    over the rest immediately afterwards, and blending a full card-sized ring
-    per step is by far the most expensive thing on this canvas.
+    Only the band outside the card's box inset by its radius is committed:
+    the caller paints the card over the rest immediately afterwards, and
+    blending a full card-sized ring per step is by far the most expensive
+    thing on this canvas.
 
     The rings depend only on the card's size, so they are worked out once per
     size (see AffineStamp) and every later shadow of that size is two cv2
@@ -628,180 +676,44 @@ def drop_shadow(img, rect, radius, spread=10, strength=0.16):
     if stamp is None:
         if len(_SHADOW_STAMPS) >= SHADOW_STAMP_CACHE:
             _SHADOW_STAMPS.clear()
+        r = _shadow_inset(w, h, radius)
         stamp = _remember(_SHADOW_STAMPS, key, AffineStamp(
             w + 2 * m, h + 2 * m,
             lambda im: _draw_shadow_rings(im, (m, m, m + w, m + h), radius,
                                           spread, strength),
-            hole=(m, m, m + w, m + h)))
+            hole=(m + r, m + r, m + w - r, m + h - r)))
     stamp.apply(img, x0 - m, y0 - m)
 
 
+def _shadow_inset(w, h, radius):
+    """How far in from a card's edges its rounded corners reach: inside
+    the box inset by this much the card covers everything."""
+    return int(max(0, min(radius, w // 2, h // 2)))
+
+
 def _draw_shadow_rings(img, rect, radius, spread, strength):
-    """The rings themselves, as drop_shadow always drew them."""
+    """The rings themselves: everywhere outside the card's box inset by
+    its radius -- so into the rounded corners the card leaves bare, and
+    under its straight edges, which the caller paints over."""
     x0, y0, x1, y1 = (int(round(v)) for v in rect)
-    colour = _bgr("#c8cede")
+    r = _shadow_inset(x1 - x0, y1 - y0, radius)
+    ix0, iy0, ix1, iy1 = x0 + r, y0 + r, x1 - r, y1 - r
+    # ChatGPT's elevation is a faint neutral shadow (0 4px 16px #0000000d
+    # for menus): black, and about a third as strong as the old tinted one.
+    colour = (0, 0, 0)
     for i in range(spread, 0, -2):
-        a = strength * (1.0 - (i - 1) / float(spread)) ** 1.8
+        a = SHADOW_SOFTEN * strength * (1.0 - (i - 1) / float(spread)) ** 1.8
         if a <= 0.004:
             continue
         ring = (x0 - i, y0 - i + 3, x1 + i, y1 + i + 3)
-        for clip in ((x0 - i - 2, y0 - i, x1 + i + 2, y0),
-                     (x0 - i - 2, y1, x1 + i + 2, y1 + i + 5),
-                     (x0 - i - 2, y0, x0, y1),
-                     (x1, y0, x1 + i + 2, y1)):
+        for clip in ((x0 - i - 2, y0 - i, x1 + i + 2, iy0),
+                     (x0 - i - 2, iy1, x1 + i + 2, y1 + i + 5),
+                     (x0 - i - 2, iy0, ix0, iy1),
+                     (ix1, iy0, x1 + i + 2, iy1)):
             rounded_rect(img, ring, radius + i, colour, -1, alpha=a, clip=clip)
 
 
-_WALLPAPER_STOPS = ((0.0, "#f7f8fc"), (0.45, "#f3f0ff"), (1.0, "#eef6ff"))
-
-_WALLPAPER_ORBS = (
-    (0.78, 0.42, 0.52, 150, "#ba96ff"),
-    (0.62, 0.58, 0.48, 135, "#ff96be"),
-    (0.70, 0.32, 0.42, 125, "#ffc382"),
-    (0.88, 0.62, 0.38, 115, "#ffaa6e"),
-    (0.48, 0.28, 0.32,  90, "#aabeff"),
-    (0.55, 0.70, 0.36, 100, "#ff8ca0"),
-)
-
-
-def _wallpaper_gradient(w, h):
-    """Diagonal top-left -> bottom-right pastel gradient, S1-SRC's base wash."""
-    stops_t = np.array([t for t, _ in _WALLPAPER_STOPS], np.float32)
-    colours = np.array([_bgr(c) for _, c in _WALLPAPER_STOPS], np.float32)
-    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
-    diag = (xx / max(w - 1, 1) + yy / max(h - 1, 1)) * 0.5
-    out = np.empty((h, w, 3), np.float32)
-    for c in range(3):
-        out[..., c] = np.interp(diag, stops_t, colours[:, c])
-    return out
-
-
-WALLPAPER_SCALE = 8
-WALLPAPER_DRIFT = 0.05
-WALLPAPER_MARGIN = 24
-
-
-def _wallpaper_scale(w, h):
-    """The 1:N reduction to build the wash at.
-
-    Fixed at WALLPAPER_SCALE for ordinary windows, then loosened so the
-    working canvas stays about the same handful of pixels however big the
-    window is -- a 4K window should not cost sixteen times a laptop one to
-    paint a gradient nothing can resolve detail in anyway.
-    """
-    return max(WALLPAPER_SCALE, int(math.ceil(max(int(w), int(h)) / 220.0)))
-
-
-def _wallpaper_small(w, h):
-    """The reduced size the wash is actually computed at."""
-    s = _wallpaper_scale(w, h)
-    return max(16, int(w) // s), max(16, int(h) // s)
-
-
-def build_wallpaper_base(w, h):
-    """The size-only half of the wallpaper: the gradient plus one blurred
-    alpha "sprite" per colour bloom, at reduced resolution.
-
-    Cached once per window size (see main()). Neither the gradient nor the
-    blurs depend on the mouse, only on how big the window is; what the mouse
-    moves each frame is just where the sprites get pasted, in
-    paint_wallpaper() below.
-    """
-    sw, sh = _wallpaper_small(w, h)
-    m = WALLPAPER_MARGIN
-    grad = _wallpaper_gradient(sw, sh)
-    sprites = []
-    for cx_f, cy_f, rf, alpha, hexc in _WALLPAPER_ORBS:
-        rad = int(max(sw, sh) * rf)
-        if rad <= 0:
-            continue
-        mask = np.zeros((sh + 2 * m, sw + 2 * m), np.float32)
-        cv2.circle(mask, (int(cx_f * sw) + m, int(cy_f * sh) + m), rad, 1.0,
-                   -1, cv2.LINE_AA)
-        mask = cv2.GaussianBlur(mask, (0, 0), max(1.0, rad * 0.35))
-        a = np.clip(mask * (alpha / 255.0) * 0.32, 0.0, 0.22)[..., None]
-        colour = np.array(_bgr(hexc), np.float32)
-        sprites.append((a, colour))
-    return grad, sprites
-
-
-_THEME_HUES = (0, 230, 160, 70, 300)
-_HUE_STAGE_HOLD = 1.6
-_HUE_STAGE_FADE = 1.4
-_HUE_STAGE = _HUE_STAGE_HOLD + _HUE_STAGE_FADE
-
-
-def _smoothstep(t):
-    return t * t * (3.0 - 2.0 * t)
-
-
-def theme_hue_shift(t=None):
-    """Degrees to rotate the base palette's hue by, right now.
-
-    A pure function of wall-clock time -- the cycle needs no state of its
-    own, so nothing has to track "how long has the wallpaper been showing";
-    it is simply always in step with the clock, the same way S1-SRC's own
-    QTimer-driven _anim_t is in practice (it runs continuously from launch).
-    """
-    if t is None:
-        t = time.time()
-    n = len(_THEME_HUES)
-    stage, within = divmod(t, _HUE_STAGE)
-    cur = _THEME_HUES[int(stage) % n]
-    if within <= _HUE_STAGE_HOLD:
-        return float(cur)
-    nxt = _THEME_HUES[(int(stage) + 1) % n]
-    frac = _smoothstep((within - _HUE_STAGE_HOLD) / _HUE_STAGE_FADE)
-    d = ((nxt - cur + 180) % 360) - 180
-    return cur + d * frac
-
-
-def _rotate_hue_bgr(bgr, degrees):
-    """One BGR triple, hue-rotated by `degrees` -- saturation/value held."""
-    b, g, r = (c / 255.0 for c in bgr)
-    h, s, v = colorsys.rgb_to_hsv(r, g, b)
-    h = ((h * 360.0 + degrees) % 360.0) / 360.0
-    r2, g2, b2 = colorsys.hsv_to_rgb(h, s, v)
-    return (b2 * 255.0, g2 * 255.0, r2 * 255.0)
-
-
-def wallpaper_offset(w, h, mouse):
-    """The parallax shift for this cursor position, in reduced-size pixels.
-
-    main() keys its cached wash on this, so the wash is only rebuilt when the
-    cursor has moved far enough to actually change it.
-    """
-    mx, my = mouse if mouse else (w * 0.5, h * 0.5)
-    k = WALLPAPER_DRIFT / _wallpaper_scale(w, h)
-    return int((mx - w * 0.5) * k), int((my - h * 0.5) * k)
-
-
-def paint_wallpaper(base, sprites, w, h, mouse=None, hue_shift=None):
-    """One frame of the background: the cached gradient plus each bloom,
-    nudged toward the mouse and hue-rotated by the theme cycle -- the same
-    cursor parallax and the same living colour S1-SRC's animated wallpaper
-    both have, just driven by wall-clock time the way it always was rather
-    than a Qt timer.
-    """
-    out = base.copy()
-    sh, sw = base.shape[:2]
-    m = WALLPAPER_MARGIN
-    off_x, off_y = wallpaper_offset(w, h, mouse)
-    shift = theme_hue_shift() if hue_shift is None else hue_shift
-    for i, (a, colour) in enumerate(sprites):
-        depth = 1.0 + 0.3 * (i % 3)
-        dx = max(-m, min(m, int(off_x * depth)))
-        dy = max(-m, min(m, int(off_y * depth)))
-        shifted = a[m - dy:m - dy + sh, m - dx:m - dx + sw]
-        rotated = np.array(_rotate_hue_bgr(tuple(colour.tolist()), shift),
-                           np.float32)
-        out *= (1.0 - shifted)
-        out += rotated[None, None, :] * shifted
-    small = np.clip(out, 0, 255).astype(np.uint8)
-    return cv2.resize(small, (int(w), int(h)), interpolation=cv2.INTER_LINEAR)
-
-
-VIDEO_RADIUS = 22
+VIDEO_RADIUS = 24
 
 
 def _corner_alpha(r):
@@ -853,7 +765,6 @@ def ascii_text(label) -> str:
 _TEXT_CACHE_MAX = 20000
 _TEXT_SIZES = {}
 _WRAPS = {}
-_EDIT_WRAPS = {}
 _FITS = {}
 
 
@@ -870,24 +781,389 @@ def _remember(cache, key, value):
     return value
 
 
-def text_size(label, scale, thickness=1):
-    """Pixel size of `label`, memoised.
+# Text is set in SF Pro -- the system font ChatGPT itself uses on a Mac --
+# instead of OpenCV's built-in face. `scale` keeps its old meaning: SF Pro
+# at scale * TEXT_PX_PER_SCALE px is as wide as the old font was, so every
+# layout measured for the old text still fits. thickness 1 is Regular,
+# 2 Semibold; `weight` picks any other (500 = ChatGPT's button Medium).
+# `family` "a3" is Avenir Next, A3-Terra's face, for its message box.
+# Each string is rendered once at TEXT_SS times the size and averaged down
+# (unhinted, like CoreText draws), then kept; drawing is one small blend.
+TEXT_PX_PER_SCALE = 25.0
+TEXT_SS = 4
+TEXT_GAMMA = 0.8          # CoreText's slightly heavier dark-on-light stems
+TEXT_GAMMA_LIGHT = 0.6    # ...and its heavier light-on-dark ones
+TEXT_GAMMA_UI = 0.9       # Chrome's "antialiased" SF Pro, as chatgpt.com
+TEXT_GAMMA_UI_LIGHT = 1.0  # sets it: lighter than CoreText's own smoothing
+UI_FONT_FILE = "/System/Library/Fonts/SFNS.ttf"
+FONT_FACES = {
+    "a3": {400: ("/System/Library/Fonts/Avenir Next.ttc", 7),
+           500: ("/System/Library/Fonts/Avenir Next.ttc", 5),
+           600: ("/System/Library/Fonts/Avenir Next.ttc", 2),
+           700: ("/System/Library/Fonts/Avenir Next.ttc", 0)},
+    "helvetica": {400: ("/System/Library/Fonts/Helvetica.ttc", 0),
+                  700: ("/System/Library/Fonts/Helvetica.ttc", 1)},
+    "lucida": {700: ("/System/Library/Fonts/LucidaGrande.ttc", 1)},
+    "menlo": {700: ("/System/Library/Fonts/Menlo.ttc", 1)},
+}
+_FONT_OBJS = {}
+_TEXT_MASKS = {}
+_TEXT_FACES_OK = None
 
-    The sidebar alone used to ask cv2 for ~950 text sizes a frame -- every
+
+def _text_engine_ok():
+    """True when Pillow and SF Pro are there; otherwise the old cv2 font."""
+    global _TEXT_FACES_OK
+    if _TEXT_FACES_OK is None:
+        try:
+            from PIL import ImageFont  # noqa: F401
+            _TEXT_FACES_OK = os.path.exists(UI_FONT_FILE)
+        except Exception:
+            _TEXT_FACES_OK = False
+    return _TEXT_FACES_OK
+
+
+def _face(px, weight, family, ss=1):
+    """A Pillow font for this size (1x px), weight and family, at ss times
+    the size. SF Pro's optical size follows the size it is SHOWN at."""
+    key = (family, px, weight, ss)
+    f = _FONT_OBJS.get(key)
+    if f is not None:
+        return f
+    from PIL import ImageFont
+    faces = FONT_FACES.get(family)
+    if faces:
+        near = min(faces, key=lambda w: abs(w - weight))
+        path, index = faces[near]
+        if not os.path.exists(path):
+            return _face(px, weight, "ui", ss)
+        f = ImageFont.truetype(path, px * ss, index=index)
+    else:
+        f = ImageFont.truetype(UI_FONT_FILE, px * ss)
+        try:
+            f.set_variation_by_axes([100, max(17, min(96, px)), 400,
+                                     max(1, min(1000, weight))])
+        except Exception:
+            pass
+    if len(_FONT_OBJS) > 256:
+        _FONT_OBJS.clear()
+    _FONT_OBJS[key] = f
+    return f
+
+
+UI_MIN_PX = 12.0            # ChatGPT's smallest text (its "xs")
+
+
+def _text_px(scale):
+    return max(UI_MIN_PX, round(float(scale) * TEXT_PX_PER_SCALE * 4) / 4.0)
+
+
+def _text_weight(thickness, weight):
+    if weight:
+        return int(weight)
+    return 600 if thickness >= 2 else 400
+
+
+# SF Pro as Chrome sets it for chatgpt.com: each glyph's advance at the
+# optical size of its point size (opsz, 17 and up), plus the font's own
+# tracking table for that size (-0.31px a glyph at 16px), plus its GPOS
+# kerning, whose values move along the weight and optical-size axes. Read
+# from the font file once with fontTools; without it, Pillow's spacing.
+_UI_LAYOUT = {}
+_UI_POSITIONS = {}
+_UI_ADVANCES = {}
+_UI_ADV_FONTS = {}
+_UI_INSTANCERS = {}
+_UI_KERNS = {}
+
+
+def _ui_layout_info():
+    if "info" in _UI_LAYOUT:
+        return _UI_LAYOUT["info"]
+    info = None
+    try:
+        import logging
+        from fontTools.ttLib import TTFont
+        logging.getLogger("fontTools").setLevel(logging.ERROR)
+        font = TTFont(UI_FONT_FILE)
+        try:
+            info = {"upem": font["head"].unitsPerEm,
+                    "cmap": dict(font.getBestCmap()),
+                    "trak": sorted(font["trak"].horizData.get(0.0, {}).items())
+                    if "trak" in font else [],
+                    "axes": {a.axisTag: (a.minValue, a.defaultValue, a.maxValue)
+                             for a in font["fvar"].axes},
+                    "fvar_axes": font["fvar"].axes,
+                    "avar": ({k: dict(v) for k, v in font["avar"].segments.items()}
+                             if "avar" in font else {}),
+                    "varstore": (getattr(font["GDEF"].table, "VarStore", None)
+                                 if "GDEF" in font else None),
+                    "lookups": []}
+            try:
+                info["lookups"] = _ui_kern_lookups(font)
+            except Exception:
+                info["lookups"] = []
+        finally:
+            font.close()
+    except Exception:
+        info = None
+    _UI_LAYOUT["info"] = info
+    return info
+
+
+def _ui_kern_lookups(font):
+    """The 'kern' feature's pair lookups: per lookup, its subtables in
+    order, with a glyph -> coverage-index map each."""
+    if "GPOS" not in font:
+        return []
+    gpos = font["GPOS"].table
+    order = []
+    for rec in gpos.FeatureList.FeatureRecord:
+        if rec.FeatureTag == "kern":
+            for li in rec.Feature.LookupListIndex:
+                if li not in order:
+                    order.append(li)
+    lookups = []
+    for li in order:
+        lookup = gpos.LookupList.Lookup[li]
+        subtables = []
+        for st in lookup.SubTable:
+            if lookup.LookupType == 9:
+                if st.ExtensionLookupType != 2:
+                    continue
+                st = st.ExtSubTable
+            elif lookup.LookupType != 2:
+                continue
+            cov = {g: i for i, g in enumerate(st.Coverage.glyphs)}
+            if st.Format == 1:
+                subtables.append((1, cov, st.PairSet, {}))
+            elif st.Format == 2:
+                subtables.append((2, cov, dict(st.ClassDef1.classDefs),
+                                  dict(st.ClassDef2.classDefs),
+                                  st.Class1Record))
+        lookups.append(subtables)
+    return lookups
+
+
+def _ui_instancer(info, weight, opsz):
+    key = (weight, opsz)
+    inst = _UI_INSTANCERS.get(key)
+    if inst is None and info["varstore"] is not None:
+        from fontTools.varLib.models import normalizeLocation, piecewiseLinearMap
+        from fontTools.varLib.varStore import VarStoreInstancer
+        loc = normalizeLocation({"wght": weight, "opsz": opsz, "wdth": 100,
+                                 "GRAD": 400}, info["axes"])
+        for tag, mapping in info["avar"].items():
+            if tag in loc:
+                loc[tag] = piecewiseLinearMap(loc[tag], mapping)
+        inst = _UI_INSTANCERS[key] = VarStoreInstancer(
+            info["varstore"], info["fvar_axes"], loc)
+    return inst
+
+
+def _ui_kern(info, g1, g2, weight, opsz):
+    """Font units the pair (g1, g2) is kerned by at this weight and
+    optical size: per lookup, the first subtable covering g1 decides."""
+    key = (g1, g2, weight, opsz)
+    hit = _UI_KERNS.get(key)
+    if hit is not None:
+        return hit
+    inst = _ui_instancer(info, weight, opsz)
+    total = 0
+    for subtables in info["lookups"]:
+        for st in subtables:
+            i = st[1].get(g1)
+            if i is None:
+                continue
+            if st[0] == 1:
+                rows = st[3].get(i)
+                if rows is None:
+                    rows = st[3][i] = {r.SecondGlyph: r.Value1
+                                       for r in st[2][i].PairValueRecord}
+                if g2 not in rows:
+                    continue
+                vr = rows[g2]
+            else:
+                vr = st[4][st[2].get(g1, 0)].Class2Record[st[3].get(g2, 0)].Value1
+            if vr is not None:
+                total += getattr(vr, "XAdvance", 0) or 0
+                dev = getattr(vr, "XAdvDevice", None)
+                if (inst is not None and dev is not None
+                        and getattr(dev, "DeltaFormat", 0) == 0x8000):
+                    total += inst[(dev.StartSize << 16) + dev.EndSize]
+            break
+    return _remember(_UI_KERNS, key, total)
+
+
+def _ui_track(info, px):
+    """SF's tracking for `px`, in px a glyph: its trak table, interpolated."""
+    table = info["trak"]
+    if not table:
+        return 0.0
+    if px <= table[0][0]:
+        v = table[0][1]
+    elif px >= table[-1][0]:
+        v = table[-1][1]
+    else:
+        for (a, va), (b, vb) in zip(table, table[1:]):
+            if a <= px <= b:
+                v = va + (vb - va) * (px - a) / float(b - a)
+                break
+    return v * px / float(info["upem"])
+
+
+def _ui_advance(ch, px, weight, opsz):
+    key = (ch, px, weight)
+    adv = _UI_ADVANCES.get(key)
+    if adv is None:
+        font = _UI_ADV_FONTS.get((weight, opsz))
+        if font is None:
+            from PIL import ImageFont
+            font = ImageFont.truetype(UI_FONT_FILE, 2048)
+            try:
+                font.set_variation_by_axes([100, opsz, 400,
+                                            max(1, min(1000, weight))])
+            except Exception:
+                pass
+            _UI_ADV_FONTS[(weight, opsz)] = font
+        adv = _remember(_UI_ADVANCES, key, font.getlength(ch) * px / 2048.0)
+    return adv
+
+
+def _ui_positions(text, px, weight, spacing=0.0):
+    """Where Chrome puts each character of `text` set in SF Pro at `px`
+    and `weight` -- with CSS letter-spacing `spacing` after each one:
+    len(text) + 1 offsets, the last the whole advance. None without the
+    font's tables."""
+    key = (text, px, weight, spacing)
+    hit = _UI_POSITIONS.get(key)
+    if hit is not None:
+        return hit
+    info = _ui_layout_info()
+    if info is None:
+        return None
+    opsz = max(17.0, min(96.0, float(px)))
+    track = _ui_track(info, px)
+    scale = px / float(info["upem"])
+    glyphs = [info["cmap"].get(ord(ch)) for ch in text]
+    xs, x = [0.0], 0.0
+    for i, ch in enumerate(text):
+        x += _ui_advance(ch, px, weight, opsz) + track + spacing
+        if i + 1 < len(text) and glyphs[i] and glyphs[i + 1]:
+            x += _ui_kern(info, glyphs[i], glyphs[i + 1], weight, opsz) * scale
+        xs.append(x)
+    return _remember(_UI_POSITIONS, key, tuple(xs))
+
+
+
+def _text_mask(text, px, weight, family, light, frac=0.0, spacing=0.0):
+    """(coverage float32 HxWx1, dx, dy) for `text` with its baseline-left at
+    the origin -- `frac` px right of it, for SF Pro set glyph by glyph:
+    rendered at TEXT_SS x and area-averaged down."""
+    key = (text, px, weight, family, light, frac, spacing)
+    hit = _TEXT_MASKS.get(key)
+    if hit is not None:
+        return hit
+    from PIL import Image, ImageDraw
+    ss = TEXT_SS
+    big = _face(px, weight, family, ss)
+    x0, y0, x1, y1 = big.getbbox(text, anchor="ls")
+    xs = _ui_positions(text, px, weight, spacing) if family == "ui" else None
+    if xs is not None:
+        # glyph by glyph where Chrome sets them, each at its quarter pixel
+        pad = int(math.ceil(px)) * ss
+        x0, x1 = -pad, int(math.ceil(xs[-1])) * ss + pad
+    bx0, by0 = math.floor(x0 / ss) * ss, math.floor(y0 / ss) * ss
+    bx1, by1 = math.ceil(x1 / ss) * ss, math.ceil(y1 / ss) * ss
+    if bx1 <= bx0 or by1 <= by0:
+        hit = (None, 0, 0)
+    else:
+        im = Image.new("L", (bx1 - bx0, by1 - by0), 0)
+        if xs is None:
+            ImageDraw.Draw(im).text((-bx0, -by0), text, font=big, fill=255,
+                                    anchor="ls")
+        else:
+            draw = ImageDraw.Draw(im)
+            for ch, x in zip(text, xs):
+                if ch.isspace():
+                    continue
+                q = math.floor((frac + x + 1 / 64.0) * 4) * ss // 4
+                draw.text((q - bx0, -by0), ch, font=big, fill=255, anchor="ls")
+        a = np.asarray(im, np.float32) / 255.0
+        a = cv2.resize(a, ((bx1 - bx0) // ss, (by1 - by0) // ss),
+                       interpolation=cv2.INTER_AREA)
+        if family == "ui":
+            a = np.power(a, TEXT_GAMMA_UI_LIGHT if light else TEXT_GAMMA_UI)
+        else:
+            a = np.power(a, TEXT_GAMMA_LIGHT if light else TEXT_GAMMA)
+        hit = (a[..., None], bx0 // ss, by0 // ss)
+    if len(_TEXT_MASKS) >= _TEXT_CACHE_MAX:
+        _TEXT_MASKS.clear()
+    _TEXT_MASKS[key] = hit
+    return hit
+
+
+def text_size(label, scale, thickness=1, weight=None, family="ui"):
+    """Pixel size of `label` -- (advance width, cap height) -- memoised.
+
+    The sidebar alone used to ask for ~950 text sizes a frame -- every
     word of every message, re-wrapped on every frame -- which by itself was a
     good part of why a click took a visible moment to show.
     """
-    key = (label if isinstance(label, str) else str(label), scale, thickness)
+    key = (label if isinstance(label, str) else str(label), scale, thickness,
+           weight, family)
     size = _TEXT_SIZES.get(key)
     if size is None:
-        size = _remember(_TEXT_SIZES, key, cv2.getTextSize(
-            ascii_text(key[0]), FONT, scale, thickness)[0])
+        text = ascii_text(key[0])
+        if _text_engine_ok():
+            px, wt = _text_px(scale), _text_weight(thickness, weight)
+            f = _face(px, wt, family, TEXT_SS)
+            cap = -f.getbbox("H", anchor="ls")[1] / TEXT_SS
+            xs = _ui_positions(text, px, wt) if family == "ui" else None
+            width = xs[-1] if xs is not None else f.getlength(text) / TEXT_SS
+            size = (int(round(width)), int(round(cap)))
+        else:
+            size = cv2.getTextSize(text, FONT, scale, thickness)[0]
+        size = _remember(_TEXT_SIZES, key, size)
     return size
 
 
-def draw_text(img, label, org, scale=0.5, colour=C_TEXT, thickness=1):
-    cv2.putText(img, ascii_text(label), (int(org[0]), int(org[1])), FONT,
-                scale, colour, thickness, cv2.LINE_AA)
+def draw_text(img, label, org, scale=0.5, colour=C_TEXT, thickness=1,
+              weight=None, family="ui", spacing=0.0):
+    """`label` with its baseline-left at `org` (`spacing`: CSS
+    letter-spacing, px, for SF Pro)."""
+    text = ascii_text(label)
+    if not text:
+        return
+    if not _text_engine_ok():
+        cv2.putText(img, text, (int(org[0]), int(org[1])), FONT, scale,
+                    colour, thickness, cv2.LINE_AA)
+        return
+    light = (0.114 * colour[0] + 0.587 * colour[1] + 0.299 * colour[2]) > 150
+    # SF Pro keeps the origin's fraction, to 1/64px, and sets each glyph on
+    # its quarter pixel from there; the baseline rounds to a whole pixel.
+    xi = math.floor(org[0])
+    frac = round((org[0] - xi) * 64) / 64.0 if family == "ui" else 0.0
+    if frac >= 1.0:
+        xi, frac = xi + 1, 0.0
+    if family != "ui":
+        xi, frac = int(round(org[0])), 0.0
+    a, dx, dy = _text_mask(text, _text_px(scale),
+                           _text_weight(thickness, weight), family, light,
+                           frac, spacing if family == "ui" else 0.0)
+    if a is None:
+        return
+    x, y = int(xi) + dx, int(math.floor(org[1] + 0.5)) + dy
+    h, w = a.shape[:2]
+    H, W = img.shape[:2]
+    x0, y0, x1, y1 = max(0, x), max(0, y), min(W, x + w), min(H, y + h)
+    if x1 <= x0 or y1 <= y0:
+        return
+    sub = a[y0 - y:y1 - y, x0 - x:x1 - x]
+    roi = img[y0:y1, x0:x1]
+    f = roi.astype(np.float32)
+    f += (np.asarray(colour, np.float32) - f) * sub
+    roi[:] = (f + 0.5).astype(np.uint8)
 
 
 def wrap_text(text, width, scale):
@@ -922,74 +1198,6 @@ def _wrap_text(text, width, scale):
     return lines or [""]
 
 
-def wrap_editable(text, width, scale):
-    """Word wrap that never loses a character -- for an editable field.
-
-    Returns the visual lines as (start, end) index pairs into `text`, so a
-    caret position maps to a line and a column with no guessing. wrap_text
-    above cannot be used for this: it re-splits on whitespace and hands back
-    strings, which is fine for a read-only paragraph but leaves an editor
-    unable to say which character a click or an arrow key landed on.
-
-    Every character belongs to exactly one line except a '\\n', which ends
-    its line and belongs to none -- so an empty line between two newlines,
-    and the empty line a trailing newline opens, both come back as an empty
-    (start, start) pair and the caret can sit on them.
-
-    Memoised: the prompt box is re-wrapped every frame it is drawn.
-    """
-    key = (str(text), width, scale)
-    hit = _EDIT_WRAPS.get(key)
-    if hit is None:
-        hit = _remember(_EDIT_WRAPS, key,
-                        tuple(_wrap_editable(key[0], width, scale)))
-    return list(hit)
-
-
-def _wrap_editable(text, width, scale):
-    n = len(text)
-    lines = []
-    seg_start = 0
-    while True:
-        nl = text.find("\n", seg_start)
-        seg_end = n if nl < 0 else nl
-        start = seg_start
-        while True:
-            end = seg_end
-            if text_size(text[start:end], scale, 1)[0] > width:
-                end = start
-                while (end < seg_end and
-                       text_size(text[start:end + 1], scale, 1)[0] <= width):
-                    end += 1
-                end = max(end, start + 1)
-                brk = text.rfind(" ", start, end)
-                if brk > start:
-                    end = brk + 1
-            lines.append((start, end))
-            start = end
-            if start >= seg_end:
-                break
-        if nl < 0:
-            break
-        seg_start = nl + 1
-    return lines
-
-
-def caret_line_col(lines, cursor):
-    """Which (line index, column within that line) a caret index sits at.
-
-    A caret exactly on a wrap boundary belongs to the line that ENDS there,
-    so it draws at the right-hand edge of the text it just typed rather than
-    jumping ahead of a line it has not reached yet.
-    """
-    if not lines:
-        return 0, 0
-    for i, (start, end) in enumerate(lines):
-        if cursor <= end:
-            return i, max(0, cursor - start)
-    return len(lines) - 1, max(0, cursor - lines[-1][0])
-
-
 def fit_text(text, width, scale):
     """One line, truncated with "..." if it would overflow width.
 
@@ -1016,11 +1224,40 @@ def fit_text(text, width, scale):
     return _remember(_FITS, key, text[:lo] + "...")
 
 
-def draw_text_centred(img, label, rect, scale=0.5, colour=C_TEXT, thickness=1):
+def text_advance(label, scale, thickness=1, weight=None, family="ui",
+                 spacing=0.0):
+    """The exact advance of `label`, fractions kept -- for centring."""
+    text = ascii_text(label)
+    if family == "ui" and _text_engine_ok():
+        xs = _ui_positions(text, _text_px(scale), _text_weight(thickness, weight),
+                           spacing)
+        if xs is not None:
+            return xs[-1]
+    return float(text_size(label, scale, thickness, weight, family)[0])
+
+
+def draw_text_centred(img, label, rect, scale=0.5, colour=C_TEXT, thickness=1,
+                      weight=None, family="ui", spacing=0.0):
     x0, y0, x1, y1 = rect
-    w, h = text_size(label, scale, thickness)
+    w = text_advance(label, scale, thickness, weight, family, spacing)
+    _, h = text_size(label, scale, thickness, weight, family)
     draw_text(img, label, (x0 + (x1 - x0 - w) / 2, y0 + (y1 - y0 + h) / 2),
-              scale, colour, thickness)
+              scale, colour, thickness, weight, family, spacing)
+
+
+def button_width(label, outlined=False, scale=0.56):
+    """A ChatGPT button's width for `label`: 12px of padding either side of
+    its semibold label, and its 1px border both sides when it has one."""
+    return (text_advance(display_label(label), scale, 1, weight=600,
+                         spacing=BUTTON_SPACING) + 24 + (2 if outlined else 0))
+
+
+def draw_check(img, centre, colour, size=5):
+    """ChatGPT's check mark: a short stroke and a long one."""
+    cx, cy = centre
+    pts = np.array([(cx - size, cy), (cx - size // 3, cy + size - 1),
+                    (cx + size + 1, cy - size + 1)], np.int32)
+    cv2.polylines(img, [pts], False, colour, 2, cv2.LINE_AA)
 
 
 def draw_chevron(img, centre, size, colour, thickness=2, up=False):
@@ -1043,25 +1280,65 @@ class CameraSettings:
     mirror: bool = False
 
     def apply(self, frame):
+        """The adjusted frame, at the camera's own size (turned with it)."""
+        frame = self._turn(frame)
+        if self.zoom > 1.001:
+            h, w = frame.shape[:2]
+            x0, y0, cw, ch = self._zoom_crop(w, h)
+            frame = cv2.resize(frame[y0:y0 + ch, x0:x0 + cw], (w, h),
+                               interpolation=cv2.INTER_LINEAR)
+        return self._tone(frame)
+
+    def full_size(self, frame):
+        """(w, h) of apply(frame): the camera's size, turned with it."""
+        h, w = frame.shape[:2]
+        return (h, w) if self.rotation in (90, 270) else (w, h)
+
+    def fitted(self, frame, avail_w, avail_h):
+        """apply(frame) scaled to fit (avail_w, avail_h) as fit_frame scales
+        it -- but the zoom's crop is scaled once, straight to that size, and
+        the tone work runs on the fitted pixels. apply() and then fit_frame()
+        scaled the crop up to the camera's full size and straight back down,
+        every camera frame on the UI thread: ~10 ms of each frame at 1920x1080
+        and a 1.1x zoom, measured under the app's own load. Always a new
+        array, never `frame` itself: the caller draws on it."""
+        turned = self._turn(frame)
+        h, w = turned.shape[:2]
+        crop = turned
+        if self.zoom > 1.001:
+            x0, y0, cw, ch = self._zoom_crop(w, h)
+            crop = turned[y0:y0 + ch, x0:x0 + cw]
+        scale = min(avail_w / float(w), avail_h / float(h))
+        if 0.999 < scale < 1.001:
+            tw, th = w, h
+        else:
+            tw, th = max(1, int(w * scale)), max(1, int(h * scale))
+        if (crop.shape[1], crop.shape[0]) != (tw, th):
+            step = tw / float(crop.shape[1])
+            crop = cv2.resize(crop, (tw, th), interpolation=(
+                cv2.INTER_AREA if step < 0.5 else cv2.INTER_LINEAR))
+        elif crop is frame:
+            crop = frame.copy()
+        return self._tone(crop)
+
+    def _zoom_crop(self, w, h):
+        """(x0, y0, w, h) of the zoom's centred crop of a w x h frame."""
+        cw = max(8, int(w / self.zoom))
+        ch = max(8, int(h / self.zoom))
+        return (w - cw) // 2, (h - ch) // 2, cw, ch
+
+    def _turn(self, frame):
         if self.rotation == 90:
             frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
         elif self.rotation == 180:
             frame = cv2.rotate(frame, cv2.ROTATE_180)
         elif self.rotation == 270:
             frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
-
         if self.mirror:
             frame = cv2.flip(frame, 1)
+        return frame
 
-        if self.zoom > 1.001:
-            h, w = frame.shape[:2]
-            cw = max(8, int(w / self.zoom))
-            ch = max(8, int(h / self.zoom))
-            x0 = (w - cw) // 2
-            y0 = (h - ch) // 2
-            frame = cv2.resize(frame[y0:y0 + ch, x0:x0 + cw], (w, h),
-                               interpolation=cv2.INTER_LINEAR)
-
+    def _tone(self, frame):
         if abs(self.contrast - 1.0) > 1e-3 or self.brightness != 0:
             frame = cv2.convertScaleAbs(frame, alpha=self.contrast,
                                         beta=self.brightness)
@@ -1302,6 +1579,8 @@ DIRECTION_LETTERS = {"up": "u", "down": "d", "left": "l", "right": "r"}
 SLOW_SUFFIX = "q"
 HEIGHT_UP_CMD = "hu"
 HEIGHT_DOWN_CMD = "hd"
+HEIGHT_SAVE_CMD = "p1"      # the board saves the height it is at...
+HEIGHT_RETURN_CMD = "p3"    # ...and goes back down to it
 GRIP_CMD_LETTER = "g"
 GRIP_MIN_DEG = 0
 GRIP_MAX_DEG = 90
@@ -1321,11 +1600,14 @@ SLOW_APPROACH_CELLS = 1
 TAG_HOLD_SECONDS = 0.35
 AUTO_GRIP_COMMAND_DELAY_S = 1.0
 AUTO_PULSE_S = 0.1
-AUTO_PICKUP_HX_S = 3.0
-AUTO_ACTION_GAP_S = 1.0
+AUTO_PICKUP_HX_S = 1.0       # a pickup: hd first, then hx for this long
+AUTO_PRESS_RUN_S = 3.0       # the runner's own press (no card) runs this long
+AUTO_ACTION_GAP_S = 0.3
 AUTO_GRIP_DOWN_MAX_S = 25.0
 AUTO_PRESS_BACKOFF_S = 0.2
 AUTO_RELEASE_DURATION_S = 3.0
+MOVE_RETRIES = 3        # a move the board refuses is tried again this many times
+AUTO_RELEASE_P3_MAX_S = 8.0     # no stop from the board this long after p3: lift anyway
 AUTO_ACTION_MAX_S = 90.0
 
 GRIPPER_NUDGE_S = 0.2
@@ -1375,6 +1657,9 @@ def caret_visible(state) -> bool:
     return (elapsed % CARET_BLINK_PERIOD) < CARET_BLINK_ON
 
 
+GRIPPER_WORD_RE = re.compile(r"hd|hx|hu|g\d{1,2}|p[13]")
+
+
 class SerialLink:
     """One lowercase letter per move: u/d/l/r start it, s stops it, and the
     same letter with a trailing 'q' (uq/dq/lq/rq) means the same move but
@@ -1398,6 +1683,7 @@ class SerialLink:
         self._reconnecting = False
         self._last_logged_error = None
         self.auto_reconnect = True
+        self.connects = 0       # ports opened so far; each open resets the board
         self.on_line = None
         self.on_bytes = None
         self.last_received = ""
@@ -1414,7 +1700,11 @@ class SerialLink:
             if conn is None:
                 continue
             try:
-                conn.write(letter.encode("ascii"))
+                # The gripper commands go out the way the serial console sends
+                # them -- text plus a newline; the single-letter motion
+                # letters stay bare.
+                wire = letter + "\n" if GRIPPER_WORD_RE.fullmatch(letter) else letter
+                conn.write(wire.encode("ascii"))
                 if self.on_line:
                     self.on_line("tx", letter)
             except Exception as e:
@@ -1461,6 +1751,7 @@ class SerialLink:
             self.last_error = None
             self._last_sent = None
             self._ready_at = time.time() + self.BOOT_DELAY
+            self.connects += 1   # the board resets: any height p1 saved is gone
             self.auto_reconnect = True
             self._last_logged_error = None
             print(f"[serial] connected to {port}")
@@ -1620,6 +1911,40 @@ class SerialLink:
 
 ARDUINO = SerialLink()
 
+# The serial connection whose board holds a height a pickup saved with p1,
+# if any. A press goes back down to it (p3) only after a pickup earlier in
+# the same run; otherwise it goes down until the limit switch trips (hx).
+_SAVED_HEIGHT_ON = None
+
+
+def note_height_saved():
+    """A pickup sent p1: the board now holds the height its jaws closed at."""
+    global _SAVED_HEIGHT_ON
+    _SAVED_HEIGHT_ON = getattr(ARDUINO, "connects", 0)
+
+
+_PRESS_MOVED = False
+
+
+def note_press_moved(moved: bool):
+    """The press now ending was followed by gotos (the tool slid along the
+    surface): its release goes back down to the saved height first (p3)."""
+    global _PRESS_MOVED
+    _PRESS_MOVED = bool(moved)
+
+
+def forget_saved_height():
+    """A fresh run: no pickup has come before its presses yet."""
+    global _SAVED_HEIGHT_ON
+    _SAVED_HEIGHT_ON = None
+
+
+def press_command():
+    """What a press sends first: p3, back down to the height the last pickup
+    saved with p1 -- or hx, down until the limit switch trips, when no
+    pickup came before it in this run, or the board has reset since."""
+    return HEIGHT_RETURN_CMD     # a press never goes down with hx
+
 
 class AprilTagDetector:
     def __init__(self):
@@ -1647,6 +1972,33 @@ class AprilTagDetector:
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         corners, ids, _ = self.detector.detectMarkers(gray)
         return corners, ids
+
+    def detect_near(self, frame, window):
+        """detect() over `window` (x0, y0, x1, y1) of `frame` only, corners
+        in frame pixels.
+
+        The marker size limits are rates of the image's size, so the window
+        gets its own detector with the rates scaled to keep the WHOLE frame's
+        limits in pixels: a window finds exactly what a whole-frame pass
+        finds inside it (measured: corners equal to 0.0001 px), at a
+        fraction of the cost."""
+        x0, y0, x1, y1 = window
+        crop = frame[y0:y1, x0:x1]
+        if crop.size == 0:
+            return [], None
+        k = max(frame.shape[:2]) / float(max(crop.shape[:2]))
+        if getattr(self, "_near_k", None) != k:
+            params = self.detector.getDetectorParameters()
+            params.minMarkerPerimeterRate *= k
+            params.maxMarkerPerimeterRate *= k
+            self._near = cv2.aruco.ArucoDetector(self.dictionary, params)
+            self._near_k = k
+        gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+        corners, ids, _ = self._near.detectMarkers(gray)
+        if ids is None or not len(ids):
+            return [], None
+        shift = np.float32([x0, y0])
+        return [c + shift for c in corners], ids
 
     @staticmethod
     def tag_center(corner_set) -> tuple:
@@ -1782,9 +2134,6 @@ def tag_cell_for(col, row) -> tuple:
         return None, None
     dc, dr = gripper_offset()
     return col - dc, row - dr
-
-
-OPPOSITE_DIR = {"up": "down", "down": "up", "left": "right", "right": "left"}
 
 
 ACTIVE_GRIPPER_PANEL = None
@@ -1973,6 +2322,13 @@ class TagTracker:
     found. A frame arriving while a detection is still running is dropped
     rather than queued -- the newest position is the only one worth having,
     and a queue would only add latency to it.
+
+    Each pass looks near the last sighting first (find): with the detector's
+    13 threshold passes a whole 800px frame took ~36 ms over 3 cores, and
+    running back to back it slowed every cv2 call the UI thread made -- the
+    camera scale-down alone measured 2.5 ms with the tag thread off and 10
+    with it on. The whole frame is searched only when the tag is not near
+    where it was.
     """
 
     def __init__(self, max_width=None):
@@ -1987,14 +2343,23 @@ class TagTracker:
         self._thread = threading.Thread(target=self._loop, daemon=True)
         self._thread.start()
 
-    def submit(self, frame):
-        """Offer the newest frame. Cheap and non-blocking when busy."""
+    def submit(self, frame, eager=True):
+        """Offer the newest frame. Cheap and non-blocking when busy.
+
+        Unless `eager` -- the robot is being steered by the tag -- a frame
+        is taken at most every TAG_IDLE_S: a tag nobody is steering by does
+        not need checking 30 times a second, and every check competes with
+        the UI thread for the cores."""
         if frame is None or self._busy:
+            return
+        now = time.monotonic()
+        if not eager and now - getattr(self, "_taken_at", 0.0) < TAG_IDLE_S:
             return
         with self._lock:
             if self._pending is not None:
                 return
             self._pending = frame.copy()
+            self._taken_at = now
         self._wake.set()
 
     def latest(self, shape=None):
@@ -2028,7 +2393,7 @@ class TagTracker:
                     frame = cv2.resize(
                         frame, (self.max_width, max(1, int(h * ds))),
                         interpolation=cv2.INTER_AREA)
-                corners, ids = self.detector.detect(frame)
+                corners, ids = self.find(frame)
                 if ds != 1.0 and corners:
                     corners = [c / ds for c in corners]
                 with self._lock:
@@ -2038,12 +2403,60 @@ class TagTracker:
             finally:
                 self._busy = False
 
+    def find(self, frame):
+        """(corners, ids) for one frame: near the last sighting first, the
+        whole frame when the tag is not there -- but while it stays lost,
+        the whole frame only every TAG_SEARCH_S. Searching it back to back
+        with no tag in view (covered, or the carriage off the board) kept
+        ~3 cores busy for nothing."""
+        window = self._window(frame.shape[:2])
+        if window is not None:
+            corners, ids = self.detector.detect_near(frame, window)
+            if ids is not None:
+                self._seen_at(corners[0], frame.shape[:2])
+                return corners, ids
+        now = time.monotonic()
+        if window is None and now < getattr(self, "_search_after", 0.0):
+            return [], None
+        corners, ids = self.detector.detect(frame)
+        if ids is not None and len(ids):
+            self._seen_at(corners[0], frame.shape[:2])
+        else:
+            self._last = None
+            self._search_after = now + TAG_SEARCH_S
+        return corners, ids
+
+    def _seen_at(self, corner_set, shape):
+        pts = corner_set.reshape(4, 2)
+        side = float(np.mean(np.linalg.norm(pts - np.roll(pts, 1, axis=0), axis=1)))
+        self._last = (float(pts[:, 0].mean()), float(pts[:, 1].mean()), side, shape)
+
+    def _window(self, shape):
+        """A square around the last sighting, 5 tag sides across (at least
+        TAG_WINDOW_MIN px), kept inside the frame at a steady size; None
+        when there is no sighting or the window would be most of the frame."""
+        last = getattr(self, "_last", None)
+        if last is None or last[3] != shape:
+            return None
+        cx, cy, side, _ = last
+        h, w = shape
+        half = int(math.ceil(max(2.5 * side, TAG_WINDOW_MIN / 2.0) / 16.0)) * 16
+        size = 2 * half
+        if size * size > 0.5 * w * h or size > min(w, h):
+            return None
+        x0 = int(min(max(cx - half, 0), w - size))
+        y0 = int(min(max(cy - half, 0), h - size))
+        return x0, y0, x0 + size, y0 + size
+
     def stop(self):
         self._stop.set()
         self._wake.set()
         self._thread.join(timeout=1.0)
 
 
+TAG_WINDOW_MIN = 120
+TAG_SEARCH_S = 0.25
+TAG_IDLE_S = 0.1
 CORNER_RADIUS = 11
 MIN_BOX_SIDE = 40
 GRID_STAMP_SETTLE_S = 0.25
@@ -2244,7 +2657,7 @@ class Grid:
                 cv2.circle(frame, (int(cx), int(cy)), CORNER_RADIUS + 5,
                            _bgr("#ffffff"), -1, cv2.LINE_AA)
                 cv2.circle(frame, (int(cx), int(cy)), CORNER_RADIUS,
-                           C_ACCENT, -1, cv2.LINE_AA)
+                           C_OVERLAY, -1, cv2.LINE_AA)
                 cv2.circle(frame, (int(cx), int(cy)), CORNER_RADIUS,
                            _bgr("#ffffff"), 2, cv2.LINE_AA)
 
@@ -2508,33 +2921,72 @@ class Button:
         stamp.apply(img, x0 - 14, y0 - 14)
 
     def _paint(self, img, hover=False, active=False, shadow=True):
-        r = (self.y1 - self.y0) // 2
+        """ChatGPT's buttons: flat pills, no shadow, semibold labels.
+        Primary is the ink (#0d0d0d, #212121 under the pointer) with white
+        text; the default is white with a 20%-black edge; "text" is
+        borderless until hovered; an active one sits on the #ececec
+        selected surface."""
+        r = (self.y1 - self.y0) / 2.0
         rect = (self.x0, self.y0, self.x1, self.y1)
-        if shadow:
-            drop_shadow(img, rect, r, spread=6, strength=0.13)
-
-        if self.style == "primary":
-            bg = C_BTN_HOVER if hover else C_BTN
-            fg = C_BTN_FG
-            border = None
-        elif self.style == "accent":
-            bg = _bgr("#7c4ddb") if hover else C_ACCENT
-            fg = C_BTN_FG
-            border = None
+        if self.style in ("primary", "accent"):
+            bg, fg, border = (C_BTN_HOVER if hover else C_BTN), C_BTN_FG, None
+        elif self.style == "danger":
+            bg, fg, border = (_bgr("#b81d17") if hover else C_RED), C_BTN_FG, None
         elif active:
-            bg = C_ACCENT_SO
-            fg = C_ACCENT
-            border = C_ACCENT
+            bg, fg, border = C_SELECTED, C_TEXT, None
+        elif self.style == "text":
+            bg, fg, border = (C_GHOST_HOV if hover else None), C_TEXT, None
         else:
-            bg = C_GHOST_HOV if hover else C_GHOST
-            fg = C_TEXT
-            border = C_BORDER
+            bg, fg, border = (C_GHOST_HOV if hover else C_GHOST), C_TEXT, C_OUTLINE
+        css_rect(img, rect, r, bg, border)
+        if self.label == "X":
+            draw_close_glyph(img, ((self.x0 + self.x1) // 2,
+                                   (self.y0 + self.y1) // 2), fg)
+            return
+        draw_text_centred(img, display_label(self.label), rect,
+                          max(self.scale, BUTTON_MIN_SCALE), fg, 1, weight=600,
+                          spacing=BUTTON_SPACING)
 
-        rounded_rect(img, rect, r, bg, -1)
-        if border is not None:
-            rounded_rect(img, rect, r, border, 1)
-        draw_text_centred(img, self.label, rect, self.scale, fg,
-                          2 if self.style in ("primary", "accent") else 1)
+
+BUTTON_MIN_SCALE = 0.52     # 13px: ChatGPT's smallest button text
+_ACRONYMS = {"AI", "USB", "ID", "OK", "HX", "HU", "HD", "ERR-2", "ERR-3", "XY",
+             "RX", "TX",
+             "CW", "CCW", "LED", "FPS", "API"}
+
+
+def display_label(label):
+    """An ALL-CAPS button label in ChatGPT's sentence case ("EXECUTE
+    PHYSICALLY" -> "Execute physically"), acronyms kept. Only how it is
+    shown -- the label itself, which code may compare, is unchanged."""
+    text = str(label)
+    # A command code in brackets ("DOWN (hd)") keeps its own case and does
+    # not count against the label being all capitals.
+    outside = re.sub(r"\([^)]*\)", "", text)
+    letters = [c for c in outside if c.isalpha()]
+    if len(letters) < 2 or not all(c.isupper() for c in letters):
+        return text
+    words, depth, first = [], 0, True
+    for word in text.split(" "):
+        if depth or word.startswith("("):
+            words.append(word)
+            depth = max(0, depth + word.count("(") - word.count(")"))
+            continue
+        core = word.strip("()[],.:;!?")
+        if core in _ACRONYMS or any(c.isdigit() for c in core):
+            words.append(word)
+        else:
+            low = word.lower()
+            words.append(low[:1].upper() + low[1:] if first else low)
+        first = False
+    return " ".join(words)
+
+
+def draw_close_glyph(img, centre, colour, size=5):
+    """ChatGPT's close icon: a thin X."""
+    cx, cy = centre
+    for (ax, ay), (bx, by) in (((cx - size, cy - size), (cx + size, cy + size)),
+                               ((cx - size, cy + size), (cx + size, cy - size))):
+        cv2.line(img, (ax, ay), (bx, by), colour, 2, cv2.LINE_AA)
 
 
 class Dropdown:
@@ -2577,19 +3029,23 @@ class Dropdown:
         return lx0 <= x <= lx1 and ly0 <= y <= ly1
 
     def draw(self, img, current, hover=False):
-        r = (self.y1 - self.y0) // 2
+        """ChatGPT's model picker: plain text and a chevron, a grey surface
+        only under the pointer or while the list is open."""
         rect = (self.x0, self.y0, self.x1, self.y1)
-        drop_shadow(img, rect, r, spread=6, strength=0.13)
-        rounded_rect(img, rect, r, C_GHOST_HOV if (hover or self.open) else C_GHOST, -1)
-        rounded_rect(img, rect, r, C_ACCENT if self.open else C_BORDER, 1)
-
-        draw_text(img, self.label, (self.x0 + 18, (self.y0 + self.y1) / 2 - 8),
-                  0.42, C_TEXT_DIM, 1)
+        if hover or self.open:
+            css_rect(img, rect, (self.y1 - self.y0) / 2.0, C_GHOST_HOV)
+        cy = (self.y0 + self.y1) // 2
+        lw, lh = text_size(self.label, 0.52, 1)
+        draw_text(img, self.label, (self.x0 + 12, cy + lh // 2), 0.52,
+                  C_TEXT_FAINT, 1)
         value = str(current) if current is not None else "--"
-        draw_text(img, value, (self.x0 + 18, (self.y0 + self.y1) / 2 + 13),
-                  0.62, C_TEXT if current is not None else C_TEXT_DIM, 2)
-        draw_chevron(img, (self.x1 - 20, (self.y0 + self.y1) // 2), 6,
-                     C_TEXT_DIM, 2, up=self.open)
+        vx = self.x0 + 12 + lw + 8
+        # ChatGPT's model picker: 16px at weight 650.
+        vw, vh = text_size(value, 0.64, 1, weight=650)
+        draw_text(img, value, (vx, cy + vh // 2), 0.64,
+                  C_TEXT if current is not None else C_TEXT_DIM, 1, weight=650)
+        draw_chevron(img, (vx + vw + 12, cy + 1), 4, C_TEXT_DIM, 2,
+                     up=self.open)
 
     def draw_list(self, img, current, mouse=(-1, -1)):
         """Painted last, on top of everything else."""
@@ -2617,7 +3073,7 @@ class Dropdown:
             ly0 = max(8, min(ly0, img.shape[0] - lh - 8))
         rect = (lx0, ly0, lx0 + lw, ly0 + lh)
         self._list_rect = rect
-        glass_card(img, rect, 20, alpha=self.list_alpha)
+        glass_card(img, rect, POPOVER_RADIUS)
 
         mx, my = mouse
         for i, (value, label) in enumerate(self.items):
@@ -2630,15 +3086,12 @@ class Dropdown:
             selected = (value == current)
             hovered = hx0 <= mx <= hx1 and hy0 <= my <= hy1
             if selected:
-                rounded_rect(img, (ix0, iy0, ix1, iy1), 12, C_ACCENT, -1)
-                fg = C_BTN_FG
+                css_rect(img, (ix0, iy0, ix1, iy1), (iy1 - iy0) / 2.0, C_SELECTED)
             elif hovered:
-                rounded_rect(img, (ix0, iy0, ix1, iy1), 12, C_ACCENT_SO, -1)
-                fg = C_ACCENT
-            else:
-                fg = C_TEXT
-            draw_text_centred(img, label, (ix0, iy0, ix1, iy1), self.list_text_scale, fg,
-                              2 if selected else 1)
+                css_rect(img, (ix0, iy0, ix1, iy1), (iy1 - iy0) / 2.0, C_GHOST_HOV)
+            draw_text_centred(img, label, (ix0, iy0, ix1, iy1),
+                              self.list_text_scale, C_TEXT,
+                              1, weight=600 if selected else 400)
             self._item_rects.append((hx0, hy0, hx1, hy1, value))
 
 
@@ -2701,18 +3154,17 @@ class Slider:
         cy = (self.y0 + self.y1) // 2
         half = max(1, self.TRACK_H // 2)
         rounded_rect(img, (self.x0, cy - half, self.x1, cy + half),
-                     half, C_BORDER, -1)
+                     half, C_SWITCH_OFF, -1)
         kx = self.knob_x(value)
         if kx > self.x0:
             rounded_rect(img, (self.x0, cy - half, kx, cy + half),
-                         half, C_ACCENT, -1)
+                         half, C_TEXT, -1)
         lit = hover or active
         r = self.KNOB_R + (1 if lit else 0)
         drop_shadow(img, (kx - r, cy - r, kx + r, cy + r), r,
-                    spread=5, strength=0.15)
+                    spread=5, strength=0.30)
         cv2.circle(img, (kx, cy), r, C_CARD, -1, cv2.LINE_AA)
-        cv2.circle(img, (kx, cy), r, C_ACCENT if lit else C_BORDER, 2,
-                   cv2.LINE_AA)
+        cv2.circle(img, (kx, cy), r, C_BORDER, 1, cv2.LINE_AA)
 
 
 def draw_switch(img, rect, on: bool, hover=False):
@@ -2723,21 +3175,23 @@ def draw_switch(img, rect, on: bool, hover=False):
     next to the word "Off" reads as something you step through, not
     something you flip.
     """
-    x0, y0, x1, y1 = (int(round(v)) for v in rect)
-    h = y1 - y0
+    # ChatGPT's switch: a 36x20 pill, #e3e3e3 off, its blue on, a white
+    # knob with a faint shadow -- no ON/OFF lettering. Right-aligned and
+    # vertically centred in `rect`, whatever size the caller gave.
+    rx0, ry0, rx1, ry1 = (int(round(v)) for v in rect)
+    w, h = 36, 20
+    x1, x0 = rx1, rx1 - w
+    y0 = (ry0 + ry1) // 2 - h // 2
+    y1 = y0 + h
     r = h // 2
-    track = C_ACCENT if on else C_BORDER
+    track = C_BLUE if on else C_SWITCH_OFF
     if hover:
-        track = _bgr("#7c4ddb") if on else _bgr("#ccd2e2")
+        track = _bgr("#0074e0") if on else _bgr("#d6d6d6")
     rounded_rect(img, (x0, y0, x1, y1), r, track, -1)
-    label, lcol = ("ON", C_BTN_FG) if on else ("OFF", C_TEXT_DIM)
-    lw, _ = text_size(label, 0.32, 1)
-    lx = x0 + (r - lw // 2) if on else x1 - r - lw // 2
-    draw_text(img, label, (lx, y0 + h // 2 + 4), 0.32, lcol, 1)
     kx = (x1 - r) if on else (x0 + r)
-    kr = r - 3
-    drop_shadow(img, (kx - kr, y0 + 3, kx + kr, y1 - 3), kr,
-                spread=5, strength=0.18)
+    kr = r - 2
+    drop_shadow(img, (kx - kr, y0 + 2, kx + kr, y1 - 2), kr,
+                spread=4, strength=0.35)
     cv2.circle(img, (kx, y0 + h // 2), kr, C_CARD, -1, cv2.LINE_AA)
 
 
@@ -2959,9 +3413,6 @@ class SettingsPanel:
                        step_vision_names, toggle=True),
             SettingRow("namer_model", "Naming model",
                        lambda: NAMER_MODEL, step_namer_model),
-            SettingRow("priority_naming", "Priority naming (faster)",
-                       lambda: "On" if PRIORITY_NAMING else "Off",
-                       step_priority_naming, toggle=True),
             SettingRow("dexterity_check", "Dexterity check",
                        lambda: "On" if DEXTERITY_CHECK else "Off",
                        step_dexterity_check, toggle=True),
@@ -3061,7 +3512,7 @@ class SettingsPanel:
         fh, fw = frame.shape[:2]
         pw = min(self.WIDTH, fw - 2 * self.PAD)
         n_sections = sum(1 for r in self.rows if r.section)
-        HEADER_H = 22
+        HEADER_H = 36
         row_h = self.ROW_H
 
         content_h = row_h * len(self.rows) + HEADER_H * n_sections
@@ -3073,8 +3524,9 @@ class SettingsPanel:
         ph = chrome_h + view_h
         px, py = max(0, (fw - pw) // 2), max(0, (fh - ph) // 2)
         self._last_rect = (px, py, pw, ph)
-        self._dropdown_origin = (px, vy0 if 'vy0' in locals() else py + 54)
+        self._dropdown_origin = (px, py + 54)
         rect = (px, py, px + pw, py + ph)
+        cv2.convertScaleAbs(frame, frame, 1.0 - 0.1 * self._anim, 0)
 
         margin = 40
         bx0, by0 = max(0, px - margin), max(0, py - margin)
@@ -3082,14 +3534,16 @@ class SettingsPanel:
         fading = self._anim < 0.999
         under = frame[by0:by1, bx0:bx1].copy() if fading else None
 
-        glass_card(frame, rect, 28, alpha=0.62)
+        glass_card(frame, rect, DIALOG_RADIUS)
 
-        draw_text(frame, "Settings", (px + 24, py + 36), 0.72, C_TEXT, 2)
+        draw_text(frame, "Settings", (px + 24, py + 24 + css_baseline(20, 30)),
+                  0.8, C_TEXT, 1, weight=600)
 
         mx, my = mouse
         self.buttons = []
         close_top = Button("X", px + pw - 52, py + 12,
-                           px + pw - 20, py + 44, "close", scale=0.46)
+                           px + pw - 20, py + 44, "close", style="text",
+                           scale=0.46)
         close_top.draw(frame, hover=close_top.contains(mx, my), shadow=False)
         self.buttons.append(close_top)
 
@@ -3100,13 +3554,20 @@ class SettingsPanel:
         vmx, vmy = mx - px, my - vy0
 
         y = -self.scroll
-        for row in self.rows if vy1 > vy0 else []:
+        rows = self.rows if vy1 > vy0 else []
+        for i, row in enumerate(rows):
             if row.section:
+                # ChatGPT's settings: a sentence-case group name, then rows
+                # split by hairlines.
                 if -HEADER_H < y < view_h:
-                    draw_text(vp, row.section, (24, y + 14), 0.36, C_ACCENT, 1)
+                    draw_text(vp, display_label(row.section), (24, y + 28),
+                              0.52, C_TEXT_DIM, 1, weight=600)
                 y += HEADER_H
+            nxt = rows[i + 1] if i + 1 < len(rows) else None
+            if nxt is not None and not nxt.section and 0 <= y + row_h - 1 < view_h:
+                vp[y + row_h - 1, 24:pw - 24] = C_DIVIDER
             if y + row_h > 0 and y < view_h:
-                draw_text(vp, row.label, (24, y + 26), 0.48, C_TEXT, 1)
+                draw_text(vp, row.label, (24, y + 26), 0.56, C_TEXT, 1)
                 if row.toggle:
                     sw = (pw - 96, y + 8, pw - 30, y + row_h - 10)
                     hit = Button("", sw[0], sw[1], sw[2], sw[3],
@@ -3116,9 +3577,9 @@ class SettingsPanel:
                     row_buttons = (hit,)
                 else:
                     value = row.read()
-                    vw, _ = text_size(value, 0.48, 2)
-                    draw_text(vp, value, (pw - 128 - vw, y + 26), 0.48,
-                              C_ACCENT, 2)
+                    vw, _ = text_size(value, 0.56, 1, weight=500)
+                    draw_text(vp, value, (pw - 128 - vw, y + 26), 0.56,
+                              C_TEXT, 1, weight=500)
                     minus = Button("-", pw - 116, y + 4, pw - 78,
                                    y + row_h - 6, "step", (row, -1),
                                    style="ghost", scale=0.62)
@@ -3292,7 +3753,7 @@ class PortPanel:
         fading = self._anim < 0.999
         under = frame[by0:by1, bx0:bx1].copy() if fading else None
 
-        glass_card(frame, rect, 28, alpha=0.62)
+        glass_card(frame, rect, DIALOG_RADIUS)
         draw_text(frame, "Arduino Port", (px + 24, py + 36), 0.72, C_TEXT, 2)
 
         if self.arduino.connected:
@@ -3306,7 +3767,8 @@ class PortPanel:
         mx, my = mouse
         self.buttons = []
         close_top = Button("X", px + pw - 52, py + 12,
-                           px + pw - 20, py + 44, "close", scale=0.46)
+                           px + pw - 20, py + 44, "close", style="text",
+                           scale=0.46)
         close_top.draw(frame, hover=close_top.contains(mx, my), shadow=False)
         self.buttons.append(close_top)
         y = py + 74
@@ -3346,7 +3808,7 @@ class PortPanel:
                 drawn, self._anim, under, 1.0 - self._anim, 0)
 
 
-LINE_COLOURS = {"tx": C_ACCENT, "rx": C_TEXT, "sys": C_TEXT_DIM}
+LINE_COLOURS = {"tx": C_BLUE, "rx": C_TEXT, "sys": C_TEXT_DIM}
 LINE_PREFIX = {"tx": ">> ", "rx": "<< ", "sys": "-- "}
 
 
@@ -3377,12 +3839,25 @@ class ConsolePanel:
         self._field_rect = None
         self._last_rect = None
         self._anim = 0.0
+        self.copied_until = 0.0
 
     def log(self, kind, text):
         for line in text.splitlines() or [""]:
             self.lines.append((kind, line))
         if len(self.lines) > self.MAX_LINES:
             self.lines = self.lines[-self.MAX_LINES:]
+
+    def text_all(self) -> str:
+        """Every line in the console as plain text, with its >> / << / -- prefix."""
+        return "\n".join(LINE_PREFIX.get(kind, "") + text for kind, text in self.lines)
+
+    def copy_all(self) -> str:
+        """Copy the whole console to the clipboard. -> the status message."""
+        if not self.lines:
+            return "Console is empty -- nothing to copy."
+        _pasteboard_set(self.text_all())
+        self.copied_until = time.time() + 1.5
+        return f"Copied {len(self.lines)} console line(s)."
 
     def open(self):
         self.visible = True
@@ -3454,6 +3929,8 @@ class ConsolePanel:
         for b in self.buttons:
             if not b.contains(x, y):
                 continue
+            if b.kind == "copy":
+                return self.copy_all()
             if b.kind == "clear":
                 self.lines = []
                 return "Console cleared."
@@ -3500,7 +3977,7 @@ class ConsolePanel:
         fading = self._anim < 0.999
         under = frame[by0:by1, bx0:bx1].copy() if fading else None
 
-        glass_card(frame, rect, 28, alpha=0.62)
+        glass_card(frame, rect, DIALOG_RADIUS)
         draw_text(frame, "Serial Console", (px + 24, py + 36), 0.6, C_TEXT, 2)
 
         status = (f"{self.arduino.port} @ {ARDUINO_BAUD}" if self.arduino.connected
@@ -3523,16 +4000,15 @@ class ConsolePanel:
         fx0, fy0 = px + 24, log_bottom + 8
         fx1, fy1 = px + pw - 88, log_bottom + 8 + field_h - 8
         self._field_rect = (fx0, fy0, fx1, fy1)
-        rounded_rect(frame, (fx0, fy0, fx1, fy1), 10,
-                    C_GHOST_HOV if self.focused else C_GHOST, -1)
-        rounded_rect(frame, (fx0, fy0, fx1, fy1), 10,
-                    C_ACCENT if self.focused else C_BORDER, 1)
+        css_rect(frame, (fx0, fy0, fx1, fy1), (fy1 - fy0) / 2.0,
+                 C_GHOST_HOV if self.focused else C_GHOST,
+                 C_ACCENT if self.focused else C_BORDER)
         shown_text = self.input_text or ("Type a command..." if not self.focused else "")
         text_colour = C_TEXT if self.input_text else C_TEXT_DIM
-        draw_text(frame, shown_text, (fx0 + 10, fy0 + 22), 0.4, text_colour, 1)
+        draw_text(frame, shown_text, (fx0 + 16, fy0 + 22), 0.4, text_colour, 1)
         if self.focused and int(time.time() * 2) % 2 == 0:
             cw, _ = text_size(self.input_text[:self.input_cursor], 0.4, 1)
-            cx = fx0 + 12 + cw
+            cx = fx0 + 16 + cw
             cv2.line(frame, (cx, fy0 + 6), (cx, fy1 - 6), C_ACCENT, 1, cv2.LINE_AA)
 
         mx, my = mouse
@@ -3542,10 +4018,23 @@ class ConsolePanel:
         send.draw(frame, hover=send.contains(mx, my), shadow=False)
         self.buttons.append(send)
 
+        # copy-all icon: two overlapping sheets (a tick for a moment once copied)
+        cx0, cy0, cx1, cy1 = px + pw - 216, py + 32, px + pw - 186, py + 58
+        copy_btn = Button("", cx0, cy0, cx1, cy1, "copy", style="text", scale=0.36)
+        copy_btn.draw(frame, hover=copy_btn.contains(mx, my), shadow=False)
+        icon = C_GREEN if time.time() < self.copied_until else C_TEXT
+        mx0, my0 = (cx0 + cx1) // 2, (cy0 + cy1) // 2
+        cv2.rectangle(frame, (mx0 - 8, my0 - 8), (mx0 + 2, my0 + 4), icon, 1, cv2.LINE_AA)
+        cv2.rectangle(frame, (mx0 - 3, my0 - 3), (mx0 + 8, my0 + 9), icon, 1, cv2.LINE_AA)
+        if time.time() < self.copied_until:
+            cv2.line(frame, (mx0 - 1, my0 + 3), (mx0 + 2, my0 + 6), icon, 2, cv2.LINE_AA)
+            cv2.line(frame, (mx0 + 2, my0 + 6), (mx0 + 6, my0 + 0), icon, 2, cv2.LINE_AA)
+        self.buttons.append(copy_btn)
+
         clear = Button("CLEAR", px + pw - 176, py + 32, px + pw - 96, py + 58,
                        "clear", scale=0.36)
         close = Button("X", px + pw - 56, py + 12, px + pw - 24, py + 40,
-                       "close", scale=0.36)
+                       "close", style="text", scale=0.36)
         clear.draw(frame, hover=clear.contains(mx, my), shadow=False)
         close.draw(frame, hover=close.contains(mx, my), shadow=False)
         self.buttons.extend([clear, close])
@@ -3601,6 +4090,7 @@ def save_settings(cam: CameraSettings, grid: Grid):
             "manual_gripper_steps": MANUAL_GRIPPER_STEPS,
             "gripper_ai": GRIPPER_AI,
             "err_auto": ERR_AUTO,
+            "planner_effort": PLANNER_EFFORT,
         },
     }
     S1_EMBEDDED_STATE["settings"] = data
@@ -3644,13 +4134,14 @@ def load_settings():
                                                       BOARD_WIDTH_IN))
     load_vision_settings(data.get("vision", {}))
 
-    global MANUAL_GRIPPER_STEPS, GRIPPER_AI, ERR_AUTO
+    global MANUAL_GRIPPER_STEPS, GRIPPER_AI, ERR_AUTO, PLANNER_EFFORT
     behaviour = data.get("behaviour", {})
     MANUAL_GRIPPER_STEPS = bool(behaviour.get(
         "manual_gripper_steps", MANUAL_GRIPPER_STEPS))
     GRIPPER_AI = bool(behaviour.get("gripper_ai", GRIPPER_AI))
     if behaviour.get("err_auto") in dict(ERR_AUTO_MODES):
         ERR_AUTO = behaviour["err_auto"]
+    # (a saved planner_effort is ignored: every start is on the cheap level)
 
     g = data.get("grid", {})
     CONFIG.n_cols = max(MIN_N, min(MAX_N_COLS, int(g.get("n_cols", CONFIG.n_cols))))
@@ -3681,8 +4172,7 @@ def load_vision_settings(v):
             print(f"[settings] vision {key}: {value!r} is not valid - keeping "
                   f"{globals()[name]!r}")
     for key, name in (("mark_parts", "VISION_MARK_PARTS"),
-                      ("show_names", "VISION_SHOW_NAMES"),
-                      ("priority_naming", "PRIORITY_NAMING")):
+                      ("show_names", "VISION_SHOW_NAMES")):
         if isinstance(v.get(key), bool):
             globals()[name] = v[key]
     if v.get("max_fps") in VISION_FPS_CHOICES:
@@ -3983,7 +4473,7 @@ class ManualMovePanel:
         fading = self._anim < 0.999
         under = frame[by0:by1, bx0:bx1].copy() if fading else None
 
-        glass_card(frame, rect, 28, alpha=0.62)
+        glass_card(frame, rect, DIALOG_RADIUS)
         draw_text(frame, "Manual Move", (px + 24, py + 36), 0.72, C_TEXT, 2)
         draw_text(frame, "Send the gantry to a cell via AprilTag guidance.",
                   (px + 24, py + 58), 0.36, C_TEXT_DIM, 1)
@@ -4007,23 +4497,23 @@ class ManualMovePanel:
         fx0, fy0 = px + 24, y + 16
         fx1, fy1 = px + pw - 24, y + 16 + field_h
         self._field_rect = (fx0, fy0, fx1, fy1)
-        rounded_rect(frame, (fx0, fy0, fx1, fy1), 10,
-                    C_GHOST_HOV if self.text_focus else C_GHOST, -1)
-        rounded_rect(frame, (fx0, fy0, fx1, fy1), 10,
-                    C_ACCENT if self.text_focus else C_BORDER, 1)
+        css_rect(frame, (fx0, fy0, fx1, fy1), (fy1 - fy0) / 2.0,
+                 C_GHOST_HOV if self.text_focus else C_GHOST,
+                 C_ACCENT if self.text_focus else C_BORDER)
         shown_text = self.text_value.upper() or ("" if self.text_focus
                                                   else "F18, k11, ...")
         text_colour = C_TEXT if self.text_value else C_TEXT_DIM
-        draw_text(frame, shown_text, (fx0 + 10, fy0 + 21), 0.4, text_colour, 1)
+        draw_text(frame, shown_text, (fx0 + 16, fy0 + 21), 0.4, text_colour, 1)
         if self.text_focus and int(time.time() * 2) % 2 == 0:
             cw, _ = text_size(shown_text[:self.text_cursor], 0.4, 1)
-            cx = fx0 + 12 + cw
+            cx = fx0 + 16 + cw
             cv2.line(frame, (cx, fy0 + 5), (cx, fy1 - 5), C_ACCENT, 1, cv2.LINE_AA)
         y += self.ROW_H
 
         self.buttons = []
         close_top = Button("X", px + pw - 52, py + 12,
-                           px + pw - 20, py + 44, "close", scale=0.46)
+                           px + pw - 20, py + 44, "close", style="text",
+                           scale=0.46)
         close_top.draw(frame, hover=close_top.contains(mx, my), shadow=False)
         self.buttons.append(close_top)
         text_field = Button("", fx0, fy0, fx1, fy1, "manual_text")
@@ -4066,7 +4556,7 @@ class ManualMovePanel:
             self.buttons.append(b)
         y += self.ROW_H + 6
 
-        halt = Button("STOP  -  SEND s", px + 24, y, px + pw - 24,
+        halt = Button("STOP (sends s)", px + 24, y, px + pw - 24,
                       y + self.ROW_H - 6, "manual_halt", style="accent",
                       scale=0.46)
         halt.draw(frame, hover=halt.contains(mx, my), shadow=False)
@@ -4286,13 +4776,14 @@ class TrigPanel:
         fading = self._anim < 0.999
         under = frame[by0:by1, bx0:bx1].copy() if fading else None
 
-        glass_card(frame, rect, 28, alpha=0.62)
+        glass_card(frame, rect, DIALOG_RADIUS)
         draw_text(frame, "Trigonometry", (px + 24, py + 36), 0.72, C_TEXT, 2)
 
         mx, my = mouse
         self.buttons = []
         close_top = Button("X", px + pw - 52, py + 12,
-                           px + pw - 20, py + 44, "close", scale=0.46)
+                           px + pw - 20, py + 44, "close", style="text",
+                           scale=0.46)
         close_top.draw(frame, hover=close_top.contains(mx, my), shadow=False)
         self.buttons.append(close_top)
         y = py + 54
@@ -4384,7 +4875,7 @@ class TrigPanel:
         h_in, H_in = trig_heights()
         k = trig_offset_k()
         if H_in <= 0 or h_in < 0 or h_in >= H_in:
-            line, line_c = "Heights are impossible -- correction is OFF", C_AMBER
+            line, line_c = "Heights are impossible -- correction is OFF", C_RED
         else:
             shift = (h_in / (H_in - h_in)) * (CONFIG.n_cols / 2.0)
             line = (f'above board: tag {h_in:g}", cam {H_in:g}"  ->  '
@@ -4452,6 +4943,7 @@ class GripperPanel:
     AUTO_GRIP_WAIT_HX = "wait_hx"
     AUTO_GRIP_HX = "hx"
     AUTO_GRIP_WAIT_G90 = "wait_g90"
+    AUTO_GRIP_WAIT_P1 = "wait_p1"
     AUTO_GRIP_WAIT_HU = "wait_hu"
 
     NOTE = "Automatic pickup, keep, press and release are available below."
@@ -4480,6 +4972,12 @@ class GripperPanel:
         self.auto_pulse_until = 0.0
         self.auto_press_started_at = 0.0
         self.auto_press_duration = 0.0
+        self.auto_press_cmd = "hx"
+        self.release_down_started_at = 0.0
+        self.failure_reason = ""
+        self.move_retries = 0
+        self.last_tof = ""
+        self._g90_resent = False
         self.offset_phase = "idle"
         self.offset_action = ""
         self.offset_until = 0.0
@@ -4508,34 +5006,12 @@ class GripperPanel:
         self.visible = False
         self.dragging = None
 
-    def show_instruction(self, text: str):
-        """A plan step needs doing by hand. Open the card, say what, and
-        start waiting for DONE.
-
-        Opening rather than merely updating: the operator's attention is on
-        the board, and an instruction on a card they closed ten steps ago
-        would never be seen -- the run would just appear to hang.
-        """
-        self.instruction = str(text or "")
-        self.awaiting_confirm = True
-        self.last_msg = ""
-        self.visible = True
-
     def confirm(self) -> bool:
         """DONE pressed: the operator says the step is carried out. True if
         that actually ended a wait, so the caller can ignore a stray press."""
         was, self.awaiting_confirm = self.awaiting_confirm, False
         self.instruction = ""
         return was
-
-    def clear_instruction(self):
-        """The run stopped or moved on by itself -- drop the manual step so
-        a stale instruction cannot keep a later run waiting on it."""
-        self.instruction = ""
-        self.awaiting_confirm = False
-
-    def waiting_for_confirm(self) -> bool:
-        return self.awaiting_confirm
 
     def automatic_busy(self) -> bool:
         return (self.offset_phase != "idle"
@@ -4665,12 +5141,22 @@ class GripperPanel:
         elif self.offset_phase == "press_down":
             if now - self.auto_press_started_at >= AUTO_GRIP_DOWN_MAX_S:
                 ARDUINO.halt()
-                self.auto_press_duration = max(
-                    0.0, now - self.auto_press_started_at)
+                # hx ran down the whole wait, so the release undoes all of
+                # it. p3 stops by itself at the saved height, and with no
+                # word from the board how far it went is unknown: the
+                # release then lifts its flat amount, not the whole wait.
+                self.auto_press_duration = (
+                    max(0.0, now - self.auto_press_started_at)
+                    if self.auto_press_cmd == "hx" else 0.0)
                 self._abort_offset_action(
-                    f"Automatic press failed: no limit-switch signal in "
-                    f"{AUTO_GRIP_DOWN_MAX_S:g}s -- sent s.")
+                    f"Automatic press failed: no s/S from the board "
+                    f"{AUTO_GRIP_DOWN_MAX_S:g}s after {self.auto_press_cmd} "
+                    f"-- sent s.")
                 return
+        elif self.offset_phase == "release_down":
+            if now - self.release_down_started_at >= AUTO_RELEASE_P3_MAX_S:
+                ARDUINO.halt()
+                self._begin_release_lift(now)
         elif self.offset_phase == "press_lift_pending":
             if ARDUINO.send_command(HEIGHT_UP_CMD):
                 self.offset_phase = "press_lift"
@@ -4721,9 +5207,30 @@ class GripperPanel:
                 and now >= self.auto_grip_up_until):
             if ARDUINO.send_command(grip_command(GRIP_MAX_DEG)):
                 self.grip = GRIP_MAX_DEG
+                self._grip_sent = grip_command(GRIP_MAX_DEG)
+                self._g90_resent = False
+                self.auto_grip_phase = self.AUTO_GRIP_WAIT_P1
+                self.auto_grip_up_until = now + AUTO_GRIP_COMMAND_DELAY_S
+                self.last_msg = f"Sent g90 -- {HEIGHT_SAVE_CMD} in 1.0s."
+            return
+        if (self.auto_grip_phase == self.AUTO_GRIP_WAIT_P1
+                and now >= self.auto_grip_up_until):
+            # g90 once more, half a second before p1: a dropped first one
+            # would otherwise save the height with the jaws still open.
+            if not self._g90_resent:
+                if ARDUINO.send_command(grip_command(GRIP_MAX_DEG)):
+                    self._g90_resent = True
+                    self.auto_grip_up_until = now + 0.5
+                    self.last_msg = f"Sent g90 again -- {HEIGHT_SAVE_CMD} in 0.5s."
+                return
+            # The jaws are shut on it: the board saves this height, for a
+            # press later in the run to go back down to (p3).
+            if ARDUINO.send_command(HEIGHT_SAVE_CMD):
+                note_height_saved()
                 self.auto_grip_phase = self.AUTO_GRIP_WAIT_HU
                 self.auto_grip_up_until = now + AUTO_GRIP_COMMAND_DELAY_S
-                self.last_msg = "Sent g90 -- hu in 1.0s."
+                self.last_msg = (f"Sent {HEIGHT_SAVE_CMD} (height saved) -- "
+                                 f"hu in 1.0s.")
             return
         if (self.auto_grip_phase == self.AUTO_GRIP_WAIT_HU
                 and now >= self.auto_grip_up_until):
@@ -4797,6 +5304,7 @@ class GripperPanel:
             return (f"Automatic {action} queued -- it will run after the "
                     f"current {self.offset_action} finishes.")
         self.offset_action = action
+        self.move_retries = 0
         self.offset_failed = False
         self.offset_deadline = time.monotonic() + AUTO_ACTION_MAX_S
         if GRIPPER_NUDGE_ACTIONS.get(action) and GRIPPER_NUDGE_S > 0:
@@ -4825,22 +5333,44 @@ class GripperPanel:
             else:
                 self.last_msg = "Automatic keep ready -- waiting to send g0."
         elif action == "press":
-            if ARDUINO.send_command("hx"):
+            # Back down to the height a pickup earlier in this run saved
+            # (p3); with no pickup before it, down to the limit switch (hx).
+            cmd = press_command()
+            if ARDUINO.send_command(cmd):
                 self.auto_press_started_at = now
+                self.auto_press_cmd = cmd
                 self.offset_phase = "press_down"
-                self.last_msg = ("Automatic press: sent hx; waiting for the "
-                                 "limit switch s/S.")
+                self.last_msg = (f"Automatic press: sent {cmd}; waiting for "
+                                 f"the board's s/S.")
             else:
-                self.last_msg = "Automatic press ready -- waiting to send hx."
+                self.last_msg = (f"Automatic press ready -- waiting to send "
+                                 f"{cmd}.")
         elif action == "release":
-            lift = self.auto_press_duration or AUTO_RELEASE_DURATION_S
-            if ARDUINO.send_command("hu"):
-                self.auto_press_duration = 0.0
-                self.offset_phase = "wait_release"
-                self.offset_until = now + lift
-                self.last_msg = (f"Automatic release: hu for {lift:.1f}s.")
-            else:
-                self.last_msg = "Automatic release ready -- waiting to send hu."
+            if _PRESS_MOVED and press_command() == HEIGHT_RETURN_CMD:
+                # The tool slid along the surface while pressed: down to the
+                # saved height again (p3) before it lifts.
+                if ARDUINO.send_command(HEIGHT_RETURN_CMD):
+                    self.release_down_started_at = now
+                    self.offset_phase = "release_down"
+                    self.last_msg = (f"Automatic release: sent {HEIGHT_RETURN_CMD} "
+                                     f"(back to the saved height); waiting for the "
+                                     f"board's s/S.")
+                else:
+                    self.last_msg = (f"Automatic release ready -- waiting to send "
+                                     f"{HEIGHT_RETURN_CMD}.")
+                return
+            self._begin_release_lift(now)
+
+    def _begin_release_lift(self, now):
+        lift = self.auto_press_duration or AUTO_RELEASE_DURATION_S
+        if ARDUINO.send_command("hu"):
+            self.auto_press_duration = 0.0
+            self.offset_phase = "wait_release"
+            self.offset_until = now + lift
+            self.last_msg = (f"Automatic release: hu for {lift:.1f}s.")
+        else:
+            self.offset_phase = "action"
+            self.last_msg = "Automatic release ready -- waiting to send hu."
 
     def _schedule_action_complete(self, now=None):
         """Hold for one second after the action."""
@@ -4876,7 +5406,13 @@ class GripperPanel:
         thing that would let a pickup that gripped nothing look fine.
         """
         self.offset_failed = True
+        self.failure_reason = message
         self._complete_offset_action(message)
+
+    def take_failure(self) -> str:
+        """Why the last automatic action failed, once -- or ''."""
+        why, self.failure_reason = self.failure_reason, ""
+        return why
 
     def _complete_offset_action(self, message="Automatic action complete."):
         self.offset_deadline = 0.0
@@ -4888,7 +5424,9 @@ class GripperPanel:
             self.last_msg = self._start_offset_action(next_action)
 
     def _start_auto_grip(self) -> str:
-        """Schedule HD, grip, HU, and stop with one-second command gaps."""
+        """Send hd; then, once the IR sensor reports, hx, s, g90, p1 (the
+        board saves this height for a later press), hu and s -- a second
+        apart."""
         if self.auto_grip_phase != self.AUTO_GRIP_IDLE:
             return "Automatic gripping is already running."
         if not ARDUINO.send_command(HEIGHT_DOWN_CMD):
@@ -4901,14 +5439,53 @@ class GripperPanel:
 
     def note_rx(self, data) -> bool:
         """Handle a contact packet: the IR sensor during an automatic
-        pickup's descent, and the limit switch during an automatic press.
+        pickup's descent, and the board's stop during an automatic press --
+        the limit switch after hx, the saved height reached after p3.
 
         Both are the board reporting that it has ALREADY stopped, so
         neither path sends an s of its own -- an s here would be a stop
         with nothing left to stop.
         """
-        if not has_serial_stop_signal(data):
+        text = data.decode("ascii", "ignore") if isinstance(data, bytes) else str(data)
+        for line in text.splitlines():
+            line = line.strip()
+            if line.startswith("TOF:"):
+                self.last_tof = line
+            elif line.startswith("ERR:") and (
+                    self.offset_phase in ("press_down", "release_down")
+                    or self.auto_grip_phase in (self.AUTO_GRIP_DOWN, self.AUTO_GRIP_WAIT_DOWN)):
+                # The board refused the downward move: nothing is coming.
+                # Try again a second later, up to MOVE_RETRIES times.
+                now = time.monotonic()
+                if self.move_retries < MOVE_RETRIES:
+                    self.move_retries += 1
+                    self.last_msg = (f"The board refused the move down ({line[4:]}) -- "
+                                     f"trying again ({self.move_retries}/{MOVE_RETRIES}).")
+                    if self.auto_grip_phase in (self.AUTO_GRIP_DOWN, self.AUTO_GRIP_WAIT_DOWN):
+                        self.auto_grip_phase = self.AUTO_GRIP_WAIT_DOWN
+                        self.auto_grip_up_until = now + 1.0
+                    else:
+                        self.offset_phase = "wait_action"
+                        self.offset_until = now + 1.0
+                    return True
+                ARDUINO.halt()
+                self.auto_grip_phase = self.AUTO_GRIP_IDLE
+                self.auto_grip_down_duration = 0.0
+                self._abort_offset_action(
+                    f"The board refused the move down ({line[4:]}) {MOVE_RETRIES + 1} "
+                    f"times -- sent s.")
+                return True
+        # p3 never sends an S: it goes DOWN to the saved height, reports
+        # P3=HOLD when it is there, and keeps following until it is stopped.
+        # HOLD is its arrival.
+        at_saved = ("P3=HOLD" in text and (
+            self.offset_phase == "release_down"
+            or (self.offset_phase == "press_down" and self.auto_press_cmd == HEIGHT_RETURN_CMD)))
+        if not (at_saved or has_serial_stop_signal(data)):
             return False
+        if self.offset_phase == "release_down":
+            self._begin_release_lift(time.monotonic())
+            return True
         if self.offset_phase == "press_down":
             return self._note_press_limit_switch()
         if self.auto_grip_phase != self.AUTO_GRIP_DOWN:
@@ -4923,7 +5500,8 @@ class GripperPanel:
         return True
 
     def _note_press_limit_switch(self) -> bool:
-        """The press's hx reached the switch: back off by AUTO_PRESS_BACKOFF_S.
+        """The press is down -- hx at the limit switch, or p3 at the height
+        the pickup saved: back off by AUTO_PRESS_BACKOFF_S.
 
         What a later release has to undo is the descent MINUS that back-off,
         since the back-off has already given part of it back -- the same
@@ -4933,14 +5511,23 @@ class GripperPanel:
         now = time.monotonic()
         descent = max(0.0, now - self.auto_press_started_at)
         self.auto_press_duration = max(0.0, descent - AUTO_PRESS_BACKOFF_S)
+        down = ("Limit switch" if self.auto_press_cmd == "hx"
+                else "Saved height reached")
+        if self.auto_press_cmd == HEIGHT_RETURN_CMD:
+            # p3 alone: at the saved height it just keeps holding it. No hu,
+            # no s -- the release's own p3 / hu takes over later.
+            self.auto_press_duration = 0.0
+            self.last_msg = f"{down} after {descent:.1f}s -- holding (p3 only)."
+            self._schedule_action_complete(now)
+            return True
         if ARDUINO.send_command(HEIGHT_UP_CMD):
             self.offset_phase = "press_lift"
             self.offset_until = now + AUTO_PRESS_BACKOFF_S
-            self.last_msg = (f"Limit switch after {descent:.1f}s -- hu for "
+            self.last_msg = (f"{down} after {descent:.1f}s -- hu for "
                              f"{AUTO_PRESS_BACKOFF_S:.1f}s.")
         else:
             self.offset_phase = "press_lift_pending"
-            self.last_msg = ("Limit switch tripped -- waiting to send hu.")
+            self.last_msg = f"{down} -- waiting to send hu."
         return True
 
     def status_line(self) -> str:
@@ -4968,6 +5555,9 @@ class GripperPanel:
             message = f"Pickup: hx has {grip_remaining:.1f}s remaining"
         elif self.auto_grip_phase == self.AUTO_GRIP_WAIT_G90:
             message = f"Pickup: waiting {grip_remaining:.1f}s before g90"
+        elif self.auto_grip_phase == self.AUTO_GRIP_WAIT_P1:
+            message = (f"Pickup: waiting {grip_remaining:.1f}s before "
+                       f"{HEIGHT_SAVE_CMD}")
         elif self.auto_grip_phase == self.AUTO_GRIP_WAIT_HU:
             message = f"Pickup: waiting {grip_remaining:.1f}s before hu"
         elif self.auto_grip_phase == self.AUTO_GRIP_UP:
@@ -4980,9 +5570,10 @@ class GripperPanel:
         elif self.offset_phase == "wait_action":
             message = f"Waiting {remaining:.1f}s before {self.offset_action}"
         elif self.offset_phase == "press_down":
-            message = "Press: hx sent; waiting for the limit switch s"
+            message = (f"Press: {self.auto_press_cmd} sent; waiting for the "
+                       f"board's s")
         elif self.offset_phase == "press_lift_pending":
-            message = "Press: limit switch tripped; waiting to send hu"
+            message = "Press: down; waiting to send hu"
         elif self.offset_phase in ("press_lift", "wait_release"):
             message = f"{self.offset_action.title()}: {remaining:.1f}s remaining"
         elif self.offset_phase == "wait_complete":
@@ -5089,20 +5680,30 @@ class GripperPanel:
 
     def _natural_height(self, pw):
         """The card's height at full size (scale 1), before it is shrunk to
-        fit a short video frame. Used only to work out how much to shrink
-        by -- see the scale factor `k` in draw()."""
-        row_h = self.ROW_H
-        note_lines = wrap_text(self.NOTE, pw - 56, self.NOTE_SCALE)
-        note_h = len(note_lines) * self.NOTE_LINE_H + 10
-        jog_h = 26 + 3 * self.JOG_BTN + 2 * self.JOG_GAP
-        instr_lines = (wrap_text(self.instruction, pw - 56, self.INSTR_SCALE)
-                      if self.instruction else [])
-        instr_h = (len(instr_lines) * self.INSTR_LINE_H + 16
-                  if instr_lines else 0)
-        done_h = row_h + 10 if self.awaiting_confirm else 0
-        return (self.PAD * 2 + 44 + instr_h + 78 + 26 + row_h + row_h + 10
-             + jog_h + 30
-               + note_h + 26 + done_h + row_h)
+        fit a short video frame."""
+        return self._content_height(pw, 1.0)
+
+    def _content_height(self, pw, k):
+        """The height draw() lays the card out to at scale k, step for step
+        -- the header, sliders, the three button rows, the jog pad, the
+        notes, Done and Close -- so the card is sized, and shrunk to fit,
+        by what it really draws."""
+        S = lambda v: v * k
+        row_h = S(self.ROW_H)
+        h = S(72)
+        if self.instruction:
+            lines = wrap_text(self.instruction, pw - 56, self.INSTR_SCALE * k)
+            h += len(lines) * S(self.INSTR_LINE_H) + S(16)
+        h += S(78) * len(self.sliders)
+        h += S(26) + 3 * (row_h + S(10))
+        jog_btn = max(1, int(round(S(self.JOG_BTN))))
+        jog_gap = max(12, int(round(S(self.JOG_GAP))))
+        h += S(26) + 3 * jog_btn + 2 * jog_gap + S(12)
+        h += S(28)
+        notes = wrap_text(self.NOTE, pw - 56, self.NOTE_SCALE * k)
+        h += len(notes) * S(self.NOTE_LINE_H) + S(12)
+        h += S(26) + row_h + S(10) + row_h
+        return h + self.PAD
 
     def draw(self, frame, mouse=(-1, -1)):
         self._anim = ease_toward(self._anim, 1.0 if self.visible else 0.0,
@@ -5114,8 +5715,15 @@ class GripperPanel:
 
         natural_ph = self._natural_height(pw)
         avail_h = max(1, fh - 2 * self.PAD)
-        k = 1.0 if natural_ph <= avail_h else max(self.MIN_SCALE,
-                                                   avail_h / natural_ph)
+        k = 1.0
+        if natural_ph > avail_h:
+            # the jog pad's buttons and gaps round, so close in on it
+            k = max(self.MIN_SCALE, avail_h / natural_ph)
+            for _ in range(6):
+                hk = self._content_height(pw, k)
+                if hk <= avail_h or k <= self.MIN_SCALE:
+                    break
+                k = max(self.MIN_SCALE, k * avail_h / hk)
 
         def S(v):
             return v * k
@@ -5125,20 +5733,12 @@ class GripperPanel:
         instr_scale = self.INSTR_SCALE * k
         note_lines = wrap_text(self.NOTE, pw - 56, note_scale)
         note_line_h = S(self.NOTE_LINE_H)
-        note_h = len(note_lines) * note_line_h + S(10)
         jog_btn = max(1, int(round(S(self.JOG_BTN))))
         jog_gap = max(12, int(round(S(self.JOG_GAP))))
-        jog_h = S(26) + 3 * jog_btn + 2 * jog_gap
         instr_lines = (wrap_text(self.instruction, pw - 56, instr_scale)
                       if self.instruction else [])
         instr_line_h = S(self.INSTR_LINE_H)
-        instr_h = (len(instr_lines) * instr_line_h + S(16)
-                  if instr_lines else 0)
-        done_h = row_h + S(10)
-        ph = int(round(
-            self.PAD * 2 + S(44) + instr_h + S(78) + S(26) + row_h
-            + row_h + S(20) + jog_h
-            + S(30) + note_h + S(26) + done_h + row_h))
+        ph = int(round(self._content_height(pw, k)))
         px = max(0, (fw - pw) // 2)
         py = max(0, (fh - ph) // 2)
         self._last_rect = (px, py, pw, ph)
@@ -5150,21 +5750,21 @@ class GripperPanel:
         fading = self._anim < 0.999
         under = frame[by0:by1, bx0:bx1].copy() if fading else None
 
-        glass_card(frame, rect, 28, alpha=0.62)
+        glass_card(frame, rect, DIALOG_RADIUS)
         draw_text(frame, "Gripper", (px + 28, py + int(S(44))), 0.9 * k,
                   C_TEXT, 2)
         mx, my = mouse
         self.buttons = []
         close_top = Button("X", px + pw - int(S(66)), py + int(S(18)),
                            px + pw - int(S(20)), py + int(S(58)),
-                           "grip_close_top", style="primary", scale=0.52 * k)
+                           "grip_close_top", style="text", scale=0.52 * k)
         close_top.draw(frame, hover=close_top.contains(mx, my), shadow=False)
         self.buttons.append(close_top)
-        auto_label = "PLAN AUTO: ON" if not MANUAL_GRIPPER_STEPS else "PLAN AUTO: OFF"
-        auto_scale = 0.4 * k
+        auto_label = "Plan auto: on" if not MANUAL_GRIPPER_STEPS else "Plan auto: off"
+        auto_scale = 0.48 * k
         auto_col = C_GREEN if not MANUAL_GRIPPER_STEPS else C_TEXT_DIM
         aw, _ = text_size(auto_label, auto_scale, 1)
-        draw_text(frame, auto_label, (px + pw - 28 - aw, py + int(S(40))),
+        draw_text(frame, auto_label, (close_top.x0 - 12 - aw, py + int(S(40))),
                   auto_scale, auto_col, 1)
 
         y = py + S(72)
@@ -5317,6 +5917,23 @@ OPENAI_API_KEY = "ADD YOUR OPENAI API KEY HERE"
 NAMER_MODELS = ("gpt-5.4-mini", "gpt-5.4")
 NAMER_MODEL = NAMER_MODELS[0]
 PLANNER_MODEL = "gpt-5.6-terra"
+# The message box's thinking pill, as in A3-Terra: the planner's reasoning
+# effort, sent to the planner model only. Saved with the settings.
+PLANNER_EFFORTS = (("low", "Low"), ("medium", "Medium"), ("high", "High"))
+PLANNER_EFFORT = "low"      # the cheapest thinking level
+
+
+def planner_effort_label():
+    return dict(PLANNER_EFFORTS).get(PLANNER_EFFORT, "Medium")
+
+
+def set_planner_effort(value) -> bool:
+    """Pick the planner's thinking level; True when it changed."""
+    global PLANNER_EFFORT
+    if value not in dict(PLANNER_EFFORTS) or value == PLANNER_EFFORT:
+        return False
+    PLANNER_EFFORT = value
+    return True
 # Error Rebounds: the cheapest model that reads photos well (gpt-6-luna,
 # $0.10 / $0.50 per 1M tokens), thinking as little as still reasons --
 # every checked step waits on it. ERR_MAX_TOKENS covers that reasoning too.
@@ -5336,7 +5953,7 @@ API_RETRIES = 3
 API_BACKOFF_S = 1.6
 
 AUTO_EXECUTE_DELAY = 3.0
-HOLD_SECONDS = 1.0
+HOLD_SECONDS = 0.2
 
 
 def resolve_api_key() -> str:
@@ -5459,6 +6076,7 @@ class MicRecorder:
         self.rate = STT_SAMPLE_RATE
         self.started_at = 0.0
         self.level = 0.0
+        self.wave_level = 0.0
         self.overflows = 0
 
     @property
@@ -5473,9 +6091,19 @@ class MicRecorder:
             self.overflows += 1
         block = np.asarray(indata, dtype=np.float32).reshape(-1).copy()
         peak = float(np.max(np.abs(block))) if block.size else 0.0
+        rms = float(np.sqrt(np.mean(block * block))) if block.size else 0.0
         with self._lock:
             self._blocks.append(block)
             self.level = max(peak, self.level * 0.82)
+            # A3-Terra's waveform scale: 16-bit RMS / 1400.
+            self.wave_level = max(self.wave_level,
+                                  min(1.0, rms * 32768.0 / 1400.0))
+
+    def take_wave_level(self) -> float:
+        """The loudest waveform level since the last call, then silence."""
+        with self._lock:
+            level, self.wave_level = self.wave_level, 0.0
+        return level
 
     def start(self) -> str:
         """Open the microphone. Returns "" on success, else why not."""
@@ -5669,7 +6297,7 @@ def _finish_reason(resp) -> str:
         return ""
 
 
-PRIORITY_NAMING = True
+PRIORITY_NAMING = False   # never the priority tier: it bills higher
 _PRIORITY_REFUSED = set()
 _REASONING_REFUSED = set()      # (model, effort) pairs refused this session
 
@@ -5821,6 +6449,8 @@ NAMER_MAX_TOKENS = 4000
 NAME_FONT = 0.6
 TAG_OBJECT_AREA_MULT = 4.0
 VISION_READY_WAIT_S = 60.0
+NAME_SETTLE_S = 0.0         # outlines named only once the new ones have held still this long
+NAME_SETTLE_MAX_S = 0.0     # ...or after this long, flicker or not
 
 
 def fastsam_letterbox(frame):
@@ -6325,8 +6955,12 @@ def naming_prompt(n, part_of, scene_hint):
         f"from 1 to {n} placed on it. Red outlines are parts of a bigger object:\n"
         f"{parts or '- (none)'}\n\n"
         "Name what each number is with a short, specific everyday name of 1-3 lowercase words, "
-        'e.g. "stepper motor", "notebook", "usb cable", "screwdriver". For a part, name the part itself '
-        '("logo", "sticker", "button"), not the thing it is on. If a number marks a shadow, bare surface, '
+        'e.g. "stepper motor", "notebook", "usb cable", "screwdriver". Name each number by what lies inside '
+        'its OWN outline - look at exactly that patch in the plain photo: something lying on top of another '
+        'object is named for what it is, not for the object under it. For a part, name the part itself '
+        '("logo", "sticker", "button", "tray", "bristles", "lip"), not the thing it is on: a dustpan\'s hollow '
+        'inside is its "tray", its front edge its "lip", a broom\'s brush end its "bristles". If a number '
+        'marks a shadow, bare surface, '
         "a gap, or something you can't identify, use \"unknown\".\n\n"
         "For every number also give:\n"
         '- "color": its main colour in one word ("black", "white", "silver", ...);\n'
@@ -6334,11 +6968,18 @@ def naming_prompt(n, part_of, scene_hint):
         '- "robot": true only when it is the robot\'s own machinery (its frame, rails, lead screws, '
         "rods, motors, belts, pulleys, carriage, cables or gripper); false for anything lying on "
         "the board, whatever it looks like - when unsure, false;\n"
-        '- "loose": only for a red-outlined part - true when it is really a separate thing lying on '
-        "or in the bigger object that could be lifted off on its own (a sock in a bowl, a pen on a "
-        "book), false when it is attached to it or printed on it (a handle, a lid, a button, a logo).\n\n"
+        '- "loose": only for a red-outlined part - true when it is a separate thing, or a piece of one, '
+        "lying on or in the bigger object that could be lifted off on its own (a sock in a bowl, a pen on "
+        "a book, a brush lying in a dustpan - its handle and its bristles alike), false when it is "
+        "attached to the bigger object or printed on it (a handle, a lid, a button, a logo);\n"
+        '- "thing": when the number is only a PIECE of a bigger thing whose other pieces carry other '
+        "numbers (a brush's handle, head and bristles; a dustpan's back wall, its lip and its floor), the "
+        'everyday name of that WHOLE thing ("hand brush", "dustpan") - the same words for EVERY piece of '
+        "it, its biggest piece and its handle included, and for a loose red-outlined piece too (the brush "
+        'lying in the dustpan: "hand brush"); "" only when the number is a whole thing by itself or a '
+        'part of the bigger object it is drawn on.\n\n'
         'Reply with JSON only: {"objects": [{"n": 1, "name": "...", "color": "...", "desc": "...", '
-        '"robot": false, "loose": false}, ...]}, one entry for every number.'
+        '"robot": false, "loose": false, "thing": ""}, ...]}, one entry for every number.'
     )
 
 
@@ -6363,7 +7004,8 @@ def parse_naming_reply(text, n):
                           "color": str(item.get("color") or "").strip().lower(),
                           "desc": str(item.get("desc") or "").strip(),
                           "robot": item.get("robot") is True,
-                          "loose": item.get("loose") is True}
+                          "loose": item.get("loose") is True,
+                          "thing": str(item.get("thing") or "").strip().lower()}
     return names
 
 
@@ -6381,6 +7023,128 @@ def ask_for_names(model, images, prompt, n):
     return parse_naming_reply(text, n)
 
 
+RECALL_IOU = 0.5           # the same place: the boxes overlap this much,
+RECALL_AREA = (0.67, 1.5)  # and the outline is about as big
+
+
+def outline_traits(snap):
+    """What a task compares the snapshot's outlines by, per outline: box,
+    centre, area, sides (short, long), mean colour, the parent's index, and
+    a part's distance from its parent's centre -- which, unlike an offset,
+    stays the same when the robot turns the object it moves."""
+    frame, objects = snap.get("frame"), snap["objects"]
+    parents = snap.get("parents") or find_parents(objects)
+    centres = [object_centroid(c) for c in objects]
+    out = []
+    for i, contours in enumerate(objects):
+        short, long, _ = object_rect(contours)
+        p = parents[i]
+        out.append({
+            "box": object_bbox(contours), "center": centres[i],
+            "area": object_area(contours), "sides": (short, long),
+            "color": (object_color(frame, contours)
+                      if frame is not None else None),
+            "parent": p,
+            "dist": (None if p is None else float(np.hypot(
+                centres[i][0] - centres[p][0], centres[i][1] - centres[p][1])))})
+    return out
+
+
+def _same_place(a, b):
+    """One thing that has not moved: the boxes overlap and the size and
+    colour agree -- the tracker's own test for an object that comes back
+    where it was."""
+    ratio = (a["area"] + 1) / (b["area"] + 1)
+    return (box_iou(a["box"], b["box"]) >= RECALL_IOU
+            and RECALL_AREA[0] < ratio < RECALL_AREA[1]
+            and similar_color(a["color"], b["color"]))
+
+
+def _same_look(a, b):
+    """One thing put down somewhere else: ObjectTracker._same_shape's test --
+    big enough to tell apart, with the same area, sides and colour."""
+    return (min(a["area"], b["area"]) >= ObjectTracker.FOUND_MIN_AREA
+            and 0.75 < a["area"] / max(b["area"], 1) < 1.33
+            and all(0.85 < x / max(y, 1) < 1.18
+                    for x, y in zip(a["sides"], b["sides"]))
+            and similar_color(a["color"], b["color"]))
+
+
+def _same_part(a, b, parent_size):
+    """One part of an object that moved with it: as far from the object's
+    centre as before, about as big, the same colour."""
+    ratio = (a["area"] + 1) / (b["area"] + 1)
+    return (abs(a["dist"] - b["dist"]) < max(0.2 * parent_size, 12)
+            and 0.5 < ratio < 2 and similar_color(a["color"], b["color"]))
+
+
+def _unique_pairs(pairs):
+    """The pairs (a, b) in which neither a nor b has any other partner."""
+    return [(a, b) for a, b in pairs
+            if sum(q[0] == a for q in pairs) == 1
+            and sum(q[1] == b for q in pairs) == 1]
+
+
+def recall_outlines(snap, todo, seen):
+    """Which of the snapshot's outlines `todo` (indices of outlines with no
+    answer yet) are things seen before under another ID: {index: old ID}.
+
+    `seen` is {old ID: traits, its parent as an ID} for everything a task
+    has seen and had an answer for, as it was last seen. Only IDs that are
+    not on the board now can match, each at most once:
+    1. the same place -- covered for a while (the gripper sat over it) or
+       an outline that flickered, and the tracker gave it a fresh ID;
+    2. the same look somewhere else -- the robot picked it up and put it
+       down, and nothing else on the board, or remembered, looks like it;
+    3. a part of an object known now (by 1 or 2, or one the tracker never
+       lost), as far from the object's centre as before.
+    Whatever is left over is new on the board."""
+    ids = snap["ids"]
+    on_board = set(ids)
+    free = {tid: t for tid, t in seen.items() if tid not in on_board}
+    if not todo or not free:
+        return {}
+    traits = outline_traits(snap)
+    found = {}
+    pairs = sorted(((box_iou(traits[i]["box"], t["box"]), i, tid)
+                    for i in todo for tid, t in free.items()
+                    if _same_place(traits[i], t)), reverse=True)
+    for _, i, tid in pairs:
+        if i not in found and tid not in found.values():
+            found[i] = tid
+
+    def gone():
+        return {tid: t for tid, t in free.items() if tid not in found.values()}
+
+    for i, tid in _unique_pairs([
+            (i, tid) for i in todo if i not in found
+            for tid, t in gone().items() if _same_look(traits[i], t)]):
+        found[i] = tid
+
+    def depth(i):
+        d, p = 0, traits[i]["parent"]
+        while p is not None and d < len(traits):
+            d, p = d + 1, traits[p]["parent"]
+        return d
+
+    parts = [i for i in todo if i not in found and traits[i]["parent"] is not None]
+    for level in sorted({depth(i) for i in parts}):
+        pairs = []
+        for i in parts:
+            if i in found or depth(i) != level:
+                continue
+            p = traits[i]["parent"]
+            box = traits[p]["box"]
+            size = max(box[2] - box[0], box[3] - box[1], 1)
+            owner = found.get(p, ids[p])
+            pairs += [(i, tid) for tid, t in gone().items()
+                      if t["parent"] == owner and t["dist"] is not None
+                      and _same_part(traits[i], t, size)]
+        for i, tid in _unique_pairs(pairs):
+            found[i] = tid
+    return found
+
+
 class ObjectNamer:
     """Names the outlined objects with a vision model in a background thread, so
     the video never waits. Every call asks only about objects without a name;
@@ -6388,9 +7152,11 @@ class ObjectNamer:
 
     Naming happens only when a task is sent (the planner needs the names)
     or on the N key -- one call each, and then it stops. Nothing is named
-    while a task is being typed, and objects that turn up later (put down
-    new, or back with a fresh ID after the robot moved them) wait for the
-    next task.
+    while a task is being typed, and objects that turn up later wait for the
+    next task. Even then, only what is new on the board is named: an object
+    the tracker lost and found again under a fresh ID -- covered by the
+    gripper, or moved by the robot -- gets back the answer it had
+    (recall), so a task with nothing new on the board makes no call at all.
     """
 
     MESSAGE_S = 6
@@ -6404,6 +7170,66 @@ class ObjectNamer:
         self._lock = threading.Lock()
         self._idle = threading.Event()
         self._idle.set()
+        # {ID: traits} of every answered outline a task has seen, as last
+        # seen, and the frame size they are measured in.
+        self.seen = {}
+        self._seen_shape = None
+
+    def recall(self, snap):
+        """Gives each outline with no answer that is something a task saw
+        before -- the tracker gave it a fresh ID -- the answer it had (see
+        recall_outlines). Returns {new ID: old ID}."""
+        ids = snap["ids"]
+        frame = snap.get("frame")
+        parents = snap.get("parents") or find_parents(snap["objects"])
+        with self._lock:
+            seen = (dict(self.seen) if frame is not None
+                    and self._seen_shape == frame.shape[:2] else {})
+        todo = [i for i, tid in enumerate(ids)
+                if tid not in self.names and tid not in self.asked]
+        carried = {}
+        for i, old in sorted(recall_outlines(snap, todo, seen).items()):
+            new = ids[i]
+            info = dict(self.info.get(old) or {})
+            if seen[old]["parent"] is None and parents[i] is not None:
+                # It stood on its own before and now lies on or in something
+                # (a sock dropped in a bowl): a loose thing, not a part.
+                info["loose"] = True
+            if info:
+                self.info[new] = info
+            if old in self.names:
+                self.names[new] = self.names[old]
+            self.asked.add(new)
+            carried[new] = old
+        return carried
+
+    def remember(self, snap, replaced=()):
+        """Keeps how every answered outline in `snap` looks, for the next
+        task's recall(). Things not on the board now are kept as they were
+        last seen: covered or lifted, they may come back. `replaced` are old
+        IDs whose things now carry a new one."""
+        ids = snap["ids"]
+        frame = snap.get("frame")
+        if frame is None:
+            return
+        traits = outline_traits(snap)
+        now = {}
+        for i, tid in enumerate(ids):
+            if tid in self.names or tid in self.asked:
+                t = dict(traits[i])
+                t["parent"] = None if t["parent"] is None else ids[t["parent"]]
+                now[tid] = t
+        with self._lock:
+            if self._seen_shape != frame.shape[:2]:
+                self.seen, self._seen_shape = {}, frame.shape[:2]
+            for old in replaced:
+                self.seen.pop(old, None)
+            # An old ID for something on the board now under another one
+            # would be a second "it" to recall.
+            for tid in [tid for tid, t in self.seen.items() if tid not in now
+                        and any(_same_place(t, n) for n in now.values())]:
+                del self.seen[tid]
+            self.seen.update(now)
 
     def say(self, text):
         self.message, self.message_until = text, time.time() + self.MESSAGE_S
@@ -6511,7 +7337,8 @@ class ObjectNamer:
             got = ask_for_names(model, images, prompt, len(ids))
             for n, entry in got.items():
                 tid = ids[n - 1]
-                self.info[tid] = {k: entry[k] for k in ("color", "desc", "robot", "loose")}
+                self.info[tid] = {k: entry.get(k, "") for k in
+                                  ("color", "desc", "robot", "loose", "thing")}
                 self.names[tid] = entry["name"]
             self.asked.update(ids)
             self.say(f"Named {len(got)} of {len(ids)} new object{'s' if len(ids) > 1 else ''}")
@@ -6572,10 +7399,15 @@ class LiveVision:
         self._thread.start()
         return self
 
-    def submit(self, frame, box, tag_pts=None, region=None):
+    def submit(self, frame, box, tag_pts=None, region=None, adjust=None):
         """Offer the newest camera frame, the grid box and the AprilTag's
         corners, all in that frame's pixels. Never blocks: a frame arriving
         while one is being outlined just replaces the one waiting.
+
+        `adjust`, a CameraSettings, is applied on this object's own thread
+        to the frame it takes: the box and corners are then in the adjusted
+        frame's pixels. The UI thread no longer makes a full-size adjusted
+        frame for every camera frame when this thread takes one in three.
 
         `region` is the part of the board FastSAM may look at -- the
         reachable cells, see reachable_box(). None means the whole box;
@@ -6586,7 +7418,7 @@ class LiveVision:
                   tuple(float(v) for v in region))
         with self._lock:
             self._pending = (frame, tuple(float(v) for v in box), tag_pts,
-                             region)
+                             region, adjust)
             self._pending_id += 1
 
     def _feed(self):
@@ -6613,7 +7445,9 @@ class LiveVision:
                     continue
                 sent_id = pending_id
                 sent_at = time.time()
-                frame, box, tag_pts, region = pending
+                frame, box, tag_pts, region, adjust = pending
+                if adjust is not None:
+                    frame = adjust.apply(frame)
                 area = box if region is None else region
                 if region == NO_REACH:
                     crop = None
@@ -6817,6 +7651,1118 @@ def outline_polygon(contours, grid: Grid):
     return poly if _poly_area(poly) > 1e-6 else None
 
 
+THING_JOIN_PAD = 0.02   # pieces of one thing may lie this far apart (of the frame)
+THING_SEAM = 0.08       # ...and must share this much of the smaller one's edge
+# Names that are only ever a piece of something: one of these, untagged,
+# joins the single thing whose pieces it touches.
+THING_PIECE_WORDS = frozenset((
+    "handle", "head", "grip", "neck", "shaft", "stick", "pole", "bristles",
+    "bristle", "brush head", "lip", "edge", "rim", "base", "floor", "wall",
+    "tray", "body", "blade", "connector", "collar", "ring", "cap"))
+
+
+def thing_groups(keys, objects, thing_of, frame_shape=None, name_of=None,
+                 doubtful=None):
+    """[(thing, [indices])]: the outlines in `keys` the namer called pieces of
+    one thing (the same thing_of(i)) whose boxes meet, two or more each. An
+    outline NAMED for a thing that other pieces belong to (the namer called
+    the brush's main piece "hand brush", its bristles a piece of "hand
+    brush") is that thing's main body and joins them. Two separate dustpans
+    on one board stay two: their pieces do not touch. Pieces join only along
+    a shared seam (seam_share, THING_SEAM); the body on any contact.
+    `doubtful`, a set, gets the pieces that touch their thing without sharing
+    a seam with it."""
+    pad = THING_JOIN_PAD * max(frame_shape[:2]) if frame_shape else 20.0
+    by_thing = {}
+    bodies = set()
+    for i in keys:
+        t = str(thing_of(i) or "").strip().lower()
+        if t:
+            by_thing.setdefault(t, []).append(i)
+    if name_of is not None:
+        loose = []
+        for i in keys:
+            if str(thing_of(i) or "").strip():
+                continue
+            n = str(name_of(i) or "").strip().lower()
+            if n in by_thing:
+                by_thing[n].append(i)       # named for the thing: its body
+                bodies.add(i)
+                continue
+            # "brush head" is a piece of "brush" whatever its tag says
+            hit = [t for t in by_thing if re.search(rf"(?<!\w){re.escape(t)}(?!\w)", n)]
+            if len(hit) == 1:
+                by_thing[hit[0]].append(i)
+            elif n in THING_PIECE_WORDS:
+                loose.append(i)
+        # a bare piece word ("handle") joins the one thing whose pieces it touches
+        for i in loose:
+            bi = object_bbox(objects[i])
+            near = [t for t, idx in by_thing.items() if any(
+                bi[0] - pad <= object_bbox(objects[j])[2]
+                and object_bbox(objects[j])[0] - pad <= bi[2]
+                and bi[1] - pad <= object_bbox(objects[j])[3]
+                and object_bbox(objects[j])[1] - pad <= bi[3] for j in idx)]
+            if len(near) == 1:
+                by_thing[near[0]].append(i)
+    groups = []
+    for thing, idx in by_thing.items():
+        boxes = {i: object_bbox(objects[i]) for i in idx}
+        root = {i: i for i in idx}
+
+        def find(i):
+            while root[i] != i:
+                root[i] = root[root[i]]
+                i = root[i]
+            return i
+
+        for a in idx:
+            for b in idx:
+                if a < b:
+                    ba, bb = boxes[a], boxes[b]
+                    if not (ba[0] - pad <= bb[2] and bb[0] - pad <= ba[2]
+                            and ba[1] - pad <= bb[3] and bb[1] - pad <= ba[3]):
+                        continue
+                    seam = seam_share(objects[a], objects[b])
+                    if seam >= THING_SEAM or (seam > 0 and (a in bodies or b in bodies)):
+                        root[find(a)] = find(b)
+        sets = {}
+        for i in idx:
+            sets.setdefault(find(i), []).append(i)
+        joined = [m for m in sets.values() if len(m) > 1]
+        groups += [(thing, sorted(m)) for m in joined]
+        if doubtful is not None:
+            for m in sets.values():
+                if len(m) == 1 and any(seam_share(objects[m[0]], objects[j]) > 0
+                                       for g in joined for j in g):
+                    doubtful.add(m[0])
+    return groups
+
+
+def seam_share(a, b):
+    """How much of the smaller of two outlines' edges runs along the other:
+    0 for outlines apart, ~1 for one wrapped round the other. Pieces of one
+    thing share seams; a floor line crossing under a tool only touches it."""
+    pts = np.concatenate([c.reshape(-1, 2) for c in list(a) + list(b)])
+    x0, y0 = (pts.min(0) - 6).astype(int)
+    x1, y1 = (pts.max(0) + 6).astype(int)
+    shape = (y1 - y0 + 1, x1 - x0 + 1)
+    ma, mb = np.zeros(shape, np.uint8), np.zeros(shape, np.uint8)
+    cv2.drawContours(ma, [(c - (x0, y0)).astype(np.int32) for c in a], -1, 255, -1)
+    cv2.drawContours(mb, [(c - (x0, y0)).astype(np.int32) for c in b], -1, 255, -1)
+    touch = np.count_nonzero(cv2.bitwise_and(cv2.dilate(ma, np.ones((9, 9), np.uint8)), mb))
+    edge = min(sum(cv2.arcLength(c, True) for c in a),
+               sum(cv2.arcLength(c, True) for c in b))
+    # the 9 px dilation lays a band ~4.5 px deep along the shared edge
+    return touch / 4.5 / max(1.0, edge)
+
+
+LIP_WORDS_RE = re.compile(r"(?<!\w)(lip|edge|blade|mouth|opening)(?!\w)")
+
+
+def compass(dx, dy):
+    """'up', 'down-right', ... for a step of (dx, dy) grid units (rows go down)."""
+    names = ("right", "up-right", "up", "up-left", "left", "down-left",
+             "down", "down-right")
+    return names[int(((math.degrees(math.atan2(-dy, dx)) % 360) + 22.5) // 45) % 8]
+
+
+TRAY_WORDS_RE = re.compile(
+    r"(?<!\w)(tray|pan|scoop|inside|interior|floor|base|basin|bowl|hollow)(?!\w)")
+LIP_EDGE_MIN = 0.42     # a lip runs along its object's outer edge for this much,
+LIP_EDGE_SURE = 0.6     # and from this much on it outranks the tray
+TRAY_MIN_SHARE = 0.25   # a tray covers at least this much of its object
+
+
+def edge_share(part, whole):
+    """How much of `part`'s outline runs along `whole`'s outer edge, 0..1.
+    A dustpan's real lip IS its edge; a brush lying across the pan, named
+    "lip" by mistake, is inside it."""
+    pts = np.concatenate([c.reshape(-1, 2) for c in list(part) + list(whole)])
+    x0, y0 = (pts.min(0) - 8).astype(int)
+    x1, y1 = (pts.max(0) + 8).astype(int)
+    shape = (y1 - y0 + 1, x1 - x0 + 1)
+    band, line = np.zeros(shape, np.uint8), np.zeros(shape, np.uint8)
+    cv2.drawContours(band, [(c - (x0, y0)).astype(np.int32) for c in whole], -1, 255, 9)
+    cv2.drawContours(line, [(c - (x0, y0)).astype(np.int32) for c in part], -1, 255, 1)
+    total = np.count_nonzero(line)
+    return np.count_nonzero(cv2.bitwise_and(band, line)) / float(max(1, total))
+
+
+MOUTH_WALL_MAX = 0.15   # a side wall's end on the lip edge, of the edge's length
+
+
+def _outer_mouth(part, whole):
+    """The pan's mouth from its own outline, as pixel ends (a, b), or None:
+    the longest straight side of `whole` that `part` (its tray, or its lip)
+    runs along for at least half the side's length, facing within 45
+    degrees of the way the part's place in the pan says (the side it sits
+    nearest). The pan's outline holds the whole lip even where something
+    lies across the tray, so the lip cannot lose to a side wall the way the
+    tray's own sides could. An end is trimmed to the part's span when the
+    part stops a wall's thickness short of it."""
+    edge_c = max(whole, key=cv2.contourArea)
+    part_c = max(part, key=cv2.contourArea)
+    pts = np.concatenate([c.reshape(-1, 2) for c in list(part) + list(whole)])
+    size = float(np.hypot(*(pts.max(0) - pts.min(0))))
+    close = max(15.0, 0.08 * size)
+    wx, wy, ww, wh = cv2.boundingRect(edge_c)
+    px, py, pw, ph = cv2.boundingRect(part_c)
+    gap = {"left": px - wx, "right": (wx + ww) - (px + pw),
+           "up": py - wy, "down": (wy + wh) - (py + ph)}
+    side = min(gap, key=gap.get)
+    across = ("up", "down") if side in ("left", "right") else ("left", "right")
+    also = [k for k in across if gap[k] <= max(10.0, 1.5 * gap[side])]
+    if len(also) == 1:
+        v, h = (side, also[0]) if side in ("up", "down") else (also[0], side)
+        want = f"{v}-{h}"
+    else:
+        want = side
+    m = cv2.moments(part_c)
+    if m["m00"] <= 0:
+        return None
+    inside = np.array([m["m10"] / m["m00"], m["m01"] / m["m00"]])
+    poly = cv2.approxPolyDP(edge_c, 0.012 * cv2.arcLength(edge_c, True), True).reshape(-1, 2)
+    best, best_len = None, 0.0
+    for k in range(len(poly)):
+        p0 = poly[k].astype(np.float64)
+        p1 = poly[(k + 1) % len(poly)].astype(np.float64)
+        length = float(np.hypot(*(p1 - p0)))
+        if length < 0.2 * size or length <= best_len:
+            continue
+        near = np.mean([abs(cv2.pointPolygonTest(part_c, (float(x), float(y)), True)) <= close
+                        for x, y in (p0 + (p1 - p0) * f for f in np.linspace(0.05, 0.95, 11))])
+        if near < 0.5:
+            continue
+        nx, ny = -(p1 - p0)[1] / length, (p1 - p0)[0] / length
+        if ((p0 + p1) / 2.0 - inside) @ np.array([nx, ny]) < 0:
+            nx, ny = -nx, -ny
+        apart = abs(_COMPASS.index(compass(nx, ny)) - _COMPASS.index(want)) % 8
+        if min(apart, 8 - apart) > 1:
+            continue
+        best, best_len = (p0, p1), length
+    if best is None:
+        return None
+    # The side walls' ends lie on the same straight edge but are no
+    # opening: an end the part stops short of by a wall's thickness is
+    # trimmed. A longer stretch past the part is the part hidden under
+    # something lying in the pan, and stays.
+    p0, p1 = best
+    u = (p1 - p0) / best_len
+    t = (part_c.reshape(-1, 2).astype(np.float64) - p0) @ u
+    lo, hi = max(0.0, float(t.min())), min(best_len, float(t.max()))
+    wall = MOUTH_WALL_MAX * best_len
+    lo = lo if lo <= wall else 0.0
+    hi = hi if best_len - hi <= wall else best_len
+    return p0 + u * lo, p0 + u * hi
+
+
+def mouth_line(part, whole, grid):
+    """The mouth as a straight segment ((col, row), (col, row)) in grid
+    units, or None: from the pan's own outline (_outer_mouth) when it can;
+    else the longest stretch of `part`'s outline lying on `whole`'s outer
+    edge (for a dustpan's tray, that stretch is the mouth: everywhere else
+    walls stand between the tray and the outside), or the part's longest
+    straight side along the edge."""
+    outer = _outer_mouth(part, whole)
+    if outer is not None:
+        a, b = outer
+        return (grid.pixel_to_grid(float(a[0]), float(a[1])),
+                grid.pixel_to_grid(float(b[0]), float(b[1])))
+    pts = np.concatenate([c.reshape(-1, 2) for c in list(part) + list(whole)])
+    x0, y0 = (pts.min(0) - 8).astype(int)
+    x1, y1 = (pts.max(0) + 8).astype(int)
+    shape = (y1 - y0 + 1, x1 - x0 + 1)
+    band, line = np.zeros(shape, np.uint8), np.zeros(shape, np.uint8)
+    cv2.drawContours(band, [(c - (x0, y0)).astype(np.int32) for c in whole], -1, 255, 9)
+    cv2.drawContours(line, [(c - (x0, y0)).astype(np.int32) for c in part], -1, 255, 1)
+    on = cv2.bitwise_and(band, line)
+    n, labels, stats, _ = cv2.connectedComponentsWithStats(
+        cv2.dilate(on, np.ones((5, 5), np.uint8)), connectivity=8)
+    best = 1 + int(np.argmax(stats[1:, cv2.CC_STAT_AREA])) if n > 1 else 0
+    ys, xs = np.nonzero((labels == best) & (on > 0)) if n > 1 else (np.zeros(0, int),) * 2
+    found = None
+    q = np.stack([xs + x0, ys + y0], 1).astype(np.float64)
+    if len(xs) >= 12:
+        mid = q.mean(0)
+        _, spread, axes = np.linalg.svd(q - mid, full_matrices=False)
+        if spread[1] <= 0.3 * spread[0]:        # a line, not a corner or a blob
+            t = (q - mid) @ axes[0]
+            found = (mid + axes[0] * t.min(), mid + axes[0] * t.max())
+    # A thick lip keeps the tray a lip's width off the edge, so the band
+    # above misses the mouth (and may find a thin side wall instead): the
+    # tray's longest straight side running close along the outer edge is
+    # the mouth then.
+    edge_c = max(whole, key=cv2.contourArea)
+    size = float(np.hypot(*(pts.max(0) - pts.min(0))))
+    reach = max(12.0, 0.06 * size)
+
+    def gap(x, y):
+        return abs(cv2.pointPolygonTest(edge_c, (float(x), float(y)), True))
+
+    def by_edge(x, y, within=None):
+        return gap(x, y) <= (reach if within is None else within)
+
+    def along_edge(x, y, within):
+        """Still along the pan's edge: close to it, and not outside the pan
+        (past a corner the line leaves the outline)."""
+        d = cv2.pointPolygonTest(edge_c, (float(x), float(y)), True)
+        return -3.0 <= d <= within
+
+    tray_c = max(part, key=cv2.contourArea)
+    poly = cv2.approxPolyDP(tray_c, 0.015 * cv2.arcLength(tray_c, True), True).reshape(-1, 2)
+    straight = None
+    for k in range(len(poly)):
+        p0, p1 = poly[k].astype(np.float64), poly[(k + 1) % len(poly)].astype(np.float64)
+        length = float(np.hypot(*(p1 - p0)))
+        if length < 0.25 * size or (found is not None and length <= float(
+                np.hypot(*(found[1] - found[0])))) or (straight is not None and length <= float(
+                np.hypot(*(straight[1] - straight[0])))):
+            continue
+        if all(by_edge(*(p0 + (p1 - p0) * f)) for f in np.linspace(0.1, 0.9, 9)):
+            straight = (p0, p1)
+    if straight is not None:
+        # Something lying on the pan (the brush) can hide part of the tray's
+        # side along the lip: carry the line on while it still runs along the
+        # pan's edge.
+        p0, p1 = straight
+        # only as far as the edge stays as close as along the part seen
+        close = min(reach, 6.0 + max(gap(*(p0 + (p1 - p0) * f))
+                                     for f in np.linspace(0.1, 0.9, 9)))
+        step = (p1 - p0) / max(1e-6, float(np.hypot(*(p1 - p0)))) * 4.0
+        while along_edge(*(p1 + step), close) and float(np.hypot(*(p1 - p0))) < size:
+            p1 = p1 + step
+        while along_edge(*(p0 - step), close) and float(np.hypot(*(p1 - p0))) < size:
+            p0 = p0 - step
+        found = (p0, p1)
+    if found is None:
+        return None
+    a, b = found
+    return (grid.pixel_to_grid(float(a[0]), float(a[1])),
+            grid.pixel_to_grid(float(b[0]), float(b[1])))
+
+
+def _mouth_note(mouth, inside):
+    """("down-right", "from H9 to M6, about 5.2 cells wide") for a mouth
+    segment, facing away from the point `inside` (the tray's centre)."""
+    (ax, ay), (bx, by) = mouth
+    width = math.hypot(bx - ax, by - ay)
+    if width < 0.75:
+        return None
+    nx, ny = -(by - ay) / width, (bx - ax) / width
+    mx, my = (ax + bx) / 2.0, (ay + by) / 2.0
+    if (mx - inside[0]) * nx + (my - inside[1]) * ny < 0:
+        nx, ny = -nx, -ny
+    ends = []
+    for x, y in ((ax, ay), (bx, by)):
+        cell = (min(CONFIG.n_cols - 1, max(0, int(x))), min(CONFIG.n_rows - 1, max(0, int(y))))
+        ends.append(coordinate_name(*cell))
+    return (compass(nx, ny), f"from {ends[0]} to {ends[1]}, about {width:.1f} cells wide",
+            {"a": (ax, ay), "b": (bx, by), "n": (nx, ny)})
+
+
+def _box_of(poly):
+    xs, ys = [q[0] for q in poly], [q[1] for q in poly]
+    return min(xs), min(ys), max(xs), max(ys)
+
+
+def _centre_of(e):
+    return e.get("center_pt") or (lambda c: c and (c[0] + 0.5, c[1] + 0.5))(
+        parse_coordinate(str(e.get("center") or "")))
+
+
+_COMPASS = ("right", "up-right", "up", "up-left", "left", "down-left", "down",
+            "down-right")
+
+
+def note_opening(entry):
+    """Which way an object's opening faces, in its DESC, when its parts show
+    it: a lip lying along the object's outer edge (from the object's centre
+    to the lip's), or a tray that reaches the edge on one side (that side).
+    A lip lying along the edge for LIP_EDGE_SURE or more is taken as it is;
+    a lip that only just qualifies and a tray disagreeing by more than 45
+    degrees: nothing is written - a wrong direction is worse than none.
+    (Measured on photos: a real rubber lip 0.89 along the edge, a brush's
+    top named "lip" by mistake 0.32; a floor patch is no tray.)"""
+    comps = entry.get("components") or []
+    poly, centre = entry.get("polygon"), _centre_of(entry)
+    if not comps or not poly or not centre:
+        return
+    lip_dir = lip = None
+    lips = [c for c in comps if LIP_WORDS_RE.search(str(c.get("name") or ""))
+            and c.get("edge", 0.0) >= LIP_EDGE_MIN]
+    if lips:
+        lip = max(lips, key=lambda c: len(_touch_cells(c)))
+        at = _centre_of(lip)
+        if at and (abs(at[0] - centre[0]) >= 0.25 or abs(at[1] - centre[1]) >= 0.25):
+            lip_dir = compass(at[0] - centre[0], at[1] - centre[1])
+    tray_dir = tray = None
+    whole = max(_poly_area(poly), 1e-6)
+    trays = [c for c in comps if TRAY_WORDS_RE.search(str(c.get("name") or ""))
+             and c.get("polygon") and _poly_area(c["polygon"]) >= TRAY_MIN_SHARE * whole]
+    if trays:
+        tray = max(trays, key=lambda c: _poly_area(c["polygon"]))
+        ox0, oy0, ox1, oy1 = _box_of(poly)
+        tx0, ty0, tx1, ty1 = _box_of(tray["polygon"])
+        gap = {"left": tx0 - ox0, "right": ox1 - tx1, "up": ty0 - oy0,
+               "down": oy1 - ty1}
+        side = min(gap, key=gap.get)
+        rest = sorted(v for k, v in gap.items() if k != side)
+        if gap[side] <= 0.6 * rest[0] or rest[0] - gap[side] >= 0.75:
+            across = ("up", "down") if side in ("left", "right") else ("left", "right")
+            also = [k for k in across if gap[k] <= max(0.5, 1.5 * gap[side])]
+            if len(also) == 1:
+                vertical, horizontal = ((side, also[0]) if side in ("up", "down")
+                                        else (also[0], side))
+                tray_dir = f"{vertical}-{horizontal}"
+            else:
+                tray_dir = side
+    if lip_dir and tray_dir and lip.get("edge", 0.0) < LIP_EDGE_SURE:
+        apart = abs(_COMPASS.index(lip_dir) - _COMPASS.index(tray_dir)) % 8
+        if min(apart, 8 - apart) > 1:
+            return
+    # The mouth itself, where it can be measured: the lip's stretch of the
+    # outer edge, else the tray's. Its own direction (square to it, away
+    # from the inside) replaces the rough ones above.
+    span = None
+    if lip_dir and lip.get("mouth"):
+        span = _mouth_note(lip["mouth"], centre)
+        if span:
+            apart = abs(_COMPASS.index(span[0]) - _COMPASS.index(lip_dir)) % 8
+            if min(apart, 8 - apart) > 1:
+                span = None
+    elif tray is not None and tray.get("mouth") and not lip_dir:
+        span = _mouth_note(tray["mouth"], _centre_of(tray) or centre)
+        if span and tray_dir:
+            apart = abs(_COMPASS.index(span[0]) - _COMPASS.index(tray_dir)) % 8
+            if min(apart, 8 - apart) > 1:
+                span = None
+    if lip_dir:
+        face = span[0] if span else lip_dir
+        note = f"opening (its {lip['name']}) faces {face}"
+    elif tray_dir or span:
+        face = span[0] if span else tray_dir
+        note = f"opening faces {face} (where its {tray['name']} reaches the edge)"
+    else:
+        return
+    if span:
+        note += f"; its mouth runs {span[1]}"
+        entry["mouth_geo"] = span[2]
+    elif tray is not None and not lip_dir and tray_dir:
+        # No line measured (the tray stops short of a thick lip): its width
+        # across the opening and its middle at the opening side still give
+        # the planner the mouth's size and place.
+        k = _COMPASS.index(tray_dir)
+        dx, dy = math.cos(math.radians(45 * k)), -math.sin(math.radians(45 * k))
+        pts = np.array(tray["polygon"], dtype=np.float64)
+        across = pts @ np.array([-dy, dx])
+        along = pts @ np.array([dx, dy])
+        front = pts[along >= along.max() - 0.15 * (along.max() - along.min())]
+        fx, fy = front.mean(0)
+        cell = (min(CONFIG.n_cols - 1, max(0, int(fx))), min(CONFIG.n_rows - 1, max(0, int(fy))))
+        note += (f"; its mouth is about {across.max() - across.min():.1f} cells wide, "
+                 f"centred near {coordinate_name(*cell)}")
+        mid = (across.max() + across.min()) / 2.0
+        half = (across.max() - across.min()) / 2.0
+        # the front line: through the front's middle, square to the opening
+        base = np.array([fx, fy]) - np.array([-dy, dx]) * ((np.array([fx, fy]) @ np.array([-dy, dx])) - mid)
+        entry["mouth_geo"] = {"a": tuple(base - np.array([-dy, dx]) * half),
+                              "b": tuple(base + np.array([-dy, dx]) * half),
+                              "n": (dx, dy)}
+    entry["desc"] = f"{entry.get('desc', '')}; {note}".lstrip("; ")
+
+
+def guess_mouth(poly):
+    """{"a", "b", "n"} (grid units) for a dustpan outlined whole, or None:
+    its handle is the far protrusion, and its mouth the longest straight
+    side facing away from the handle (within about 45 degrees)."""
+    try:
+        pts = np.array([(float(x), float(y)) for x, y in poly], np.float64)
+    except (TypeError, ValueError):
+        return None
+    if len(pts) < 3:
+        return None
+    size = float(np.hypot(*np.ptp(pts, axis=0)))
+    c = np.array(_poly_centroid([tuple(q) for q in pts]), np.float64)
+    dense = []
+    for i, a in enumerate(pts):
+        b = pts[(i + 1) % len(pts)]
+        k = max(1, int(math.ceil(float(np.hypot(*(b - a))) / 0.1)))
+        dense.extend(a + (b - a) * j / k for j in range(k))
+    dense = np.array(dense)
+    dist = np.hypot(*(dense - c).T)
+    tip = dense[int(dist.argmax())]
+    if float(dist.max()) < 1.3 * float(np.median(dist)):
+        return None                         # no handle to tell the front by
+    away = -(tip - c) / max(1e-9, float(np.hypot(*(tip - c))))
+    cnt = np.round(pts * 100).astype(np.int32).reshape(-1, 1, 2)
+    poly2 = cv2.approxPolyDP(cnt, 0.012 * cv2.arcLength(cnt, True), True).reshape(-1, 2) / 100.0
+    best, best_len = None, 0.0
+    for i in range(len(poly2)):
+        p0, p1 = poly2[i], poly2[(i + 1) % len(poly2)]
+        length = float(np.hypot(*(p1 - p0)))
+        if length < 0.25 * size or length <= best_len:
+            continue
+        n = np.array([-(p1 - p0)[1], (p1 - p0)[0]]) / length
+        if ((p0 + p1) / 2.0 - c) @ n < 0:
+            n = -n
+        if n @ away >= 0.7:
+            best, best_len = (p0, p1, n), length
+    if best is None:
+        return None
+    p0, p1, n = best
+    return {"a": tuple(p0), "b": tuple(p1), "n": (float(n[0]), float(n[1]))}
+
+
+SWEEP_TASK_RE = re.compile(r"(?<!\w)(sweep\w*|broom\w*|dust ?pan|dustpan)(?!\w)", re.I)
+SWEEP_DEPTH = 5         # the cleaning area runs this many cells out from the mouth
+SWEEP_STOP_IN = 0.15    # the claw comes to rest this far into a cell, past the edge it came in by
+SWEEP_LIP_IN = 0.5      # a stroke ends with the bristles' front this far past the lip
+SWEEP_FULL = (0.45, 1.0)  # how far behind the front bristles still carry dust in: tried both
+SWEEP_BACK = 0.3        # a stroke through the pan stops this far short of where it narrows
+SWEEP_WALL = 0.05       # margin off the mouth's ends (it is measured to the tray's span)
+_COLLECTOR_RE = re.compile(r"(?<!\w)(dust ?pan|dustpan|scoop|collector)(?!\w)")
+_BRUSH_RE = re.compile(r"(?<!\w)(broom|brush|sweeper|whisk)(?!\w)")
+_BRISTLE_RE = re.compile(r"(?<!\w)(bristles?|brush head|broom head|head)(?!\w)")
+_DEBRIS_RE = re.compile(
+    r"(?<!\w)(dust|dirt|debris|crumbs?|scraps?|litter|trash|rubbish|leaves|leaf|"
+    r"sand|rice|seeds?|grains?|chips|flakes|lint|fluff|mess|spill|particles|"
+    r"bits|pieces|wrappers?)(?!\w)")
+
+
+def is_sweep_task(task) -> bool:
+    return bool(SWEEP_TASK_RE.search(task or ""))
+
+
+def _names_of(o):
+    aka = o.get("aka") or []
+    aka = [aka] if isinstance(aka, str) else list(aka)
+    return " ".join([str(o.get("name") or "")] + [str(a) for a in aka]).lower()
+
+
+def _goto_line(cell):
+    name = coordinate_name(*cell)
+    letters = "".join(ch for ch in name if ch.isalpha())
+    return f"goto_coordinate = {letters}, {name[len(letters):]}"
+
+
+def gantry_stop(pos, cell):
+    """Where the claw comes to rest for a goto to `cell` from `pos` (cells;
+    `pos` continuous). The gantry runs one axis at a time, vertical first
+    (build_path_commands), and the guidance stops it the moment the tag is
+    seen inside the target cell: just past the edge it came in by. An axis
+    that did not have to move keeps its place."""
+    x, y = float(pos[0]), float(pos[1])
+    c, r = cell
+    if r != math.floor(y):
+        y = r + SWEEP_STOP_IN if r > y else r + 1 - SWEEP_STOP_IN
+    if c != math.floor(x):
+        x = c + SWEEP_STOP_IN if c > x else c + 1 - SWEEP_STOP_IN
+    return np.array([x, y])
+
+
+def _fill_points(polys, step):
+    """Points (cells, continuous) filling the given outlines, edges included."""
+    if not polys:
+        return np.zeros((0, 2))
+    k = int(round(1.0 / step))
+    allp = np.vstack(polys)
+    lo = np.floor(allp.min(0)) - 1
+    size = ((np.ceil(allp.max(0)) + 1 - lo) * k).astype(int) + 1
+    mask = np.zeros((size[1], size[0]), np.uint8)
+    for poly in polys:
+        cv2.fillPoly(mask, [np.round((poly - lo) * k).astype(np.int32)], 1)
+    ys, xs = np.nonzero(mask)
+    return np.stack([xs, ys], 1) / float(k) + lo
+
+
+def _cell_square(c):
+    return np.array([(c[0], c[1]), (c[0] + 1, c[1]), (c[0] + 1, c[1] + 1), (c[0], c[1] + 1)],
+                    np.float64)
+
+
+def sweep_recipe(objects):
+    """The sweep, computed: {"lines", "lanes", "covered", "target", "brush",
+    "collector", "dirt_lanes", "note", ...} -- or {"note": why not} / None
+    when the board has no dustpan with a measured mouth and no brush.
+
+    Built for how the gantry really moves (one axis at a time, stopping just
+    inside a cell's edge -- gantry_stop):
+      - the brush is picked up at its top-right grip cell, coming in
+        diagonally from a neighbour, so the claw's resting point -- and so
+        the bristles' place relative to it -- is known;
+      - every stroke is ONE straight move along the axis that points most
+        nearly into the mouth, from behind the dust until the bristles'
+        front is SWEEP_LIP_IN past the lip, never onto the pan's walls;
+        lanes sit side by side across the mouth, overlapping;
+      - dust off to the side of the mouth (outside what those strokes can
+        carry in, outlined dirt included) is first pushed sideways into
+        their path (feed strokes) -- a sideways slide never carries a pile,
+        so nothing slides along the lip;
+      - each stroke start is lined up from the side that puts the claw
+        where the lane needs it.
+    Commands are the CLAW's cells (the pickup is at the grip cell already,
+    so Gripper AI has nothing to shift)."""
+    pans = [o for o in objects or () if _COLLECTOR_RE.search(_names_of(o))
+            and (o.get("mouth_geo") or o.get("polygon"))]
+    pans.sort(key=lambda o: not o.get("mouth_geo"))
+    brushes = [o for o in objects or () if _BRUSH_RE.search(_names_of(o))
+               and not _COLLECTOR_RE.search(_names_of(o))]
+    if not pans or not brushes:
+        return None
+    pan, brush = pans[0], brushes[0]
+    pick_notes = []
+    geo = pan.get("mouth_geo")
+    if not geo:
+        geo = guess_mouth(pan.get("polygon"))
+        if not geo:
+            return {"note": f"the {pan['name']}'s mouth could not be told from its outline"}
+        a_, b_ = np.array(geo["a"], np.float64), np.array(geo["b"], np.float64)
+        if float(np.hypot(*(b_ - a_))) > 2.0:        # the side walls stand at its ends
+            t_ = (b_ - a_) / float(np.hypot(*(b_ - a_)))
+            geo = dict(geo, a=tuple(a_ + t_ * 0.3), b=tuple(b_ - t_ * 0.3))
+        pick_notes.append(f"the {pan['name']}'s mouth is taken from its shape "
+                          "(the side facing away from its handle)")
+    home = parse_coordinate(str(brush.get("center") or ""))
+    if home is None:
+        return {"note": "the brush has no cell to pick it up at"}
+    cells, polys = [], []
+    for comp in brush.get("components") or []:
+        if _BRISTLE_RE.search(str(comp.get("name") or "").lower()):
+            cells += [parse_coordinate(x) for x in _touch_cells(comp)]
+            if comp.get("polygon") and len(comp["polygon"]) >= 3:
+                polys.append(np.array(comp["polygon"], np.float64))
+    cells = [c for c in cells if c is not None] or [
+        c for c in (parse_coordinate(x) for x in _touch_cells(brush)) if c is not None]
+    if not cells:
+        return {"note": "the brush's bristles have no cells"}
+    reach = reachable_cells()
+    if reach is None:
+        return {"note": "no cell is reachable"}
+
+    def reachable(c):
+        return reach[0] <= c[0] < reach[2] and reach[1] <= c[1] < reach[3]
+
+    if not reachable(home):
+        return {"note": f"the brush at {coordinate_name(*home)} is out of reach"}
+    A, B = np.array(geo["a"], np.float64), np.array(geo["b"], np.float64)
+    N = np.array(geo["n"], np.float64)
+    N /= max(1e-9, float(np.hypot(*N)))
+    W = float(np.hypot(*(B - A)))
+    if W < 0.75:
+        return {"note": "the dustpan's mouth is too short to sweep into"}
+    T = (B - A) / W
+    L = (A + B) / 2.0
+    bristles = _fill_points(polys or [_cell_square(c) for c in cells], 0.1)
+    bw = float(np.ptp(bristles @ T))
+    if bw > W + 1.5:
+        return {"note": f"the bristles ({bw:.1f} cells across) are wider than the "
+                        f"dustpan's mouth ({W:.1f} cells)"}
+    # -- the pickup: diagonally into the grip cell, so the claw rests just
+    # inside the corner it came in by -- the one deepest on the brush
+    grip = parse_coordinate(top_right_grip_cell(brush)) or home
+    if not reachable(grip):
+        grip = home
+    outline = brush.get("polygon")
+    shape = (np.array(outline, np.float32).reshape(-1, 1, 2)
+             if outline and len(outline) >= 3 else None)
+    own = np.array([(c + 0.5, r + 0.5) for c, r in
+                    (parse_coordinate(x) for x in _touch_cells(brush)) if c is not None]
+                   or [(home[0] + 0.5, home[1] + 0.5)])
+    corners = []
+    for sx in (1, -1):
+        for sy in (-1, 1):
+            wp = (grip[0] + sx, grip[1] + sy)
+            if not reachable(wp):
+                continue
+            q = gantry_stop((wp[0] + 0.5, wp[1] + 0.5), grip)
+            depth = (cv2.pointPolygonTest(shape, (float(q[0]), float(q[1])), True)
+                     if shape is not None else -float(np.hypot(*(own - q).T).min()))
+            corners.append((depth, wp, q))
+    corners.sort(key=lambda c: -c[0])
+    # every corner the claw would rest on the brush at is a candidate: which
+    # one sets where on the cell grid the bristles can be put
+    firm = ([c for c in corners if c[0] >= min(0.1, corners[0][0]) - 1e-9]
+            if corners else [])
+
+    # -- where the bristles may go
+    half = W / 2.0 - SWEEP_WALL
+    k_px = 10
+    pan_poly = pan.get("polygon")
+    if pan_poly and len(pan_poly) >= 3:
+        mask = np.zeros((CONFIG.n_rows * k_px, CONFIG.n_cols * k_px), np.uint8)
+        cv2.fillPoly(mask, [np.round(np.array(pan_poly, np.float64) * k_px).astype(np.int32)], 1)
+        mask = cv2.dilate(mask, np.ones((3, 3), np.uint8))
+
+        def in_pan(X):
+            ix = np.clip((X[:, 0] * k_px).astype(int), 0, mask.shape[1] - 1)
+            iy = np.clip((X[:, 1] * k_px).astype(int), 0, mask.shape[0] - 1)
+            return mask[iy, ix] > 0
+    else:
+        def in_pan(X):
+            q = X - L
+            return (q @ N < 0.1) & (np.abs(q @ T) < W / 2.0 + 0.6)
+
+    # -- what to sweep: the area in front of the mouth, and outlined dirt
+    grid_a = np.arange(0.5, SWEEP_DEPTH + 1e-9, 0.25)
+    grid_b = np.arange(-half, half + 1e-9, 0.25)
+    pts0 = np.array([L + a * N + b * T for a in grid_a for b in grid_b])
+    target = set()
+    for c in range(CONFIG.n_cols):
+        for r in range(CONFIG.n_rows):
+            q = np.array([c + 0.5, r + 0.5]) - L
+            # the floor in front of the lip; cells on the lip line itself
+            # are the dustpan's edge
+            if 0.5 <= q @ N <= SWEEP_DEPTH and abs(q @ T) <= W / 2.0:
+                target.add((c, r))
+    for d in objects or ():
+        if d is pan or d is brush or not _DEBRIS_RE.search(_names_of(d)):
+            continue
+        dc = [c for c in (parse_coordinate(x) for x in _touch_cells(d)) if c is not None]
+        if not dc:
+            continue
+        dp = _fill_points([np.array(d["polygon"], np.float64)]
+                          if d.get("polygon") and len(d["polygon"]) >= 3
+                          else [_cell_square(c) for c in dc], 0.25)
+        q = dp - L
+        dp = dp[~((q @ N < 0) & (np.abs(q @ T) < W / 2.0))]      # already in the pan
+        if len(dp):
+            target |= set(dc)
+            pts0 = np.vstack([pts0, dp])
+    tcells = sorted(target)
+    tpts0 = np.array([(c + 0.5, r + 0.5) for c, r in tcells]) if tcells else np.zeros((0, 2))
+
+    def place(pos, want, precise, fits=None):
+        """Gotos to a cell near `want` (a claw point) whose resting point
+        is nearest `want` along `precise` (x or y) and `fits`: straight
+        there, or lined up from the neighbour on either side along that
+        axis. -> (gotos, resting point), or None."""
+        best_p = None
+        base = (int(math.floor(want[0])), int(math.floor(want[1])))
+        other = np.abs(np.array([precise[1], precise[0]]))
+        for dx in (-2, -1, 0, 1, 2):
+            for dy in (-2, -1, 0, 1, 2):
+                cell = (base[0] + dx, base[1] + dy)
+                if not reachable(cell):
+                    continue
+                for way in ([cell],):
+                    if not all(reachable(c) for c in way):
+                        continue
+                    q = np.array(pos, np.float64)
+                    for c in way:
+                        q = gantry_stop(q, c)
+                    if fits is not None and not fits(q):
+                        continue
+                    score = (10 * abs((q - want) @ precise) + abs((q - want) @ other)
+                             + 0.01 * (len(way) - 1))
+                    if best_p is None or score < best_p[0]:
+                        best_p = (score, way, q)
+        return None if best_p is None else (best_p[1], best_p[2])
+
+    axes = {"up": (0.0, -1.0), "down": (0.0, 1.0), "left": (-1.0, 0.0), "right": (1.0, 0.0)}
+
+    def sweep_with(approach, p_pick, full_lag):
+        """The best sweep with the claw resting at p_pick on the brush."""
+        S = bristles - p_pick                    # the bristles, from the claw
+        # how far in the pan stays about as wide as its mouth (a handle or a
+        # tapering back is no place for the bristles)
+        pan_depth = 2.0
+        if pan.get("polygon"):
+            fill = np.zeros((CONFIG.n_rows * 10, CONFIG.n_cols * 10), np.uint8)
+            cv2.fillPoly(fill, [np.round(np.array(pan["polygon"], np.float64) * 10).astype(np.int32)], 1)
+            inner = cv2.erode(fill, np.ones((7, 7), np.uint8))     # the walls' thickness off
+            ts = np.linspace(-half, half, 41)
+            pan_depth = 0.0
+            for d in np.arange(0.5, 16.01, 0.25):
+                row = L - d * N + np.outer(ts, T)
+                ix = np.clip((row[:, 0] * 10).astype(int), 0, inner.shape[1] - 1)
+                iy = np.clip((row[:, 1] * 10).astype(int), 0, inner.shape[0] - 1)
+                if (inner[iy, ix] > 0).mean() < 0.9:
+                    break
+                pan_depth = float(d)
+
+        def legal(P):
+            """No bristle on the pan's walls: on the pan's outline only through
+            the opening (in front of the lip, or just past it)."""
+            X = S + P
+            q = X - L
+            wall = (np.abs(q @ T) > half + 0.05) | (q @ N < -(max(pan_depth, 2.0) + 0.3))
+            return not (in_pan(X) & wall).any()
+
+        def slices(perp, u):
+            """The bristles cut across `perp` in 0.1-cell slices (the first one
+            starting half a slice before them, so no point sits on a slice's
+            edge): each slice's front and back along the move direction `u`."""
+            v = S @ perp
+            v0 = float(v.min()) - 0.05
+            idx = np.floor((v - v0) / 0.1).astype(int)
+            a = S @ u
+            front = np.full(idx.max() + 1, np.nan)
+            back = np.full_like(front, np.nan)
+            for k in range(len(front)):
+                m = idx == k
+                if m.any():
+                    front[k], back[k] = a[m].max(), a[m].min()
+            return v0, front, back
+
+        def behind(points, q, u, perp):
+            """How far along u a claw (across at q) may sit with every point
+            that its bristles cover still ahead of their back -- slice by slice,
+            so a tilted head's slanted back edge does not leave dust behind."""
+            v0, _, back = slices(perp, u)
+            # the most forward back within 0.2 cells either side: the claw's
+            # resting point is only known to about that much
+            pad = np.concatenate([np.full(2, np.nan), back, np.full(2, np.nan)])
+            with np.errstate(all="ignore"):
+                back = np.nanmax(np.stack([pad[i:i + len(back)] for i in range(5)]), 0)
+            k = np.floor((points @ perp - q @ perp - v0) / 0.1).astype(int)
+            ok = (k >= 0) & (k < len(back))
+            b = np.where(ok, back[np.clip(k, 0, len(back) - 1)], np.nan)
+            ok &= ~np.isnan(b)
+            return float((points[ok] @ u - b[ok]).min()) - 0.05 if ok.any() else math.inf
+
+        def full_part(perp, u):
+            """The bristles' extent across `perp` counting only the slices whose
+            front (along u) is within `full_lag` of the foremost: a tilted
+            head's thin wedge drags dust only part of the way."""
+            v0, front, _ = slices(perp, u)
+            full = np.nonzero(~np.isnan(front) & (front >= np.nanmax(front) - full_lag))[0]
+            v = S @ perp
+            own = np.isin(np.floor((v - v0) / 0.1).astype(int), full)
+            return float(v[own].min()), float(v[own].max())
+
+        def carry(points, P0, P1, u, perp):
+            """Dust in the bristles' way from P0 to P1 (a straight move along u)
+            ends just past their front. -> (points, moved mask)."""
+            v0, front, back = slices(perp, u)
+            k = np.floor((points @ perp - P0 @ perp - v0) / 0.1).astype(int)
+            ok = (k >= 0) & (k < len(front))
+            f = np.where(ok, front[np.clip(k, 0, len(front) - 1)], np.nan)
+            b = np.where(ok, back[np.clip(k, 0, len(front) - 1)], np.nan)
+            a = points @ u
+            hit = ~np.isnan(f) & (a >= P0 @ u + b - 1e-9) & (a <= P1 @ u + f)
+            out = points.copy()
+            out[hit] += ((P1 @ u + f[hit] + 0.05) - a[hit])[:, None] * u
+            return out, hit
+
+        def plan(push):
+            """The sweep with every stroke into the mouth moving `push`."""
+            d1 = np.array(axes[push])
+            e = np.abs(d1[::-1])                 # across the strokes: x or y
+            ends = [(L - T * half) @ e, (L + T * half) @ e]
+            b_lo, b_hi = min(ends), max(ends)    # what a stroke can carry in
+            v0_m, front_m, _ = slices(e, d1)
+            lat_m = v0_m + (np.arange(len(front_m)) + 0.5) * 0.1
+            live = ~np.isnan(front_m) & (front_m >= np.nanmax(front_m) - full_lag)
+
+            def lip_past(P):
+                """How far each bristle slice that meets the lip inside the
+                opening has its front past the lip, along the stroke."""
+                X = P + np.outer(lat_m[live], e) + np.outer(front_m[live], d1)
+                past = ((X - L) @ N) / float(d1 @ N)
+                cross = X - np.outer(past, d1)
+                return past[np.abs((cross - L) @ T) <= half + 0.05]
+
+            def delivered(P):
+                """The front SWEEP_LIP_IN past the lip, and every slice that
+                carries dust at least 0.2 past it."""
+                past = lip_past(P)
+                return len(past) > 0 and past.max() >= SWEEP_LIP_IN and bool((past >= 0.2).all())
+
+            def through(P):
+                """Past the lip and on through the pan, to SWEEP_BACK short of its far side."""
+                past = lip_past(P)
+                return (len(past) > 0 and past.max() >= max(SWEEP_LIP_IN, pan_depth - SWEEP_BACK)
+                        and bool((past >= 0.2).all()))
+
+            notes, lines, lanes, stops = [], [], [], []
+            if approach is not None:
+                lines.append(f"{_goto_line(approach)}   # line up with the {brush['name']}'s grip")
+            lines += [f"{_goto_line(grip)}   # pick up the {brush['name']}", "pickup"]
+            st = {"pts": pts0.copy(), "tpts": tpts0.copy(), "pos": p_pick.copy(), "feeds": 0,
+                  "main": 0}
+
+            def trace(cell0, P0, u, done):
+                """A pressed move from P0 along u until `done(P)`, never onto
+                the pan. -> (resting point, cell) at its end, or (None, None)."""
+                step = (int(round(u[0])), int(round(u[1])))
+                P_end, end_cell, n = None, None, 1
+                while True:
+                    c = (cell0[0] + step[0] * n, cell0[1] + step[1] * n)
+                    if not reachable(c):
+                        break
+                    prev = P0 if P_end is None else P_end
+                    P = gantry_stop(prev, c)
+                    if not all(legal(prev + (P - prev) * f) for f in np.linspace(0.25, 1.0, 4)):
+                        break
+                    P_end, end_cell = P, c
+                    if done(P):
+                        break
+                    n += 1
+                return P_end, end_cell
+
+            def run_stroke(way, P0, u, perp, done, label, end_note, ends=None):
+                """Press at P0, move along u until `done(P)` (or to `ends`, an
+                already traced end), release. -> the resting point at the end,
+                or None."""
+                cell0 = way[-1]
+                P_end, end_cell = ends or trace(cell0, P0, u, done)
+                if end_cell is None:
+                    return None
+                for k, c in enumerate(way):
+                    lines.append(_goto_line(c) + ("   # " + label if k == len(way) - 1 else
+                                                  "   # line up"))
+                lines.extend(["press", f"{_goto_line(end_cell)}   # {end_note}", "release"])
+                lanes.append([cell0, end_cell])
+                stops.append((P0, P_end))
+                st["pts"], _ = carry(st["pts"], P0, P_end, u, perp)
+                st["tpts"], _ = carry(st["tpts"], P0, P_end, u, perp)
+                st["pos"] = P_end
+                return P_end
+
+            # -- feed strokes: dust beyond the mouth's span, pushed sideways
+            # into it, one bristle-width row at a time
+            for side in (-1, 1):
+                u = -side * e
+                g_lo, g_hi = full_part(d1, u)
+                goal = (b_lo + min(1.0, 0.5 * (b_hi - b_lo)) if side < 0
+                        else b_hi - min(1.0, 0.5 * (b_hi - b_lo)))
+                given_up = np.zeros(len(st["pts"]), bool)
+                for _ in range(16):
+                    pts = st["pts"]
+                    beyond = ((pts @ e < b_lo - 0.4) if side < 0 else (pts @ e > b_hi + 0.4)) & ~given_up
+                    if not beyond.any():
+                        break
+                    a_lo = float((pts[beyond] @ d1).min())
+                    row = beyond & (pts @ d1 <= a_lo + (g_hi - g_lo) - 0.05)
+                    back = float((pts[row] @ u).min())
+                    cover = (lambda q, a_lo=a_lo: q @ d1 + g_lo <= a_lo + 0.05
+                             and q @ d1 + g_hi >= a_lo + 0.3)
+                    done = ((lambda P: P @ e + float((S @ e).max()) >= goal) if side < 0
+                            else (lambda P: P @ e + float((S @ e).min()) <= goal))
+                    # the row nearest the outermost dust first; one a little
+                    # further over when that one would catch the pan's corner
+                    best_f, seen = None, set()
+                    for shift in (0.0, 0.35, 0.7, 1.0, -0.35, -0.7):
+                        want = ((back - 0.3 - float((S @ u).min())) * u
+                                + (a_lo - g_lo + shift) * d1)
+                        rp = pts[row]
+                        got = (place(st["pos"], want, d1, lambda q: cover(q) and
+                                     q @ u <= behind(rp, q, u, d1))
+                               or place(st["pos"], want, d1, cover))
+                        if got is None or tuple(np.round(got[1], 3)) in seen:
+                            continue
+                        seen.add(tuple(np.round(got[1], 3)))
+                        P_end, end_cell = trace(got[0][-1], got[1], u, done)
+                        if end_cell is None:
+                            continue
+                        moved, _ = carry(pts, got[1], P_end, u, d1)
+                        gain = int((row & ~((moved @ e < b_lo - 0.4) | (moved @ e > b_hi + 0.4))).sum())
+                        if best_f is None or gain > best_f[0]:
+                            best_f = (gain, got, (P_end, end_cell))
+                    if best_f is None or best_f[0] == 0:
+                        notes.append(f"dust beside the mouth cannot be reached without "
+                                     f"touching the {pan['name']}")
+                        given_up |= row
+                        continue
+                    way, P0 = best_f[1]
+                    if P0 @ u > behind(pts[row], P0, u, d1) + 0.05:
+                        notes.append("a feed stroke starts short (reach)")
+                    end = run_stroke(
+                        way, P0, u, d1, done,
+                        f"feed {st['feeds'] + 1}: from beyond the dust beside the mouth",
+                        f"pushes it in front of the {pan['name']}'s mouth", ends=best_f[2])
+                    if end is None:
+                        notes.append(f"dust beside the mouth cannot be reached without "
+                                     f"touching the {pan['name']}")
+                        given_up |= row
+                        continue
+                    st["feeds"] += 1
+                    pts = st["pts"]
+                    still = ((pts @ e < b_lo - 0.4) if side < 0 else (pts @ e > b_hi + 0.4)) & row
+                    if still.any():
+                        notes.append(f"a feed stroke stops at the {pan['name']}'s side")
+                        given_up |= still
+
+            # -- the strokes into the mouth, side by side across it, each
+            # overlapping the last
+            f_lo, f_hi = full_part(e, d1)
+            g_lo = float((S @ d1).min())
+            inside = (lambda q: q @ e + f_lo >= b_lo - 0.05 and q @ e + f_hi <= b_hi + 0.05)
+            lo_l, hi_l = b_lo - f_lo, b_hi - f_hi
+            if hi_l <= lo_l:
+                lats = [0.5 * (lo_l + hi_l)]
+            else:
+                lats = [lo_l + t for t in range(int(math.floor(hi_l - lo_l + 1e-6)) + 1)]
+                if hi_l - lats[-1] > 0.25:
+                    lats.append(hi_l)
+            if abs(lats[-1] - st["pos"] @ e) < abs(lats[0] - st["pos"] @ e):
+                lats.reverse()
+            used = set()
+            for k, lat in enumerate(lats, 1):
+                fits = (lambda q, u=used: inside(q) and int(math.floor(q @ e)) not in u)
+                pts = st["pts"]
+                ahead = ((pts - L) @ N > 0.0) & (pts @ e >= lat + f_lo - 0.4) & (pts @ e <= lat + f_hi + 0.4)
+                got = None
+                if ahead.any():
+                    ap = pts[ahead]
+                    a_min = float((ap @ d1).min())
+                    for pull in np.arange(0.0, 8.01, 0.5):
+                        # behind the farthest dust, pulled in only for the reach
+                        got = place(st["pos"], lat * e + (a_min - 0.3 - g_lo + pull) * d1, e,
+                                    (lambda q, f=fits, p=pull: (f is None or f(q))
+                                     and q @ d1 <= behind(ap, q, d1, e) + p))
+                        if got is not None:
+                            break
+                    if got is None:
+                        notes.append(f"stroke {k} is out of reach")
+                        continue
+                    way, P0 = got
+                    used.add(int(math.floor(P0 @ e)))
+                    # a stroke the walls stop at the lip (a tilted head's
+                    # corner poking past the mouth's end) goes in further
+                    # toward the middle instead, when that gets it in
+                    traced = trace(way[-1], P0, d1, through)
+                    mid = 0.5 * (b_lo + b_hi)
+                    for nudge in (0.2, 0.6):
+                        if traced[1] is not None and delivered(traced[0]):
+                            break
+                        side_in = 1.0 if P0 @ e < mid else -1.0
+                        alt = place(st["pos"], P0 + side_in * nudge * e, e,
+                                    lambda q, p=P0, n=nudge: (q @ e - p @ e) * side_in >= n - 0.05
+                                    and q @ d1 <= behind(ap, q, d1, e) + 0.5)
+                        if alt is None:
+                            continue
+                        t2 = trace(alt[0][-1], alt[1], d1, through)
+                        if t2[1] is not None and delivered(t2[0]):
+                            way, P0, traced = alt[0], alt[1], t2
+                    short = P0 @ d1 - behind(ap, P0, d1, e)
+                    if short > 0.05:
+                        notes.append(f"stroke {k} starts {short:.1f} cells short (reach)")
+                    end = run_stroke(way, P0, d1, e, through,
+                                     f"stroke {k}: behind the dust",
+                                     f"{push} through the {pan['name']}", ends=traced)
+                    if end is None:
+                        notes.append(f"stroke {k} cannot move without touching the {pan['name']}")
+                    else:
+                        st["main"] += 1
+                        past = lip_past(end)
+                        if not len(past) or past.min() < 0.05:
+                            notes.append(f"stroke {k} stops short of the lip (the walls)")
+            if approach is not None:
+                lines.append(f"{_goto_line(approach)}   # back to the {brush['name']}'s place")
+            lines += [f"{_goto_line(grip)}   # the {brush['name']} back where it was", "keep"]
+            q = st["tpts"] - L
+            got_in = (q @ N < 0) & (np.abs(q @ T) <= W / 2.0)
+            covered = {c for c, ok in zip(tcells, got_in) if ok}
+            qd = st["pts"] - L
+            score = float(((qd @ N < 0) & (np.abs(qd @ T) <= W / 2.0)).mean()) if len(qd) else 0.0
+            return {"lines": lines, "lanes": lanes, "covered": len(covered), "target": len(target),
+                    "covered_cells": covered, "brush": brush["name"], "dirt_lanes": st["feeds"],
+                    "score": score,
+                    "strokes": st["main"], "axis": push, "pick": tuple(p_pick), "stops": stops,
+                    "bristles_from_claw": tuple(S.mean(0)), "collector": pan["name"],
+                    "note": "; ".join(dict.fromkeys(pick_notes + notes))}
+
+        # the axes that point into the mouth: plan with each, keep the best
+        into = sorted((k for k in axes if -(np.array(axes[k]) @ N) >= 0.45),
+                      key=lambda k: -(np.array(axes[k]) @ N))
+        best_plan = None
+        for push in into:
+            p_ = plan(push)
+            if not p_["lanes"]:
+                continue
+            if best_plan is None or (round(p_["score"], 3), -len(p_["lanes"])) > (
+                    round(best_plan["score"], 3), -len(best_plan["lanes"])):
+                best_plan = p_
+        return best_plan
+
+    # the gantry sits at the bottom middle of the board, goes up to the grip's
+    # row and then along it: it rests just inside the cell's lower edge and
+    # just inside its side facing the middle
+    direct = np.array([
+        grip[0] + (SWEEP_STOP_IN if grip[0] + 0.5 > CONFIG.n_cols / 2.0 else 1.0 - SWEEP_STOP_IN),
+        grip[1] + 1.0 - SWEEP_STOP_IN])
+    # (with no outline, the grip cell itself is on the brush)
+    direct_depth = (cv2.pointPolygonTest(shape, (float(direct[0]), float(direct[1])), True)
+                    if shape is not None else 0.5)
+    if direct_depth >= 0.1 or not firm:
+        firm = [(direct_depth, None, direct)]       # straight to the grip cell
+    else:
+        pick_notes.append("the pickup lines up from a neighbouring cell "
+                          "(the grip is a thin part)")
+    best = None
+    for depth, approach, p_pick in firm:
+        for full_lag in SWEEP_FULL:
+            got = sweep_with(approach, np.array(p_pick, np.float64), full_lag)
+            if got is not None and (best is None or (round(got["score"], 3), -len(got["lanes"]), depth) > (
+                    round(best[0]["score"], 3), -len(best[0]["lanes"]), best[1])):
+                best = (got, depth)
+    if best is None:
+        return {"note": "; ".join(pick_notes) or "no stroke fits"}
+    return best[0]
+
+
+def sweep_recipe_text(rec) -> str:
+    """The SWEEP RECIPE block for the planner's input."""
+    head = (f"SWEEP RECIPE (computed by S1 from the {rec['collector']}'s measured "
+            f"mouth and the {rec['brush']}'s bristles: {len(rec['lanes'])} straight "
+            f"stroke(s), each one move {rec.get('axis', 'in')} into the mouth"
+            + (f" except {rec['dirt_lanes']} first pushing dust from beside the mouth "
+               "in front of it" if rec.get("dirt_lanes") else "")
+            + f", covering {rec['covered']} of the {rec['target']} cells of the "
+            f"{SWEEP_DEPTH}-step area outside the mouth and the dirt"
+            + (f"; {rec['note']}" if rec.get("note") else "")
+            + ") - write these lines exactly, in this order, then anything "
+              "else the task asks:")
+    return head + "\n" + "\n".join(rec["lines"])
+
+
+def _pressed_runs(text):
+    """The cells of every press ... release run in a plan, in order."""
+    runs, run = [], None
+    for line in (text or "").splitlines():
+        bare = re.sub(r"^\s*\d+[.)]\s*", "", line.split("#")[0]).strip().lower()
+        m = re.match(r"goto_coordinate\s*=\s*([a-z]+)\s*,\s*(\d+)", bare)
+        if bare == "press":
+            run = []
+        elif bare == "release":
+            if run is not None:
+                runs.append(run)
+            run = None
+        elif m and run is not None:
+            run.append(f"{m.group(1).upper()}{m.group(2)}")
+    return runs
+
+
+def sweep_followed(plan, rec) -> bool:
+    """True when the plan's pressed strokes are exactly the recipe's."""
+    want = _pressed_runs("\n".join(rec["lines"]))
+    return _pressed_runs(plan) == want
+
+
+def sweep_plan_text(rec) -> str:
+    """A whole plan made of the recipe, for when the planner's differs."""
+    return ("PLAN:\n- sweep into the " + rec["collector"] + ": " + rec["brush"] + ", "
+            + rec["collector"] + " | after: holding nothing\n"
+            "# Sweep computed by S1 from the measured mouth (the planner's "
+            "strokes did not match it).\n" + "\n".join(rec["lines"]) + "\nTask_Completed")
+
+
+def merge_outlines(outlines):
+    """One outline (a list of contours) covering several touching outlines:
+    their union, the hairline seams between them closed."""
+    pts = np.concatenate([c.reshape(-1, 2) for o in outlines for c in o])
+    x0, y0 = (pts.min(0) - 4).astype(int)
+    x1, y1 = (pts.max(0) + 4).astype(int)
+    mask = np.zeros((y1 - y0 + 1, x1 - x0 + 1), np.uint8)
+    for o in outlines:
+        cv2.drawContours(mask, [(c - (x0, y0)).astype(np.int32) for c in o], -1, 255, -1)
+    mask = cv2.dilate(mask, np.ones((5, 5), np.uint8))
+    merged, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    return [c + np.int32([x0, y0]) for c in merged]
+
+
 def planner_objects(snap, namer, grid: Grid):
     """A Vision AI snapshot as the planner's object list.
 
@@ -6835,11 +8781,24 @@ def planner_objects(snap, namer, grid: Grid):
     def meta(i):
         return info.get(ids[i]) or {}
 
+    def foreign(i):
+        """A part tagged as a piece of some OTHER thing than the object it
+        lies on (the brush's handle lying in a dustpan) belongs to that
+        thing, not to the dustpan - whatever its loose flag says."""
+        t = str(meta(i).get("thing") or "").strip().lower()
+        p = parents[i]
+        if not t or p is None:
+            return False
+        host = (clean_object_name(names.get(ids[p])) or "",
+                str(meta(p).get("thing") or "").strip().lower())
+        return not any(h and (t in h or h in t) for h in host)
+
     def owner(i):
         """The object this outline belongs to: itself when it stands alone
         (or lies loose on something), else the nearest such ancestor."""
         seen = 0
-        while parents[i] is not None and not meta(i).get("loose") and seen < len(objects):
+        while (parents[i] is not None and not meta(i).get("loose")
+               and not foreign(i) and seen < len(objects)):
             i, seen = parents[i], seen + 1
         return i
 
@@ -6861,6 +8820,9 @@ def planner_objects(snap, namer, grid: Grid):
                  "polygon": poly}
         set_center_pt(entry, pt)
         if o != i:
+            entry["edge"] = edge_share(contours, objects[o])
+            if TRAY_WORDS_RE.search(name) or LIP_WORDS_RE.search(name):
+                entry["mouth"] = mouth_line(contours, objects[o], grid)
             components.setdefault(o, []).append(entry)
             continue
         colour = meta(i).get("color") or (
@@ -6884,6 +8846,67 @@ def planner_objects(snap, namer, grid: Grid):
             parent_poly = entries[o]["polygon"]
             entries[o]["components"] = [c for c in comps
                                         if component_on_parent(c["polygon"], parent_poly)]
+
+    # Pieces of one thing (the namer's "thing"), touching: one object named
+    # for the whole, its footprint all their cells, each piece a COMPONENT
+    # with its own cells -- a hand brush's handle and bristles, a dustpan's
+    # back wall, lip and floor, which FastSAM outlines separately.
+    doubtful = set()
+    for thing, members in thing_groups(
+            list(entries), objects, lambda i: meta(i).get("thing"),
+            frame.shape if frame is not None else None,
+            name_of=lambda i: entries[i]["name"], doubtful=doubtful):
+        merged = merge_outlines([objects[m] for m in members])
+        poly = outline_polygon(merged, grid) if merged else None
+        cell, cells, pt = polygon_to_cells(poly) if poly else (None, [], None)
+        if cell is None:
+            continue
+        main = max(members, key=lambda m: object_area(objects[m]))
+        pieces = []
+        for m in sorted(members, key=lambda m: _reading_order(entries[m])):
+            e = entries[m]
+            # the piece named for the whole thing is its body
+            piece = {"name": "body" if e["name"] == thing else e["name"],
+                     "center": e["center"],
+                     "touches": e["touches"], "polygon": e["polygon"],
+                     "edge": edge_share(objects[m], merged)}
+            if TRAY_WORDS_RE.search(piece["name"]) or LIP_WORDS_RE.search(piece["name"]):
+                piece["mouth"] = mouth_line(objects[m], merged, grid)
+            if "center_pt" in e:
+                piece["center_pt"] = e["center_pt"]
+            pieces.append(piece)
+            pieces.extend(e.get("components") or [])
+        xs, ys = [q[0] for q in poly], [q[1] for q in poly]
+        w_in, h_in = (max(xs) - min(xs)) * cw, (max(ys) - min(ys)) * ch
+        whole = dict(entries[main])
+        whole.update({
+            "name": thing, "center": coordinate_name(*cell),
+            "touches": ",".join(coordinate_name(*c) for c in cells),
+            "polygon": poly, "size": size_class(max(w_in, h_in)),
+            "desc": (f"seen as {len(members)} pieces ("
+                     + ", ".join("body" if entries[m]["name"] == thing
+                                 else entries[m]["name"] for m in members)
+                     + f"), about {w_in:.1f} x {h_in:.1f} in"),
+            "components": pieces})
+        set_center_pt(whole, pt)
+        for m in members:
+            entries.pop(m, None)
+        entries[main] = whole
+        print(f"[vision] {thing}: joined {len(members)} pieces")
+    for e in entries.values():
+        note_opening(e)
+    # A piece whose other pieces were not seen keeps its thing in its name;
+    # one that only touches its thing (a floor line the namer took for the
+    # brush's "neck") keeps its own name, flagged as a guess.
+    for i, e in entries.items():
+        thing = str(meta(i).get("thing") or "").strip().lower()
+        if i in doubtful:
+            e["name_uncertain"] = True
+            e["desc"] = (f"{e.get('desc', '')}; only touches the {thing}, "
+                         f"not one of its pieces").lstrip("; ")
+        elif (thing and e.get("name") != thing and thing not in str(e.get("name"))
+                and not str(e.get("desc", "")).startswith("seen as ")):
+            e["name"] = f"{thing} {e['name']}"
     return [entries[i] for i in sorted(entries, key=lambda i: _reading_order(entries[i]))]
 
 
@@ -7202,15 +9225,6 @@ def garment_family(obj) -> str:
     if fold_landmarks(obj, family="unknown"):
         return "unknown"
     return ""
-
-
-def is_garment(obj) -> bool:
-    return bool(garment_family(obj))
-
-
-def is_fold_top(obj):
-    """Kept for the name: a garment that folds sleeve-onto-sleeve."""
-    return garment_family(obj) == "sleeved"
 
 
 def _fold_aliases(role: str, family: str):
@@ -7939,21 +9953,38 @@ count). It is background, not a standing instruction: never redo, continue,
 or undo an earlier plan unless the current Task actually asks for that.
 
 COMPONENTS lists the parts of an object that vision outlined separately
-inside it, each with its own cell:
-  COMPONENTS: door@Q3, start stop button@P3, logo@Q5
-Vision lists a part only when the camera saw it as its own patch inside the
-object - it is never asked for any particular part. So most objects list
-(none), and the part a task needs is often absent: a dustpan's opening, a
-broom's bristle head, an appliance's door, drum or buttons, a cup's handle.
-An absent part is never missing - it is on its object. Find it from the
-object's own SHAPE - its TOUCHES footprint, one run of cells per row (e.g.
-N4-P4,N5-Q5) - and its DESC, the way the playbooks below say (the dustpan's
-opening and the brush head in playbook 1/1b); otherwise use the object's
-CENTER. Matching rules:
+inside it: each part's name, its CENTER cell and, in brackets, every cell it
+TOUCHES (the same run notation as TOUCHES), parts separated by semicolons:
+  COMPONENTS: door@Q3 [P2-R2,P3-R4]; start stop button@P3 [P3]; logo@Q5 [Q5]
+Vision works from the picture alone: it traces whatever stands out as its
+own patch and names each outline. Nobody tells it which parts an object
+has, so it has no fixed idea of them - one view outlines a dustpan's inside
+(its tray) or a broom's bristle head as a part, the next does not. Never
+assume either way; read what this OBJECT LIST gives:
+- A LISTED part is exactly where its bracketed cells are. Use them as the
+  part's footprint - which side of its object it lies on, where it starts
+  and ends, how wide it is. Its CENTER is only its middle cell.
+- An absent part is never missing - it is on its object. Find it from the
+  object's own SHAPE - its TOUCHES footprint, one run of cells per row (e.g.
+  N4-P4,N5-Q5) - and its DESC, the way the playbooks below say (the
+  dustpan's opening and the brush head in playbook 1/1b); otherwise use the
+  object's CENTER.
+- Vision often outlines a thing as separate PIECES side by side (a brush's
+  handle and its bristles; a dustpan's back wall, its lip and its floor).
+  It joins the pieces it knows belong together into ONE OBJECT named for
+  the whole thing: its DESC says "seen as N pieces", its TOUCHES are all
+  their cells, and each piece is a COMPONENT with its own cells. When it
+  could not join them, pieces arrive as OBJECTS side by side - e.g. "broom
+  handle" and "broom head" whose TOUCHES meet. Pieces whose names say they
+  belong to one thing and whose cells touch are ONE object: its footprint
+  is all their cells together. Pick it up once, by the piece a hand would
+  hold (the handle), and read the other piece's cells as that part of it
+  (the bristle head).
+Matching rules:
 - Operator says "start button" / "drum" / "door" -> match that part of the
   parent object.
-- If the part is listed (name@CELL), goto THAT cell for press / load / open
-  actions on it.
+- If the part is listed (name@CELL [cells]), goto THAT cell for press /
+  load / open actions on it.
 - If it is not listed, goto the parent object's CENTER for it, unless a
   playbook says where on the object's shape that part is.
 - A part may be listed as "lid" instead of "door" (a washing machine's or
@@ -8306,10 +10337,12 @@ wait_X(SECONDS) - only when a later step depends on the delay
 goto cloth -> pickup -> goto first cell -> press -> goto each remaining cell -> release -> goto cloth home -> keep
 
 **Sweep (broom or scrub brush) - cover the dustpan's outside rectangle**
-Use playbook 1/1b. Leave the dustpan where it is. Vision does not mark its
-opening: read it from the dustpan's shape - its LARGER edge (the side of its
-TOUCHES footprint spanning the most cells) is the opening lip; the narrower
-opposite side, where any handle sticks out, is the back. Start the cleaning
+Use playbook 1/1b. Leave the dustpan where it is. Find its opening lip:
+when vision outlined the dustpan's inside as a COMPONENT (its tray), the lip
+is the dustpan side that the tray's cells run out to; otherwise read it from
+the dustpan's shape - its LARGER edge (the side of its TOUCHES footprint
+spanning the most cells) is the opening lip; the narrower opposite side,
+where any handle sticks out, is the back. Start the cleaning
 rectangle at that lip, not at its CENTER. It spans the full collector width
 across the opening and extends exactly five coordinate steps outward. Sweep every
 part of that rectangle toward the opening with consecutive stroke lanes.
@@ -8417,6 +10450,14 @@ Substitute real CENTER/TOUCHES coordinates from the OBJECT LIST wherever COL/ROW
 
 ## 1 / 1b. Sweep with broom or scrub brush INTO the dustpan
 
+USE THE SWEEP RECIPE. When the input carries a SWEEP RECIPE block, S1 has
+already worked out the strokes from the dustpan's measured mouth and the
+brush's bristles - the cells it lines up from, the pickup, every straight
+pressed stroke, the entry into the mouth and the brush's return. Write its lines exactly, in that order,
+then anything else the task asks. Do not redo its geometry, add or drop
+lanes, or refuse on width, footprint or coverage grounds. The rules below
+are for a sweep with no recipe.
+
 Use a broom or a suitable brush, including a hand brush or scrub brush.
 Do not require a broom when a suitable brush is present. Do not use a mop,
 cloth or bottle. If neither broom nor brush exists, output the MISSING line.
@@ -8428,12 +10469,44 @@ Find the dustpan / collector from its name, aliases and description. Keep it
 where it is and facing the same way. Do not move it to a board edge or turn
 it toward the board center. Neither the brush nor the dustpan can rotate.
 
-Vision outlines the dustpan as ONE shape: it does not report its lip,
-opening, tray or handle as COMPONENTS (a part it does list is only a patch
-the camera happened to separate - check it against the shape). The
-dustpan's SHAPE is the reference for where its opening is. Read its
-footprint from TOUCHES - one run of cells per row, e.g. N4-P4,N5-Q5 - and
-find its four sides: its first and last row, its first and last column.
+Vision may outline the dustpan as one shape, or ALSO outline its inside -
+the TRAY, the hollow pan the dust drops into - as a COMPONENT with its own
+cells, named "tray", "pan", "scoop", "inside", "floor", "base", "basin" or
+the like: whichever part covers the dustpan's hollow middle. Use what the
+OBJECT LIST gives. A listed LIP - a component named "lip", "rubber lip",
+"edge", "front edge" or "blade" - IS the opening lip: its cells are the lip
+itself, and the opening faces away from the dustpan's other cells. When
+vision can measure it - from a lip that runs along the dustpan's edge, or
+from the side where its tray reaches the edge - the DESC says which way:
+"opening (its front lip) faces down" or "opening faces down (where its
+tray reaches the edge)". That is the outward direction N. When it also
+says "its mouth runs from H9 to M6, about 5.2 cells wide", that line IS the
+opening lip - its two ends, its width W and its heading, diagonal or not -
+measured by vision along the dustpan's edge: use it for L, T and W rather
+than the footprint's widest row or column. "its mouth is about 4.5 cells
+wide, centred near J9" gives W and the lip's midpoint L the same way. A
+brush whose bristles are no wider than W fits through the mouth; the
+footprint's outermost row or column is NOT the mouth's width. Take it before A and B, and
+check it against them.
+
+A. TRAY LISTED - its bracketed cells ARE the tray. Find the four sides of
+   both footprints (first and last row, first and last column) and compare
+   them side by side. On the opening side the tray runs out to the
+   dustpan's own edge, or stops one cell short at the thin lip; on the back
+   and the two side walls the dustpan's cells carry on past the tray (the
+   walls, the back, a handle strip). The side with the SMALLEST margin
+   between the tray's edge and the dustpan's edge is the OPENING; the side
+   with the largest margin, where a handle strip sticks out, is the BACK.
+   Example: dustpan TOUCHES rows 4-11, columns N-R; tray [N5-P5,N6-P6,
+   N7-P7,N8-P8,N9-P9,N10-P10], rows 5-10, columns N-P. Margins: left 0
+   (N to N), right 2 (P to R), top 1, bottom 1 - the opening is the LEFT
+   edge, column N. If two sides tie for the smallest margin, decide between
+   them with the shape rules in B. The TARGET_HEAD (below) goes on the
+   tray's own cells just inside that lip, centred across it.
+B. NO TRAY LISTED - the dustpan's SHAPE is the reference for where its
+   opening is. Read its footprint from TOUCHES - one run of cells per row,
+   e.g. N4-P4,N5-Q5 - and find its four sides: its first and last row, its
+   first and last column.
 - The OPENING (the lip) is the dustpan's LARGER edge: the straight side of
   the footprint that spans the most cells. A dustpan is widest across its
   mouth, so its widest side is where the dust goes in.
@@ -8490,12 +10563,17 @@ only the transport strokes needed for that patch. Otherwise another visible
 dust patch does not expand the default area.
 
 ### Step 0a - measure the brush and convert working points to commands
-Vision outlines the brush as one shape too and does not mark its head, so
-read the head from the shape the same way: the bristle HEAD is the WIDER
+Vision may outline the brush's bristle head as well: as a COMPONENT of
+the brush (named "bristles", "head", "brush head" or the like), or as an
+OBJECT of its own lying against the handle (pieces of one thing - see
+COMPONENTS above; the brush is then picked up by its handle piece, and that
+piece's CENTER is the object's CENTER here). Its cells ARE the bristle
+footprint and its middle cell is the original HEAD. When vision did not
+outline the head, read it from the shape: the bristle HEAD is the WIDER
 block of cells at one end of the brush's TOUCHES footprint, and the handle
 is the long thin strip leading away from it. The head block's cells are
-the bristle footprint and its middle cell is the original HEAD; measure
-its offset from the object's CENTER. A hand or scrub brush with no thin
+the bristle footprint and its middle cell is the original HEAD. Either way,
+measure its offset from the object's CENTER. A hand or scrub brush with no thin
 handle strip is all head: its footprint is the bristles, its CENTER the
 HEAD. Cleaning coverage is the path of the BRISTLES, not the gripper,
 handle, object's CENTER or simulation dot. The handle's length is not
@@ -8515,8 +10593,11 @@ outside cells from the lip to five steps outward, across the full opening
 width. Keep this target set fixed when choosing brush positions. Do not
 shrink it to the brush center path or to the few lanes easiest to reach.
 
-Keep the full bristle footprint inside the rectangle during cleaning.
-Start each stroke with its OUTER bristles at the far edge, so that edge is
+The bristles may reach past the rectangle's sides and far edge - sweeping
+a little extra floor is harmless - but never onto the dustpan's walls, its
+back or its handle. A brush that cannot turn keeps its footprint square to
+the grid even when the mouth is diagonal: that is expected, never a reason
+to stop. Start each stroke with its OUTER bristles at the far edge, so that edge is
 cleaned too. End the straight cleaning part at the lip-side edge. Only then
 align for entry into the tray. Do not turn toward the tray center halfway
 through a row and leave a corner unswept.
@@ -8538,6 +10619,8 @@ object CENTER. Use EVERY integer HEAD row from first through last. For an
 up/down opening, use the matching left/right offsets and HEAD columns.
 For a diagonal opening, step across the opening in its local direction and
 check actual covered grid cells. Do not replace it with an axis-aligned box.
+Strokes travel along N toward the mouth: diagonal gotos (one cell along each
+axis) or short stair-steps; the brush itself stays square to the grid.
 These head positions must then be converted to CENTER commands as above.
 
 Before returning the plan, translate the original bristle footprint to
@@ -8549,6 +10632,10 @@ Task_Completed. Do not just say "whole rectangle covered" without checking.
 Do not count the handle, the entire brush outline, or an unpressed return
 as cleaning. If exact coverage cannot fit the measured geometry, report
 the specific limitation instead of giving a partial plan as complete.
+Bristles overhanging the rectangle, or a brush that cannot turn to match a
+diagonal mouth, are NOT such limitations - plan the strokes with the
+footprint as it is. Only a mouth narrower than the bristles, or target cells
+off the board or out of reach, are.
 
 Choose one TARGET_HEAD inside the usable tray, just past the lip and
 centered across the opening. The full brush head must fit through the mouth
@@ -8591,9 +10678,9 @@ the dustpan center. The near edge is at N; the far edge is five steps left
 at I. None of the tray to the right of N is ordinary cleaning area.
 For a small head whose footprint fits, a lane approaches from the I side,
 works toward M, aligns with the entry while fully outside N, then enters
-through N into the usable tray. A wider head needs its center inset so its
-outer bristles stay within the same rectangle. Calculate its lanes from
-that footprint. Do not blindly start the gripper at I or use rows 4..11 as
+through N into the usable tray. A wider head may overhang the rectangle's
+sides; its lanes still start and end where its bristles cover the edge
+cells. Calculate its lanes from that footprint. Do not blindly start the gripper at I or use rows 4..11 as
 gripper rows. For example, if the original brush CENTER is E7 and HEAD is
 E6, desired HEAD I5 requires planner CENTER I6. If the top-right grip is
 E4, the final gripper command becomes I3, while the head still reaches I5.
@@ -8615,8 +10702,10 @@ object movement. If no collector is listed, use the requested area and
 converge the strokes to one clear shared pile cell; do not invent a dustpan.
 
 ### Sweep checks before output
-- The opening is the dustpan's widest side, read from its footprint and
-  facing away from any handle strip - not a side wall, not the back.
+- The opening is the side the listed tray runs out to (the smallest
+  margin), or with no tray listed the dustpan's widest side, read from its
+  footprint and facing away from any handle strip - not a side wall, not
+  the back.
 - The rectangle starts at that lip, not at the collector's CENTER.
 - Its width spans the collector across the opening; its outward depth is
   exactly five coordinate steps. All corners follow the collector's pose.
@@ -9686,7 +11775,7 @@ the job, not matching a verb to a name.
 
 - **Momentary press -> release**: turning any appliance on/off, opening/closing any door/lid/drawer, pressing any switch/button, turning any dial, squeezing any dispenser, actuating any lever. -> playbook shape 1 (press/release section).
 - **press -> wait_X -> release, on/off pair**: any full appliance cycle (wash, dry, dishwasher, brew, bake, microwave, steep, simmer, rice cooker, air fryer, toast, charge). -> playbook 6.
-- **pickup broom/brush -> consecutive collecting lanes -> keep broom/brush**: any sweep (room/floor/table). Leave the collector in place. Sweep its full-width rectangle exactly five steps outward from the opening lip (the dustpan's widest edge, read from its shape), using every valid head lane one step apart from one side edge to the other. Verify that the translated bristles cover every target cell; do not reduce the task to two nearby strokes. Align outside the lip, then enter front-on and release at the shared point inside the tray. Apply head-to-CENTER offsets; the top-right grip correction is applied automatically later. No collector: use one shared pile cell. No cloth, bottle or serpentine. -> playbook 1/1b.
+- **pickup broom/brush -> consecutive collecting lanes -> keep broom/brush**: any sweep (room/floor/table). Leave the collector in place. Sweep its full-width rectangle exactly five steps outward from the opening lip (the side its listed tray runs out to; else the dustpan's widest edge, read from its shape), using every valid head lane one step apart from one side edge to the other. Verify that the translated bristles cover every target cell; do not reduce the task to two nearby strokes. Align outside the lip, then enter front-on and release at the shared point inside the tray. Apply head-to-CENTER offsets; the top-right grip correction is applied automatically later. No collector: use one shared pile cell. No cloth, bottle or serpentine. -> playbook 1/1b.
 - **pickup mop -> contact pass -> keep mop**: mopping. -> playbook 2.
 - **pickup cloth/tool/source -> contact pass over every cell -> keep it**: ANY task whose physical action is "hold something against a surface and move it across every cell that needs it" - wiping, scrubbing, soaping, washing, dusting a surface/dish/glass, AND JUST AS MUCH spreading, coating or applying any substance across a surface or object with a tool or its own container (butter on bread, frosting on a cake, oil in a pan, sunscreen on a tray, wax on a table, glue between two pieces, paint on a panel, chalk on a board) - it is the identical motion regardless of which of those words the operator used. NEVER use a spray bottle for any of these. -> playbooks 3, 3b, 3c.
 - **pickup source -> goto destination -> pour -> return source**: pouring any liquid or granular/solid substance into a container, and watering any plant. -> playbooks 7, 13, 18.
@@ -9794,7 +11883,7 @@ def build_planner_system() -> str:
 DEXTERITY_MODEL = "gpt-5.4-mini"
 
 DEXTERITY_CHECK = False
-MEMORY_MODEL = "gpt-5.4-mini"
+
 
 DEXTERITY_SYSTEM = """
 You are the Dexterity Gate for one specific robot. You decide whether a task is
@@ -9876,33 +11965,6 @@ No explanation, no reasoning, no punctuation, no extra words. Only the single
 token above, including the curly braces.
 """.strip()
 
-MEMORY_SYSTEM = """
-You watch tasks sent to a household robot and decide whether the operator has revealed a STANDING preference worth remembering for every future task.
-
-You are given the operator's TASK and the EXISTING custom-training instructions.
-
-Save something only when ALL of these hold:
-1. It is a preference, rule, habit or constraint that would still apply on a completely different task next week - not a detail of this one task.
-2. It is not already covered by an existing instruction, in wording or in meaning.
-3. It is concrete enough to act on. "Be careful" is not; "always grip mugs by the body, never the handle" is.
-
-Words like "always", "never", "from now on", "I prefer", "remember", "each time" are strong signals. A plain one-off request ("move the blue mug to D6") has nothing to save - that is the normal case, and saying so is the right answer.
-
-Write any saved instruction as a short standing rule in the imperative, in the operator's own terms, one sentence, no preamble.
-
-Output raw JSON and nothing else. No markdown fences, no commentary.
-
-Nothing to save:
-{"save": false}
-
-Something to save:
-{"save": true, "instruction": "Always stack plates at O15 when finishing up."}
-""".strip()
-
-
-def _unfence(raw: str) -> str:
-    return re.sub(r"^```(?:json)?\s*|\s*```$", "", (raw or "").strip())
-
 
 def check_dexterity(client, task: str) -> str:
     """"dexterous" | "non-dexterous". Anything unreadable passes as non-."""
@@ -9915,35 +11977,19 @@ def check_dexterity(client, task: str) -> str:
     return "dexterous" if "dexterous" in raw else "non-dexterous"
 
 
-def check_memory(client, task: str, existing) -> str:
-    """A standing rule worth keeping, or "" for the normal one-off case."""
-    have = "\n".join(f"- {s}" for s in (existing or [])) or "(none yet)"
-    raw = call_model(
-        client, model=MEMORY_MODEL, max_tokens=500, stage="Memory",
-        messages=[{"role": "system", "content": MEMORY_SYSTEM},
-                  {"role": "user", "content":
-                   f"EXISTING CUSTOM TRAINING:\n{have}\n\nTASK:\n{task}"}])
-    block = _first_json_object(_unfence(raw))
-    if block is None:
-        return ""
-    try:
-        data = json.loads(block)
-    except json.JSONDecodeError:
-        return ""
-    if not isinstance(data, dict) or data.get("save") is not True:
-        return ""
-    rule = str(data.get("instruction") or "").strip()
-    norm = lambda s: re.sub(r"[^a-z0-9 ]", "", str(s).lower()).strip()
-    if any(norm(rule) == norm(x) for x in (existing or [])):
-        return ""
-    return rule
-
-
 def _format_component(c) -> str:
-    """'handle@F7 (grip: hold)' - A3's own component token format."""
+    """'tray@F6 [E5-G5,E6-G6,F7] (grip: hold)': the part's name, its CENTER
+    and, in brackets, every cell it touches. Vision outlines a part only
+    when the camera sees it as its own patch, so a part the planner gets is
+    real: its cells tell which side of the object it lies on and where it
+    ends (a dustpan's tray reaching the dustpan's open edge), which its
+    centre alone cannot."""
     name = str(c.get("name") or "part")
     cell = str(c.get("center") or "").strip().upper()
     tok = f"{name}@{cell}" if cell else name
+    cells = compact_cells(_touch_cells(c))
+    if cells:
+        tok += f" [{cells}]"
     grip = str(c.get("grip") or "").strip().lower()
     if grip in ("hold", "avoid"):
         tok += f" (grip: {grip})"
@@ -10022,7 +12068,8 @@ def obj_to_line(o) -> str:
     aka = o.get("aka", [])
     aka = ", ".join(str(a) for a in aka) if isinstance(aka, list) else str(aka)
     comps = o.get("components") or []
-    comps_s = ", ".join(_format_component(c) for c in comps) if comps else "(none)"
+    # "; " between parts: a part's own cells are a comma-separated run list.
+    comps_s = "; ".join(_format_component(c) for c in comps) if comps else "(none)"
     touches = compact_cells(_touch_cells(o)) or o.get("touches", "")
     conf = "low - treat this name as a guess" if o.get("name_uncertain") else "ok"
     return (f"OBJECT: {o.get('name', 'object')}  "
@@ -10040,16 +12087,18 @@ def object_list_text(objs) -> str:
     return "\n".join(obj_to_line(o) for o in objs)
 
 
-def vision_report_text(objs) -> str:
+def vision_report_text(objs, nothing_new=False) -> str:
     """Everything vision found, for the operator to read before the plan.
 
     The planner's own OBJECT: lines are too wide for the chat column, so the
     same content is folded into one short line per object: where it is, what
-    it spans, and which of its parts were outlined.
+    it spans, and which of its parts were outlined. `nothing_new` says the
+    names are the ones from before: nothing new was on the board.
     """
     if not objs:
         return "Vision found nothing on the board."
-    lines = [f"Vision - {len(objs)} object(s) on the board:"]
+    lines = [f"Vision - {len(objs)} object(s) on the board"
+             + (" (nothing new, names kept):" if nothing_new else ":")]
     for o in objs:
         cells = [c for c in str(o.get("touches") or "").split(",") if c.strip()]
         span = f" ({len(cells)} cells)" if len(cells) > 1 else ""
@@ -10422,41 +12471,6 @@ def _touch_cells(obj):
             seen.add(token)
             cells.append(token)
     return cells
-
-
-def _first_json_object(text: str):
-    """The span of the first balanced {...} object in text, or None.
-
-    A naive greedy regex (first '{' to last '}') swallows any trailing prose
-    that happens to contain a brace (e.g. "the {corner} shelf"), producing a
-    span json.loads can't parse even though a valid object was right there.
-    Counting braces (respecting quoted strings) finds its real end instead.
-    """
-    start = text.find("{")
-    if start == -1:
-        return None
-    depth = 0
-    in_str = False
-    escape = False
-    for i in range(start, len(text)):
-        ch = text[i]
-        if in_str:
-            if escape:
-                escape = False
-            elif ch == "\\":
-                escape = True
-            elif ch == '"':
-                in_str = False
-            continue
-        if ch == '"':
-            in_str = True
-        elif ch == "{":
-            depth += 1
-        elif ch == "}":
-            depth -= 1
-            if depth == 0:
-                return text[start:i + 1]
-    return None
 
 
 def size_class(span_in: float) -> str:
@@ -10913,8 +12927,8 @@ def enforce_gripper_targets(text: str, objects, task=""):
     with nothing in the plan or transcript showing why (found by fuzzing
     near the board edge, 2026-09-26: a box near column T got a shifted
     top-right pickup but an unshifted destination cell). Fixed by checking
-    every later goto up to the matching keep/release BEFORE touching any
-    line, so an off-board goto anywhere in the held route cancels the grip
+    every later goto up to the matching keep (a pickup) or release (a bare
+    press) BEFORE touching any line, so an off-board goto anywhere in the held route cancels the grip
     shift for the whole route, not just its own line -- the object is then
     gripped at CENTER for that pickup, same as when it has no outline.
     """
@@ -10940,17 +12954,20 @@ def enforce_gripper_targets(text: str, objects, task=""):
         m = GRIP_SUBST_RE.search(bares[i])
         return parse_coordinate(f"{m.group(2).upper()}{m.group(3)}") if m else None
 
-    def held_route(start_i):
+    def held_route(start_i, until):
         """[(line index, cell)] for every goto from just after `start_i`
-        up to (not including) the next keep/release -- the whole route a
-        shift set at `start_i` would need to apply to, checked as one."""
+        up to (not including) the next command in `until` -- the whole
+        route a shift set at `start_i` would need to apply to, checked as
+        one. A picked-up object is held until its keep (a `release` in
+        between only lifts it off the surface it was pressed on); an
+        object slid by a bare press, until the release."""
         out = []
         for j in range(start_i + 1, len(lines)):
             if lows[j].startswith("goto_coordinate"):
                 c = goto_cell(j)
                 if c is not None:
                     out.append((j, c))
-            elif lows[j] in ("keep", "release"):
+            elif lows[j] in until:
                 break
         return out
 
@@ -10973,7 +12990,7 @@ def enforce_gripper_targets(text: str, objects, task=""):
         board. Updates `moved[idx]` either way, from whatever cell the
         object actually ends up registered at."""
         shift = (target[0] - planned[0], target[1] - planned[1])
-        route = held_route(gi)
+        route = held_route(gi, ("keep",) if action == "pickup" else ("release", "keep"))
         if shift != (0, 0) and not all(on_board((c[0] + shift[0], c[1] + shift[1]))
                                        for _, c in route):
             target, shift = planned, (0, 0)
@@ -11047,19 +13064,6 @@ def gripper_target_lines(changes: list) -> list:
 
 GOTO_RE = re.compile(
     r"goto_coordinate\s*[:=]?\s*([A-Za-z]{1,2})\s*,?\s*(\d{1,2})\b", re.I)
-
-
-def load_custom_training():
-    """Standing planner rules stored inside this single-file app."""
-    data = S1_EMBEDDED_STATE.get("custom_training") or []
-    return [s for s in data if isinstance(s, str) and s.strip()] \
-        if isinstance(data, list) else []
-
-
-def save_custom_training(rules):
-    """Persist standing planner rules inside S1.py."""
-    S1_EMBEDDED_STATE["custom_training"] = list(rules)
-    persist_embedded_state()
 
 
 def parse_plan_commands(text: str):
@@ -11294,7 +13298,7 @@ class SimpleGripperPanel:
             self.visible = False
             return self._run("auto")
         self.visible = True
-        self.last_msg = (f"{self.title()}: adjust the head, then press DONE.")
+        self.last_msg = (f"{self.title()}: adjust the head, then press Done.")
         return self.last_msg
 
     def close(self):
@@ -11366,7 +13370,7 @@ class SimpleGripperPanel:
     def cancel(self) -> str:
         """Keep the card waiting for DONE while the operator adjusts."""
         if not self.handed_off:
-            self.last_msg = f"{self.title()}: adjust the head, then press DONE."
+            self.last_msg = f"{self.title()}: adjust the head, then press Done."
         return self.last_msg
 
     def confirm(self) -> str:
@@ -11459,23 +13463,24 @@ class SimpleGripperPanel:
         px = (fw - pw) // 2
         py = max(self.PAD, (fh - ph) // 2)
         self._last_rect = (px, py, pw, ph)
-        glass_card(frame, (px, py, px + pw, py + ph), 26, alpha=0.66)
+        glass_card(frame, (px, py, px + pw, py + ph), DIALOG_RADIUS)
 
         mx, my = mouse
         self.buttons = []
         close_top = Button("X", px + pw - 52, py + 12,
-                           px + pw - 20, py + 44, "simple_close", scale=0.46)
+                           px + pw - 20, py + 44, "simple_close",
+                           style="text", scale=0.46)
         close_top.draw(frame, hover=close_top.contains(mx, my), shadow=False)
         self.buttons.append(close_top)
         draw_text(frame, f"Simple Gripper - {self.title()}",
                   (px + 22, py + 34), 0.48, C_TEXT, 2)
 
         if self.running():
-            line, colour = f"{self.title()} running - STOP is live.", C_ACCENT
+            line, colour = f"{self.title()} running - Stop is live.", C_ACCENT
         elif self.handed_off:
             line, colour = f"{self.title()} sent.", C_TEXT_DIM
         else:
-            line, colour = ("Adjust the head, then press DONE.", C_TEXT_DIM)
+            line, colour = ("Adjust the head, then press Done.", C_TEXT_DIM)
         draw_text(frame, line, (px + 22, py + 56), 0.42, colour, 1)
 
         bar_y = py + 66
@@ -11660,14 +13665,17 @@ class PlungeSequence:
     long it took as the measure of how far down it went. Raising is then the
     mirror image -- HU for that same duration, then stop -- which puts the
     gripper back where it started without needing to know the height in any
-    real units.
+    real units. A pickup also has the board save the height it gripped at
+    (p1) between the grip and the lift, for a later press to go back to.
 
     Every phase is driven from the frame loop rather than by sleeping, so the
-    window keeps redrawing and the operator can still hit STOP mid-plunge.
+    window keeps redrawing and the operator can still hit STOP mid-plunge --
+    and timed on the monotonic clock: the wall clock on this Mac jumps.
     """
 
     def __init__(self):
         self.phase = "idle"
+        self.kind = "pickup"
         self.started_at = 0.0
         self.down_duration = 0.0
         self.up_until = 0.0
@@ -11677,16 +13685,18 @@ class PlungeSequence:
     def active(self) -> bool:
         return self.phase != "idle"
 
-    def start(self) -> bool:
-        """Begin the descent. False if there is no board to talk to, in which
-        case the step just carries on as it did before this existed."""
+    def start(self, kind="pickup") -> bool:
+        """Begin the descent for a `kind` step (pickup, pour or press). False
+        if there is no board to talk to, in which case the step just carries
+        on as it did before this existed."""
+        self.kind = kind
         if not ARDUINO.connected:
             self.phase = "idle"
             self.status = "No board connected -- skipping the gripper plunge."
             print(f"[plunge] {self.status}")
             return False
         self.phase = "down"
-        self.started_at = time.time()
+        self.started_at = time.monotonic()
         self.down_duration = 0.0
         self.status = f"Lowering the gripper ({HEIGHT_DOWN_CMD})..."
         ARDUINO.send_command(HEIGHT_DOWN_CMD)
@@ -11707,12 +13717,22 @@ class PlungeSequence:
             return
         if b"s" not in data and b"S" not in data:
             return
-        self.down_duration = time.time() - self.started_at
+        self.down_duration = time.monotonic() - self.started_at
+        ARDUINO.send_command("g90")
+        if self.kind == "pickup":
+            # p1 a second after the grip, the lift a second after that, as
+            # the gripper card spaces them: the board reads commands with
+            # nothing between them.
+            self.phase = "save"
+            self.up_until = time.monotonic() + AUTO_GRIP_COMMAND_DELAY_S
+            self.status = f"Gripped -- saving the height ({HEIGHT_SAVE_CMD})..."
+            print(f"[plunge] got 's' after {self.down_duration:.2f}s - "
+                  f"sent g90, {HEIGHT_SAVE_CMD} next")
+            return
         self.phase = "up"
-        self.up_until = time.time() + self.down_duration
+        self.up_until = time.monotonic() + self.down_duration
         self.status = (f"Raising the gripper ({HEIGHT_UP_CMD}) for "
                        f"{self.down_duration:.2f}s...")
-        ARDUINO.send_command("g90")
         ARDUINO.send_command(HEIGHT_UP_CMD)
         print(f"[plunge] got 's' after {self.down_duration:.2f}s - "
               f"sent {HEIGHT_UP_CMD} for the same")
@@ -11721,7 +13741,7 @@ class PlungeSequence:
         """Called every frame. Ends the lift, or gives up on a silent board."""
         if self.phase == "idle":
             return
-        now = time.time()
+        now = time.monotonic()
         if self.phase == "down":
             if now - self.started_at >= PLUNGE_DOWN_TIMEOUT_S:
                 ARDUINO.halt()
@@ -11729,6 +13749,23 @@ class PlungeSequence:
                 self.status = ("The board never reported the gripper was "
                                "down -- stopped it and carried on.")
                 print(f"[plunge] {self.status}")
+            return
+        if self.phase in ("save", "lift"):
+            if now < self.up_until:
+                return
+            if self.phase == "save":
+                if ARDUINO.send_command(HEIGHT_SAVE_CMD):
+                    note_height_saved()
+                    self.phase = "lift"
+                    self.up_until = now + AUTO_GRIP_COMMAND_DELAY_S
+                    print(f"[plunge] sent {HEIGHT_SAVE_CMD} - height saved")
+            elif ARDUINO.send_command(HEIGHT_UP_CMD):
+                self.phase = "up"
+                self.up_until = now + self.down_duration
+                self.status = (f"Raising the gripper ({HEIGHT_UP_CMD}) for "
+                               f"{self.down_duration:.2f}s...")
+                print(f"[plunge] sent {HEIGHT_UP_CMD} for "
+                      f"{self.down_duration:.2f}s")
             return
         if now >= self.up_until:
             ARDUINO.halt()
@@ -11772,6 +13809,7 @@ class PlanRunner:
         self.await_auto = False
         self.on_auto_action = None
         self.auto_wait = None
+        self.auto_failed = None
         self.auto_press_started_at = 0.0
         self.auto_press_duration = 0.0
         self._auto_stop_until = 0.0
@@ -11779,6 +13817,8 @@ class PlanRunner:
         self.step_wait = None
         self.await_step = False
         self._step_offered = False
+        self._pressed = False
+        self._moved_pressed = False
         if not hasattr(self, "plunge"):
             self.plunge = PlungeSequence()
         else:
@@ -11805,9 +13845,16 @@ class PlanRunner:
     def start(self, state):
         if not self.commands:
             return False
+        if not getattr(state, "resume_run", False):
+            # A fresh run: its presses go down to the limit switch until one
+            # of its own pickups saves a height. The rest of a task after a
+            # failed step carries on with the height its first part saved.
+            forget_saved_height()
         self.active = True
         self.index = -1
         self.finished = False
+        self._pressed = self._moved_pressed = False
+        note_press_moved(False)
         self.await_speech = False
         self.speech_until = 0.0
         self._clear_manual()
@@ -11843,11 +13890,6 @@ class PlanRunner:
         state.status_message = why
         ARDUINO.send_direction(None)
 
-    def current_command(self):
-        if 0 <= self.index < len(self.commands):
-            return self.commands[self.index]
-        return ""
-
     def _advance(self, state):
         self.index += 1
         if self.index >= len(self.commands):
@@ -11875,11 +13917,13 @@ class PlanRunner:
                 self.mode = "hold"
                 self.hold_until = time.time() + HOLD_SECONDS
                 self.label = "OFF GRID"
-                state.action_label = (self.label, C_AMBER)
+                state.action_label = (self.label, C_RED)
                 return
             state.target_col, state.target_row = coord
             state.arrived = False
             state.action_label = None
+            if self._pressed:
+                self._moved_pressed = True
             self.mode = "move"
             self.label = f"GO TO {coordinate_name(*coord)}"
             print(f"[plan] {step}: move to {coordinate_name(*coord)}")
@@ -11888,16 +13932,24 @@ class PlanRunner:
         self.mode = "hold"
         self.hold_until = time.time() + HOLD_SECONDS
         self.label = action_label(cmd)
-        state.action_label = (self.label, C_ACCENT)
+        state.action_label = (self.label, C_OVERLAY)
         state.status_message = f"Step {step}: {self.label}"
         print(f"[plan] {step}: {self.label}")
         bare = cmd.split("(", 1)[0].strip().lower()
+        if bare == "press":
+            self._pressed, self._moved_pressed = True, False
+            note_press_moved(False)
+        elif bare == "release":
+            note_press_moved(self._moved_pressed)
+            self._pressed = False
+        elif bare in ("pickup", "keep"):
+            self._pressed = False
         manual = (MANUAL_GRIPPER_STEPS and bare in MANUAL_ACTIONS
                  and self.on_manual_action is not None)
         panel_auto = (not manual and bare in ("pickup", "keep", "press", "release")
                       and self.on_auto_action is not None)
         if bare in PLUNGE_COMMANDS and not manual and not panel_auto:
-            self.plunge.start()
+            self.plunge.start(bare)
         if panel_auto:
             self.on_auto_action(bare)
             self.await_auto = True
@@ -11905,10 +13957,10 @@ class PlanRunner:
             if bare == "keep":
                 ARDUINO.send_command("g0")
             elif bare == "press":
-                ARDUINO.send_command("hx")
+                ARDUINO.send_command(press_command())
                 self.auto_press_started_at = time.monotonic()
-                self.auto_press_duration = AUTO_PICKUP_HX_S
-                self._auto_stop_until = time.monotonic() + AUTO_PICKUP_HX_S
+                self.auto_press_duration = AUTO_PRESS_RUN_S
+                self._auto_stop_until = time.monotonic() + AUTO_PRESS_RUN_S
             else:
                 ARDUINO.send_command("hu")
                 self._auto_stop_until = time.monotonic() + AUTO_RELEASE_DURATION_S
@@ -11959,7 +14011,7 @@ class PlanRunner:
                     self.await_manual = False
                 else:
                     state.status_message = (
-                        f"{self.label}: do it by hand, then press DONE "
+                        f"{self.label}: do it by hand, then press Done "
                         "on the Gripper card.")
                     return
             if self.await_auto:
@@ -11967,6 +14019,14 @@ class PlanRunner:
                     state.status_message = f"{self.label}: automatic gripper action in progress."
                     return
                 self.await_auto = False
+                why = self.auto_failed() if self.auto_failed is not None else ""
+                if why:
+                    # The gripper could not do this step: carrying on would
+                    # press and release with nothing held.
+                    print(f"[plan] step failed -- stopping: {why}")
+                    self.stop(state, f"Stopped at step {self.index + 1}: {why}")
+                    state.action_label = ("GRIPPER FAILED", C_RED)
+                    return
             if self.on_step_done is not None and not self._step_offered:
                 # The step is finished and shown. The per-step checker may
                 # hold the plan here until its verdict is in.
@@ -12033,7 +14093,7 @@ class SimRunner:
         self.index = -1
         self.active = False
         self.label = ""
-        self.colour = C_ACCENT
+        self.colour = C_OVERLAY
         self.popup = ""
         self.cell = ""
         self.col = self.row = 0.0
@@ -12072,9 +14132,9 @@ class SimRunner:
         self.popup = ""
         self._moving = False
         self._beats = [
-            self._beat("", C_ACCENT, 1000, popup="Invoking Alpha 2D unstacker"),
-            self._beat("", C_ACCENT, 1000, popup="Alpha 2D stacker is unstacking"),
-            self._beat("", C_ACCENT, 1000, popup="Unstacking is done..."),
+            self._beat("", C_OVERLAY, 1000, popup="Invoking Alpha 2D unstacker"),
+            self._beat("", C_OVERLAY, 1000, popup="Alpha 2D stacker is unstacking"),
+            self._beat("", C_OVERLAY, 1000, popup="Unstacking is done..."),
         ]
         self._next_at = time.time()
         state.status_message = "Simulating the plan..."
@@ -12161,7 +14221,7 @@ class SimRunner:
         if m:
             coord = parse_coordinate(f"{m.group(1)}{m.group(2)}")
             if coord is None:
-                return [self._beat("Off this grid - skipped", C_AMBER,
+                return [self._beat("Off this grid - skipped", C_RED,
                                    self.DELAY["default"])]
             key = "contact" if self._pressed else "goto"
             colour, label = CMD_STATES[key]
@@ -12263,13 +14323,14 @@ class AIJob:
         self.vision_ready = False
         self.vision_final = False
         self.vision_shown = False
+        # True when the board held nothing new, so nothing was named.
+        self.nothing_new = False
 
         self.questions = []
         self.answers = None
         self.cancelled = False
         self.blocked = False
         self.rejected = ""
-        self.memory_rule = ""
         self.grips_applied = []
         self.already_done = ""
         self.out_of_reach = []
@@ -12337,21 +14398,32 @@ class AIJob:
         """Vision AI's snapshot of the board as the planner's object list.
 
         The outlines are already there -- FastSAM has been tracing them the
-        whole time -- so the only wait is naming whatever has no name yet:
-        one call, and none at all when the board has not changed since the
-        last task.
+        whole time -- so the only wait is naming what is new on the board:
+        one call, and none at all when nothing new has been put down since
+        the last task. Something the tracker lost and found again under a
+        fresh ID (covered by the gripper, moved by the robot) is not new: it
+        gets back its name first (ObjectNamer.recall).
         """
         if self.vision is None:
             raise ModelError("Vision AI is not running.")
         snap = self.vision.snapshot(on_wait=lambda: self._set_stage(
             "Vision AI - waiting for FastSAM's first outlines..."))
+        namer = self.vision.namer
+        snap, carried = self._settled(snap, namer)
         fh, fw = snap["frame"].shape[:2]
         self.grid = Grid(fw, fh, list(snap["box"]), square_cells=False)
         save_vision_frame(snap["frame"], self.grid)
         if not snap["objects"]:
             raise ModelError("Vision AI found no objects on the board.")
-        namer = self.vision.namer
+        if carried:
+            print("[vision] seen before under another ID, names kept: "
+                  + ", ".join(namer.names.get(tid, "unknown")
+                              for tid in carried.values()))
         unnamed = namer.unanswered(snap["ids"])
+        if not unnamed:
+            self.nothing_new = True
+            namer.say("Nothing new on the board - names kept")
+            print("[vision] nothing new on the board - no naming call")
         if unnamed:
             tier = " priority" if PRIORITY_NAMING else ""
             self._set_stage(f"Vision AI - naming {len(unnamed)} object(s) "
@@ -12365,6 +14437,7 @@ class AIJob:
                 if not any(tid in namer.names for tid in snap["ids"]):
                     raise ModelError(problem)
                 print(f"[vision] {problem} - planning with the names there are")
+        namer.remember(snap, carried.values())
         objects = planner_objects(snap, namer, self.grid)
         if not objects:
             raise ModelError("Vision AI found no objects on the board to "
@@ -12372,6 +14445,32 @@ class AIJob:
         print("\n=== OBJECT LIST (Vision AI) ===")
         print(object_list_text(objects))
         return objects
+
+    def _settled(self, snap, namer):
+        """(snapshot, {new ID: old ID}) once the outlines the task has no
+        name for have held still for NAME_SETTLE_S (at most NAME_SETTLE_MAX_S):
+        a new object or part flickers for a moment, and naming then would
+        name the flicker. Nothing new: no wait."""
+        carried = dict(namer.recall(snap))
+        last = set(namer.unanswered(snap["ids"]))
+        if not last:
+            return snap, carried
+        self._set_stage("Vision AI - letting the new outlines settle...")
+        start = calm = time.time()
+        while time.time() - start < NAME_SETTLE_MAX_S:
+            time.sleep(0.1)
+            try:
+                fresh = self.vision.snapshot(timeout=0)
+            except ModelError:
+                break
+            snap = fresh
+            carried.update(namer.recall(snap))
+            now = set(namer.unanswered(snap["ids"]))
+            if now != last:
+                last, calm = now, time.time()
+            if not now or time.time() - calm >= NAME_SETTLE_S:
+                break
+        return snap, carried
 
     def _render_before_photo(self):
         """The board as the task found it, for Error Rebounds' CHECK."""
@@ -12429,8 +14528,7 @@ class AIJob:
 
             if any(t.is_alive() for t in pre):
                 self._set_stage(f"Checking the gripper can do this "
-                                f"({DEXTERITY_MODEL}) and what to remember "
-                                f"({MEMORY_MODEL})...")
+                                f"({DEXTERITY_MODEL})...")
             for t in pre:
                 t.join(timeout=API_TIMEOUT_S + 10)
 
@@ -12455,6 +14553,18 @@ class AIJob:
                     recipes = fold_recipe_text(self.objects, self.grid)
                 except Exception as e:
                     print(f"[fold] recipe failed ({e}) - planner works from parts")
+            sweep = None
+            if is_sweep_task(self.task):
+                try:
+                    sweep = sweep_recipe(self.objects)
+                except Exception as e:
+                    print(f"[sweep] recipe failed ({e}) - planner works from the shapes")
+                if sweep and sweep.get("lines"):
+                    recipes = (recipes + "\n\n" if recipes else "") + sweep_recipe_text(sweep)
+                    print(f"[sweep] recipe: {len(sweep['lanes'])} lane(s), covers "
+                          f"{sweep['covered']}/{sweep['target']} cells")
+                elif sweep:
+                    print(f"[sweep] no recipe: {sweep.get('note')}")
             reach_note = ""
             if self.out_of_reach:
                 reach_note = (
@@ -12476,10 +14586,17 @@ class AIJob:
             system = build_planner_system()
             self.plan = call_model(
                 client, model=PLANNER_MODEL, max_tokens=6000, stage="Planner",
+                reasoning=PLANNER_EFFORT,
                 messages=[{"role": "system", "content": system},
                           {"role": "user", "content": user}])
             print("\n=== PLAN ===")
             print(self.plan)
+            if sweep and sweep.get("lines") and not sweep_followed(self.plan, sweep):
+                # The strokes are measured geometry: a plan that refuses or
+                # sweeps elsewhere is replaced by them, not asked again.
+                print("[sweep] the plan's strokes differ from the measured "
+                      "sweep - using the recipe")
+                self.plan = sweep_plan_text(sweep)
             if (not has_plan_actions(parse_plan_commands(self.plan))
                     and not plan_already_done(self.plan)):
                 note = no_action_retry_note(self.plan)
@@ -12487,7 +14604,7 @@ class AIJob:
                 self._set_stage(f"Planning again ({PLANNER_MODEL})...")
                 retry = call_model(
                     client, model=PLANNER_MODEL, max_tokens=6000,
-                    stage="Planner (retry)",
+                    stage="Planner (retry)", reasoning=PLANNER_EFFORT,
                     messages=[{"role": "system", "content": system},
                               {"role": "user", "content": user},
                               {"role": "assistant", "content": self.plan},
@@ -13033,6 +15150,7 @@ class AppState:
     selected_part: Optional[tuple] = None
     history_open: bool = False
     examples_open: bool = False
+    effort_menu_open: bool = False
     example_notice: Optional[int] = None
     example_notice_until: float = 0.0
     ai_chat: list = field(default_factory=list)
@@ -13050,6 +15168,13 @@ class AppState:
     exec_cancelled: bool = True
     exec_cancel_rect: Optional[tuple] = None
     popup_close_rect: Optional[tuple] = None
+
+    prep_active: bool = False           # the "adjust the gripper" pop-up before a task
+    prep_started: float = 0.0
+    prep_search: Optional[dict] = None
+    prep_searched: bool = False
+    prep_start_rect: Optional[tuple] = None
+    prep_cancel_rect: Optional[tuple] = None
 
     missing_popup: Optional[dict] = None
     missing_popup_done_rect: Optional[tuple] = None
@@ -13080,6 +15205,9 @@ class AppState:
 
     board_view: Optional[object] = None
     board_raw: Optional[object] = None
+    # The camera's frame as grabbed and the settings it is shown with;
+    # board_full is that frame adjusted at full size, made on demand.
+    board_src: Optional[object] = None
     board_full: Optional[object] = None
 
 
@@ -13191,6 +15319,668 @@ TASK_EXAMPLES = (
 )
 
 
+
+# ---- A3-Terra's message box ---------------------------------------------
+# The one part of this window that is not ChatGPT's: the box a task is typed
+# into is A3-Terra's ComposeBar, drawn the way Qt draws it there -- the
+# capsule (eight soft shadow strokes, a white gradient, a gloss and a 1.5px
+# rim), the thinking pill, the history, microphone and send circles, the
+# edit's padding, line breaking, scrollbar, selection and caret -- at
+# A3-Terra's own pixel geometry, in the faces Qt uses for it (Avenir Next,
+# and Helvetica, Menlo and Lucida Grande where Qt falls back to them), with
+# every glyph where Qt puts it. Checked against renders of A3-Terra's own
+# widgets.
+A3_TEXT = _bgr("#1f2430")
+A3_TEXT_DIM = _bgr("#6b7280")
+A3_VIOLET = _bgr("#8b5cf6")
+A3_LILAC = _bgr("#c4b5fd")
+A3_RED = _bgr("#ef4444")
+A3_WAVE = _bgr("#8e97a8")
+A3_LIST_EDGE = _bgr("#e4defe")      # A3-Terra's 45% lilac border, on white
+A3_COMPOSE_H = 86       # a 52px row, 9px margins, 8px of shadow padding
+A3_SH_PAD = 8
+A3_PILL_W, A3_PILL_H = 85, 20
+A3_BTN = 36
+A3_EDIT_H = 52
+A3_EDIT_PAD = 6         # the edit's stylesheet padding
+A3_DOC_MARGIN = 4       # QTextDocument's own margin
+A3_SCROLLBAR_W = 12
+A3_LINE = 13.65625      # Avenir Next 10px's line height, as Qt lays it out
+A3_LINE_STEP = 14       # ...rounded up: QTextLine.height(), which each next line
+                        # is placed by, so every line starts on a whole pixel
+A3_ASCENT = 10.0        # ...and its ascent
+A3_SCROLLED_TOP = 1     # where a scrolled box's first line starts: Qt scrolls
+                        # to the line above's bottom, 13.66px, cut to 13
+A3_SMOOTHING = 1 / 160.0  # macOS font smoothing: CoreText fattens each glyph
+                          # by 1/160 of its size on either side
+A3_PLACEHOLDER = "Ask to do anything…"
+A3_LISTENING = "Listening…  ·  tap to stop"
+A3_TRANSCRIBING = "Transcribing…"
+A3_FACES = {            # (file, face index) of each face the box draws with
+    "avenir": ("/System/Library/Fonts/Avenir Next.ttc", 7),
+    "helvetica-bold": ("/System/Library/Fonts/Helvetica.ttc", 1),
+    "menlo-bold": ("/System/Library/Fonts/Menlo.ttc", 1),
+    "lucida-bold": ("/System/Library/Fonts/LucidaGrande.ttc", 1),
+}
+_A3_STAMPS = {}
+_A3_FONTS = {}
+_A3_FACE_INFO = {}
+_A3_POSITIONS = {}
+_A3_MASKS = {}
+_A3_WRAPS = {}
+
+
+def _qround(v):
+    """Qt's qRound: halves go away from zero, where round() goes to even."""
+    return int(math.floor(v + 0.5))
+
+
+def _a3_sdf(w, h, x0, y0, x1, y1, r):
+    """Signed distance from each pixel centre to a rounded rect."""
+    ys, xs = np.mgrid[0:h, 0:w].astype(np.float32)
+    xs += 0.5
+    ys += 0.5
+    bx, by = (x1 - x0) / 2.0, (y1 - y0) / 2.0
+    r = max(0.0, min(r, bx, by))
+    qx = np.abs(xs - (x0 + x1) / 2.0) - (bx - r)
+    qy = np.abs(ys - (y0 + y1) / 2.0) - (by - r)
+    return (np.hypot(np.maximum(qx, 0), np.maximum(qy, 0))
+            + np.minimum(np.maximum(qx, qy), 0) - r)
+
+
+def _a3_fill(w, h, x0, y0, x1, y1, r):
+    """Coverage of a filled rounded rect, anti-aliased analytically the way
+    Qt's raster engine does it."""
+    return np.clip(0.5 - _a3_sdf(w, h, x0, y0, x1, y1, r), 0.0, 1.0)
+
+
+def _a3_stroke(w, h, x0, y0, x1, y1, r, pen):
+    """Coverage of a pen `pen` px wide centred on a rounded rect's edge."""
+    d = np.abs(_a3_sdf(w, h, x0, y0, x1, y1, r)) - pen / 2.0
+    return np.clip(0.5 - d, 0.0, 1.0)
+
+
+def _a3_polyline(w, h, pts, pen, ss=8):
+    """Coverage of a round-capped polyline, drawn ss times larger and
+    averaged down."""
+    m = np.zeros((h * ss, w * ss), np.uint8)
+    pts = [(int(round(x * ss * 16)), int(round(y * ss * 16))) for x, y in pts]
+    for a, b in zip(pts, pts[1:]):
+        cv2.line(m, a, b, 255, max(1, int(round(pen * ss))), cv2.LINE_8, 4)
+    for c in pts:
+        cv2.circle(m, c, int(round(pen * ss * 8)), 255, -1, cv2.LINE_8, 4)
+    return cv2.resize(m.astype(np.float32) / 255.0, (w, h),
+                      interpolation=cv2.INTER_AREA)
+
+
+def _a3_font(face, px):
+    """A Pillow font for `face` at `px` (render size)."""
+    key = (face, px)
+    font = _A3_FONTS.get(key)
+    if font is None:
+        from PIL import ImageFont
+        path, index = A3_FACES[face]
+        font = _A3_FONTS[key] = ImageFont.truetype(path, px, index=index)
+    return font
+
+
+def _a3_face_info(face):
+    """What Qt lays `face` out with, read from the font file: units per em,
+    the character map, advance widths, vertical metrics and pair kerning --
+    OpenType GPOS, else the legacy kern table. None without fontTools or
+    the file; Pillow's advances stand in then."""
+    if face in _A3_FACE_INFO:
+        return _A3_FACE_INFO[face]
+    info = None
+    try:
+        import logging
+        from fontTools.ttLib import TTFont
+        # Apple's faces trip a harmless "extra bytes in post" warning.
+        logging.getLogger("fontTools").setLevel(logging.ERROR)
+        path, index = A3_FACES[face]
+        font = TTFont(path, fontNumber=index)
+        try:
+            info = {"upem": font["head"].unitsPerEm,
+                    "cmap": dict(font.getBestCmap()),
+                    "adv": {g: m[0] for g, m in font["hmtx"].metrics.items()},
+                    "ascent": font["hhea"].ascent,
+                    "descent": -font["hhea"].descent,
+                    "lookups": [], "legacy": {}}
+            try:
+                info["lookups"] = _a3_gpos_kerning(font)
+                if not info["lookups"] and "kern" in font:
+                    for table in font["kern"].kernTables:
+                        if getattr(table, "format", None) == 0:
+                            info["legacy"].update(table.kernTable)
+            except Exception:
+                info["lookups"], info["legacy"] = [], {}
+        finally:
+            font.close()
+    except Exception:
+        info = None
+    _A3_FACE_INFO[face] = info
+    return info
+
+
+def _a3_gpos_kerning(font):
+    """The 'kern' feature's pair-adjustment lookups, as plain dicts: per
+    lookup, its subtables in order -- (1, {first: {second: dx}}) or
+    (2, first glyphs, class1 of, class2 of, {(c1, c2): dx})."""
+    if "GPOS" not in font:
+        return []
+    gpos = font["GPOS"].table
+    order = []
+    for rec in gpos.FeatureList.FeatureRecord:
+        if rec.FeatureTag == "kern":
+            for li in rec.Feature.LookupListIndex:
+                if li not in order:
+                    order.append(li)
+    lookups = []
+    for li in order:
+        lookup = gpos.LookupList.Lookup[li]
+        subtables = []
+        for st in lookup.SubTable:
+            if lookup.LookupType == 9:          # an extension wrapping one
+                if st.ExtensionLookupType != 2:
+                    continue
+                st = st.ExtSubTable
+            elif lookup.LookupType != 2:
+                continue
+            firsts = st.Coverage.glyphs
+            if st.Format == 1:
+                pairs = {}
+                for g1, pset in zip(firsts, st.PairSet):
+                    pairs[g1] = {r.SecondGlyph: getattr(r.Value1, "XAdvance", 0) or 0
+                                 for r in pset.PairValueRecord if r.Value1 is not None}
+                subtables.append((1, pairs))
+            elif st.Format == 2:
+                values = {}
+                for c1, rec1 in enumerate(st.Class1Record):
+                    for c2, rec2 in enumerate(rec1.Class2Record):
+                        value = rec2.Value1
+                        dx = (getattr(value, "XAdvance", 0) or 0) if value else 0
+                        if dx:
+                            values[(c1, c2)] = dx
+                subtables.append((2, set(firsts), dict(st.ClassDef1.classDefs),
+                                  dict(st.ClassDef2.classDefs), values))
+        lookups.append(subtables)
+    return lookups
+
+
+def _a3_kern(info, g1, g2):
+    """Font units the pair (g1, g2) is kerned by: per lookup, the first
+    subtable that covers g1 decides, as HarfBuzz applies them."""
+    total = 0
+    for subtables in info["lookups"]:
+        for st in subtables:
+            if st[0] == 1:
+                row = st[1].get(g1)
+                if row is not None and g2 in row:
+                    total += row[g2]
+                    break
+            elif g1 in st[1]:
+                total += st[4].get((st[2].get(g1, 0), st[3].get(g2, 0)), 0)
+                break
+    if not info["lookups"]:
+        total += info["legacy"].get((g1, g2), 0)
+    return total
+
+
+def a3_positions(text, face="avenir", px=10):
+    """Where Qt puts each character of `text` in `face` at `px`: CoreText's
+    advances truncated to 1/64 px, as Qt takes them, plus the face's pair
+    kerning rounded to 1/64 as HarfBuzz scales it. len(text) + 1 offsets;
+    the last is the advance of the whole string."""
+    key = (text, face, px)
+    hit = _A3_POSITIONS.get(key)
+    if hit is not None:
+        return hit
+    info = _a3_face_info(face)
+    xs, x = [0.0], 0
+    if info is None:
+        try:
+            font = _a3_font(face, px * TEXT_SS)
+            advance = lambda ch: font.getlength(ch) / TEXT_SS
+        except Exception:
+            advance = lambda ch: text_size(ch, px / TEXT_PX_PER_SCALE, 1)[0]
+        for ch in text:
+            x += int(advance(ch) * 64)
+            xs.append(x / 64.0)
+    else:
+        scale = px * 64.0 / info["upem"]
+        glyphs = [info["cmap"].get(ord(ch)) for ch in text]
+        for i, g in enumerate(glyphs):
+            if g is None:
+                x += int(px * 32)     # not in this face; Qt would fall back
+            else:
+                x += int(math.floor(info["adv"].get(g, 0) * scale + 1e-9))
+                nxt = glyphs[i + 1] if i + 1 < len(glyphs) else None
+                if nxt is not None:
+                    k = _a3_kern(info, g, nxt) * scale
+                    x += int(math.copysign(math.floor(abs(k) + 0.5), k))
+            xs.append(x / 64.0)
+    return _remember(_A3_POSITIONS, key, tuple(xs))
+
+
+def a3_vmetrics(face, px):
+    """(ascent, descent) Qt centres a line of `face` at `px` with: the
+    font's hhea metrics, truncated to 1/64 px."""
+    info = _a3_face_info(face)
+    if info is None:
+        return float(px), px * 0.25
+    scale = px * 64.0 / info["upem"]
+    return (math.floor(info["ascent"] * scale) / 64.0,
+            math.floor(info["descent"] * scale) / 64.0)
+
+
+def _a3_mask(text, face, px, frac=0.0, k=1):
+    """(coverage, dx, dy) for `text` with its baseline-left `frac` device px
+    right of a whole pixel: laid out at `px` in A3-Terra's pixels, each glyph
+    k times further along and k times larger -- as Qt draws on a k-x screen
+    -- snapped to the device quarter pixel as Qt's glyph cache does, and
+    fattened by A3_SMOOTHING of its size, as CoreText's font smoothing
+    draws it; drawn TEXT_SS times larger again and averaged down. (dx, dy)
+    is the mask's top-left from that whole pixel."""
+    key = (text, face, px, frac, k)
+    hit = _A3_MASKS.get(key)
+    if hit is not None:
+        return hit
+    from PIL import Image, ImageDraw
+    ss = TEXT_SS
+    xs = a3_positions(text, face, px)
+    size = px * k
+    try:
+        font = _a3_font(face, size * ss)
+    except Exception:
+        return (None, 0, 0)
+    pad = int(math.ceil(size))
+    top = int(math.ceil(size * 1.4))
+    w = int(math.ceil(frac + k * xs[-1])) + 2 * pad
+    h = top + int(math.ceil(size * 0.6)) + 2
+    im = Image.new("L", (w * ss, h * ss), 0)
+    draw = ImageDraw.Draw(im)
+    stroke = A3_SMOOTHING * size * ss
+    for ch, x in zip(text, xs):
+        if ch.isspace():
+            continue
+        quarter = math.floor((frac + k * x + 1 / 64.0) * 4)
+        draw.text((pad * ss + quarter * ss // 4, top * ss), ch, font=font,
+                  fill=255, anchor="ls", stroke_width=stroke,
+                  stroke_fill=255)
+    a = cv2.resize(np.asarray(im, np.float32) / 255.0, (w, h),
+                   interpolation=cv2.INTER_AREA)
+    return _remember(_A3_MASKS, key, (a, -pad, -top))
+
+
+def _a3_text_cov(w, h, text, face, px, x, baseline, k=1):
+    """The (h, w) coverage of `text` with its baseline-left at device (x,
+    baseline): x to Qt's quarter pixel, the baseline to its whole pixel."""
+    cov = np.zeros((h, w), np.float32)
+    try:
+        a, dx, dy = _a3_mask(text, face, px, x - math.floor(x), k)
+    except Exception:
+        return cov
+    if a is None:
+        return cov
+    ox, oy = int(math.floor(x)) + dx, _qround(baseline) + dy
+    mh, mw = a.shape[:2]
+    x0, y0, x1, y1 = max(0, ox), max(0, oy), min(w, ox + mw), min(h, oy + mh)
+    if x1 > x0 and y1 > y0:
+        cov[y0:y1, x0:x1] = a[y0 - oy:y1 - oy, x0 - ox:x1 - ox]
+    return cov
+
+
+def a3_text(img, text, x, baseline, colour, face="avenir", px=10, alpha=1.0,
+            clip=None, k=1):
+    """`text` as A3-Terra's box sets it, baseline-left at device (x,
+    baseline), Unicode and all, k device px to each of A3-Terra's. `clip`
+    (x0, y0, x1, y1) bounds it, as a widget clips its own painting."""
+    if not _text_engine_ok():
+        draw_text(img, text, (x, baseline), px * k / TEXT_PX_PER_SCALE,
+                  colour, 1)
+        return
+    a, dx, dy = _a3_mask(text, face, px, x - math.floor(x), k)
+    if a is None:
+        return
+    H, W = img.shape[:2]
+    cx0, cy0, cx1, cy1 = clip if clip is not None else (0, 0, W, H)
+    ox, oy = int(math.floor(x)) + dx, _qround(baseline) + dy
+    h, w = a.shape[:2]
+    x0, y0 = max(0, cx0, ox), max(0, cy0, oy)
+    x1, y1 = min(W, cx1, ox + w), min(H, cy1, oy + h)
+    if x1 <= x0 or y1 <= y0:
+        return
+    sub = a[y0 - oy:y1 - oy, x0 - ox:x1 - ox, None]
+    if alpha < 1.0:
+        sub = sub * alpha
+    roi = img[y0:y1, x0:x1]
+    f = roi.astype(np.float32)
+    f += (np.asarray(colour, np.float32) - f) * sub
+    roi[:] = (f + 0.5).astype(np.uint8)
+
+
+def a3_wrap(text, width, face="avenir", px=10):
+    """QPainter's word wrap, for the box's own strings (its placeholder):
+    whole words, trailing spaces not counted."""
+    key = (text, width, face, px)
+    lines = _A3_WRAPS.get(key)
+    if lines is None:
+        lines, line = [], ""
+        for word in text.split():
+            probe = f"{line} {word}".strip()
+            if a3_positions(probe, face, px)[-1] > width and line:
+                lines.append(line)
+                line = word
+            else:
+                line = probe
+        lines.append(line)
+        lines = _remember(_A3_WRAPS, key, tuple(lines))
+    return lines
+
+
+def a3_wrap_editable(text, width):
+    """The box's visual lines as (start, end) index pairs into `text`,
+    broken where Qt's QTextLayout breaks them in A3-Terra: after the last
+    space that lets a line's text fit `width` -- the spaces hang off its
+    end, uncounted -- and mid-word only when one word alone is wider.
+
+    Every character belongs to exactly one line except a '\\n', which ends
+    its line and belongs to none -- so an empty line between two newlines,
+    and the empty line a trailing newline opens, both come back as an empty
+    (start, start) pair and the caret can sit on them. Memoised: the box is
+    re-wrapped every frame it is drawn.
+    """
+    key = (str(text), width)
+    hit = _A3_WRAPS.get(key)
+    if hit is None:
+        hit = _remember(_A3_WRAPS, key,
+                        tuple(_a3_wrap_editable(key[0], width)))
+    return list(hit)
+
+
+def _a3_wrap_editable(text, width):
+    lines = []
+    seg_start = 0
+    while True:
+        nl = text.find("\n", seg_start)
+        seg_end = len(text) if nl < 0 else nl
+        start = seg_start
+        while True:
+            xs = a3_positions(text[start:seg_end])
+            n = seg_end - start
+
+            def fits(k):
+                while k > 0 and text[start + k - 1] == " ":
+                    k -= 1
+                return xs[k] <= width + 1e-6
+
+            if fits(n):
+                end = seg_end
+            else:
+                k = 0
+                while k < n and fits(k + 1):
+                    k += 1
+                if k > 0 and text[start + k - 1] == " ":
+                    end = start + k
+                else:
+                    brk = text.rfind(" ", start, start + k)
+                    end = brk + 1 if brk >= start else start + max(1, k)
+            lines.append((start, end))
+            start = end
+            if start >= seg_end:
+                break
+        if nl < 0:
+            break
+        seg_start = nl + 1
+    return lines
+
+
+def a3_caret_line(lines, cursor):
+    """(line, column) of a caret, as Qt places it: at a soft line break it
+    starts the next line; at a '\\n', and at the very end, it ends its own."""
+    if not lines:
+        return 0, 0
+    for i, (start, end) in enumerate(lines):
+        last = i == len(lines) - 1
+        if cursor < end or (cursor == end and (last or lines[i + 1][0] != end)):
+            return i, max(0, cursor - start)
+    return len(lines) - 1, max(0, cursor - lines[-1][0])
+
+
+def a3_index_at(line, local_x):
+    """The character boundary in `line` nearest a click `local_x` px from
+    its start."""
+    xs = a3_positions(line)
+    if local_x <= 0 or not line:
+        return 0
+    for i in range(1, len(xs)):
+        if xs[i] >= local_x:
+            return i if (local_x - xs[i - 1]) > (xs[i] - local_x) else i - 1
+    return len(line)
+
+
+def _a3_blend(f, colour, alpha):
+    """f (float BGR) <- `colour` over it at per-pixel `alpha`."""
+    a = alpha[..., None]
+    f *= (1.0 - a)
+    f += np.asarray(colour, np.float32)[None, None, :] * a
+
+
+def _a3_stamp(key, w, h, paint):
+    """An AffineStamp of paint(f), f a float image to draw into: made once
+    per key, then replayed every frame."""
+    stamp = _A3_STAMPS.get(key)
+    if stamp is None:
+        if len(_A3_STAMPS) >= 64:
+            _A3_STAMPS.clear()
+
+        def draw(img):
+            f = img.astype(np.float32)
+            paint(f)
+            img[:] = np.clip(f + 0.5, 0, 255).astype(np.uint8)
+
+        stamp = _A3_STAMPS[key] = AffineStamp(w, h, draw)
+    return stamp
+
+
+def a3_compose_layout(x, y, width, k=1):
+    """Where ComposeBar's row -- margins 26/17/22/17, spacing 8 -- puts the
+    edit, the thinking pill, history, microphone and send in a bar `width`
+    device px wide at (x, y), on a screen of k device px to A3-Terra's one.
+    Qt lays the row out in whole A3-Terra pixels; the pill and the circles
+    sit on the edit's bottom."""
+    w = int(width // k)
+    send = w - 22 - A3_BTN
+    mic = send - 8 - A3_BTN
+    hist = mic - 8 - A3_BTN
+    pill = hist - 8 - A3_PILL_W
+    top = 17
+    bottom = top + A3_EDIT_H
+
+    def at(x0, y0, x1, y1):
+        return (x + k * x0, y + k * y0, x + k * x1, y + k * y1)
+    return {"edit": at(26, top, pill - 8, bottom),
+            "pill": at(pill, bottom - A3_PILL_H, pill + A3_PILL_W, bottom),
+            "history": at(hist, bottom - A3_BTN, hist + A3_BTN, bottom),
+            "mic": at(mic, bottom - A3_BTN, mic + A3_BTN, bottom),
+            "send": at(send, bottom - A3_BTN, send + A3_BTN, bottom)}
+
+
+def a3_compose_bar(canvas, x, y, width, k=1):
+    """ComposeBar.paintEvent with the widget's top-left at (x, y), k device
+    px to A3-Terra's one: eight shadow strokes under the capsule, its white
+    fill fading from 245 to 215 alpha down the bar, the gloss over its top
+    60% and the 1.5px rim."""
+    def paint(f):
+        h, w = f.shape[:2]
+        pad = A3_SH_PAD * k
+        x0, y0 = pad + 0.75 * k, pad + 0.75 * k
+        x1, y1 = w - pad - 0.75 * k, h - pad - 0.75 * k
+        rad = min((y1 - y0) / 2.0, 34.0 * k)
+        for i in range(A3_SH_PAD, 0, -1):
+            alpha = int(30 * (1.0 - (i - 1) / float(A3_SH_PAD)) ** 1.6)
+            if alpha > 0:
+                _a3_blend(f, (145, 128, 120),
+                          _a3_stroke(w, h, x0, y0 + 4 * k, x1, y1 + 4 * k,
+                                     rad, i * 2 * k)
+                          * (alpha / 255.0))
+        fill = _a3_fill(w, h, x0, y0, x1, y1, rad)
+        yy = np.arange(h, dtype=np.float32)[:, None]
+        _a3_blend(f, (255, 255, 255),
+                  fill * (245.0 - 30.0 * np.clip(yy / h, 0, 1)) / 255.0)
+        _a3_blend(f, (255, 255, 255),
+                  fill * (150.0 * (1.0 - np.clip(yy / (h * 0.6), 0, 1)))
+                  / 255.0)
+        _a3_blend(f, (218, 204, 196),
+                  _a3_stroke(w, h, x0, y0, x1, y1, rad, 1.5 * k)
+                  * (200 / 255.0))
+    w = int(width // k)
+    _a3_stamp(("bar", w, k), w * k, A3_COMPOSE_H * k, paint).apply(
+        canvas, x, y)
+
+
+def a3_thinking_pill(canvas, x, y, label, k=1):
+    """PillComboBox.paintEvent, k device px to A3-Terra's one: the capsule
+    shaded white to #f6f8fc, its 1.5px rim, the level in Helvetica Bold 9px,
+    and the chevron."""
+    def paint(f):
+        h, w = f.shape[:2]
+        x0, y0, x1, y1 = 0.75 * k, 0.75 * k, w - 0.75 * k, h - 0.75 * k
+        rad = (y1 - y0) / 2.0
+        cov = _a3_fill(w, h, x0, y0, x1, y1, rad)[..., None]
+        t = np.clip(np.arange(h, dtype=np.float32) / h, 0, 1)[:, None, None]
+        shade = (np.float32([255, 255, 255])
+                 + np.float32([-3, -7, -9]) * t)
+        f[:] = f * (1.0 - cov) + shade * cov
+        _a3_blend(f, (224, 210, 202),
+                  _a3_stroke(w, h, x0, y0, x1, y1, rad, 1.5 * k)
+                  * (220 / 255.0))
+        asc, desc = a3_vmetrics("helvetica-bold", 9)
+        mid = A3_PILL_H / 2.0                 # in A3-Terra's pixels
+        _a3_blend(f, A3_TEXT, _a3_text_cov(
+            w, h, label, "helvetica-bold", 9, k * (0.75 + 14),
+            k * (mid + (asc - desc) / 2.0), k))
+        cx = A3_PILL_W - 0.75 - 16 / 2.0 - 6
+        _a3_blend(f, (128, 114, 107), _a3_polyline(
+            w, h, [(k * (cx - 4), k * (mid - 2)), (k * cx, k * (mid + 2.4)),
+                   (k * (cx + 4), k * (mid - 2))], 1.6 * k)
+            * (220 / 255.0))
+    _a3_stamp(("pill", label, k), A3_PILL_W * k, A3_PILL_H * k,
+              paint).apply(canvas, x, y)
+
+
+def _a3_button_glyph(w, h, glyph, face, px, k=1):
+    """A QPushButton's one-glyph label on a button w x h device px: centred,
+    in A3-Terra's pixels, on its advance across and on its line down -- a
+    line as tall and as deep as the deeper of the glyph's own face and the
+    button's font, Helvetica Bold, as Qt sets a glyph it falls back for."""
+    asc, desc = a3_vmetrics(face, px)
+    base_asc, base_desc = a3_vmetrics("helvetica-bold", px)
+    asc, desc = max(asc, base_asc), max(desc, base_desc)
+    adv = a3_positions(glyph, face, px)[-1]
+    return _a3_text_cov(w, h, glyph, face, px, k * (w / k - adv) / 2.0,
+                        k * (h / k / 2.0 + (asc - desc) / 2.0), k)
+
+
+def a3_history_button(canvas, x, y, hover=False, k=1):
+    """The history circle as its stylesheet draws it: a 10% violet fill, a
+    1.5px rim in A3-Terra's 45% lilac -- with the four dots Qt leaves where
+    the border's straight edges meet its arcs -- and the arrow in Menlo
+    Bold 13px, grey; violet, on a solid lilac rim, under the pointer."""
+    def paint(f):
+        h, w = f.shape[:2]
+        x0, y0, x1, y1 = 0.75 * k, 0.75 * k, w - 0.75 * k, h - 0.75 * k
+        rim = 1.0 if hover else 0.45
+        _a3_blend(f, A3_VIOLET,
+                  _a3_fill(w, h, x0, y0, x1, y1, 17.25 * k) * 0.10)
+        _a3_blend(f, A3_LILAC,
+                  _a3_stroke(w, h, x0, y0, x1, y1, 17.25 * k, 1.5 * k) * rim)
+        # Qt strokes the border in pieces that meet, overlapping, at the
+        # four points and the four diagonals: a 2 x 1.5px mark at each.
+        ys, xs = np.mgrid[0:h, 0:w].astype(np.float32)
+        xs -= w / 2.0 - 0.5
+        ys -= h / 2.0 - 0.5
+        dots = np.zeros((h, w), np.float32)
+        for i in range(8):
+            t = i * math.pi / 4.0
+            ux, uy = math.cos(t), math.sin(t)
+            radial = xs * ux + ys * uy - 17.25 * k
+            along = ys * ux - xs * uy
+            qx, qy = np.abs(along) - 1.0 * k, np.abs(radial) - 0.75 * k
+            sdf = (np.hypot(np.maximum(qx, 0), np.maximum(qy, 0))
+                   + np.minimum(np.maximum(qx, qy), 0))
+            dots = np.maximum(dots, np.clip(0.5 - sdf, 0.0, 1.0))
+        _a3_blend(f, A3_LILAC, dots * rim)
+        _a3_blend(f, A3_VIOLET if hover else A3_TEXT_DIM, _a3_button_glyph(
+            w, h, "↺", "menlo-bold", 13, k))
+    _a3_stamp(("history", hover, k), A3_BTN * k, A3_BTN * k, paint).apply(
+        canvas, x, y)
+
+
+def _a3_mic_icon(k=1):
+    """mic_icon(): the capsule, cradle arc and stem at pen size/14, drawn
+    in a 22pt pixmap at 2x and smooth-scaled to the 21pt icon size -- 21
+    device px on a 1x screen, 42 on a 2x one."""
+    size, dpr = 22, 2
+    n, u, pen = size * dpr, size / 24.0 * dpr, size / 14.0 * dpr
+    cov = _a3_stroke(n, n, 9 * u, 3 * u, 15 * u, 14 * u, 3 * u, pen)
+    arc = [(12 * u + 6 * u * math.cos(t), 14 * u + 5 * u * math.sin(t))
+           for t in np.linspace(0, math.pi, 60)]
+    cov = np.maximum(cov, _a3_polyline(n, n, arc, pen))
+    cov = np.maximum(cov, _a3_polyline(n, n, [(12 * u, 19 * u),
+                                              (12 * u, 21 * u)], pen))
+    return cv2.resize(cov, (21 * k, 21 * k), interpolation=cv2.INTER_AREA)
+
+
+_A3_STOP = {1: (14.07, 13.0, 20.93, 20.4), 2: (29.14, 27.11, 42.86, 40.83)}
+
+
+def a3_round_button(canvas, x, y, kind, live=False, busy=False, hover=False,
+                    disabled=False, k=1):
+    """The black circles. "mic": the microphone, red while it records, its
+    icon dimmed while a take is transcribed. "send": the up arrow, Lucida
+    Grande Bold 18px -- or, while the planner works, the stop square."""
+    def paint(f):
+        h, w = f.shape[:2]
+        if kind == "mic":
+            bg = (A3_RED if live else
+                  _bgr("#1f1f1f") if hover and not disabled else (0, 0, 0))
+        else:
+            bg = _bgr("#2b2b2b") if hover else (0, 0, 0)
+        _a3_blend(f, bg, _a3_fill(w, h, 0, 0, w, h, w / 2.0))
+        if kind == "mic":
+            icon = np.zeros((h, w), np.float32)
+            icon[7 * k:28 * k, 7 * k:28 * k] = _a3_mic_icon(k)
+            _a3_blend(f, (255, 255, 255), icon * (0.5 if disabled else 1.0))
+        elif busy:
+            # "◼" at 13px bold, Hiragino Sans's square: where CoreText puts
+            # its edges, measured off A3-Terra's own button at 1x and 2x.
+            edges = _A3_STOP.get(k) or tuple(v * k / 2.0 for v in _A3_STOP[2])
+            _a3_blend(f, (255, 255, 255), _a3_fill(w, h, *edges, 0.0))
+        else:
+            _a3_blend(f, (255, 255, 255), _a3_button_glyph(
+                w, h, "↑", "lucida-bold", 18, k))
+    key = (kind, bool(live), bool(busy), bool(hover), bool(disabled), k)
+    _a3_stamp(key, A3_BTN * k, A3_BTN * k, paint).apply(canvas, x, y)
+
+
+def a3_wave_bar(img, x, y0, y1, clip, k=1):
+    """One WaveMeter bar: 3px wide (3k device px), fully rounded,
+    anti-aliased."""
+    bw = 3 * k
+    ix0 = max(clip[0], int(math.floor(x)) - 1)
+    iy0 = max(clip[1], int(math.floor(y0)) - 1)
+    ix1 = min(clip[2], int(math.ceil(x + bw)) + 1)
+    iy1 = min(clip[3], int(math.ceil(y1)) + 1)
+    if ix1 <= ix0 or iy1 <= iy0:
+        return
+    roi = img[iy0:iy1, ix0:ix1]
+    f = roi.astype(np.float32)
+    _a3_blend(f, A3_WAVE, _a3_fill(ix1 - ix0, iy1 - iy0, x - ix0, y0 - iy0,
+                                   x + bw - ix0, y1 - iy0, 1.5 * k))
+    roi[:] = (f + 0.5).astype(np.uint8)
+
+
 class AISidebar:
     """A chat panel: transcript above, prompt box below.
 
@@ -13204,21 +15994,31 @@ class AISidebar:
     """
 
     PAD = 14
-    ROW_H = 24
-    LINE_H = 17
-    SCALE = 0.42
-    GAP = 10
-    B_PAD = 9
-    FIELD_SCALE = 0.44
-    FIELD_H = 46
-    FIELD_LINE_H = 20
-    FIELD_MAX_LINES = 6
-    MIC_GAP = 12
-    MIC_W = 50 + MIC_GAP
+    ROW_H = 30
+    LINE_H = 24           # ChatGPT's replies: 16px on a 24px line
+    SCALE = 0.64
+    MENU_SCALE = 0.56     # ...its menus: 14px rows on 20px lines
+    MENU_LINE_H = 20
+    USER_SCALE = 0.60     # ...what you sent: 15px on a 21.75px line,
+    USER_LINE_H = 21.75   # in a bubble padded 14px by 16px
+    B_PAD = 14
+    GAP = 20
+    OPT_H = 44
+    OPT_GAP = 8
+    HEADER_H = 52
+    NOTE_H = 24
+    NOTE = "S1 can make mistakes. Watch the robot while it runs."
+    FIELD_MAX_LINES = 2   # A3-Terra's box is 52px tall: two lines, then scroll
 
-    def __init__(self, x0: int, y0: int, width: int, height: int):
+    def __init__(self, x0: int, y0: int, width: int, height: int, k: int = 1):
+        # The prompt box is drawn k device px to each of A3-Terra's, k the
+        # screen's backing scale: A3-Terra's own size on a Retina screen.
+        self.k = max(1, int(k))
         self._history_anim = 0.0
-        self.field_lines = 1
+        self._wave = []
+        self._wave_t = 0.0
+        self._wave_pending = 0.0
+        self._wave_live = False
         self.set_geometry(x0, y0, width, height)
 
     def set_geometry(self, x0, y0, width, height):
@@ -13226,50 +16026,52 @@ class AISidebar:
         self.width, self.height = width, height
         p = self.PAD
         bottom = y0 + height
-        fh = self.FIELD_H + (max(1, self.field_lines) - 1) * self.FIELD_LINE_H
-        self.field = (x0 + p, bottom - p - fh,
-                      x0 + width - p - 58 - self.MIC_W, bottom - p)
-        self.send_btn = Button(">", x0 + width - p - 50,
-                               bottom - p - self.FIELD_H,
-                               x0 + width - p, bottom - p, "ai_send",
-                               style="primary", scale=0.6)
+        right = x0 + width - p
+        k = self.k
+        cy = bottom - self.NOTE_H - A3_COMPOSE_H * k
+        bar_w = int((width - 2 * p) // k) * k
+        self.compose = (x0 + p, cy, x0 + p + bar_w, cy + A3_COMPOSE_H * k)
+        lay = a3_compose_layout(x0 + p, cy, width - 2 * p, k)
+        self.field = lay["edit"]
+        self.send_btn = Button("", *lay["send"], "ai_send")
         self._send_is_stop = False
-        self.mic_btn = Button("", self.send_btn.x0 - self.MIC_W,
-                              bottom - p - self.FIELD_H,
-                              self.send_btn.x0 - self.MIC_GAP, bottom - p,
-                              "ai_mic", scale=0.5)
-        self.check_btn = Button("CHECK", x0 + width - p - 66, y0 + 12,
-                                x0 + width - p, y0 + 40, "ai_check",
-                                style="accent", scale=0.40)
+        self.mic_btn = Button("", *lay["mic"], "ai_mic")
+        self.history_btn = Button("", *lay["history"], "ai_history")
+        self.effort_btn = Button("", *lay["pill"], "ai_effort")
+        self._effort_rects = []
+        self._effort_menu_rect = None
+        # ChatGPT's header pair: a black pill and an outlined one, 44px
+        # tall, 12px of padding either side of a 14px semibold label.
+        ew = round(button_width("Examples", outlined=True))
+        cw = round(button_width("Check"))
+        self.examples_btn = Button("Examples", right - ew, y0 + 4, right,
+                                   y0 + 48, "ai_examples", scale=0.56)
+        self.check_btn = Button("Check", right - ew - 8 - cw, y0 + 4,
+                                right - ew - 8, y0 + 48, "ai_check",
+                                style="primary", scale=0.56)
         self._check_shown = False
-        self.history_btn = Button("History", x0 + width - p - 150, y0 + 12,
-                                  x0 + width - p - 76, y0 + 40, "ai_history",
-                                  scale=0.38)
-        self.examples_btn = Button("Examples", x0 + p, y0 + 48,
-                                   x0 + p + 100, y0 + 78, "ai_examples",
-                                   scale=0.40)
         self._example_rects = []
         self._example_popup_rect = None
 
-        ay1 = self.field[1] - 10
-        ay0 = ay1 - 40
-        split = x0 + width - p - 100
-        self.exec_btn = Button("EXECUTE PHYSICALLY", x0 + p, ay0, split - 8,
-                               ay1, "ai_execute", style="accent", scale=0.42)
-        self.resim_btn = Button("REPLAY", split, ay0, x0 + width - p, ay1,
-                                "ai_resim", scale=0.40)
-        self.stop_sim_btn = Button("STOP SIMULATION", x0 + p, ay0,
-                                   x0 + width - p, ay1, "ai_stop_sim",
-                                   style="primary", scale=0.42)
-        self.stop_run_btn = Button("STOP EXECUTION", x0 + p, ay0,
-                                   x0 + width - p, ay1, "ai_stop_run",
-                                   style="primary", scale=0.42)
-        self.reexec_btn = Button("RE-EXECUTE", x0 + p, ay0,
-                                 x0 + width - p, ay1, "ai_reexecute",
-                                 style="accent", scale=0.42)
+        ay1 = cy
+        ay0 = ay1 - 44
+        split = right - 100
+        self.exec_btn = Button("Execute physically", x0 + p, ay0, split - 8,
+                               ay1, "ai_execute", style="primary", scale=0.56)
+        self.resim_btn = Button("Replay", split, ay0, right, ay1, "ai_resim",
+                                scale=0.56)
+        self.stop_sim_btn = Button("Stop simulation", x0 + p, ay0, right,
+                                   ay1, "ai_stop_sim", style="primary",
+                                   scale=0.56)
+        self.stop_run_btn = Button("Stop execution", x0 + p, ay0, right,
+                                   ay1, "ai_stop_run", style="primary",
+                                   scale=0.56)
+        self.reexec_btn = Button("Re-execute", x0 + p, ay0, right, ay1,
+                                 "ai_reexecute", scale=0.56)
         self._action_mode = None
-        self.view_full = (x0, y0 + 86, x0 + width, self.field[1] - 8)
-        self.view_short = (x0, y0 + 86, x0 + width, ay0 - 8)
+        top = y0 + self.HEADER_H
+        self.view_full = (x0, top, x0 + width, cy + 2)
+        self.view_short = (x0, top, x0 + width, ay0 - 8)
         self.view = self.view_full
         self._max_scroll = 0
         self._bar_frac = 1.0
@@ -13278,7 +16080,7 @@ class AISidebar:
         self._history_rects = []
         self._history_list_rect = None
         self._choice_rects = []
-        self._vp_origin = (x0, y0 + 86)
+        self._vp_origin = (x0, top)
         self._scroll_anim = 0.0
 
     def contains(self, x, y):
@@ -13286,6 +16088,13 @@ class AISidebar:
                 and self.y0 <= y <= self.y0 + self.height)
 
     def hit_test(self, x, y, history_open=False, state=None):
+        if state is not None and state.effort_menu_open:
+            for rect, value in self._effort_rects:
+                if rect[0] <= x < rect[2] and rect[1] <= y < rect[3]:
+                    return ("ai_effort_pick", value)
+            rect = self._effort_menu_rect
+            if rect and rect[0] <= x <= rect[2] and rect[1] <= y <= rect[3]:
+                return "ai_none"
         if state is not None:
             self.expire_example_notice(state)
             if state.examples_open or state.example_notice is not None:
@@ -13313,6 +16122,8 @@ class AISidebar:
             return "ai_stop" if self._send_is_stop else "ai_send"
         if self.mic_btn.contains(x, y):
             return "ai_mic"
+        if self.effort_btn.contains(x, y):
+            return "ai_effort"
         if self._action_mode == "exec":
             if self.exec_btn.contains(x, y):
                 return "ai_execute"
@@ -13333,8 +16144,11 @@ class AISidebar:
             return "ai_history"
         if self.examples_btn.contains(x, y):
             return "ai_examples"
-        fx0, fy0, fx1, fy1 = self.field
-        if fx0 <= x <= fx1 and fy0 <= y <= fy1:
+        # Anywhere on the message box's capsule that is not one of its
+        # controls puts the caret in it.
+        cx0, cy0, cx1, cy1 = self.compose
+        pad = A3_SH_PAD * self.k
+        if cx0 + pad <= x <= cx1 - pad and cy0 + pad <= y <= cy1 - pad:
             return "ai_focus"
         return "ai_none"
 
@@ -13370,42 +16184,50 @@ class AISidebar:
         return True
 
     def _draw_examples(self, canvas, state, mouse):
+        """ChatGPT's popover under the header: a white card, a grey title,
+        14px rows that turn #f3f3f3 under the pointer."""
         self.expire_example_notice(state)
         self._example_rects = []
         self._example_popup_rect = None
         if not state.examples_open and state.example_notice is None:
             return
-        x0, y0 = self.x0 + self.PAD, self.y0 + 86
+        x0, y0 = self.x0 + self.PAD, self.y0 + self.HEADER_H
         x1 = self.x0 + self.width - self.PAD
         if state.examples_open:
             lines = []
-            height = 48 + 32 * len(TASK_EXAMPLES)
+            height = 54 + 36 * len(TASK_EXAMPLES)
         else:
             remaining = max(1, int(math.ceil(state.example_notice_until - time.monotonic())))
-            lines = self._wrap(TASK_EXAMPLES[state.example_notice][2], x1 - x0 - 24, 0.40)
-            height = 70 + 18 * len(lines)
+            lines = self._wrap(TASK_EXAMPLES[state.example_notice][2],
+                               x1 - x0 - 32, self.MENU_SCALE)
+            height = 82 + self.MENU_LINE_H * len(lines)
         rect = (x0, y0, x1, y0 + height)
         self._example_popup_rect = rect
-        glass_card(canvas, rect, 14)
+        glass_card(canvas, rect, POPOVER_RADIUS)
         close_rect = popup_cross(canvas, rect)
         self._example_rects.append((close_rect, "ai_example_close"))
         title = "Task examples" if state.examples_open else "Objects needed"
-        draw_text(canvas, title, (x0 + 12, y0 + 25), 0.44, C_ACCENT, 1)
+        draw_text(canvas, title, (x0 + 16, y0 + 29), 0.52, C_TEXT_DIM, 1,
+                  weight=500)
         if state.examples_open:
             for index, (label, _, _) in enumerate(TASK_EXAMPLES):
-                row = (x0 + 6, y0 + 42 + index * 32, x1 - 6, y0 + 70 + index * 32)
-                hover = row[0] <= mouse[0] <= row[2] and row[1] <= mouse[1] <= row[3]
+                row = (x0 + 6, y0 + 44 + index * 36, x1 - 6,
+                       y0 + 78 + index * 36)
+                hover = (row[0] <= mouse[0] <= row[2]
+                         and row[1] <= mouse[1] <= row[3])
                 if hover:
-                    rounded_rect(canvas, row, 8, C_ACCENT_SO, -1)
-                draw_text(canvas, self._fit(label, row[2] - row[0] - 16, 0.40),
-                          (row[0] + 8, row[1] + 19), 0.40, C_TEXT, 1)
+                    css_rect(canvas, row, (row[3] - row[1]) / 2.0, C_GHOST_HOV)
+                draw_text(canvas, self._fit(label, row[2] - row[0] - 20,
+                                            self.MENU_SCALE),
+                          (row[0] + 10, row[1] + 22), self.MENU_SCALE, C_TEXT, 1)
                 self._example_rects.append((row, ("ai_example_pick", index)))
         else:
             for index, line in enumerate(lines):
-                draw_text(canvas, line, (x0 + 12, y0 + 50 + index * 18),
-                          0.40, C_TEXT, 1)
+                draw_text(canvas, line,
+                          (x0 + 16, y0 + 56 + index * self.MENU_LINE_H),
+                          self.MENU_SCALE, C_TEXT, 1)
             draw_text(canvas, f"Closes in {remaining}s - prompt not sent",
-                      (x0 + 12, rect[3] - 12), 0.36, C_TEXT_DIM, 1)
+                      (x0 + 16, rect[3] - 14), 0.48, C_TEXT_FAINT, 1)
 
     def scroll_by(self, state, delta_px: int):
         """Wheel over the transcript. Scroll is measured up from the bottom."""
@@ -13457,38 +16279,51 @@ class AISidebar:
         return sim if sim.active else runner
 
     def _blocks(self, state, live):
-        """Every message as (role, lines, commands, height), oldest first."""
+        """Every message as (role, lines, payload, width, height), oldest
+        first, laid out the way ChatGPT lays out a conversation: what you
+        sent in a grey bubble on the right, the planner's replies as plain
+        text, a plan as a card, a question with its answers as pills."""
         avail = self.width - 2 * self.PAD
-        own = int(avail * 0.86)
+        own = min(384, int(avail * 0.88))
         blocks = []
         for msg in state.ai_chat:
             role = msg["role"]
             if role == "plan":
                 cmds = msg["commands"]
-                h = 22 + max(1, len(cmds)) * self.ROW_H + 2 * self.B_PAD
+                h = 54 + max(1, len(cmds)) * self.ROW_H
                 blocks.append((role, [], cmds, avail, h))
                 continue
             if role == "choices":
-                lines = self._wrap(msg["text"], avail - 2 * self.B_PAD,
-                                   self.SCALE)
-                h = (len(lines) * self.LINE_H
-                     + len(msg["options"]) * self.ROW_H
-                     + 2 * self.B_PAD + 6)
+                lines = self._wrap(msg["text"], avail, self.SCALE)
+                n = len(msg["options"])
+                h = (len(lines) * self.LINE_H + 12
+                     + n * (self.OPT_H + self.OPT_GAP) - self.OPT_GAP)
                 blocks.append((role, lines, msg, avail, h))
                 continue
-            width = own if role == "user" else avail
-            lines = self._wrap(msg["text"], width - 2 * self.B_PAD, self.SCALE)
-            blocks.append((role, lines, None,
-                           width, len(lines) * self.LINE_H + 2 * self.B_PAD))
+            if role == "user":
+                lines = self._wrap(msg["text"], own - 34, self.USER_SCALE)
+                width = min(own, 34 + max(text_advance(ln, self.USER_SCALE, 1)
+                                          for ln in lines))
+                h = len(lines) * self.USER_LINE_H + 2 * self.B_PAD + 2
+                blocks.append((role, lines, None, width, h))
+                continue
+            if role == "error":
+                lines = self._wrap(msg["text"], avail - 32, self.USER_SCALE)
+                h = int(round(len(lines) * self.USER_LINE_H + 2 * 12))
+                blocks.append((role, lines, None, avail, h))
+                continue
+            lines = self._wrap(msg["text"], avail, self.SCALE)
+            blocks.append((role, lines, None, avail,
+                           len(lines) * self.LINE_H))
 
         for job in (state.ai_job, state.err_job):
             if job is None:
                 continue
             stage, done = job.snapshot()
             if not done:
-                lines = self._wrap(stage, avail - 2 * self.B_PAD, self.SCALE)
+                lines = self._wrap(stage, avail - 22, self.USER_SCALE)
                 blocks.append(("working", lines, None, avail,
-                               len(lines) * self.LINE_H + 2 * self.B_PAD))
+                               int(round(len(lines) * self.USER_LINE_H))))
         return blocks
 
     @staticmethod
@@ -13542,8 +16377,6 @@ class AISidebar:
             return
 
         vp = canvas[vy0:vy1, vx0:vx1].copy()
-        cv2.addWeighted(vp, 1.0 - GLASS_ALPHA, np.full_like(vp, C_CARD),
-                        GLASS_ALPHA, 0, dst=vp)
 
         blocks = self._blocks(state, live)
         total = sum(b[4] + self.GAP for b in blocks)
@@ -13552,10 +16385,17 @@ class AISidebar:
         scroll_px = min(scroll_px, self._max_scroll)
 
         if not blocks:
-            draw_text(vp, "Ask for a task, and the plan runs here.",
-                      (self.PAD, 26), self.SCALE, C_TEXT_DIM, 1)
-            draw_text(vp, "e.g. \"put the red cube on the tray\"",
-                      (self.PAD, 26 + self.LINE_H), self.SCALE, C_TEXT_DIM, 1)
+            # ChatGPT's empty conversation: one question in the middle,
+            # 24px on a 28px line, a 16px grey suggestion under it.
+            title = "What should the robot do?"
+            tw = text_advance(title, 0.96, 1)
+            ty = vh // 2 - 28
+            draw_text(vp, title, ((vw - tw) / 2, ty + css_baseline(24, 28)),
+                      0.96, C_TEXT, 1)
+            hint = 'e.g. "put the red cube on the tray"'
+            hw = text_advance(hint, 0.64, 1)
+            draw_text(vp, hint, ((vw - hw) / 2, ty + 40 + css_baseline(16, 26)),
+                      0.64, C_TEXT_DIM, 1)
             canvas[vy0:vy1, vx0:vx1] = vp
             self._cache, self._cache_key = vp, key
             self._choice_rects = []
@@ -13567,8 +16407,9 @@ class AISidebar:
         for role, lines, cmds, bw, bh in blocks:
             if y + bh >= 0 and y <= vh:
                 bx0 = vw - self.PAD - bw if role == "user" else self.PAD
+                top = int(math.floor(y + 0.5))
                 self._bubble(vp, role, lines, cmds, live,
-                             (bx0, y, bx0 + bw, y + bh))
+                             (bx0, top, bx0 + bw, top + bh))
             y += bh + self.GAP
 
         canvas[vy0:vy1, vx0:vx1] = vp
@@ -13583,100 +16424,114 @@ class AISidebar:
         bar_h = max(24, int(vh * self._bar_frac))
         top = vy0 + int((vh - bar_h)
                         * (1 - scroll_px / float(self._max_scroll)))
-        rounded_rect(canvas, (vx1 - 6, top, vx1 - 3, top + bar_h), 2,
-                     C_BORDER, -1)
+        rounded_rect(canvas, (vx1 - 7, top, vx1 - 3, top + bar_h), 2,
+                     _bgr("#cdcdcd"), -1)
 
     def _bubble(self, vp, role, lines, cmds, live, rect):
         x0, y0, x1, y1 = rect
-        if role == "user":
-            rounded_rect(vp, rect, 12, C_ACCENT_SO, -1)
-            colour = C_TEXT
-        elif role == "error":
-            rounded_rect(vp, rect, 12, C_CARD_SOFT, -1)
-            rounded_rect(vp, rect, 12, C_AMBER, 1)
-            colour = C_AMBER
-        elif role == "working":
-            rounded_rect(vp, rect, 12, C_CARD_SOFT, -1)
-            colour = C_BLUE
-        else:
-            rounded_rect(vp, rect, 12, C_CARD_SOFT, -1)
-            rounded_rect(vp, rect, 12, C_BORDER, 1)
-            colour = C_TEXT
-
         if role == "plan":
             self._steps(vp, cmds, live, x0, y0, x1)
             return
         if role == "choices":
             self._choices(vp, lines, cmds, x0, y0, x1)
             return
-        ty = y0 + self.B_PAD + 12
-        for ln in lines:
-            draw_text(vp, ln, (x0 + self.B_PAD, ty), self.SCALE, colour, 1)
-            ty += self.LINE_H
+        if role == "user":
+            # ChatGPT's bubble: #e8e8e8, a 5%-black edge, 24px corners.
+            css_rect(vp, rect, 28, C_BUBBLE, C_BUBBLE_EDGE)
+            self._lines(vp, lines, x0 + 17, y0 + 1 + self.B_PAD,
+                        self.USER_SCALE, self.USER_LINE_H, C_TEXT)
+        elif role == "error":
+            css_rect(vp, rect, 24, C_ERROR_BG)
+            self._lines(vp, lines, x0 + 16, y0 + 12, self.USER_SCALE,
+                        self.USER_LINE_H, C_ERROR_TEXT)
+        elif role == "working":
+            # ChatGPT while it thinks: a dark dot, the stage in grey.
+            cv2.circle(vp, (x0 + 5, y0 + 11), 5, C_TEXT, -1, cv2.LINE_AA)
+            self._lines(vp, lines, x0 + 20, y0, self.USER_SCALE,
+                        self.USER_LINE_H, C_TEXT_FAINT)
+        else:
+            self._lines(vp, lines, x0, y0, self.SCALE, self.LINE_H, C_TEXT)
+
+    @staticmethod
+    def _lines(img, lines, x, top, scale, line_h, colour):
+        """Lines of text in CSS line boxes `line_h` tall from `top`."""
+        base = css_baseline(scale * TEXT_PX_PER_SCALE, line_h)
+        for i, ln in enumerate(lines):
+            draw_text(img, ln, (x, top + i * line_h + base), scale, colour, 1)
 
     def _choices(self, vp, lines, msg, x0, y0, x1):
-        """A question and its options. Answered options stay on screen so
-        the transcript still reads as what was actually asked and said."""
-        ty = y0 + self.B_PAD + 12
-        for ln in lines:
-            draw_text(vp, ln, (x0 + self.B_PAD, ty), self.SCALE, C_TEXT, 1)
-            ty += self.LINE_H
+        """A question and its options as ChatGPT offers choices: outlined
+        pills; the one picked turns grey with a check. Answered options stay
+        on screen so the transcript still reads as what was asked and said."""
+        self._lines(vp, lines, x0, y0, self.SCALE, self.LINE_H, C_TEXT)
         chosen = msg.get("answer")
         vx0, vy0 = self._vp_origin
-        y = ty + 2
+        y = y0 + len(lines) * self.LINE_H + 12
         for opt in msg["options"]:
-            row = (x0 + 6, y, x1 - 6, y + self.ROW_H - 4)
+            row = (x0, y, x1, y + self.OPT_H)
             picked = chosen is not None and opt == chosen
             if picked:
-                rounded_rect(vp, row, 10, C_ACCENT_SO, -1)
-                rounded_rect(vp, row, 10, C_ACCENT, 1)
+                css_rect(vp, row, self.OPT_H / 2.0, C_SELECTED)
             elif chosen is None:
-                rounded_rect(vp, row, 10, C_CARD, -1)
-                rounded_rect(vp, row, 10, C_BORDER, 1)
-            colour = C_ACCENT if picked else (
-                C_TEXT if chosen is None else C_TEXT_DIM)
-            label = self._fit(opt, row[2] - row[0] - 20, 0.40)
-            draw_text(vp, label, (row[0] + 10, y + 16), 0.40, colour,
-                      2 if picked else 1)
+                css_rect(vp, row, self.OPT_H / 2.0, C_CARD, C_OUTLINE)
+            colour = C_TEXT if chosen is None or picked else C_TEXT_FAINT
+            label = self._fit(opt, row[2] - row[0] - 52, 0.56)
+            draw_text(vp, label, (row[0] + 16, y + 27), 0.56, colour, 1,
+                      weight=600)
+            if picked:
+                draw_check(vp, (row[2] - 24, y + self.OPT_H // 2), C_TEXT)
             if chosen is None:
                 self._choice_rects.append(
                     ((row[0] + vx0, row[1] + vy0, row[2] + vx0, row[3] + vy0),
                      msg, opt))
-            y += self.ROW_H
+            y += self.OPT_H + self.OPT_GAP
 
     def _steps(self, vp, cmds, live, x0, y0, x1):
-        """The plan as a checklist; the live step is the one being walked.
+        """The plan as a checklist card: numbered steps, a check on each
+        one done, a dot and a grey row on the one being walked.
 
         `live` is whichever runner owns the moment -- the rehearsal while the
         dot is moving, PlanRunner once the real run starts. Both hand the
         checklist the same list object, so identity still says whether this
-        bubble is the plan currently being walked.
+        card is the plan currently being walked.
         """
+        y1 = y0 + 54 + max(1, len(cmds)) * self.ROW_H
+        css_rect(vp, (x0, y0, x1, y1), 24, _bgr("#f9f9f9"), C_BORDER)
         live_plan = cmds is live.commands and live.active
-        draw_text(vp, f"PLAN  -  {len(cmds)} steps",
-                  (x0 + self.B_PAD, y0 + self.B_PAD + 12), 0.40, C_ACCENT, 2)
-        y = y0 + self.B_PAD + 22
+        draw_text(vp, "Plan", (x0 + 16, y0 + 29), self.SCALE, C_TEXT, 1,
+                  weight=600)
+        pw, _ = text_size("Plan", self.SCALE, 1, weight=600)
+        draw_text(vp, f"{len(cmds)} steps", (x0 + 24 + pw, y0 + 29), 0.52,
+                  C_TEXT_FAINT, 1)
+        y = y0 + 42
         for i, cmd in enumerate(cmds):
             on_step = live_plan and i == live.index
             done = live_plan and i < live.index
+            mid = y + self.ROW_H // 2
             if on_step:
-                rounded_rect(vp, (x0 + 4, y, x1 - 4, y + self.ROW_H - 3), 9,
-                             C_ACCENT_SO, -1)
-            mark = "OK" if done else ("->" if on_step else f"{i + 1}.")
-            colour = C_GREEN if done else (C_ACCENT if on_step else C_TEXT_DIM)
-            draw_text(vp, mark, (x0 + self.B_PAD, y + 16), 0.38, colour,
-                      2 if on_step else 1)
-            text = self._fit(cmd, x1 - x0 - 2 * self.B_PAD - 32, 0.40)
-            draw_text(vp, text, (x0 + self.B_PAD + 30, y + 16), 0.40,
-                      C_TEXT if on_step else C_TEXT_DIM, 2 if on_step else 1)
+                css_rect(vp, (x0 + 8, y + 2, x1 - 8, y + self.ROW_H - 2),
+                         (self.ROW_H - 4) / 2.0, C_SELECTED)
+            if done:
+                draw_check(vp, (x0 + 26, mid), C_GREEN)
+            elif on_step:
+                cv2.circle(vp, (x0 + 26, mid), 4, C_TEXT, -1, cv2.LINE_AA)
+            else:
+                label = str(i + 1)
+                lw, _ = text_size(label, 0.48, 1)
+                draw_text(vp, label, (x0 + 26 - lw // 2, mid + 5), 0.48,
+                          C_TEXT_FAINT, 1)
+            text = self._fit(cmd, x1 - x0 - 64, 0.52)
+            draw_text(vp, text, (x0 + 44, mid + 5), 0.52,
+                      C_TEXT_DIM if live_plan and not (on_step or done)
+                      else C_TEXT, 1, weight=500 if on_step else None)
             y += self.ROW_H
 
     def _draw_history(self, canvas, state, mouse):
-        """Every task you've sent, most recent first, click one to reuse it.
+        """Every task you've sent, most recent first; click one to reuse it.
 
-        Eases in from just under the History button rather than snapping
-        into place, and fades with the same _history_anim the button-click
-        toggle drives, so opening and closing both read as one motion.
+        A ChatGPT popover opening upward from the message box's history
+        button, easing in and fading with the same _history_anim the
+        button's toggle drives, so opening and closing read as one motion.
         """
         mx, my = mouse
         tasks = []
@@ -13686,37 +16541,40 @@ class AISidebar:
         tasks = tasks[:12]
 
         anim = self._history_anim
-        pad, row_h = 10, 30
-        lw = self.width - 2 * self.PAD
-        lh = pad * 2 + 36 + (max(1, len(tasks)) * row_h)
-        lx0 = self.history_btn.x0
-        ly0 = self.history_btn.y1 + 8 + int((1.0 - anim) * -10)
-        rect = (lx0, ly0, min(lx0 + lw, self.x0 + self.width - self.PAD), ly0 + lh)
+        pad, row_h = 6, 36
+        lx0 = self.x0 + self.PAD
+        lx1 = self.x0 + self.width - self.PAD
+        lh = 52 + pad + max(1, len(tasks)) * row_h
+        bottom = self.compose[1] + 4 + int((1.0 - anim) * 10)
+        ly0 = max(self.y0 + 8, bottom - lh)
+        rect = (lx0, ly0, lx1, bottom)
         self._history_list_rect = rect
 
-        margin = 20
+        margin = 24
         bx0 = max(0, lx0 - margin)
-        by0 = max(0, min(ly0, self.history_btn.y1 + 8) - margin)
-        bx1 = min(canvas.shape[1], rect[2] + margin)
-        by1 = min(canvas.shape[0], self.history_btn.y1 + 8 + lh + margin)
+        by0 = max(0, ly0 - margin)
+        bx1 = min(canvas.shape[1], lx1 + margin)
+        by1 = min(canvas.shape[0], self.compose[1] + 14 + margin)
         fading = anim < 0.999
         under = canvas[by0:by1, bx0:bx1].copy() if fading else None
 
-        glass_card(canvas, rect, 16)
+        glass_card(canvas, rect, POPOVER_RADIUS)
         self._history_rects = [(popup_cross(canvas, rect), None)]
+        draw_text(canvas, "Recent tasks", (lx0 + 16, ly0 + 29), 0.52,
+                  C_TEXT_DIM, 1, weight=500)
         if not tasks:
-            draw_text(canvas, "Nothing sent yet.", (lx0 + pad, ly0 + pad + 50),
-                      0.40, C_TEXT_DIM, 1)
+            draw_text(canvas, "Nothing sent yet.", (lx0 + 16, ly0 + 66),
+                      self.MENU_SCALE, C_TEXT_FAINT, 1)
         else:
-            y = ly0 + pad + 36
+            y = ly0 + 44
             for task in tasks:
-                row = (lx0 + 4, y, rect[2] - 4, y + row_h - 4)
+                row = (lx0 + pad, y, lx1 - pad, y + row_h - 2)
                 hovered = row[0] <= mx <= row[2] and row[1] <= my <= row[3]
                 if hovered:
-                    rounded_rect(canvas, row, 9, C_ACCENT_SO, -1)
-                label = self._fit(task, row[2] - row[0] - 16, 0.40)
-                draw_text(canvas, label, (row[0] + 8, y + 20), 0.40,
-                          C_ACCENT if hovered else C_TEXT, 1)
+                    css_rect(canvas, row, (row[3] - row[1]) / 2.0, C_GHOST_HOV)
+                label = self._fit(task, row[2] - row[0] - 20, self.MENU_SCALE)
+                draw_text(canvas, label, (row[0] + 10, y + 22), self.MENU_SCALE,
+                          C_TEXT, 1)
                 self._history_rects.append((row, task))
                 y += row_h
 
@@ -13725,37 +16583,38 @@ class AISidebar:
             canvas[by0:by1, bx0:bx1] = cv2.addWeighted(
                 drawn, anim, under, 1.0 - anim, 0)
 
-
     def paint_card(self, canvas):
-        """The panel's frosted card and its soft border.
+        """ChatGPT sets a conversation straight on the page: the panel is
+        white, kept apart from the camera by one hairline, the way ChatGPT's
+        canvas is kept apart from its chat.
 
         main() paints this once into the cached window background and then
-        draws with card=False: blending a card the size of the whole panel
-        was two full-panel copies and blends every frame for a surface that
-        never changes.
+        draws with card=False.
         """
-        rect = (self.x0, self.y0, self.x0 + self.width, self.y0 + self.height)
-        rounded_rect(canvas, rect, 22, C_CARD, -1, alpha=0.10)
-        rounded_rect(canvas, rect, 22, C_BORDER, 1, alpha=0.45)
+        x0, y0 = self.x0, self.y0
+        canvas[y0:y0 + self.height, x0:x0 + self.width] = C_BG
+        lx = x0 - SIDE_PAD // 2
+        if 0 <= lx < canvas.shape[1]:
+            canvas[y0:y0 + self.height, lx] = C_RULE
 
     def draw(self, canvas, state, runner, sim, mouse=(-1, -1), shadow=True,
              card=True):
+        """The header, the conversation, any action buttons, A3-Terra's
+        message box with ChatGPT's line under it, then whichever popover is
+        open. (`shadow` is left from when the panel floated; unused.)"""
         mx, my = mouse
-        want = max(1, min(self.FIELD_MAX_LINES,
-                          len(wrap_editable(state.ai_task, self._field_w(),
-                                            self.FIELD_SCALE))))
-        if want != self.field_lines:
-            self.field_lines = want
-            self.set_geometry(self.x0, self.y0, self.width, self.height)
-        rect = (self.x0, self.y0, self.x0 + self.width, self.y0 + self.height)
-        if shadow:
-            drop_shadow(canvas, rect, 22, spread=14, strength=0.16)
         if card:
             self.paint_card(canvas)
 
+        # ChatGPT's header title: 16px at weight 650, the name in ink, the
+        # rest in grey ("ChatGPT 5").
         p = self.PAD
-        draw_text(canvas, "S1-SRC PLANNER", (self.x0 + p, self.y0 + 30),
-                  0.46, C_ACCENT, 2)
+        base = self.y0 + 10 + css_baseline(16, 32)
+        draw_text(canvas, "S1-SRC", (self.x0 + p, base), 0.64, C_TEXT, 1,
+                  weight=650)
+        tw, _ = text_size("S1-SRC ", 0.64, 1, weight=650)
+        draw_text(canvas, "Planner", (self.x0 + p + tw, base), 0.64,
+                  C_TEXT_DIM, 1, weight=650)
         busy = state.ai_job is not None and not state.ai_job.done
         checking = state.err_job is not None and not state.err_job.done
         self._send_is_stop = busy
@@ -13775,8 +16634,6 @@ class AISidebar:
                              and not sim.active and state.err_ready)
         if self._check_shown:
             self.check_btn.draw(canvas, hover=self.check_btn.contains(mx, my))
-        self.history_btn.draw(canvas, hover=self.history_btn.contains(mx, my),
-                              active=state.history_open)
         self.examples_btn.draw(canvas, hover=self.examples_btn.contains(mx, my),
                                active=state.examples_open)
 
@@ -13796,6 +16653,12 @@ class AISidebar:
 
         self._draw_transcript(canvas, state,
                               self._live_runner(runner, sim))
+        self._draw_compose(canvas, state, mx, my, busy)
+        nw = text_advance(self.NOTE, 0.48, 1)
+        draw_text(canvas, self.NOTE,
+                  (self.x0 + (self.width - nw) / 2,
+                   self.y0 + self.height - 8), 0.48, C_TEXT_DIM, 1)
+
         self._history_anim = ease_toward(
             self._history_anim, 1.0 if state.history_open else 0.0)
         if state.history_open or self._history_anim > 0.004:
@@ -13803,104 +16666,197 @@ class AISidebar:
         else:
             self._history_rects = []
             self._history_list_rect = None
-
-        fx0, fy0, fx1, fy1 = self.field
-        focused = state.ai_focus
-        rounded_rect(canvas, self.field, 14, C_CARD_SOFT, -1)
-        rounded_rect(canvas, self.field, 14, C_ACCENT if focused else C_BORDER,
-                     2 if focused else 1)
-        text_y = fy0 + 28
-        sc = self.FIELD_SCALE
-        if not state.ai_task and not focused:
-            draw_text(canvas, "Message the planner...", (fx0 + 12, text_y),
-                      sc, C_TEXT_DIM, 1)
-        else:
-            text = state.ai_task
-            lines = wrap_editable(text, self._field_w(), sc)
-            first = self._field_first_line(state, lines)
-            for i, (ls, le) in enumerate(lines[first:first + self.field_lines]):
-                ty = text_y + i * self.FIELD_LINE_H
-                shown = text[ls:le]
-                if focused and state.ai_select_all and shown:
-                    w, _ = text_size(shown, sc, 1)
-                    rounded_rect(canvas, (fx0 + 8, ty - 15, fx0 + 12 + w,
-                                          ty + 5), 4, C_ACCENT, -1, alpha=0.35)
-                draw_text(canvas, shown, (fx0 + 12, ty), sc, C_TEXT, 1)
-            if focused and not state.ai_select_all and caret_visible(state):
-                cl, cc = caret_line_col(lines, state.ai_cursor)
-                if first <= cl < first + self.field_lines:
-                    ls = lines[cl][0]
-                    cw, _ = text_size(text[ls:ls + cc], sc, 1)
-                    cy = text_y + (cl - first) * self.FIELD_LINE_H
-                    cv2.line(canvas, (fx0 + 12 + cw, cy - 15),
-                             (fx0 + 12 + cw, cy + 5), C_ACCENT, 2, cv2.LINE_AA)
-
-        self.send_btn.label = "" if busy else ">"
-        self.send_btn.draw(canvas, hover=self.send_btn.contains(mx, my))
-        if busy:
-            cx = (self.send_btn.x0 + self.send_btn.x1) // 2
-            cy = (self.send_btn.y0 + self.send_btn.y1) // 2
-            s = 7
-            rounded_rect(canvas, (cx - s, cy - s, cx + s, cy + s), 3,
-                         C_BTN_FG, -1)
-
-        self._draw_mic(canvas, state, mx, my)
-
-        rounded_rect(canvas, rect, 22, GLASS_EDGE, 1)
+        self._draw_effort_menu(canvas, state, mouse)
         self._draw_examples(canvas, state, mouse)
 
-    def _draw_mic(self, canvas, state, mx, my):
-        """The microphone button, in one of three states.
+    @staticmethod
+    def _over(button, mx, my):
+        """The pointer over a button's own square, as Qt hovers a widget."""
+        return button.x0 <= mx < button.x1 and button.y0 <= my < button.y1
 
-        Idle    -- a ghost pill with a dark microphone glyph.
-        Recording -- an accent pill, a filled glyph, and a ring that breathes
-                   with the measured input level, so it is obvious at a
-                   glance that the room is actually being heard and not just
-                   that a button was pressed.
-        Working -- the glyph dims and three dots cycle while the transcript
-                   is on its way back.
-        """
+    def _draw_compose(self, canvas, state, mx, my, busy):
+        """A3-Terra's message box: the capsule, then the edit -- or the
+        waveform while the microphone records -- the thinking pill, history,
+        microphone and send."""
+        k = self.k
+        cx0, cy0, cx1, _ = self.compose
+        a3_compose_bar(canvas, cx0, cy0, cx1 - cx0, k)
         rec = MIC.active
         job = state.stt_job
-        working = job is not None and not job.done
+        transcribing = job is not None and not job.done
+        if rec:
+            self._draw_wave(canvas)
+        else:
+            self._wave_live = False
+            self._draw_field(canvas, state, transcribing)
+        b = self.effort_btn
+        a3_thinking_pill(canvas, b.x0, b.y0, planner_effort_label(), k)
+        b = self.history_btn
+        a3_history_button(canvas, b.x0, b.y0, hover=self._over(b, mx, my),
+                          k=k)
         b = self.mic_btn
-        cx = (b.x0 + b.x1) // 2
-        cy = (b.y0 + b.y1) // 2
+        a3_round_button(canvas, b.x0, b.y0, "mic", live=rec,
+                        hover=self._over(b, mx, my), disabled=transcribing,
+                        k=k)
+        b = self.send_btn
+        a3_round_button(canvas, b.x0, b.y0, "send", busy=busy,
+                        hover=self._over(b, mx, my), k=k)
 
-        if rec:
-            lvl = max(0.0, min(1.0, MIC.level * 2.4))
-            r = (b.y1 - b.y0) // 2
-            grow = int(4 + (self.MIC_GAP // 2 - 1) * lvl)
-            rounded_rect(canvas, (b.x0 - grow, b.y0 - grow,
-                                  b.x1 + grow, b.y1 + grow),
-                         r + grow, C_ACCENT, -1, alpha=0.16 + 0.20 * lvl)
+    def _field_rows(self, text):
+        """(lines, scrollbar shown) for `text` in the box."""
+        lines = a3_wrap_editable(text, self._field_w(text))
+        return lines, len(lines) > self.FIELD_MAX_LINES
 
-        b.style = "accent" if rec else "ghost"
-        b.draw(canvas, hover=b.contains(mx, my))
-
-        fg = C_BTN_FG if rec else (C_TEXT_DIM if working else C_TEXT)
-        if working:
-            phase = int(time.time() * 3.0) % 3
-            for i in range(3):
-                c = C_TEXT if i == phase else C_BORDER
-                cv2.circle(canvas, (cx - 9 + i * 9, cy), 3, c, -1,
-                           cv2.LINE_AA)
+    def _draw_field(self, canvas, state, transcribing):
+        """The QPlainTextEdit: Avenir Next 10px inside 6px of padding and
+        the document's 4px margin. Two lines show and a third peeks in under
+        them; past two the text scrolls, with A3-Terra's violet bar."""
+        k = self.k
+        fx0, fy0, fx1, fy1 = self.field
+        pad = A3_EDIT_PAD * k
+        text = state.ai_task
+        focused = state.ai_focus
+        lines, bar = self._field_rows(text)
+        clip = (fx0 + pad, fy0 + pad,
+                fx1 - pad - (A3_SCROLLBAR_W * k if bar else 0), fy1 - pad)
+        tx, top = self._field_origin()
+        step = A3_LINE_STEP * k
+        if not text:
+            # QPlainTextEdit's placeholder: the text colour at half alpha,
+            # word-wrapped in the viewport less the left margin only.
+            hint = A3_TRANSCRIBING if transcribing else A3_PLACEHOLDER
+            width = (fx1 - fx0) // k - 2 * A3_EDIT_PAD - A3_DOC_MARGIN
+            for i, ln in enumerate(a3_wrap(hint, width)):
+                a3_text(canvas, ln, tx, top + k * A3_ASCENT + i * step,
+                        A3_TEXT, alpha=128 / 255.0, clip=clip, k=k)
+            if focused and caret_visible(state):
+                self._caret(canvas, tx, top, clip)
             return
+        first = self._field_first_line(state, lines)
+        tx, top = self._field_origin(first)
+        selected = focused and state.ai_select_all
+        for i in range(first, min(len(lines), first + self.FIELD_MAX_LINES + 1)):
+            ls, le = lines[i]
+            y = top + (i - first) * step
+            shown = text[ls:le]
+            if selected and shown:
+                x1 = min(clip[2], _qround(tx + k * a3_positions(shown)[-1]))
+                y0 = max(clip[1], _qround(y))
+                y1 = min(clip[3], _qround(y + A3_LINE * k))
+                if x1 > tx and y1 > y0:
+                    rounded_rect(canvas, (tx, y0, x1 - 1, y1 - 1), 0,
+                                 A3_VIOLET, -1, alpha=0.55)
+            a3_text(canvas, shown, tx, y + k * A3_ASCENT, A3_TEXT, clip=clip,
+                    k=k)
+        if focused and not selected and caret_visible(state):
+            cl, cc = a3_caret_line(lines, state.ai_cursor)
+            if first <= cl <= first + self.FIELD_MAX_LINES:
+                ls, le = lines[cl]
+                self._caret(canvas, tx + k * a3_positions(text[ls:le])[cc],
+                            top + (cl - first) * step, clip)
+        if bar:
+            # A3-Terra's QScrollBar: 12px wide inside the padding, margins
+            # 6px and 2px, a 35% violet handle at least 28px tall -- in a
+            # box this short, the whole of its track -- and square: Qt
+            # drops a radius larger than half the handle.
+            hx1 = fx1 - pad - 2 * k
+            hy0, hy1 = fy0 + pad + 6 * k, fy1 - pad - 6 * k
+            css_rect(canvas, (hx1 - 8 * k, hy0, hx1, hy1), 0, A3_VIOLET,
+                     alpha=0.35)
 
-        cap_w, cap_h = 7, 10
-        top = cy - cap_h - 3
-        rounded_rect(canvas, (cx - cap_w // 2, top,
-                              cx + cap_w // 2, cy + 1), cap_w // 2, fg, -1)
-        cv2.ellipse(canvas, (cx, cy - 1), (7, 7), 0, 25, 155, fg, 2,
-                    cv2.LINE_AA)
-        cv2.line(canvas, (cx, cy + 6), (cx, cy + 10), fg, 2, cv2.LINE_AA)
-        cv2.line(canvas, (cx - 5, cy + 11), (cx + 5, cy + 11), fg, 2,
-                 cv2.LINE_AA)
+    def _field_origin(self, first=0):
+        """Device (x, y) where the box's first visible line starts: inside
+        the edit's padding and the document's 4px margin -- or, once the box
+        has scrolled, 1px under the padding, where Qt's scroll leaves it."""
+        k = self.k
+        fx0, fy0, _, _ = self.field
+        pad = A3_EDIT_PAD * k
+        return (fx0 + pad + A3_DOC_MARGIN * k,
+                fy0 + pad + (A3_SCROLLED_TOP if first else A3_DOC_MARGIN) * k)
 
-        if rec:
-            draw_text_centred(canvas, f"{MIC.elapsed():.0f}s",
-                              (b.x0, b.y0 - 26, b.x1, b.y0 - 12),
-                              0.34, C_ACCENT, 1)
+    def _caret(self, canvas, x, top, clip):
+        """Qt's text cursor: 1px of the text colour (k device px), one line
+        tall."""
+        k = self.k
+        x = _qround(x)
+        y0 = max(clip[1], _qround(top))
+        y1 = min(clip[3], _qround(top + A3_LINE * k))
+        if clip[0] <= x < clip[2] and y1 > y0:
+            canvas[y0:y1, x:min(x + k, clip[2])] = A3_TEXT
+
+    def _draw_wave(self, canvas):
+        """A3-Terra's WaveMeter in the edit's place while the microphone is
+        open: "Listening...  -  tap to stop", then one bar per tick for the
+        loudest level heard, scrolling in from the right at 24 a second
+        whatever this window's own frame rate -- clipped to the edit, as
+        the widget is (in a box this narrow, the hint fills it)."""
+        k = self.k
+        fx0, fy0, fx1, fy1 = self.field
+        w, h = (fx1 - fx0) / k, (fy1 - fy0) / k      # in A3-Terra's pixels
+        now = time.monotonic()
+        cap = max(8, int(w / 6.0) + 2)
+        if not self._wave_live:
+            self._wave_live = True
+            self._wave, self._wave_pending, self._wave_t = [], 0.0, now
+            MIC.take_wave_level()
+        self._wave_pending = max(self._wave_pending, MIC.take_wave_level())
+        ticks = int((now - self._wave_t) * 24)
+        if ticks > 0:
+            self._wave_t += ticks / 24.0
+            for _ in range(min(ticks, cap)):
+                self._wave.append(self._wave_pending)
+                self._wave_pending *= 0.4
+            del self._wave[:-cap]
+        clip = (fx0, fy0, fx1, fy1)
+        asc, desc = a3_vmetrics("avenir", 9)
+        a3_text(canvas, A3_LISTENING, fx0 + 4 * k,
+                fy0 + k * ((h - (asc + desc)) / 2.0 + asc), A3_TEXT_DIM,
+                px=9, alpha=200 / 255.0, clip=clip, k=k)
+        left = 4 + _qround(a3_positions(A3_LISTENING, "avenir", 9)[-1]) + 12
+        mid, span = h / 2.0, h * 0.72
+        x = w - 3.0 - 2.0
+        for level in reversed(self._wave):
+            if x < left:
+                break
+            amp = max(2.5, min(1.0, level) ** 0.6 * span)
+            a3_wave_bar(canvas, fx0 + k * x, fy0 + k * (mid - amp / 2),
+                        fy0 + k * (mid + amp / 2), clip, k)
+            x -= 6.0
+
+    def _draw_effort_menu(self, canvas, state, mouse):
+        """The thinking pill's list as A3-Terra's RoundedComboBox opens it:
+        a white card with a lilac hairline and 10px corners, 27px rows of
+        Avenir Next 10px with hairlines between, the current level shaded --
+        opening upward, as Qt opens a list with no room below it."""
+        self._effort_rects = []
+        self._effort_menu_rect = None
+        if not state.effort_menu_open:
+            return
+        mx, my = mouse
+        k = self.k
+        b = self.effort_btn
+        row_h = 27 * k
+        longest = max(_qround(a3_positions(label, "helvetica-bold", 9)[-1])
+                      for _, label in PLANNER_EFFORTS)
+        w = (max(longest + 72, A3_PILL_W) + 6) * k
+        h = (27 * len(PLANNER_EFFORTS) + 10) * k
+        rect = (b.x0, b.y0 - h, b.x0 + w, b.y0)
+        self._effort_menu_rect = rect
+        drop_shadow(canvas, rect, 10 * k, spread=12 * k, strength=0.14)
+        rounded_rect(canvas, rect, 10 * k, C_CARD, -1)
+        rounded_rect(canvas, rect, 10 * k, A3_LIST_EDGE, k)
+        for i, (value, label) in enumerate(PLANNER_EFFORTS):
+            ry = rect[1] + 5 * k + i * row_h
+            row = (rect[0] + 3 * k, ry, rect[2] - 3 * k, ry + row_h)
+            hover = row[0] <= mx < row[2] and row[1] <= my < row[3]
+            if value == PLANNER_EFFORT:
+                canvas[row[1]:row[3] - k, row[0]:row[2]] = _bgr("#f1f1f4")
+            elif hover:
+                canvas[row[1]:row[3] - k, row[0]:row[2]] = _bgr("#f6f6f8")
+            canvas[row[3] - k:row[3], row[0]:row[2]] = A3_LIST_EDGE
+            a3_text(canvas, label, row[0] + 16 * k, row[1] + 16 * k, A3_TEXT,
+                    k=k)
+            self._effort_rects.append((row, value))
 
     @classmethod
     def _wrap(cls, text, width, scale):
@@ -13910,55 +16866,37 @@ class AISidebar:
     def _fit(text, width, scale):
         return fit_text(text, width, scale)
 
-    @staticmethod
-    def _click_index(text, scale, local_x):
-        """Which character boundary in `text` a click at `local_x` is
-        closest to -- snaps to whichever side of the nearest glyph the
-        click fell nearer, the way every text field on the platform does."""
-        if local_x <= 0 or not text:
-            return 0
-        prev_w = 0
-        for i in range(1, len(text) + 1):
-            w = text_size(text[:i], scale, 1)[0]
-            if w >= local_x:
-                return i if (local_x - prev_w) > (w - local_x) else i - 1
-            prev_w = w
-        return len(text)
-
-    def _field_w(self):
-        """Usable text width inside the prompt box.
-
-        Derived from the panel's own width rather than from self.field, so it
-        can be asked BEFORE the field is re-placed for a new line count --
-        the height changes, this does not.
-        """
-        return self.width - 2 * self.PAD - 58 - 26
+    def _field_w(self, text=""):
+        """The width the box wraps `text` at: the edit's width less its
+        padding and the document margin, each side -- and less the
+        scrollbar's 12px once the text runs past two lines, as Qt rewraps."""
+        fx0, _, fx1, _ = self.field
+        w = (fx1 - fx0) // self.k - 2 * (A3_EDIT_PAD + A3_DOC_MARGIN)
+        if text and len(a3_wrap_editable(text, w)) > self.FIELD_MAX_LINES:
+            w -= A3_SCROLLBAR_W
+        return w
 
     def _field_first_line(self, state, lines):
-        """Index of the topmost visible line in the prompt box.
+        """Index of the topmost visible line in the message box.
 
-        Past FIELD_MAX_LINES the box stops growing and scrolls instead: it
-        follows the caret while the field has focus, and otherwise sits at
-        the top of the text.
+        Past two lines the box scrolls: it follows the caret while the
+        field has focus, and otherwise sits at the top of the text.
         """
-        extra = len(lines) - self.field_lines
-        if extra <= 0:
+        extra = len(lines) - self.FIELD_MAX_LINES
+        if extra <= 0 or not state.ai_focus:
             return 0
-        if not state.ai_focus:
-            return 0
-        cl, _ = caret_line_col(lines, state.ai_cursor)
-        return max(0, min(extra, cl - self.field_lines + 1))
+        cl, _ = a3_caret_line(lines, state.ai_cursor)
+        return max(0, min(extra, cl - self.FIELD_MAX_LINES + 1))
 
     def move_caret_line(self, state, dy):
-        """Up/down arrow: the same column, one visual line away.
+        """Up/down arrow: the same x, one visual line away, as Qt moves it.
 
         Lives on the sidebar rather than in edit_ai_task because "one line"
         only means anything against the width the field is actually drawn at.
         """
         text = state.ai_task
-        sc = self.FIELD_SCALE
-        lines = wrap_editable(text, self._field_w(), sc)
-        cl, cc = caret_line_col(lines, state.ai_cursor)
+        lines, _ = self._field_rows(text)
+        cl, cc = a3_caret_line(lines, state.ai_cursor)
         target = cl + (1 if dy > 0 else -1)
         state.ai_caret_reset_at = time.time()
         state.ai_select_all = False
@@ -13969,10 +16907,9 @@ class AISidebar:
             state.ai_cursor = len(text)
             return
         ls, le = lines[cl]
-        goal_x = text_size(text[ls:ls + cc], sc, 1)[0]
+        goal_x = a3_positions(text[ls:le])[cc]
         ts, te = lines[target]
-        col = self._click_index(text[ts:te], sc, goal_x)
-        state.ai_cursor = min(ts + col, te)
+        state.ai_cursor = min(ts + a3_index_at(text[ts:te], goal_x), te)
 
     def handle_edit_key(self, state, key, mods=0):
         """One key for the prompt box, modifier flags included.
@@ -14012,18 +16949,17 @@ class AISidebar:
         """Canvas point of a click on the field -> the ai_task index it
         should land the cursor on, matching the lines the field was last
         drawn with."""
-        fx0, fy0, fx1, fy1 = self.field
-        sc = self.FIELD_SCALE
-        local_x = x - (fx0 + 12)
         text = state.ai_task
         if not text:
             return 0
-        lines = wrap_editable(text, self._field_w(), sc)
+        lines, _ = self._field_rows(text)
         first = self._field_first_line(state, lines)
-        row = 0 if y is None else int((y - (fy0 + 8)) // self.FIELD_LINE_H)
+        tx, top = self._field_origin(first)
+        row = 0 if y is None else int((y - top) // (A3_LINE_STEP * self.k))
         idx = max(first, min(len(lines) - 1, first + max(0, row)))
         ls, le = lines[idx]
-        return min(ls + self._click_index(text[ls:le], sc, local_x), le)
+        return min(ls + a3_index_at(text[ls:le], (x - tx) / self.k), le)
+
 
 WINDOW_NAME = "Humaniod Operating System - S1"
 APP_MENU_NAME = "S1"
@@ -14073,6 +17009,25 @@ def screen_size(default=(1600, 1000)):
     except Exception:
         pass
     return default
+
+
+def display_scale():
+    """Device pixels per point on the main screen -- 2 on a Retina display
+    -- as a whole number; 1 when AppKit cannot say."""
+    if NSScreen is not None:
+        try:
+            scale = float(NSScreen.mainScreen().backingScaleFactor() or 1.0)
+            return max(1, int(round(scale)))
+        except Exception:
+            pass
+    return 1
+
+
+def sidebar_width(win_w, k=1):
+    """The planner panel's width: a fifth of the window, kept within
+    380..560 px -- each k times wider on a k-x screen, where the prompt box
+    is drawn k times larger and needs k times the room."""
+    return max(SIDEBAR_W * k, min(560 * k, win_w // 5))
 
 
 CANVAS_MAX_PIXELS = 0
@@ -14172,6 +17127,111 @@ def _pump_available() -> bool:
     return _PUMP["ok"]
 
 
+# AppKit's mouse event types, as the cv2 events S1's handler expects.
+_NS_MOUSE_EVENTS = {1: cv2.EVENT_LBUTTONDOWN, 2: cv2.EVENT_LBUTTONUP,
+                    3: cv2.EVENT_RBUTTONDOWN, 4: cv2.EVENT_RBUTTONUP,
+                    5: cv2.EVENT_MOUSEMOVE, 6: cv2.EVENT_MOUSEMOVE,
+                    7: cv2.EVENT_MOUSEMOVE, 25: cv2.EVENT_MBUTTONDOWN,
+                    26: cv2.EVENT_MBUTTONUP, 27: cv2.EVENT_MOUSEMOVE}
+_NS_BUTTON_FLAGS = {1: cv2.EVENT_FLAG_LBUTTON, 2: cv2.EVENT_FLAG_LBUTTON,
+                    6: cv2.EVENT_FLAG_LBUTTON, 3: cv2.EVENT_FLAG_RBUTTON,
+                    4: cv2.EVENT_FLAG_RBUTTON, 7: cv2.EVENT_FLAG_RBUTTON}
+# Releases and drags still count outside the window, held to its edge, so a
+# drag let go past the edge ends instead of sticking to the mouse.
+_NS_MOUSE_ANYWHERE = frozenset((2, 4, 6, 7, 26, 27))
+_MOUSE = {"window": None, "handler": None}
+
+
+def _ignore_mouse(event, x, y, flags, userdata):
+    """HighGUI's callback while pump_events delivers the mouse itself."""
+
+
+def set_mouse_handler(name, handler):
+    """Where window `name`'s mouse events go: `handler(event, x, y, flags,
+    userdata)`, cv2's own callback signature.
+
+    On macOS pump_events reads mouse events off AppKit's queue and hands each
+    one over at the point where it happened. HighGUI's Cocoa handler reports
+    a click at wherever the pointer is when the event is finally processed --
+    measured: clicks sent at (30, 30) and (370, 260) both arrived at the
+    pointer's (200, 149) -- and drops it if the pointer has left the window
+    by then. With a frame or two between a click and its handling, a click
+    followed by any movement of the mouse landed beside the button, or
+    nowhere at all: buttons that needed clicking several times. HighGUI is
+    given a callback that ignores everything, so nothing arrives twice.
+    Where pump_events is not in charge, HighGUI's callback is used as before.
+    """
+    if _pump_available():
+        _MOUSE["window"], _MOUSE["handler"] = name, handler
+        cv2.setMouseCallback(name, _ignore_mouse)
+    else:
+        _MOUSE["handler"] = None
+        cv2.setMouseCallback(name, handler)
+
+
+def _dispatch_mouse(event, kind):
+    """One AppKit mouse event to the mouse handler, in canvas pixels.
+
+    The point is the event's own location in the window, mapped exactly as
+    HighGUI maps the pointer (cvSendMouseEvent): flipped against the image
+    view's height and scaled from the view's points to the image's pixels.
+    """
+    handler = _MOUSE["handler"]
+    window = event.window()
+    if handler is None or window is None or str(window.title()) != _MOUSE["window"]:
+        return
+    view = window.contentView()
+    image = view.image() if view.respondsToSelector_("image") else None
+    if image is None:
+        return
+    shown = view.imageView() if view.respondsToSelector_("imageView") else None
+    vs = (shown if shown is not None else view).frame().size
+    size = image.size()
+    if vs.width < 1 or vs.height < 1 or size.width < 1 or size.height < 1:
+        return
+    loc = event.locationInWindow()
+    x = loc.x * size.width / vs.width
+    y = (vs.height - loc.y) * size.height / vs.height
+    if not (0 <= x < size.width and 0 <= y < size.height):
+        if kind not in _NS_MOUSE_ANYWHERE:
+            return
+        x = min(max(x, 0.0), size.width - 1)
+        y = min(max(y, 0.0), size.height - 1)
+    mods = int(event.modifierFlags())
+    flags = _NS_BUTTON_FLAGS.get(kind, 0)
+    if mods & (1 << 17):
+        flags |= cv2.EVENT_FLAG_SHIFTKEY
+    if mods & (1 << 18):
+        flags |= cv2.EVENT_FLAG_CTRLKEY
+    if mods & (1 << 19):
+        flags |= cv2.EVENT_FLAG_ALTKEY
+    handler(_NS_MOUSE_EVENTS[kind], int(x), int(y), flags, None)
+
+
+def tune_window(name):
+    """Window `name` in sRGB, taking mouse-moved events. True once done (or
+    impossible), False while the window does not exist yet.
+
+    The canvas is sRGB -- ChatGPT's colours as CSS gives them. Left in the
+    display's own colour space (the built-in screen's "Color LCD"), AppKit
+    colour-matched the whole canvas on the CPU at every redraw: imshow plus
+    the redraw measured 22.6 ms a frame at 2366x1436, 11.6 ms in sRGB, the
+    window server doing the matching instead.
+    """
+    if sys.platform != "darwin" or NSApplication is None or NSColorSpace is None:
+        return True
+    try:
+        for window in NSApplication.sharedApplication().windows():
+            if str(window.title()) == name:
+                window.setColorSpace_(NSColorSpace.sRGBColorSpace())
+                window.setAcceptsMouseMovedEvents_(True)
+                return True
+    except Exception as e:
+        print(f"[warn] could not set up the window: {e}")
+        return True
+    return False
+
+
 def pump_events(keys, timeout=0.0):
     """Hand every queued window event to the app now; collect the keys.
 
@@ -14186,8 +17246,9 @@ def pump_events(keys, timeout=0.0):
     Exactly as HighGUI does: a keyDown with characters is NOT passed on to
     [NSApp sendEvent:] -- its first character is reported, as waitKeyEx
     would return it, in `keys` as (code, modifier flags) -- and everything
-    else is dispatched, which is what runs the mouse callback, the scroll
-    monitor, menus and the window's own buttons.
+    else is dispatched, which runs the scroll monitor, menus and the
+    window's own buttons. A mouse event first goes to set_mouse_handler's
+    handler, at the point where it happened.
 
     `timeout` > 0 sleeps until the first event arrives or that many seconds
     pass -- a wait that a click ends immediately, unlike time.sleep. Returns
@@ -14218,6 +17279,13 @@ def pump_events(keys, timeout=0.0):
                     if chars:
                         keys.append((ord(chars[0]), int(event.modifierFlags())))
                         continue
+                elif kind in _NS_MOUSE_EVENTS and _MOUSE["handler"] is not None:
+                    try:
+                        _dispatch_mouse(event, kind)
+                    except Exception:
+                        # A fault in one click's handler must not turn the
+                        # whole event pump off.
+                        traceback.print_exc()
                 app.sendEvent_(event)
             app.updateWindows()
     except Exception as e:
@@ -14698,6 +17766,11 @@ def focus_macos_app(on_port_settings=None, on_serial_console=None,
 
 
 def main():
+    # This thread draws and handles input; the camera, tag, vision and serial
+    # threads share the GIL with it. A waiting thread gets the GIL after the
+    # switch interval: 5 ms by default, paid again after every cv2 call that
+    # released it. 1 ms keeps the frame loop's worst frames short.
+    sys.setswitchinterval(0.001)
     name_macos_app()
     set_macos_app_icon()
     cam_settings, saved_grid = load_settings()
@@ -14723,7 +17796,8 @@ def main():
     if CANVAS_MAX_PIXELS and win_w * win_h > CANVAS_MAX_PIXELS:
         k = (CANVAS_MAX_PIXELS / float(win_w * win_h)) ** 0.5
         win_w, win_h = int(win_w * k), int(win_h * k)
-    side_w = max(SIDEBAR_W, min(560, win_w // 5))
+    box_k = display_scale()
+    side_w = sidebar_width(win_w, box_k)
     avail_w = max(320, win_w - 3 * SIDE_PAD - side_w)
     avail_h = max(240, win_h - TOP_BAR_H)
 
@@ -14754,14 +17828,15 @@ def main():
     video_x = SIDE_PAD + (avail_w - frame_w) // 2
     video_y = TOP_BAR_H + (avail_h - frame_h) // 2
 
-    sidebar = AISidebar(win_w - SIDE_PAD - side_w, TOP_BAR_H, side_w, avail_h)
+    sidebar = AISidebar(win_w - SIDE_PAD - side_w, TOP_BAR_H, side_w, avail_h,
+                        k=box_k)
     runner = PlanRunner()
     sim = SimRunner()
     camera_dd = Dropdown("Camera", 20, 8, 190, 50, "camera")
     camera_dd.ITEM_W = 96
     camera_dd.set_items([(i, f"Cam {i}") for i in cam_mgr.available_indices])
-    settings_button = Button("Settings", total_w - 140, 12, total_w - 20, 44,
-                             "settings", style="primary", scale=0.46)
+    settings_button = Button("Settings", total_w - 108, 6, total_w - 20, 50,
+                             "settings", style="primary", scale=0.56)
 
     def relayout(w, h):
         """Re-place everything around a video of this size."""
@@ -14774,8 +17849,8 @@ def main():
         grid.update_size(w, h)
         sidebar.set_geometry(win_w - SIDE_PAD - side_w, TOP_BAR_H, side_w,
                              avail_h)
-        settings_button = Button("Settings", total_w - 140, 12, total_w - 20,
-                                 44, "settings", style="primary", scale=0.46)
+        settings_button = Button("Settings", total_w - 108, 6, total_w - 20,
+                                 50, "settings", style="primary", scale=0.56)
 
     def on_grid_size_changed():
         grid.config_changed()
@@ -14810,6 +17885,7 @@ def main():
     runner.on_manual_clear = simple_gripper.close
     runner.on_auto_action = simple_gripper.open_for
     runner.auto_wait = simple_gripper.busy
+    runner.auto_failed = gripper_panel.take_failure
     runner.on_step_done = lambda i, cmd: step_check_start(i, cmd)
     runner.step_wait = lambda: step_fail_wait()
 
@@ -14890,7 +17966,8 @@ def main():
         if not objects:
             return
         state.ai_objects = objects
-        chat_say(state, "assistant", vision_report_text(objects))
+        chat_say(state, "assistant", vision_report_text(
+            objects, nothing_new=getattr(job, "nothing_new", False)))
 
     def pump_questions():
         """Put the clarity stage's question to the operator, one at a time."""
@@ -14962,14 +18039,6 @@ def main():
             chat_say(state, "error", job.rejected)
             state.status_message = "Task needs a dexterous gripper."
             return
-        if job.memory_rule:
-            rules = load_custom_training()
-            rules.append(job.memory_rule)
-            save_custom_training(rules)
-            chat_say(state, "assistant",
-                     f"Saved to custom training: \"{job.memory_rule}\"\n"
-                     f"It now applies to every task. Remove it by editing "
-                     f"{os.path.basename(TRAINING_PATH)}.")
         try:
             collect_vision_result()
             if job.already_done:
@@ -15037,7 +18106,7 @@ def main():
                 chat_say(state, "assistant",
                          f"Re-planned the rest of the task. Carrying on "
                          f"physically in {AUTO_EXECUTE_DELAY:g}s -- press "
-                         f"CANCEL if you need more time.")
+                         f"Cancel if you need more time.")
                 return
             state.replans = 0
             state.replan_notes = []
@@ -15051,7 +18120,8 @@ def main():
             sim.start(state)
             chat_say(state, "assistant",
                      "Simulating the plan on the board -- watch the dot. "
-                     "Nothing physical happens until you press EXECUTE.")
+                     "Nothing physical happens until you press Execute "
+                     "physically.")
         except Exception as e:
             chat_say(state, "error", f"Could not use the AI result: {e}")
             state.status_message = "Planning failed."
@@ -15068,8 +18138,8 @@ def main():
                                 f"in {AUTO_EXECUTE_DELAY:g}s unless cancelled.")
         chat_say(state, "assistant",
                  f"Simulation complete. Executing physically in "
-                 f"{AUTO_EXECUTE_DELAY:g}s -- press CANCEL if you need more "
-                 f"time, or REPLAY to watch it again.")
+                 f"{AUTO_EXECUTE_DELAY:g}s -- press Cancel if you need more "
+                 f"time, or Replay to watch it again.")
 
     def cancel_auto_execute():
         """CANCEL on the countdown popup, or Esc: stop the auto-start.
@@ -15082,10 +18152,10 @@ def main():
             return
         state.exec_cancelled = True
         state.exec_cancel_rect = None
-        state.status_message = ("Auto-execute cancelled. Press EXECUTE "
-                                "PHYSICALLY whenever you're ready.")
+        state.status_message = ("Auto-execute cancelled. Press Execute "
+                                "physically whenever you're ready.")
         chat_say(state, "assistant",
-                 "Cancelled. Press EXECUTE PHYSICALLY whenever you're ready.")
+                 "Cancelled. Press Execute physically whenever you're ready.")
 
     def start_execution():
         """EXECUTE: hand the rehearsed plan to the real, tag-guided runner."""
@@ -15096,12 +18166,73 @@ def main():
             chat_say(state, "error", "No plan loaded to execute.")
             return
         sim.stop(state, "Simulation stopped.")
+        # Every task starts with the jaws open, whatever they were left at,
+        # and a pop-up for the operator to line the gripper up and show the tag.
+        ARDUINO.send_command("g0")
+        gripper_panel.grip = 0.0
+        gripper_panel._grip_sent = "g0"
+        state.prep_active = True
+        state.prep_started = time.monotonic()
+        state.prep_search = None
+        state.prep_searched = False
+        state.status_message = "Adjust the gripper with the joystick, then press Start."
+
+    def begin_run():
+        """START on the pre-task pop-up: hand the plan to the tag-guided runner."""
+        state.prep_active = False
+        state.prep_start_rect = state.prep_cancel_rect = None
+        ARDUINO.halt()
         state.err_ready = True
         mark_execution_start()
         chat_say(state, "assistant",
                  "Executing physically. Move the tag as the banner says -- "
                  "each step completes when the tag is actually seen there.")
         runner.start(state)
+
+    def cancel_prep():
+        state.prep_active = False
+        state.prep_start_rect = state.prep_cancel_rect = None
+        ARDUINO.halt()
+        state.status_message = "Task not started. Press Execute physically whenever you're ready."
+
+    def prep_tick():
+        """While the pre-task pop-up is up and the tag is not seen: try moving
+        up, then right, then left in short slow pulses until it shows. Once."""
+        if not state.prep_active:
+            return
+        now = time.monotonic()
+        if state.tag_visible and state.tag_on_grid:
+            sr = state.prep_search
+            if sr and sr.get("moving"):
+                ARDUINO.halt()
+                sr["moving"] = None
+            state.prep_searched = True       # found: no more searching
+            return
+        if state.prep_searched:
+            return
+        sr = state.prep_search
+        if sr is None:
+            if now - state.prep_started < 1.5:
+                return                       # give the camera a moment first
+            sr = state.prep_search = {"step": 0, "until": now, "moving": None}
+        if sr["moving"]:
+            if now >= sr["until"]:
+                ARDUINO.halt()
+                sr["moving"] = None
+                sr["until"] = now + 1.0      # settle so the camera can see it
+            return
+        if now < sr["until"]:
+            return
+        steps = (("uq", 0.5), ("rq", 0.5), ("lq", 1.0))
+        if sr["step"] >= len(steps):
+            sr["gave_up"] = True
+            state.prep_searched = True
+            return
+        letter, seconds = steps[sr["step"]]
+        sr["step"] += 1
+        if ARDUINO.send_command(letter):
+            sr["moving"] = letter
+            sr["until"] = now + seconds
 
     def step_check_start(index, cmd):
         """The runner finished a step. With "Check every step" on, photograph
@@ -15176,7 +18307,8 @@ def main():
                 if job.verdict == "cannot verify" else "NO CLEAR VERDICT")
         state.step_results[index] = "wrong" if wrong else "unverified"
         cmd = runner.commands[index] if 0 <= index < len(runner.commands) else ""
-        step = f"Step {index + 1}/{len(runner.commands)} ({action_label(cmd)})"
+        step = (f"Step {index + 1}/{len(runner.commands)} "
+                f"({display_label(action_label(cmd))})")
         default = "replan" if wrong else "continue"
         auto = not wrong or state.replans < REPLAN_AUTO_LIMIT
         state.step_fail = {
@@ -15470,6 +18602,8 @@ def main():
         in_video = 0 <= vy < frame_h and 0 <= vx < frame_w
 
         if event == cv2.EVENT_LBUTTONDOWN:
+            if state.effort_menu_open and not sidebar.contains(x, y):
+                state.effort_menu_open = False
             if state.step_fail is not None:
                 for rect, act in ((state.step_fail_continue_rect,
                                    step_fail_continue),
@@ -15507,6 +18641,12 @@ def main():
                         cancel_auto_execute()
                     state.popup_close_rect = None
                     return
+            if state.prep_active:
+                for rect, act in ((state.prep_start_rect, begin_run),
+                                  (state.prep_cancel_rect, cancel_prep)):
+                    if rect is not None and rect[0] <= vx <= rect[2] and rect[1] <= vy <= rect[3]:
+                        act()
+                        return
             if state.exec_cancel_rect is not None:
                 bx0, by0, bx1, by1 = state.exec_cancel_rect
                 if bx0 <= vx <= bx1 and by0 <= vy <= by1:
@@ -15539,6 +18679,9 @@ def main():
                                        state=state)
                 if DEBUG_INPUT:
                     print(f"[click] sidebar.hit_test -> {hit}", flush=True)
+                if hit != "ai_effort" and not (
+                        isinstance(hit, tuple) and hit[0] == "ai_effort_pick"):
+                    state.effort_menu_open = False
                 if hit == "ai_check":
                     state.history_open = False
                     state.examples_open = False
@@ -15556,6 +18699,16 @@ def main():
                         state.ai_focus = True
                         state.ai_caret_reset_at = time.time()
                     state.history_open = False
+                elif hit == "ai_effort":
+                    state.history_open = False
+                    state.examples_open = False
+                    state.effort_menu_open = not state.effort_menu_open
+                elif isinstance(hit, tuple) and hit[0] == "ai_effort_pick":
+                    state.effort_menu_open = False
+                    if set_planner_effort(hit[1]):
+                        save_settings(cam_settings, grid)
+                    state.status_message = (
+                        f"Planner thinking: {planner_effort_label()}.")
                 elif hit == "ai_history":
                     state.examples_open = False
                     state.example_notice = None
@@ -15583,8 +18736,8 @@ def main():
                     state.exec_pending = True
                     state.exec_cancelled = True
                     chat_say(state, "assistant",
-                             "Simulation stopped. Press EXECUTE PHYSICALLY "
-                             "when you want to run it for real, or REPLAY "
+                             "Simulation stopped. Press Execute physically "
+                             "when you want to run it for real, or Replay "
                              "to watch it again.")
                 elif hit == "ai_stop_run":
                     state.history_open = False
@@ -15592,7 +18745,7 @@ def main():
                     state.exec_pending = bool(runner.commands)
                     state.exec_cancelled = True
                     chat_say(state, "assistant",
-                             "Execution stopped. Press EXECUTE PHYSICALLY to "
+                             "Execution stopped. Press Execute physically to "
                              "run it again from the top.")
                 elif hit == "ai_reexecute":
                     state.history_open = False
@@ -15714,6 +18867,19 @@ def main():
         if manual_move_panel.text_focus:
             manual_move_panel.handle_key(key, state, runner, sim)
             return None
+        if key == 27 and (state.effort_menu_open or state.history_open
+                          or state.examples_open):
+            # Esc closes an open popover first -- with none open it quits.
+            state.effort_menu_open = False
+            state.history_open = False
+            state.examples_open = False
+            return None
+        if key == 27 and settings_panel.visible:
+            # Settings is a dialog, as ChatGPT's is: Esc closes it wherever
+            # the caret is.
+            settings_panel.toggle()
+            state.status_message = "Settings closed."
+            return None
         was_focused = state.ai_focus
         if sidebar.handle_edit_key(state, key, mods) == "send":
             launch_ai()
@@ -15727,6 +18893,12 @@ def main():
             state.missing_popup = None
             chat_say(state, "assistant", "Task cancelled.")
             state.status_message = "Task cancelled."
+            return None
+        if state.prep_active and key == 27:
+            cancel_prep()
+            return None
+        if state.prep_active and key in (13, 10):
+            begin_run()
             return None
         if key == 27 and state.exec_cancel_rect is not None:
             cancel_auto_execute()
@@ -15791,7 +18963,7 @@ def main():
     cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
     cv2.resizeWindow(WINDOW_NAME, win_w, win_h)
     cv2.moveWindow(WINDOW_NAME, *window_origin())
-    cv2.setMouseCallback(WINDOW_NAME, on_mouse)
+    set_mouse_handler(WINDOW_NAME, on_mouse)
     MENU_ACTIONS = {
         ",": port_panel.open,
         "k": console_panel.open,
@@ -15880,9 +19052,6 @@ def main():
     last_status = None
     last_vision_note = ""
     frame_count = 0
-    wallpaper_base = None
-    wallpaper_sprites = None
-    wallpaper_size = None
     wash = None
     wash_have = None
     canvas = None
@@ -15891,6 +19060,7 @@ def main():
     base_grid_have = None
     startup_t = time.time()
     last_draw = 0.0
+    window_tuned = False
 
     while True:
         try:
@@ -15930,7 +19100,7 @@ def main():
         new_win = window_size((win_w, win_h))
         if new_win != (win_w, win_h):
             win_w, win_h = new_win
-            side_w = max(SIDEBAR_W, min(560, win_w // 5))
+            side_w = sidebar_width(win_w, box_k)
             avail_w = max(320, win_w - 3 * SIDE_PAD - side_w)
             avail_h = max(240, win_h - TOP_BAR_H)
             frame_w = frame_h = -1
@@ -15944,18 +19114,22 @@ def main():
                    cs.saturation, cs.sharpness, cs.rotation, cs.mirror)
         fresh = cam_key != cam_have or state.board_raw is None
         if fresh:
-            full = cs.apply(raw)
-            fitted = fit_frame(full, avail_w, avail_h)
-            if fitted is full:
-                fitted = full.copy()
-            state.board_full = full
+            # A copy of the settings goes with the frame: Vision AI applies
+            # them later, on its own thread, and the Settings panel may
+            # change the live ones in between.
+            adjust = dc_replace(cs)
+            fitted = adjust.fitted(raw, avail_w, avail_h)
+            state.board_src = (raw, adjust)
+            state.board_full = None
             state.board_raw = fitted
             cam_have = cam_key
             fh_, fw_ = fitted.shape[:2]
             if (fw_, fh_) != (frame_w, frame_h):
                 relayout(fw_, fh_)
                 wash_have = None
-            tracker.submit(fitted)
+            tracker.submit(fitted, eager=(state.target_col is not None
+                                          or runner.active
+                                          or state.manual_move_active))
         h, w = state.board_raw.shape[:2]
 
         found, ids = tracker.latest((h, w))
@@ -16005,14 +19179,15 @@ def main():
         update_guidance(state)
 
         if fresh:
-            full = state.board_full
-            fsx = full.shape[1] / float(w)
-            fsy = full.shape[0] / float(h)
-            vision.submit(full, (grid.box[0] * fsx, grid.box[1] * fsy,
-                                 grid.box[2] * fsx, grid.box[3] * fsy),
+            full_w, full_h = adjust.full_size(raw)
+            fsx = full_w / float(w)
+            fsy = full_h / float(h)
+            vision.submit(raw, (grid.box[0] * fsx, grid.box[1] * fsy,
+                                grid.box[2] * fsx, grid.box[3] * fsy),
                           None if state.tag_raw_pts is None
                           else state.tag_raw_pts * np.float32([fsx, fsy]),
-                          region=reachable_box(grid.box, fsx, fsy))
+                          region=reachable_box(grid.box, fsx, fsy),
+                          adjust=adjust)
 
         grid_key = (tuple(grid.box), CONFIG.n_cols, CONFIG.n_rows,
                     frozenset(unreachable_rows() | fixed_unreachable_rows()),
@@ -16026,7 +19201,7 @@ def main():
 
         if tag_mark == "seen":
             cv2.aruco.drawDetectedMarkers(frame, found, ids)
-            cv2.circle(frame, (int(cx), int(cy)), 7, C_ACCENT, -1, cv2.LINE_AA)
+            cv2.circle(frame, (int(cx), int(cy)), 7, C_OVERLAY, -1, cv2.LINE_AA)
             cv2.circle(frame, (int(cx), int(cy)), 7, _bgr("#ffffff"), 2, cv2.LINE_AA)
         elif tag_mark == "held":
             cv2.circle(frame, (int(cx), int(cy)), 7, C_AMBER, 2, cv2.LINE_AA)
@@ -16110,6 +19285,23 @@ def main():
         else:
             state.exec_cancel_rect = None
 
+        if state.prep_active:
+            prep_tick()
+            seen = state.tag_visible and state.tag_on_grid
+            sr = state.prep_search or {}
+            if seen:
+                tag_line = "AprilTag: seen"
+            elif sr.get("gave_up"):
+                tag_line = "AprilTag NOT seen -- move it into view by hand or with the joystick."
+            elif sr:
+                tag_line = "AprilTag not seen -- trying to find it (moving up, right, left)..."
+            else:
+                tag_line = "Make the AprilTag visible to the camera."
+            state.prep_start_rect, state.prep_cancel_rect = draw_prep_popup(
+                frame, tag_line, seen)
+        else:
+            state.prep_start_rect = state.prep_cancel_rect = None
+
         state.missing_popup_done_rect = None
         state.missing_popup_cancel_rect = None
         if state.missing_popup is not None:
@@ -16147,18 +19339,9 @@ def main():
         wash_key = (total_w, total_h, video_x, video_y, w, h,
                     sidebar.x0, sidebar.y0, sidebar.width, sidebar.height)
         if wash is None or wash_key != wash_have:
-            if (wallpaper_base is None or wallpaper_size != (total_w, total_h)):
-                wallpaper_base, wallpaper_sprites = build_wallpaper_base(
-                    total_w, total_h)
-                wallpaper_size = (total_w, total_h)
-            wash = paint_wallpaper(wallpaper_base, wallpaper_sprites,
-                                   total_w, total_h, None, hue_shift=0.0)
-            drop_shadow(wash, (video_x, video_y, video_x + w, video_y + h),
-                        22, spread=14, strength=0.18)
-            drop_shadow(wash, (sidebar.x0, sidebar.y0,
-                               sidebar.x0 + sidebar.width,
-                               sidebar.y0 + sidebar.height),
-                        22, spread=14, strength=0.16)
+            # ChatGPT's page: plain white, structure from hairlines and
+            # surface tone rather than shadows or a coloured wash.
+            wash = np.full((total_h, total_w, 3), C_BG, np.uint8)
             sidebar.paint_card(wash)
             wash_have = wash_key
             canvas = None
@@ -16170,21 +19353,22 @@ def main():
         video_rect = (video_x, video_y, video_x + w, video_y + h)
         canvas[video_y:video_y + h, video_x:video_x + w] = frame
         round_video_corners(canvas, wash, video_x, video_y, w, h)
-        rounded_rect(canvas, video_rect, 22, C_BORDER, 1)
+        rounded_rect(canvas, video_rect, VIDEO_RADIUS, C_BORDER, 1)
 
         camera_dd.draw(canvas, f"Cam {cam_mgr.current_index()}",
                        hover=camera_dd.contains(mx, my))
         settings_button.draw(canvas, hover=settings_button.contains(mx, my))
         draw_text(canvas, f"{CONFIG.n_cols}x{CONFIG.n_rows} grid   "
                           f"Vision AI: {vision.status()}",
-                  (206, 34), 0.44, C_TEXT_DIM, 1)
+                  (206, 34), 0.52, C_TEXT_FAINT, 1)
 
         typed = f"{state.typed_col or '--'}{state.typed_row if state.typed_row else ''}"
-        chip_w = max(96, text_size(typed, 0.5, 2)[0] + 60)
-        chip = (total_w - 160 - chip_w, 12, total_w - 156, 44)
-        rounded_rect(canvas, chip, 16, C_ACCENT_SO, -1)
-        draw_text(canvas, "Target", (chip[0] + 16, 33), 0.42, C_ACCENT, 1)
-        draw_text(canvas, typed, (chip[0] + 74, 33), 0.5, C_ACCENT, 2)
+        chip_w = max(104, text_size(typed, 0.56, 1, weight=600)[0] + 86)
+        chip = (total_w - 116 - chip_w, 6, total_w - 116, 50)
+        css_rect(canvas, chip, (chip[3] - chip[1]) / 2.0, C_CARD_SOFT)
+        draw_text(canvas, "Target", (chip[0] + 16, 33), 0.56, C_TEXT_DIM, 1)
+        draw_text(canvas, typed, (chip[0] + 72, 33), 0.56, C_TEXT, 1,
+                  weight=600)
 
         sidebar.draw(canvas, state, runner, sim, (mx, my), shadow=False,
                      card=False)
@@ -16194,8 +19378,8 @@ def main():
             print(f"[status] {last_status}", flush=True)
 
         status_y = total_h - 12
-        draw_text(canvas, state.status_message, (28, status_y), 0.44,
-                  C_TEXT_DIM, 1)
+        draw_text(canvas, state.status_message, (24, status_y), 0.48,
+                  C_TEXT_FAINT, 1)
 
         camera_dd.draw_list(canvas, cam_mgr.current_index(), (mx, my))
 
@@ -16205,8 +19389,10 @@ def main():
                   f"settings={settings_button.x0},{settings_button.y0},"
                   f"{settings_button.x1},{settings_button.y1}", flush=True)
         cv2.imshow(WINDOW_NAME, canvas)
+        if not window_tuned:
+            window_tuned = tune_window(WINDOW_NAME)
         if time.time() - startup_t < 5.0:
-            cv2.setMouseCallback(WINDOW_NAME, on_mouse)
+            set_mouse_handler(WINDOW_NAME, on_mouse)
             if sys.platform == "darwin" and NSApplication is not None:
                 try:
                     NSApplication.sharedApplication().activateIgnoringOtherApps_(True)
@@ -16220,6 +19406,15 @@ def main():
     cam_mgr.release()
     flush_embedded_state()
     cv2.destroyAllWindows()
+
+
+def board_full(state: AppState):
+    """The newest camera frame with the camera settings applied, at the
+    camera's own size -- made when something asks for it, not every frame."""
+    if state.board_full is None and state.board_src is not None:
+        raw, adjust = state.board_src
+        state.board_full = adjust.apply(raw)
+    return state.board_full
 
 
 def vision_source(state: AppState, grid: Grid):
@@ -16236,7 +19431,7 @@ def vision_source(state: AppState, grid: Grid):
     while a request is in flight.
     """
     fitted = state.board_raw if state.board_raw is not None else state.board_view
-    full = state.board_full
+    full = board_full(state)
     if fitted is None and full is None:
         return None, grid
     if full is None or fitted is None:
@@ -16519,40 +19714,52 @@ def draw_object_overlays(frame, grid: Grid, objects, show_names=True,
         label = str(o.get("name") or "object")
         tw, th = text_size(label, 0.42, 1)
         chip = (lx + 2, ly - th - 12, lx + tw + 18, ly - 2)
-        rounded_rect(frame, chip, 8, colour, -1, alpha=0.88)
+        css_rect(frame, chip, (chip[3] - chip[1]) / 2.0, colour, alpha=0.88)
         draw_text(frame, label, (lx + 10, ly - 8), 0.42, _bgr("#ffffff"), 1)
 
 
+def ink_on_white(colour):
+    """A status colour dark enough to read as words on a white pill: the
+    light ones (the amber) deepened, the rest kept."""
+    lum = 0.114 * colour[0] + 0.587 * colour[1] + 0.299 * colour[2]
+    if lum <= 140:
+        return colour
+    k = 140.0 / lum
+    return tuple(int(c * k) for c in colour)
+
+
 def draw_guidance_banner(frame, state: AppState):
-    """A big live cue over the video: which way, and how many cells."""
+    """A big live cue over the video: which way, and how many cells -- a
+    white ChatGPT pill with the cue in its colour."""
     if state.action_label is not None:
         label, colour = state.action_label
     elif state.target_col is None:
         return
     elif state.out_of_reach:
-        label, colour = "OUT OF REACH", C_AMBER
+        label, colour = "Out of reach", C_RED
     elif state.arrived:
-        label, colour = "ARRIVED", C_GREEN
+        label, colour = "Arrived", C_GREEN
     elif state.guide_dir:
-        label = (f"{ARROWS[state.guide_dir]}  {state.guide_dir.upper()} "
+        label = (f"{ARROWS[state.guide_dir]}  {state.guide_dir.capitalize()} "
                  f"x{state.guide_steps}")
         if state.guide_slow:
-            label += "  SLOW"
-        colour = C_AMBER if state.guide_slow else C_ACCENT
+            label += "  slow"
+        colour = C_AMBER if state.guide_slow else C_OVERLAY
     elif state.tag_visible and state.tag_on_grid:
-        label, colour = "CENTER TAG", C_AMBER
+        label, colour = "Center tag", C_AMBER
     elif state.last_tag_col is None:
-        label, colour = "SHOW THE TAG", C_TEXT_DIM
+        label, colour = "Show the tag", C_TEXT_DIM
     else:
-        label, colour = "TAG LOST", C_TEXT_DIM
+        label, colour = "Tag lost", C_TEXT_DIM
 
+    label = display_label(label)
     fw = frame.shape[1]
-    tw = text_size(label, 1.1, 3)[0]
-    bw = tw + 72
-    rect = ((fw - bw) // 2, 18, (fw + bw) // 2, 88)
-    glass_card(frame, rect, 35, alpha=0.55)
-    rounded_rect(frame, rect, 35, colour, 2)
-    draw_text_centred(frame, label, rect, 1.1, colour, 3)
+    tw = text_size(label, 1.0, 1, weight=600)[0]
+    bw = tw + 64
+    rect = ((fw - bw) // 2, 18, (fw + bw) // 2, 78)
+    glass_card(frame, rect, 30)
+    draw_text_centred(frame, label, rect, 1.0, ink_on_white(colour), 1,
+                      weight=600)
 
 
 def draw_sim_overlay(frame, grid: Grid, sim):
@@ -16602,117 +19809,179 @@ def draw_sim_overlay(frame, grid: Grid, sim):
         draw_text(frame, sim.cell, (px - w // 2, int(py + r) + 22), 0.5,
                   colour, 1)
 
-    label = sim.label or "Simulating..."
-    label = f"SIMULATION  -  {label}"
+    label = display_label(sim.label or "Simulating...")
+    label = f"Simulation  -  {label}"
     if SIM_SPEED != 1.0:
         label += f"   -   {SIM_SPEED:g}x"
-    tw = text_size(label, 0.6, 2)[0]
-    bw = tw + 60
-    rect = ((fw - bw) // 2, fh - 82, (fw + bw) // 2, fh - 30)
-    glass_card(frame, rect, 26, alpha=0.55)
-    rounded_rect(frame, rect, 26, colour, 2)
-    draw_text_centred(frame, label, rect, 0.6, colour, 2)
+    tw = text_size(label, 0.6, 1, weight=600)[0]
+    bw = tw + 56
+    rect = ((fw - bw) // 2, fh - 80, (fw + bw) // 2, fh - 32)
+    glass_card(frame, rect, 24)
+    draw_text_centred(frame, label, rect, 0.6, ink_on_white(colour), 1,
+                      weight=600)
+
+
+DIALOG_RADIUS = 32         # dialogs and panels
+POPOVER_RADIUS = 24        # menus and popovers
+
+
+def dialog_rect(frame, width, height):
+    """Where a ChatGPT dialog `width` x `height` sits: centred, never wider
+    than the frame less 16px a side."""
+    fh, fw = frame.shape[:2]
+    width = min(width, fw - 32)
+    return ((fw - width) // 2, (fh - height) // 2,
+            (fw + width) // 2, (fh + height) // 2)
+
+
+def dialog_backdrop(frame):
+    """ChatGPT's modal backdrop: 10% black over what is behind."""
+    cv2.convertScaleAbs(frame, frame, 0.9, 0)
+
+
+DIALOG_INSET = 25        # its 1px border, then 24px of padding
+
+
+def dialog_title(frame, rect, title):
+    """A dialog's title: 20px semibold on a 30px line."""
+    draw_text(frame, title, (rect[0] + DIALOG_INSET,
+                             rect[1] + DIALOG_INSET + css_baseline(20, 30)),
+              0.8, C_TEXT, 1, weight=600)
+
+
+def dialog_body(frame, rect, lines, top=DIALOG_INSET + 38):
+    """A dialog's text: 15px grey on 22.5px lines, 8px under the title."""
+    for i, line in enumerate(lines):
+        draw_text(frame, line, (rect[0] + DIALOG_INSET, rect[1] + top + i * 22.5
+                                + css_baseline(15, 22.5)), 0.6, C_TEXT_DIM, 1)
+
+
+def dialog_buttons(frame, rect, specs):
+    """ChatGPT's dialog footer: pills sized to their labels, right-aligned
+    8px apart, 24px in from the card's bottom-right corner. `specs` lists
+    (label, kind, style) left to right; returns their rects in that order."""
+    x0, y0, x1, y1 = rect
+    right, rects = x1 - DIALOG_INSET, []
+    for label, kind, style in reversed(specs):
+        w = max(64, round(button_width(label, outlined=style != "primary")))
+        b = Button(label, right - w, y1 - DIALOG_INSET - 44, right,
+                   y1 - DIALOG_INSET, kind, style=style, scale=0.56)
+        b.draw(frame, shadow=False)
+        rects.append((b.x0, b.y0, b.x1, b.y1))
+        right -= w + 8
+    return rects[::-1]
+
+
+def popup_cross_rect(rect):
+    """Where a card's close button goes: its top-right corner."""
+    x0, y0, x1, y1 = rect
+    return (x1 - 48, y0 + 14, x1 - 16, y0 + 46)
 
 
 def popup_cross(frame, rect):
-    x0, y0, x1, y1 = rect
-    button = Button("X", x1 - 42, y0 + 8, x1 - 10, y0 + 40,
-                    "popup_close", scale=0.46)
+    button = Button("X", *popup_cross_rect(rect), "popup_close",
+                    style="text", scale=0.46)
     button.draw(frame, shadow=False)
     return (button.x0, button.y0, button.x1, button.y1)
 
 
+def _countdown_dialog(frame, seconds_left):
+    """The hand-off dialog's title and rect, for drawing it and for
+    hit-testing its close button without drawing."""
+    title = f"Executing physically in {max(0, math.ceil(seconds_left))}s..."
+    width = max(380, text_size(title, 0.8, 1, weight=600)[0] + 50 + 48)
+    return title, dialog_rect(frame, width, 2 * DIALOG_INSET + 30 + 24 + 44)
+
+
 def countdown_cross_rect(frame, seconds_left):
-    text = f"Executing physically in {max(0, math.ceil(seconds_left))}s..."
-    fh, fw = frame.shape[:2]
-    bw = max(text_size(text, 0.8, 2)[0] + 96, 320)
-    return ((fw + bw) // 2 - 42, (fh - 150) // 2 + 8,
-            (fw + bw) // 2 - 10, (fh - 150) // 2 + 40)
+    return popup_cross_rect(_countdown_dialog(frame, seconds_left)[1])
 
 
 def draw_sim_popup(frame, text: str):
-    """S1-SRC's centred pop-up -- the unstacker stages, and the hand-off."""
+    """S1-SRC's centred pop-up -- the unstacker stages, and the hand-off --
+    as a ChatGPT dialog: the one line, and a close button."""
     if not text:
         return
-    fh, fw = frame.shape[:2]
-    tw = text_size(text, 0.86, 2)[0]
-    bw, bh = tw + 96, 104
-    rect = ((fw - bw) // 2, (fh - bh) // 2, (fw + bw) // 2, (fh + bh) // 2)
-    drop_shadow(frame, rect, 26, spread=14, strength=0.22)
-    glass_card(frame, rect, 26, alpha=0.75)
-    rounded_rect(frame, rect, 26, C_ACCENT, 2)
-    draw_text_centred(frame, text, rect, 0.86, C_TEXT, 2)
+    tw = text_size(text, 0.64, 1, weight=500)[0]
+    rect = dialog_rect(frame, tw + 48 + 48, 88)
+    glass_card(frame, rect, DIALOG_RADIUS)
+    draw_text(frame, text, (rect[0] + 24, rect[1] + 50), 0.64, C_TEXT, 1,
+              weight=500)
     return popup_cross(frame, rect)
 
 
+def draw_prep_popup(frame, tag_line, seen):
+    """The big pop-up before a task: jaws were just opened (g0); line the
+    gripper up with the joystick and make the AprilTag visible. -> (Start rect,
+    Cancel rect)."""
+    rect = dialog_rect(frame, 760, 300)
+    glass_card(frame, rect, DIALOG_RADIUS)
+    dialog_title(frame, rect, "We are about to start the task.")
+    x = rect[0] + DIALOG_INSET
+    draw_text(frame, "Adjust the gripper with the joystick.", (x, rect[1] + 100),
+              0.78, C_TEXT, 1, weight=500)
+    draw_text(frame, "The gripper has been opened (g0).", (x, rect[1] + 136),
+              0.56, C_TEXT_DIM, 1)
+    draw_text(frame, tag_line, (x, rect[1] + 176), 0.62,
+              C_GREEN if seen else C_RED, 1, weight=500)
+    cancel, start = dialog_buttons(frame, rect, [("Cancel", "prep_cancel", "ghost"),
+                                                 ("Start", "prep_start", "primary")])
+    return start, cancel
+
+
 def draw_exec_countdown_popup(frame, seconds_left: float) -> tuple:
-    """The hand-off popup, with a live countdown and a way to stop it.
+    """The hand-off dialog, with a live countdown and a way to stop it.
 
     Physical execution starts on its own when the countdown reaches zero --
-    CANCEL (or Esc) is the only thing standing in its way. Returns the
-    CANCEL button's rect, in this frame's own pixels, for the caller to
+    Cancel (or Esc) is the only thing standing in its way. Returns the
+    Cancel button's rect, in this frame's own pixels, for the caller to
     hit-test in on_mouse the same way every other panel here does.
     """
-    secs = max(0, math.ceil(seconds_left))
-    text = f"Executing physically in {secs}s..."
-    fh, fw = frame.shape[:2]
-    tw = text_size(text, 0.8, 2)[0]
-    bw, bh = max(tw + 96, 320), 150
-    rect = ((fw - bw) // 2, (fh - bh) // 2, (fw + bw) // 2, (fh + bh) // 2)
-    x0, y0, x1, y1 = rect
-    drop_shadow(frame, rect, 26, spread=14, strength=0.22)
-    glass_card(frame, rect, 26, alpha=0.75)
-    rounded_rect(frame, rect, 26, C_ACCENT, 2)
-    draw_text_centred(frame, text, (x0, y0 + 14, x1, y0 + 74), 0.8, C_TEXT, 2)
-    btn_w = 150
-    cancel_btn = Button("CANCEL", x0 + (bw - btn_w) // 2, y1 - 60,
-                        x0 + (bw - btn_w) // 2 + btn_w, y1 - 20, "cancel_exec")
-    cancel_btn.draw(frame, shadow=False)
+    title, rect = _countdown_dialog(frame, seconds_left)
+    dialog_backdrop(frame)
+    glass_card(frame, rect, DIALOG_RADIUS)
+    dialog_title(frame, rect, title)
+    (cancel,) = dialog_buttons(frame, rect, [("Cancel", "cancel_exec", "ghost")])
     popup_cross(frame, rect)
-    return (cancel_btn.x0, cancel_btn.y0, cancel_btn.x1, cancel_btn.y1)
+    return cancel
 
 
 def draw_step_fail_popup(frame, fail, seconds_left) -> tuple:
-    """A step failed its check mid-run: CONTINUE ANYWAY or REPLAN. The
-    default one (accent) happens on its own when `seconds_left` runs out;
-    None means no countdown -- wait for a click. Returns (continue_rect,
-    replan_rect) in this frame's own pixels."""
+    """A step failed its check mid-run: Continue anyway or Replan, as a
+    ChatGPT dialog. The default one (the black button) happens on its own
+    when `seconds_left` runs out; None means no countdown -- wait for a
+    click. Returns (continue_rect, replan_rect) in this frame's pixels."""
     replan_first = fail.get("default") == "replan"
     title = fail.get("title") or "A step went wrong"
-    fh, fw = frame.shape[:2]
-    bw = min(max(540, text_size(title, 0.78, 2)[0] + 96), fw - 32)
-    lines = wrap_text(fail.get("reason") or "No reason given.", bw - 72, 0.52)[:3]
+    width = max(460, text_size(title, 0.8, 1, weight=600)[0] + 50 + 48)
+    width = min(width, frame.shape[1] - 32)
+    lines = wrap_text(fail.get("reason") or "No reason given.", width - 48,
+                      0.6)[:3]
     if seconds_left is None:
         foot = "Choose how to go on."
     else:
         secs = max(0, math.ceil(seconds_left))
         foot = (f"Replanning from this step in {secs}s..." if replan_first
                 else f"Carrying on in {secs}s...")
-    bh = 60 + 26 * len(lines) + 40 + 64
-    rect = ((fw - bw) // 2, (fh - bh) // 2, (fw + bw) // 2, (fh + bh) // 2)
+    # border + padding, a 30px title, 8px, the reason, 8px, the countdown,
+    # 24px, 44px buttons, padding + border
+    rect = dialog_rect(frame, width, int(2 * DIALOG_INSET + 30 + 8
+                                         + 22.5 * (len(lines) + 1) + 8
+                                         + 24 + 44 + 0.5))
     x0, y0, x1, y1 = rect
-    drop_shadow(frame, rect, 26, spread=14, strength=0.22)
-    glass_card(frame, rect, 26, alpha=0.78)
-    rounded_rect(frame, rect, 26, C_RED if replan_first else C_AMBER, 2)
-    draw_text_centred(frame, title, (x0, y0 + 14, x1, y0 + 56), 0.78, C_TEXT, 2)
-    y = y0 + 58
-    for line in lines:
-        draw_text_centred(frame, line, (x0 + 28, y, x1 - 28, y + 26), 0.52,
-                          C_TEXT_DIM, 1)
-        y += 26
-    draw_text_centred(frame, foot, (x0, y + 6, x1, y + 36), 0.56, C_TEXT, 1)
-    btn_w = (bw - 64 - 16) // 2
-    by0, by1 = y1 - 62, y1 - 18
-    cont = Button("Continue anyway", x0 + 32, by0, x0 + 32 + btn_w, by1,
-                  "step_fail_continue",
-                  style="ghost" if replan_first else "accent", scale=0.56)
-    repl = Button("Replan", x1 - 32 - btn_w, by0, x1 - 32, by1,
-                  "step_fail_replan",
-                  style="accent" if replan_first else "ghost", scale=0.56)
-    cont.draw(frame, shadow=False)
-    repl.draw(frame, shadow=False)
-    return ((cont.x0, cont.y0, cont.x1, cont.y1),
-            (repl.x0, repl.y0, repl.x1, repl.y1))
+    dialog_backdrop(frame)
+    glass_card(frame, rect, DIALOG_RADIUS)
+    dialog_title(frame, rect, title)
+    dialog_body(frame, rect, lines)
+    draw_text(frame, foot, (x0 + DIALOG_INSET,
+                            y0 + DIALOG_INSET + 38 + 22.5 * len(lines) + 8
+                            + css_baseline(15, 22.5)), 0.6, C_TEXT, 1,
+              weight=600)
+    cont, repl = dialog_buttons(frame, rect, [
+        ("Continue anyway", "step_fail_continue",
+         "ghost" if replan_first else "primary"),
+        ("Replan", "step_fail_replan", "primary" if replan_first else "ghost")])
+    return cont, repl
 
 
 def draw_missing_popup(frame, names) -> tuple:
@@ -16721,30 +19990,26 @@ def draw_missing_popup(frame, names) -> tuple:
     (done_rect, cancel_rect) in this frame's own pixels, for on_mouse to
     hit-test the same way every other panel here does.
 
-    DONE is the big, primary action (add the object, then restart the same
-    task from scratch); CANCEL is a small X cross, not a text button, so it
-    is never mistaken for the expected next step.
+    Done is the dialog's one button, the primary action (add the object,
+    then restart the same task from scratch); cancelling is the close
+    button, so it is never mistaken for the expected next step.
     """
     what = ", ".join(names) if names else "the missing object"
-    line1 = "Add this object"
-    line2 = f"({what}), then press Done to try again."
-    fh, fw = frame.shape[:2]
-    tw = max(text_size(line1, 0.9, 2)[0], text_size(line2, 0.62, 1)[0])
-    bw, bh = max(tw + 96, 360), 190
-    rect = ((fw - bw) // 2, (fh - bh) // 2, (fw + bw) // 2, (fh + bh) // 2)
-    x0, y0, x1, y1 = rect
-    drop_shadow(frame, rect, 26, spread=14, strength=0.22)
-    glass_card(frame, rect, 26, alpha=0.78)
-    rounded_rect(frame, rect, 26, C_ACCENT, 2)
-    draw_text_centred(frame, line1, (x0, y0 + 16, x1, y0 + 58), 0.9, C_TEXT, 2)
-    draw_text_centred(frame, line2, (x0, y0 + 58, x1, y0 + 92), 0.62, C_TEXT, 1)
-    done_w = 190
-    done_btn = Button("Done", x0 + (bw - done_w) // 2, y1 - 66,
-                      x0 + (bw - done_w) // 2 + done_w, y1 - 20,
-                      "missing_popup_done", style="accent", scale=0.72)
-    done_btn.draw(frame, shadow=False)
+    title = "Add this object"
+    width = max(420, text_size(title, 0.8, 1, weight=600)[0] + 50 + 48)
+    width = min(width, frame.shape[1] - 32)
+    lines = wrap_text(f"Needed: {what}. Put it on the board, then press "
+                      f"Done to try again.", width - 48, 0.6)[:3]
+    rect = dialog_rect(frame, width, int(2 * DIALOG_INSET + 30 + 8
+                                         + 22.5 * len(lines) + 24 + 44 + 0.5))
+    dialog_backdrop(frame)
+    glass_card(frame, rect, DIALOG_RADIUS)
+    dialog_title(frame, rect, title)
+    dialog_body(frame, rect, lines)
+    (done,) = dialog_buttons(frame, rect,
+                             [("Done", "missing_popup_done", "primary")])
     cancel_rect = popup_cross(frame, rect)
-    return ((done_btn.x0, done_btn.y0, done_btn.x1, done_btn.y1), cancel_rect)
+    return (done, cancel_rect)
 
 
 def run_single_file_self_test():
@@ -16929,8 +20194,11 @@ def run_single_file_self_test():
         check_top(wrap_text(_t, 180, 0.42) == _wrap_text(_t, 180, 0.42)
                   and wrap_text(_t, 180, 0.42) == wrap_text(_t, 180, 0.42),
                   f"memoised wrap_text differs for {_t[:20]!r}")
-        check_top(wrap_editable(_t, 180, 0.44) == _wrap_editable(_t, 180, 0.44),
-                  f"memoised wrap_editable differs for {_t[:20]!r}")
+        check_top(a3_wrap_editable(_t, 180) == _a3_wrap_editable(_t, 180),
+                  f"memoised a3_wrap_editable differs for {_t[:20]!r}")
+        check_top("".join(_t[a:b] for a, b in a3_wrap_editable(_t, 52))
+                  == _t.replace("\n", ""),
+                  f"the message box's wrap lost characters of {_t[:20]!r}")
         _slow = _t
         if text_size(_slow, 0.4, 1)[0] > 120:
             while _slow and text_size(_slow + "...", 0.4, 1)[0] > 120:
@@ -16990,10 +20258,71 @@ def run_single_file_self_test():
     finally:
         (_g["GRIPPER_OFFSET_UP_DOWN"], _g["GRIPPER_OFFSET_RIGHT_LEFT"],
          CONFIG.n_rows, CONFIG.n_cols) = _off
+    # -- the camera frame is scaled once, straight to the window's size
+    _raw = np.random.default_rng(5).integers(0, 256, (360, 640, 3), dtype=np.uint8)
+    _raw = cv2.GaussianBlur(_raw, (0, 0), 3)
+    for _cs in (CameraSettings(), CameraSettings(zoom=1.1),
+                CameraSettings(zoom=1.4, rotation=90, mirror=True),
+                CameraSettings(contrast=1.3, brightness=12, saturation=1.2,
+                               sharpness=0.5)):
+        for _aw, _ah in ((640, 360), (500, 400), (200, 300)):
+            _old = fit_frame(_cs.apply(_raw), _aw, _ah)
+            _new = _cs.fitted(_raw, _aw, _ah)
+            check_top(_new.shape == _old.shape and _new is not _raw
+                      and not np.shares_memory(_new, _raw)
+                      and float(np.abs(_new.astype(int) - _old.astype(int)).mean()) < 3.0,
+                      f"fitted() is not apply()+fit_frame() for {_cs} at "
+                      f"{_aw}x{_ah}: {_new.shape} vs {_old.shape}")
+        check_top(_cs.full_size(_raw)[::-1] == _cs.apply(_raw).shape[:2],
+                  f"full_size() is not apply()'s size for {_cs}")
+    _bs = AppState()
+    _bs.board_src = (_raw, CameraSettings(zoom=1.1))
+    check_top(np.array_equal(board_full(_bs), CameraSettings(zoom=1.1).apply(_raw))
+              and board_full(_bs) is board_full(_bs),
+              "board_full() did not make the full adjusted frame once")
+
+    # -- the AprilTag: near the last sighting first, the same corners
+    _td = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_APRILTAG_36h11)
+    _tagimg = cv2.copyMakeBorder(cv2.aruco.generateImageMarker(_td, 0, 64),
+                                 10, 10, 10, 10, cv2.BORDER_CONSTANT, value=255)
+
+    def _tagframe(x, y):
+        f = np.full((450, 800, 3), (150, 190, 215), np.uint8)
+        f[y:y + _tagimg.shape[0], x:x + _tagimg.shape[1]] = _tagimg[..., None]
+        return f
+
+    _tt = TagTracker.__new__(TagTracker)
+    _tt.detector = AprilTagDetector()
+    _f1 = _tagframe(300, 200)
+    _c1, _i1 = _tt.find(_f1)
+    _w1 = _tt._window(_f1.shape[:2])
+    check_top(_i1 is not None and _w1 is not None
+              and (_w1[2] - _w1[0]) * (_w1[3] - _w1[1]) <= 0.5 * 800 * 450,
+              f"no search window after a sighting: {_w1}")
+    _f2 = _tagframe(330, 215)
+    _c2, _i2 = _tt.find(_f2)
+    _cf, _if = AprilTagDetector().detect(_f2)
+    check_top(_i2 is not None and np.abs(_c2[0] - _cf[0]).max() < 1e-3,
+              "the window found the tag somewhere else than the whole frame does")
+    _f3 = _tagframe(650, 20)
+    _c3, _i3 = _tt.find(_f3)
+    _cf3, _ = AprilTagDetector().detect(_f3)
+    check_top(_i3 is not None and np.abs(_c3[0] - _cf3[0]).max() < 1e-3,
+              "a tag that jumped out of the window was not found in the whole frame")
+    _tt.find(np.full((450, 800, 3), 200, np.uint8))
+    check_top(_tt._window((450, 800)) is None,
+              "the search window outlived the tag")
+    _c4, _i4 = _tt.find(_f1)
+    check_top(_i4 is None, "a lost tag was searched for again at once")
+    _tt._search_after = 0.0
+    _c5, _i5 = _tt.find(_f1)
+    check_top(_i5 is not None, "a lost tag was not found again after the wait")
+
     _lv2 = LiveVision()
     _lv2._thread = object()
     _lv2.submit(_vframe, (0, 0, 10, 10), None, region=(1, 2, 3, 4))
-    check_top(_lv2._pending[3] == (1.0, 2.0, 3.0, 4.0),
+    check_top(_lv2._pending[3] == (1.0, 2.0, 3.0, 4.0)
+              and _lv2._pending[4] is None,
               "LiveVision.submit dropped the reachable region")
     _lv2.submit(_vframe, (0, 0, 10, 10), None, region=NO_REACH)
     check_top(_lv2._pending[3] == NO_REACH, "NO_REACH did not reach the feeder")
@@ -17009,6 +20338,139 @@ def run_single_file_self_test():
     check_top(not any(hasattr(_x, _a) for _x in (ObjectNamer, LiveVision)
                       for _a in ("auto", "prefetch", "prepare_names")),
               "something still names objects outside a task or the N key")
+
+    # -- a new task names only what is new on the board: things the tracker
+    # re-numbered (covered, moved) keep their names, with no naming call
+    _rf = np.full((1000, 1000, 3), 200, np.uint8)
+    _rcalls = []
+
+    def _rshape(x0, y0, x1, y1, bgr):
+        cv2.rectangle(_rf, (x0, y0), (x1, y1), bgr, -1)
+        return _square(x0, y0, x1, y1)
+
+    def _rsnap(objs, ids):
+        return {"frame": _rf.copy(), "box": _board, "objects": objs,
+                "ids": ids, "parents": find_parents(objs)}
+
+    def _fake_names(model, images, prompt, n):
+        _rcalls.append(n)
+        return {k: {"name": f"thing{len(_rcalls)}.{k}", "color": "",
+                    "desc": "", "robot": False, "loose": False}
+                for k in range(1, n + 1)}
+
+    class _RVision:
+        failed = ""
+
+        def __init__(self):
+            self.namer = ObjectNamer()
+            self.snap = None
+
+        def snapshot(self, timeout=0, on_wait=None):
+            return self.snap
+
+    _gr = globals()
+    _rwas = (_gr["ask_for_names"], _gr["resolve_api_key"])
+    _gr["ask_for_names"], _gr["resolve_api_key"] = _fake_names, lambda: "test"
+    try:
+        _rv = _RVision()
+
+        def _rtask(objs, ids):
+            _rv.snap = _rsnap(objs, ids)
+            _rj = AIJob(None, "tidy up", vision=_rv)
+            _rj._read_board()
+            return _rj
+
+        _rf[:] = 200
+        _ra = _rshape(150, 150, 350, 350, (40, 40, 200))       # red square
+        _rb = _rshape(500, 200, 800, 320, (200, 80, 30))       # blue bar
+        _rc = _rshape(200, 500, 400, 700, (40, 160, 40))       # green box...
+        _rl = _rshape(260, 560, 300, 600, (240, 240, 240))     # ...its logo
+        _j1 = _rtask([_ra, _rb, _rc, _rl], [1, 2, 3, 4])
+        _rn = dict(_rv.namer.names)
+        check_top(_rcalls == [4] and not _j1.nothing_new,
+                  f"the first task did not name the board once: {_rcalls}")
+        # all four lost and found again in place (the gripper covered them)
+        _j2 = _rtask([_ra, _rb, _rc, _rl], [5, 6, 7, 8])
+        check_top(_rcalls == [4] and _j2.nothing_new,
+                  f"re-numbered outlines in place were named again: {_rcalls}")
+        check_top([_rv.namer.names.get(t) for t in (5, 6, 7, 8)]
+                  == [_rn[t] for t in (1, 2, 3, 4)],
+                  "re-numbered outlines did not keep their names")
+        # the robot moved the bar, and the box with its logo
+        _rf[:] = 200
+        _ra = _rshape(150, 150, 350, 350, (40, 40, 200))
+        _rb2 = _rshape(550, 750, 850, 870, (200, 80, 30))
+        _rc2 = _rshape(600, 350, 800, 550, (40, 160, 40))
+        _rl2 = _rshape(660, 410, 700, 450, (240, 240, 240))
+        _j3 = _rtask([_ra, _rb2, _rc2, _rl2], [5, 9, 10, 11])
+        check_top(_rcalls == [4] and _j3.nothing_new,
+                  f"moved objects were named again: {_rcalls}")
+        check_top([_rv.namer.names.get(t) for t in (9, 10, 11)]
+                  == [_rn[t] for t in (2, 3, 4)],
+                  "moved objects (or a part that moved with one) lost their names")
+        # something new: named on its own, the rest kept
+        _rd = _rshape(120, 740, 260, 880, (30, 200, 220))      # yellow sponge
+        _j4 = _rtask([_ra, _rb2, _rc2, _rl2, _rd], [5, 9, 10, 11, 12])
+        check_top(_rcalls == [4, 1] and not _j4.nothing_new
+                  and _rv.namer.names.get(12) == "thing2.1",
+                  f"a new object was not named on its own: {_rcalls}")
+        # a different object where an old one was is new, not the old one
+        _rf[150:351, 150:351] = 200
+        _ra2 = _rshape(150, 150, 350, 350, (200, 80, 30))      # now blue
+        _rtask([_ra2, _rb2, _rc2, _rl2, _rd], [13, 9, 10, 11, 12])
+        check_top(_rcalls == [4, 1, 1] and _rv.namer.names.get(13) == "thing3.1",
+                  f"a new object where an old one stood took its name: {_rcalls}")
+        # two look-alikes both moved: which is which is unknown -> named
+        _re1 = _rshape(420, 120, 500, 200, (150, 40, 150))
+        _re2 = _rshape(800, 120, 880, 200, (150, 40, 150))
+        _rtask([_ra2, _rb2, _rc2, _rl2, _rd, _re1, _re2],
+               [13, 9, 10, 11, 12, 14, 15])
+        _rf[120:201, 420:501] = 200
+        _rf[120:201, 800:881] = 200
+        _re3 = _rshape(420, 600, 500, 680, (150, 40, 150))
+        _re4 = _rshape(800, 600, 880, 680, (150, 40, 150))
+        _rtask([_ra2, _rb2, _rc2, _rl2, _rd, _re3, _re4],
+               [13, 9, 10, 11, 12, 16, 17])
+        check_top(_rcalls == [4, 1, 1, 2, 2],
+                  f"two moved look-alikes were guessed apart: {_rcalls}")
+        # a free-standing object now lying in another (the robot dropped it
+        # in) is a loose thing there, not a part of it
+        _lo = ObjectNamer()
+        _lo.names, _lo.asked = {1: "tray", 2: "sock"}, {1, 2}
+        _lo.info = {2: {"color": "black", "desc": "", "robot": False,
+                        "loose": False}}
+        _rf[:] = 200
+        _rt = _rshape(150, 150, 450, 450, (60, 150, 60))
+        _rs = _rshape(600, 600, 700, 660, (30, 30, 30))
+        _lo.remember(_rsnap([_rt, _rs], [1, 2]))
+        _rf[:] = 200
+        _rt = _rshape(150, 150, 450, 450, (60, 150, 60))
+        _rs2 = _rshape(250, 250, 350, 310, (30, 30, 30))
+        check_top(_lo.recall(_rsnap([_rt, _rs2], [1, 3])) == {3: 2}
+                  and _lo.names.get(3) == "sock"
+                  and _lo.info[3]["loose"] is True
+                  and _lo.info[2]["loose"] is False,
+                  f"a sock dropped in a tray was not a loose thing there: "
+                  f"{_lo.info.get(3)}")
+        # an outline the model called "unknown" stays unknown, unasked
+        _un2 = ObjectNamer()
+        _un2.asked = {1}
+        _un2.remember(_rsnap([_ra2], [1]))
+        check_top(_un2.recall(_rsnap([_ra2], [2])) == {2: 1}
+                  and _un2.unanswered([2]) == [] and 2 not in _un2.names,
+                  "a re-numbered 'unknown' outline was not left unknown")
+        # another camera size: nothing from before can be the same
+        _big = _rsnap([_ra2], [3])
+        _big["frame"] = np.zeros((720, 1280, 3), np.uint8)
+        check_top(_un2.recall(_big) == {},
+                  "outlines were recalled across a camera size change")
+        check_top("(nothing new, names kept)" in vision_report_text(
+                      [{"name": "cup", "center": "C3"}], nothing_new=True)
+                  and "nothing new" not in vision_report_text(
+                      [{"name": "cup", "center": "C3"}]),
+                  "the transcript does not say when nothing new was named")
+    finally:
+        _gr["ask_for_names"], _gr["resolve_api_key"] = _rwas
 
     # -- priority mode: naming asks for the priority tier, falls back cleanly
     _calls = []
@@ -17062,8 +20524,244 @@ def run_single_file_self_test():
                   "the bristle HEAD is the WIDER",
                   "An absent part is never missing",
                   "never write MISSING for it",
-                  "the machine's\nCENTER is the drum"):
+                  "the machine's\nCENTER is the drum",
+                  "A LISTED part is exactly where its bracketed cells are",
+                  "A. TRAY LISTED - its bracketed cells ARE the tray",
+                  "SMALLEST margin",
+                  "B. NO TRAY LISTED",
+                  "never a reason\nto stop",
+                  "are NOT such limitations",
+                  "are ONE object",
+                  "Its cells ARE the bristle\nfootprint"):
         check_top(_want in _sys, f"the planner prompt lost {_want!r}")
+    check_top("Vision outlines the dustpan as ONE shape" not in _sys
+              and "does not mark its head" not in _sys,
+              "the planner prompt still says vision never outlines a part")
+    # a part's own cells reach the planner
+    _pan = {"name": "dustpan", "center": "P6", "touches": "N4-R4,N5-R5,N6-R6,N7-R7,N8-R8",
+            "color": "red", "size": "medium", "desc": "plastic dustpan",
+            "components": [{"name": "tray", "center": "O6",
+                            "touches": "N5,O5,P5,N6-P6,N7-P7"},
+                           {"name": "logo", "center": "R8", "touches": "R8"}]}
+    _pl = obj_to_line(_pan)
+    check_top("COMPONENTS: tray@O6 [N5-P5,N6-P6,N7-P7]; logo@R8 [R8]" in _pl,
+              f"a part's cells did not reach the planner: {_pl}")
+    _np = naming_prompt(2, [None, "1"], VISION_SCENE_HINT)
+    check_top('"tray"' in _np and '"bristles"' in _np and '"thing"' in _np
+              and "its OWN outline" in _np,
+              "the naming prompt does not ask for the part names the planner reads")
+    _gt = parse_naming_reply('{"objects": [{"n": 1, "name": "handle", "thing": '
+                             '"Hand Brush"}, {"n": 2, "name": "bristles"}]}', 2)
+    check_top(_gt[1]["thing"] == "hand brush" and _gt[2]["thing"] == "",
+              f"the naming reply's thing was not read: {_gt}")
+    check_top("A listed LIP" in _sys and "seen as N pieces" in _sys,
+              "the planner prompt lost the joined pieces or the listed lip")
+    # pieces of one thing become one object; a lone piece keeps its thing
+    _jf = np.full((1000, 1000, 3), 200, np.uint8)
+    _jo = [_square(200, 300, 420, 340), _square(420, 280, 560, 380),
+           _square(700, 700, 760, 760), _square(560, 300, 620, 360),
+           _square(140, 305, 200, 335)]
+    _jn = ObjectNamer()
+    _jn.names = {1: "hand brush", 2: "bristles", 3: "lip", 4: "brush tip",
+                 5: "handle"}
+    _jn.info = {1: {"thing": ""}, 2: {"thing": "hand brush"},
+                3: {"thing": "dustpan"}, 4: {"thing": ""}, 5: {"thing": ""}}
+    _js = {"frame": _jf, "box": _board, "objects": _jo, "ids": [1, 2, 3, 4, 5],
+           "parents": find_parents(_jo)}
+    _jl = {o["name"]: o for o in planner_objects(_js, _jn, _vgrid)}
+    # a floor line tagged as a piece but only crossing under the brush stays
+    # out; a dustpan's body meeting its lip at one corner joins
+    _sf = np.full((1000, 1000, 3), 200, np.uint8)
+    _so = [_square(200, 200, 420, 260), _square(420, 180, 560, 300),
+           _square(405, 240, 412, 600),
+           _square(600, 600, 760, 700), _square(600, 700, 760, 720),
+           _square(560, 560, 600, 600)]
+    _sn = ObjectNamer()
+    _sn.names = {1: "handle", 2: "bristles", 3: "neck", 4: "dustpan",
+                 5: "wall", 6: "front lip"}
+    _sn.info = {1: {"thing": "brush"}, 2: {"thing": "brush"}, 3: {"thing": "brush"},
+                4: {"thing": ""}, 5: {"thing": "dustpan"}, 6: {"thing": "dustpan"}}
+    _ss = {"frame": _sf, "box": _board, "objects": _so, "ids": [1, 2, 3, 4, 5, 6],
+           "parents": find_parents(_so)}
+    _sl = {o["name"]: o for o in planner_objects(_ss, _sn, _vgrid)}
+    check_top(seam_share(_so[0], _so[1]) >= THING_SEAM
+              and seam_share(_so[0], _so[2]) < THING_SEAM,
+              f"seams measured wrong: {seam_share(_so[0], _so[1]):.3f} "
+              f"{seam_share(_so[0], _so[2]):.3f}")
+    check_top(sorted(c["name"] for c in (_sl.get("brush") or {}).get("components", []))
+              == ["bristles", "handle"] and "neck" in _sl
+              and _sl["neck"].get("name_uncertain") is True
+              and "only touches the brush" in _sl["neck"]["desc"],
+              f"a floor line crossing under the brush was joined: {sorted(_sl)}")
+    _dp = _sl.get("dustpan") or {}
+    check_top(sorted(c["name"] for c in _dp.get("components", []))
+              == ["body", "front lip", "wall"],
+              f"the dustpan's body did not join at its corner: {sorted(_sl)}")
+    check_top("opening (its front lip) faces up-left" in _dp.get("desc", ""),
+              f"the opening's direction was not measured: {_dp.get('desc')}")
+    check_top(compass(0, 1) == "down" and compass(1, 0) == "right"
+              and compass(-1, -1) == "up-left", "compass directions wrong")
+    # -- the sweep, computed: lanes across the mouth, all cells covered
+    _g = globals()
+    _rk = (_g["GRIPPER_OFFSET_UP_DOWN"], _g["GRIPPER_OFFSET_RIGHT_LEFT"],
+           CONFIG.n_rows, CONFIG.n_cols)
+    try:
+        _g["GRIPPER_OFFSET_UP_DOWN"] = _g["GRIPPER_OFFSET_RIGHT_LEFT"] = 0
+        CONFIG.n_rows = CONFIG.n_cols = 20
+        _pan = {"name": "dustpan", "center": "J5", "aka": [],
+                "mouth_geo": {"a": (7.0, 8.0), "b": (12.0, 8.0), "n": (0.0, 1.0)}}
+        _br = {"name": "hand brush", "center": "C3", "aka": [],
+               "components": [{"name": "bristles", "touches": "B4-D4"}]}
+        _rec = sweep_recipe([_pan, _br])
+        # the claw rests only just inside a cell's edge, so a stroke's side
+        # can fall up to about half a cell short at one end of the mouth
+        _miss = {(_c, _r) for _c in range(7, 12) for _r in range(8, 13)} - _rec["covered_cells"]
+        check_top(_rec and _rec.get("lines") and _rec["target"] == 25
+                  and all(_c in (7, 11) for _c, _r in _miss)
+                  and "goto_coordinate = C, 3" in _rec["lines"][0]
+                  and _rec["lines"][1] == "pickup" and _rec["lines"][-1] == "keep"
+                  and "goto_coordinate = C, 3" in _rec["lines"][-2]
+                  and not any("line up" in _l for _l in _rec["lines"])
+                  and len(_rec["lanes"]) >= 2
+                  and len({_a[0] for _a, _b in _rec["lanes"]}) == len(_rec["lanes"]),
+                  f"the computed sweep is wrong: {_rec}")
+        check_top(tuple(gantry_stop((5.5, 5.5), (7, 3))) == (7 + SWEEP_STOP_IN, 4 - SWEEP_STOP_IN)
+                  and tuple(gantry_stop((5.5, 5.5), (5, 9))) == (5.5, 9 + SWEEP_STOP_IN),
+                  "the gantry's resting point is not where it stops")
+        _rp = sweep_plan_text(_rec)
+        check_top(has_plan_actions(parse_plan_commands(_rp))
+                  and sweep_followed(_rp, _rec)
+                  and not sweep_followed("PLAN:\ngoto_coordinate = A, 1\npress\n"
+                                         "goto_coordinate = A, 2\nrelease", _rec),
+                  "a plan of the recipe is not recognised as following it")
+        check_top(enforce_gripper_targets(_rp, [_pan, _br])[1] == [],
+                  "Gripper AI shifted the recipe's claw cells")
+
+        def _straight(rec, way):
+            """Every pressed stroke is one move along one axis, `way`."""
+            step = {"up": (0, -1), "down": (0, 1), "left": (-1, 0), "right": (1, 0)}
+            for a, b in rec["lanes"]:
+                d = (b[0] - a[0], b[1] - a[1])
+                if d[0] and d[1]:
+                    return False
+            return all(((b[0] - a[0]) * step[way][0] + (b[1] - a[1]) * step[way][1]) > 0
+                       for a, b in rec["lanes"][-rec["strokes"]:])
+        check_top(_rec["axis"] == "up" and _straight(_rec, "up"),
+                  f"the strokes are not straight up into the mouth: {_rec['lanes']}")
+        # a diagonal mouth, and a reach limit that shortens the lanes
+        _pan2 = dict(_pan, mouth_geo={"a": (8.0, 10.0), "b": (12.0, 6.0),
+                                      "n": (0.7071, 0.7071)})
+        _rec2 = sweep_recipe([_pan2, _br])
+        check_top(_rec2 and _rec2.get("lines") and _rec2["covered"] >= 0.8 * _rec2["target"]
+                  and _straight(_rec2, _rec2["axis"]),
+                  f"a diagonal mouth's sweep does not cover its area: {_rec2}")
+        _n30 = (0.5, 0.866)
+        _rec30 = sweep_recipe([dict(_pan, mouth_geo={"a": (7.4, 10.1), "b": (11.7, 7.6),
+                                                     "n": _n30}), _br])
+        check_top(_rec30 and _rec30.get("lanes") and _rec30["axis"] in ("up", "left")
+                  and _straight(_rec30, _rec30["axis"]) and _rec30["covered"] >= 0.9 * _rec30["target"],
+                  f"a slanted mouth's sweep is wrong: {_rec30}")
+        _g["GRIPPER_OFFSET_UP_DOWN"] = -7
+        _pan3 = dict(_pan, mouth_geo={"a": (7.0, 10.0), "b": (12.0, 10.0), "n": (0.0, 1.0)})
+        _rec3 = sweep_recipe([_pan3, _br])
+        check_top(_rec3 and _rec3.get("lines")
+                  and all(c[1] < 13 for l in _rec3["lanes"] for c in l)
+                  and "short" in _rec3.get("note", ""),
+                  f"a sweep past the reach was not shortened: {_rec3}")
+        _br2 = dict(_br, components=[{"name": "bristles", "touches": "A4-Q4"}])
+        _rec4 = sweep_recipe([_pan, _br2])
+        check_top(_rec4 and not _rec4.get("lines") and "wider" in _rec4.get("note", ""),
+                  f"bristles wider than the mouth were not refused: {_rec4}")
+        _dirt = {"name": "paper scraps", "center": "C13", "aka": [],
+                 "touches": "B13-D13,B14-D14"}
+        _g["GRIPPER_OFFSET_UP_DOWN"] = 0
+        _rec5 = sweep_recipe([_pan, _br, _dirt])
+        _dset = {(1, 12), (2, 12), (3, 12), (1, 13), (2, 13), (3, 13)}
+        check_top(_rec5.get("dirt_lanes", 0) >= 1 and _dset <= _rec5["covered_cells"]
+                  and len(_rec5["lanes"]) > len(_rec["lanes"]),
+                  f"dirt beside the area got no stroke: {_rec5.get('dirt_lanes')} "
+                  f"{sorted(_dset - _rec5.get('covered_cells', set()))}")
+        _dpan = [(10.0, 3.0), (14.0, 3.0), (17.0, 5.0), (17.0, 6.5), (20.0, 6.5), (20.0, 7.5),
+                 (17.0, 7.5), (17.0, 9.0), (14.0, 11.0), (10.0, 11.0)]
+        _gm = guess_mouth(_dpan)
+        check_top(_gm and abs(_gm["n"][0] + 1.0) < 0.05 and abs(_gm["a"][0] - 10.0) < 0.05
+                  and abs(_gm["b"][0] - 10.0) < 0.05,
+                  f"a whole dustpan's mouth was not told from its handle: {_gm}")
+        _rec7 = sweep_recipe([{"name": "dustpan", "center": "N7", "aka": [], "polygon": _dpan}, _br])
+        check_top(_rec7 and _rec7.get("lines") and _rec7["axis"] == "right" and len(_rec7["lanes"]) >= 3
+                  and "taken from its shape" in _rec7.get("note", ""),
+                  f"a dustpan outlined whole got no sweep: {_rec7}")
+        _near_dirt = dict(_dirt, center="J11", touches="J11")
+        check_top(sweep_recipe([_pan, _br, _near_dirt]).get("dirt_lanes") == 0,
+                  "dirt already in front of the mouth got an extra stroke")
+        # an outlined brush: the claw comes to rest on the brush itself
+        _brp = dict(_br, center="H16", touches="F15-J15,F16-J16",
+                    polygon=[(5.2, 14.6), (9.9, 14.6), (9.9, 16.4), (5.2, 16.4)],
+                    components=[{"name": "bristles", "touches": "F15-F16",
+                                 "polygon": [(5.2, 14.6), (6.1, 14.6), (6.1, 16.4), (5.2, 16.4)]}])
+        _rec6 = sweep_recipe([_pan, _brp])
+        check_top(_rec6.get("lines") and 5.2 < _rec6["pick"][0] < 9.9
+                  and 14.6 < _rec6["pick"][1] < 16.4,
+                  f"the pickup does not rest on the brush: {_rec6.get('pick')}")
+        check_top(is_sweep_task("sweep the dust into the dustpan")
+                  and is_sweep_task("Broom the floor") and not is_sweep_task("fold the towel"),
+                  "sweep tasks are not recognised")
+    finally:
+        (_g["GRIPPER_OFFSET_UP_DOWN"], _g["GRIPPER_OFFSET_RIGHT_LEFT"],
+         CONFIG.n_rows, CONFIG.n_cols) = _rk
+    check_top("USE THE SWEEP RECIPE" in build_planner_system(),
+              "the planner prompt does not say to use the sweep recipe")
+    # a brush lying in a dustpan is a brush; a "lip" inside the pan is not
+    # its lip; the tray reaching the bottom edge says where it opens
+    _tf = np.full((1000, 1000, 3), 200, np.uint8)
+    _to = [_square(300, 300, 700, 700), _square(340, 450, 660, 700),
+           _square(420, 520, 580, 560), _square(350, 320, 500, 360),
+           _square(500, 310, 600, 370)]
+    _tn = ObjectNamer()
+    _tn.names = {1: "dustpan", 2: "tray", 3: "lip", 4: "handle", 5: "bristles"}
+    _tn.info = {1: {"thing": ""}, 2: {"thing": ""}, 3: {"thing": ""},
+                4: {"thing": "hand brush", "loose": False},
+                5: {"thing": "hand brush", "loose": False}}
+    _ts = {"frame": _tf, "box": _board, "objects": _to, "ids": [1, 2, 3, 4, 5],
+           "parents": find_parents(_to)}
+    _tl = {o["name"]: o for o in planner_objects(_ts, _tn, _vgrid)}
+    _tp = _tl.get("dustpan") or {}
+    check_top("hand brush" in _tl and sorted(
+                  c["name"] for c in _tl["hand brush"].get("components", []))
+              == ["bristles", "handle"]
+              and not any(c["name"] in ("handle", "bristles")
+                          for c in _tp.get("components", [])),
+              f"a brush lying in a dustpan stayed part of it: {sorted(_tl)} "
+              f"{[c['name'] for c in _tp.get('components', [])]}")
+    check_top("opening faces down (where its tray reaches the edge)" in _tp.get("desc", "")
+              and "opening (its lip)" not in _tp.get("desc", ""),
+              f"the opening was not measured from the tray: {_tp.get('desc')}")
+    check_top("its mouth runs from" in _tp.get("desc", "")
+              and "about 8.0 cells wide" in _tp.get("desc", ""),
+              f"the tray's mouth was not measured: {_tp.get('desc')}")
+    # a dustpan turned 30 degrees: the mouth runs along its lower right side
+    _rf2 = np.full((1000, 1000, 3), 200, np.uint8)
+    _pan = cv2.boxPoints(((500, 500), (360, 300), 30)).astype(np.int32)
+    _inner = cv2.boxPoints(((520, 535), (290, 230), 30)).astype(np.int32)
+    _ro = [[_pan.reshape(-1, 1, 2)], [_inner.reshape(-1, 1, 2)]]
+    _rn = ObjectNamer()
+    _rn.names, _rn.info = {1: "dustpan", 2: "tray"}, {1: {}, 2: {}}
+    _rs = {"frame": _rf2, "box": _board, "objects": _ro, "ids": [1, 2],
+           "parents": find_parents(_ro)}
+    _rp = {o["name"]: o for o in planner_objects(_rs, _rn, _vgrid)}.get("dustpan") or {}
+    check_top("its mouth runs from" in _rp.get("desc", "")
+              and ("faces down-right" in _rp.get("desc", "")
+                   or "faces down" in _rp.get("desc", "")),
+              f"a turned dustpan's mouth was not measured: {_rp.get('desc')}")
+    check_top(set(_jl) == {"hand brush", "dustpan lip", "brush tip"},
+              f"pieces were not joined into one thing: {sorted(_jl)}")
+    _hb = _jl.get("hand brush") or {}
+    check_top(sorted(c["name"] for c in _hb.get("components", []))
+              == ["body", "bristles", "handle"]
+              and set(_touch_cells(_hb)) >= set(_touch_cells(
+                  _hb["components"][0])) | set(_touch_cells(_hb["components"][1]))
+              and _hb.get("desc", "").startswith("seen as 3 pieces"),
+              f"the joined brush is not its pieces together: {_hb}")
     for _gone in ("lip/opening, tray and handle components",
                   "ask for a clearer view", "(aka: hatch/lid)",
                   "or bare name when no"):
@@ -17196,8 +20894,85 @@ def run_single_file_self_test():
     check_top(_ck_bar.hit_test((_cb.x0 + _cb.x1) // 2, (_cb.y0 + _cb.y1) // 2,
                                state=_ck_state) == "ai_check",
               "CHECK no longer answers a click")
-    check_top(_cb.x0 > _ck_bar.history_btn.x1 and _cb.label == "CHECK",
-              "the CHECK pill overlaps History")
+    check_top(_cb.x1 < _ck_bar.examples_btn.x0 and _cb.label == "Check",
+              "the Check pill overlaps Examples")
+
+    # -- A3-Terra's message box: laid out, broken into lines and wired up
+    #    as A3-Terra's is
+    _lay = a3_compose_layout(0, 0, 357)
+    check_top(_lay == {"edit": (26, 17, 110, 69), "pill": (118, 49, 203, 69),
+                       "history": (211, 33, 247, 69),
+                       "mic": (255, 33, 291, 69), "send": (299, 33, 335, 69)},
+              f"the message box left A3-Terra's layout: {_lay}")
+    _lay2 = a3_compose_layout(0, 0, 715, 2)
+    check_top(_lay2 == {_n: tuple(2 * _v for _v in _r)
+                        for _n, _r in _lay.items()},
+              f"A3-Terra's box at 2x is not its 1x layout doubled: {_lay2}")
+    check_top(sidebar_width(1823) == 380 and sidebar_width(2366, 2) == 760,
+              "the planner panel does not widen for the box on a 2x screen")
+    _k1 = AISidebar(400, 60, 380, 700)
+    _k2 = AISidebar(400, 60, 732, 700, k=2)
+    _kst = AppState()
+    _kst.ai_task = "put the red cup on the left tray, then the plate"
+    _kst.ai_focus = True
+    _f1, _f2 = _k1.field, _k2.field
+    check_top(_k2.compose[3] - _k2.compose[1] == 2 * A3_COMPOSE_H
+              and _f2[2] - _f2[0] == 2 * (_f1[2] - _f1[0])
+              and _f2[3] - _f2[1] == 2 * A3_EDIT_H,
+              f"the 2x box is not twice the 1x box: {_k2.compose} {_f2}")
+    check_top(all(_k1.cursor_click(_kst, _f1[0] + _lx, _f1[1] + _ly)
+                  == _k2.cursor_click(_kst, _f2[0] + 2 * _lx,
+                                      _f2[1] + 2 * _ly)
+                  for _lx in (3, 14, 31, 57, 75) for _ly in (12, 25)),
+              "a click lands the caret elsewhere in the 2x box")
+    _kst.ai_cursor = 3
+    _k2.move_caret_line(_kst, 1)
+    _c2 = _kst.ai_cursor
+    _kst.ai_cursor = 3
+    _k1.move_caret_line(_kst, 1)
+    check_top(_c2 == _kst.ai_cursor and _c2 > 3,
+              f"the down arrow moves differently in the 2x box: {_c2}")
+    if _a3_face_info("avenir") is not None:
+        check_top(a3_positions("Ask to do") == (
+            0.0, 7.0, 11.4375, 16.53125, 19.03125, 22.1875, 28.296875,
+            30.796875, 37.15625, 43.265625),
+            "the message box no longer sets glyphs where Qt does")
+        _s = "put the red cup on the left tray, then move the plate"
+        _ln = [_s[a:b] for a, b in a3_wrap_editable(_s, 52)]
+        check_top(_ln[:2] == ["put the red ", "cup on the "]
+                  and _ln[2].startswith("left tray"),
+                  f"the message box breaks lines unlike A3-Terra: {_ln[:3]}")
+    check_top(a3_caret_line([(0, 4), (4, 8)], 4) == (1, 0)
+              and a3_caret_line([(0, 4), (5, 8)], 4) == (0, 4)
+              and a3_caret_line([(0, 4), (4, 8)], 8) == (1, 4),
+              "the caret sits on the wrong side of a line break")
+    _ck_state.effort_menu_open = True
+    _ck_canvas[:] = 230
+    _ck_bar.draw(_ck_canvas, _ck_state, PlanRunner(), SimRunner())
+    _rows = {v: r for r, v in _ck_bar._effort_rects}
+    check_top(set(_rows) == set(dict(PLANNER_EFFORTS)) and all(
+        _ck_bar.hit_test((r[0] + r[2]) // 2, (r[1] + r[3]) // 2,
+                         state=_ck_state) == ("ai_effort_pick", v)
+        for v, r in _rows.items()),
+        "the thinking levels do not answer a click")
+    _ck_state.effort_menu_open = False
+    for _btn, _want in ((_ck_bar.effort_btn, "ai_effort"),
+                        (_ck_bar.history_btn, "ai_history"),
+                        (_ck_bar.mic_btn, "ai_mic"),
+                        (_ck_bar.send_btn, "ai_send")):
+        check_top(_ck_bar.hit_test((_btn.x0 + _btn.x1) // 2,
+                                   (_btn.y0 + _btn.y1) // 2,
+                                   state=_ck_state) == _want,
+                  f"the message box's {_want} control does not answer")
+    check_top(_ck_bar.hit_test(_ck_bar.compose[0] + 20,
+                               (_ck_bar.compose[1] + _ck_bar.compose[3]) // 2,
+                               state=_ck_state) == "ai_focus",
+              "a click on the message box does not focus it")
+    _mic = MicRecorder()
+    _mic._callback(np.full((480, 1), 0.02, np.float32), 480, None, None)
+    check_top(abs(_mic.take_wave_level() - 0.02 * 32768 / 1400) < 1e-4
+              and _mic.take_wave_level() == 0.0,
+              "the waveform level is off A3-Terra's scale")
 
     # -- per-step checks: every action step, never a move
     for _c, _want in (("pickup", True), ("keep", True), ("press", True),
@@ -17410,6 +21185,8 @@ def run_single_file_self_test():
         advance(AUTO_PICKUP_HX_S)
         advance(AUTO_GRIP_COMMAND_DELAY_S)
         advance(AUTO_GRIP_COMMAND_DELAY_S)
+        advance(AUTO_GRIP_COMMAND_DELAY_S)
+        advance(AUTO_GRIP_COMMAND_DELAY_S)
         hu_sent_at = clock.now
         check(fake.commands[-1][1] == "hu", "hu was not sent on schedule")
         planned_raise = panel.auto_grip_up_until - hu_sent_at
@@ -17419,7 +21196,7 @@ def run_single_file_self_test():
         advance(descent + 0.05)
         advance(AUTO_ACTION_GAP_S)
         commands = [command for _, command in fake.commands]
-        check(commands == ["hd", "hx", "s", "g90", "hu", "s"],
+        check(commands == ["hd", "hx", "s", "g90", "g90", "p1", "hu", "s"],
               f"unexpected pickup sequence: {commands}")
         check(not any(c in ("u", "d", "l", "r") for c in commands),
               f"the deleted approach offset still drives the axes: {commands}")
@@ -17429,9 +21206,13 @@ def run_single_file_self_test():
         check(times[2] - times[1] >= AUTO_PICKUP_HX_S, "hx duration was short")
         check(times[3] - times[2] >= AUTO_GRIP_COMMAND_DELAY_S,
               "hx-to-g90 wait was short")
-        check(times[4] - times[3] >= AUTO_GRIP_COMMAND_DELAY_S,
-              "g90-to-hu wait was short")
+        check(times[4] - times[3] >= 0.5 and times[5] - times[4] >= 0.5,
+              "g90-to-p1 wait was short")
+        check(times[6] - times[5] >= AUTO_GRIP_COMMAND_DELAY_S,
+              "p1-to-hu wait was short")
         check(panel.offset_phase == "idle", "pickup state did not reset")
+        check(press_command() == "p3",
+              "a press after this pickup would not go back to its height")
 
         clock.now = 200.0
         fake.commands = []
@@ -17494,6 +21275,19 @@ def run_single_file_self_test():
               panel.auto_grip_phase == panel.AUTO_GRIP_IDLE,
               "a failed pickup did not return to idle")
 
+        # a release after a press that moved goes back down (p3) first
+        clock.now = 450.0
+        fake.commands = []
+        panel = GripperPanel()
+        note_press_moved(True)
+        panel.start_automatic_action("release")
+        advance(AUTO_ACTION_GAP_S)
+        check([command for _, command in fake.commands] == ["p3"],
+              "a release after a moved press did not go back to its height first")
+        check(panel.note_rx(b"S") and fake.commands[-1][1] == "hu",
+              "the release did not lift once p3 reached its height")
+        note_press_moved(False)
+
         clock.now = 500.0
         fake.commands = []
         panel = GripperPanel()
@@ -17513,74 +21307,172 @@ def run_single_file_self_test():
 
         clock.now = 600.0
         fake.commands = []
+        forget_saved_height()       # no pickup before this press: hx
         panel = GripperPanel()
         panel.start_automatic_action("press")
         advance(AUTO_ACTION_GAP_S)
-        check([c for _, c in fake.commands] == ["hx"],
-              f"press did not start with hx: {fake.commands}")
+        check([c for _, c in fake.commands] == ["p3"],
+              f"press did not start with p3: {fake.commands}")
         for _ in range(40):
             advance(0.1)
-        check([c for _, c in fake.commands] == ["hx"],
+        check([c for _, c in fake.commands] == ["p3"],
               f"press cut its own descent short: {fake.commands}")
         check(panel.offset_phase == "press_down",
               "press left the descent without a limit switch")
         descent = clock.now - panel.auto_press_started_at
-        check(panel.note_rx(b"s"), "the lowercase limit-switch s was refused")
-        check([c for _, c in fake.commands] == ["hx", "hu"],
-              f"the limit switch did not start the back-off: {fake.commands}")
-        advance(AUTO_PRESS_BACKOFF_S / 2.0)
-        check([c for _, c in fake.commands] == ["hx", "hu"],
-              "the back-off stopped before it had lifted anything")
-        advance(AUTO_PRESS_BACKOFF_S)
-        commands = [c for _, c in fake.commands]
-        check(commands == ["hx", "hu", "s"],
-              f"press did not run hx, then hu, then s: {commands}")
-        times = [at for at, _ in fake.commands]
-        check(times[2] - times[1] > AUTO_PRESS_BACKOFF_S - 1e-6,
-              "the back-off sent hu and s in the same instant")
-        advance(AUTO_ACTION_GAP_S)
+        check(panel.note_rx(b"TOF:MM=81 RAW=80 VALID=1 P1=-1 P3=HOLD\n"), "P3=HOLD was not taken as arrival")
+        # p3 alone: no hu, no s after it
+        advance(AUTO_ACTION_GAP_S + 0.5)
+        check([c for _, c in fake.commands] == ["p3"],
+              f"a press sent something besides p3: {fake.commands}")
         check(panel.offset_phase == "idle" and not panel.offset_failed,
               "press did not finish cleanly")
-        expected_recorded = descent - AUTO_PRESS_BACKOFF_S
-        check(abs(panel.auto_press_duration - expected_recorded) < 1e-6,
-              f"press recorded {panel.auto_press_duration:.3f}s, "
-              f"expected {expected_recorded:.3f}s")
-        check(expected_recorded > AUTO_RELEASE_DURATION_S + 0.5,
-              "this case no longer distinguishes a measured lift from the "
-              "flat one -- lengthen the descent above")
         fake.commands = []
         panel.start_automatic_action("release")
         advance(AUTO_ACTION_GAP_S)
         check([c for _, c in fake.commands] == ["hu"], "release did not lift")
         advance(AUTO_RELEASE_DURATION_S + 0.1)
-        check([c for _, c in fake.commands] == ["hu"],
-              "release stopped at the flat duration instead of undoing the "
-              "press -- the tool is left standing below where it started")
-        advance(expected_recorded - AUTO_RELEASE_DURATION_S)
-        commands = [c for _, c in fake.commands]
-        check(commands == ["hu", "s"], f"release did not end: {commands}")
-        times = [at for at, _ in fake.commands]
-        lifted = times[1] - times[0]
-        check(expected_recorded - 1e-6 <= lifted <= expected_recorded + 0.2,
-              f"release lifted for {lifted:.2f}s, expected the press's own "
-              f"{expected_recorded:.2f}s")
-        check(panel.auto_press_duration == 0.0,
-              "the press depth survived the release that undid it")
+        check([c for _, c in fake.commands] == ["hu", "s"],
+              f"release did not end with s: {fake.commands}")
 
-        clock.now = 650.0
+        # A press after a pickup: p3, back down to the height p1 saved.
+        clock.now = 680.0
         fake.commands = []
+        note_height_saved()
         panel = GripperPanel()
         panel.start_automatic_action("press")
         advance(AUTO_ACTION_GAP_S)
-        check(panel.offset_phase == "press_down", "press did not descend")
-        advance(AUTO_GRIP_DOWN_MAX_S)
+        check([c for _, c in fake.commands] == ["p3"],
+              f"a press after a pickup did not send p3: {fake.commands}")
+        for _ in range(20):
+            advance(0.1)
+        check(panel.offset_phase == "press_down",
+              "the p3 press moved on before the board answered")
+        check(panel.note_rx(b"P3=HOLD"), "the board's P3=HOLD after p3 was refused")
+        advance(0.5)
         commands = [c for _, c in fake.commands]
-        check(commands == ["hx", "s"],
-              f"a switchless press did not stop at hx: {commands}")
-        check("hu" not in commands,
-              "the press backed off from a switch it never reached")
-        check(panel.offset_failed, "a failed press reported success")
-        check(panel.offset_phase == "idle", "a failed press did not reset")
+        check(commands == ["p3"],
+              f"a press after a pickup did not run p3 alone: {commands}")
+        advance(AUTO_ACTION_GAP_S)
+        check(panel.offset_phase == "idle" and not panel.offset_failed,
+              "the p3 press did not finish cleanly")
+        fake.connects = 1
+        check(press_command() == "p3",
+              "a height saved before the board reset was still trusted")
+        del fake.connects
+        _runner = PlanRunner()
+        _runner.commands = ["goto_coordinate = A, 1"]
+        _resumed = AppState()
+        _resumed.resume_run = True
+        note_height_saved()
+        _runner.start(_resumed)
+        check(press_command() == "p3",
+              "the rest of a task after a failed step lost its saved height")
+        _runner.start(AppState())
+        check(press_command() == "p3",
+              "a fresh run kept the height an earlier run saved")
+        _runner.stop(AppState())
+
+        # A p3 the board never answers: stopped after the wait, and the
+        # release lifts its flat amount -- not the whole wait.
+        clock.now = 685.0
+        fake.commands = []
+        note_height_saved()
+        panel = GripperPanel()
+        panel.start_automatic_action("press")
+        advance(AUTO_ACTION_GAP_S)
+        advance(AUTO_GRIP_DOWN_MAX_S)
+        check([c for _, c in fake.commands] == ["p3", "s"],
+              f"a silent p3 was not stopped: {fake.commands}")
+        check(panel.offset_failed and panel.auto_press_duration == 0.0,
+              f"a silent p3 left a {panel.auto_press_duration:.1f}s lift "
+              f"for the release")
+        fake.commands = []
+        panel.start_automatic_action("release")
+        advance(AUTO_ACTION_GAP_S)
+        advance(AUTO_RELEASE_DURATION_S + 0.05)
+        commands = [c for _, c in fake.commands]
+        times = [at for at, _ in fake.commands]
+        check(commands == ["hu", "s"]
+              and times[1] - times[0] < AUTO_RELEASE_DURATION_S + 0.1,
+              f"the release after a silent p3 lifted too far: {fake.commands}")
+
+        # STOP in the second between g90 and p1: no p1, nothing saved.
+        clock.now = 690.0
+        fake.commands = []
+        forget_saved_height()
+        panel = GripperPanel()
+        panel.start_automatic_action("pickup")
+        advance(AUTO_ACTION_GAP_S)
+        panel.note_rx(b"S")
+        advance(AUTO_GRIP_COMMAND_DELAY_S)
+        advance(AUTO_PICKUP_HX_S)
+        advance(AUTO_GRIP_COMMAND_DELAY_S)
+        check(panel.auto_grip_phase == panel.AUTO_GRIP_WAIT_P1,
+              f"g90 was not followed by the wait for p1: "
+              f"{panel.auto_grip_phase}")
+        panel.abort_automatic_action()
+        advance(AUTO_GRIP_COMMAND_DELAY_S * 2)
+        commands = [c for _, c in fake.commands]
+        check("p1" not in commands and commands[-1] == "s",
+              f"a stopped pickup still saved its height: {commands}")
+        check(press_command() == "p3",
+              "a pickup stopped before p1 left a height saved")
+
+        # A broom sweep: one pickup, then press ... release twice -- both
+        # presses go back to the height it saved.
+        clock.now = 750.0
+        fake.commands = []
+        note_height_saved()
+        panel = GripperPanel()
+        for queued in ("press", "release", "press", "release"):
+            panel.start_automatic_action(queued)
+        for _ in range(2000):
+            advance(0.05)
+            if panel.offset_phase == "press_down":
+                panel.note_rx(b"P3=HOLD")
+            if panel.offset_phase == "idle" and not panel.pending_auto_actions:
+                break
+        sweep = [c for _, c in fake.commands]
+        check(sweep == ["p3", "hu", "s", "p3", "hu", "s"],
+              f"two presses after one pickup did not both use p3: {sweep}")
+
+        # The runner's own sequence, used when no gripper card is wired: a
+        # pickup saves its height too, a second either side of p1; a pour
+        # does not.
+        clock.now = 760.0
+        fake.commands = []
+        forget_saved_height()
+        plunge = PlungeSequence()
+        check(plunge.start("pickup"), "the runner's pickup did not start")
+        clock.now += 0.7
+        plunge.note_rx(b"S")
+        for _ in range(60):
+            clock.now += 0.05
+            plunge.tick()
+        commands = [c for _, c in fake.commands]
+        check(commands == ["hd", "g90", "p1", "hu", "s"],
+              f"the runner's pickup ran {commands}")
+        times = [at for at, _ in fake.commands]
+        check(times[2] - times[1] >= AUTO_GRIP_COMMAND_DELAY_S - 1e-6
+              and times[3] - times[2] >= AUTO_GRIP_COMMAND_DELAY_S - 1e-6,
+              f"the runner's pickup crowded p1: {fake.commands}")
+        check(abs((times[4] - times[3]) - 0.7) < 0.06,
+              f"the runner's lift did not mirror its descent: {fake.commands}")
+        check(press_command() == "p3", "the runner's pickup saved no height")
+        fake.commands = []
+        forget_saved_height()
+        plunge = PlungeSequence()
+        plunge.start("pour")
+        clock.now += 0.5
+        plunge.note_rx(b"S")
+        for _ in range(30):
+            clock.now += 0.05
+            plunge.tick()
+        commands = [c for _, c in fake.commands]
+        check(commands == ["hd", "g90", "hu", "s"],
+              f"a pour changed: {commands}")
+        check(press_command() == "p3", "a pour saved a height")
 
         clock.now = 700.0
         fake.commands = []
@@ -17657,9 +21549,9 @@ def run_single_file_self_test():
                                          or chain[index - 1] not in moving)]
         check(not strays,
               f"stop sent with nothing to stop, at {strays} of {chain}")
-        check(chain == ["hd", "hx", "s", "g90", "hu", "s",
+        check(chain == ["hd", "hx", "s", "g90", "g90", "p1", "hu", "s",
                         "g0",
-                        "hx", "hu", "s",
+                        "p3",
                         "hu", "s"],
               f"the chained actions did not all run: {chain}")
 
@@ -17681,6 +21573,16 @@ def run_single_file_self_test():
               f"{top_right_grip_cell(sock)}")
         check(top_right_grip_cell({"name": "bare", "center": "H8"}) == "H8",
               "a cell-less object did not fall back to its centre")
+        # a held tool's press/release (sweep strokes) does not put it down:
+        # the grip shift covers every stroke and the way back to its keep
+        _held, _ = enforce_gripper_targets(
+            "PLAN:\ngoto_coordinate = D, 4\npickup\ngoto_coordinate = D, 9\npress\n"
+            "goto_coordinate = D, 8\nrelease\ngoto_coordinate = F, 9\npress\n"
+            "goto_coordinate = F, 8\nrelease\ngoto_coordinate = D, 4\nkeep",
+            [dict(box, name="hand brush")])
+        _hcells = [f"{m.group(1).upper()}{m.group(2)}" for m in GOTO_RE.finditer(_held)]
+        check(_hcells == ["E3", "E8", "E7", "G8", "G7", "E3"],
+              f"a held tool's later strokes lost the grip shift: {_hcells}")
 
         class _SlowPort:
             is_open = True
@@ -17801,8 +21703,9 @@ def run_single_file_self_test():
         card.tick()
         check(not card.visible, "a confirmed manual card did not close")
 
+        # The press comes after the pickup above: back to its height (p3).
         for action, first in (("pickup", "hd"), ("keep", "g0"),
-                              ("press", "hx"), ("release", "hu")):
+                              ("press", "p3"), ("release", "hu")):
             clock.now += 10.0
             fake.commands = []
             gp, card = wire()
@@ -17837,8 +21740,11 @@ def run_single_file_self_test():
         check(card.visible and not card.handed_off,
               "a manual keep did not open the card and wait")
 
+        # Each action stopped as soon as it starts: the pickup never gets
+        # to p1, so the press after it still goes down to the switch (hx).
+        forget_saved_height()
         for action, first in (("pickup", "hd"), ("keep", "g0"),
-                              ("press", "hx"), ("release", "hu")):
+                              ("press", "p3"), ("release", "hu")):
             clock.now += 10.0
             fake.commands = []
             fake.failed_writes = 1
@@ -17960,6 +21866,7 @@ def run_single_file_self_test():
     finally:
         (ARDUINO, time.monotonic) = old
         GRIPPER_NUDGE_S, GRIPPER_NUDGE_ACTIONS = old_nudge
+        forget_saved_height()
 
     global GRIPPER_OFFSET_UP_DOWN, GRIPPER_OFFSET_RIGHT_LEFT
     old_offset = (GRIPPER_OFFSET_UP_DOWN, GRIPPER_OFFSET_RIGHT_LEFT)

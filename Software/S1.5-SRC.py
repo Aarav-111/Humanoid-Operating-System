@@ -106,7 +106,7 @@ ALPHABET = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 DEBUG_INPUT = bool(os.environ.get("S1_DEBUG_INPUT"))
 
 SCRIPT_PATH = os.path.abspath(__file__)
-S1_EMBEDDED_STATE_B64 = "eyJzZXR0aW5ncyI6eyJjYW1lcmEiOnsiem9vbSI6MS4xLCJicmlnaHRuZXNzIjowLCJjb250cmFzdCI6MS4wLCJzYXR1cmF0aW9uIjoxLjAsInNoYXJwbmVzcyI6MC4wLCJyb3RhdGlvbiI6MCwibWlycm9yIjpmYWxzZX0sImdyaWQiOnsibl9jb2xzIjoyMCwibl9yb3dzIjoyMCwiYm94IjpbMjE2LjAyMzQyMDg2NTg2MjMsNy44Njc3Nzc3Nzc3Nzc3NjksMTAwNC4yOTU5MjYxODg3ODY0LDc5NS45MDI3Nzc3Nzc3Nzc3XSwic3F1YXJlX2NlbGxzIjp0cnVlLCJmcmFtZV9zaXplIjpbMTQyOSw4MDNdLCJib3hfcmVsIjpbMC4xNTExNzEwNDMyOTMxMTU2OCwwLjAwOTc5Nzk3OTc5Nzk3OTc4NiwwLjcwMjc5NjMwOTQzOTMxODcsMC45OTExNjE2MTYxNjE2MTYxXX0sInRyaWdfb2Zmc2V0Ijp7ImNhbWVyYV9oZWlnaHRfaW4iOjM1LjAsInRhZ19oZWlnaHRfaW4iOjUuNSwiYm9hcmRfaGVpZ2h0X2luIjowLjAsInBpdm90X3giOjAuMCwicGl2b3RfeSI6MC4wLCJncmlwcGVyX3VwX2Rvd24iOi03LCJncmlwcGVyX3JpZ2h0X2xlZnQiOjAsImdyaXBwZXJfdmVydGljYWxfZGlyZWN0aW9uIjoidXAiLCJncmlwcGVyX2hvcml6b250YWxfZGlyZWN0aW9uIjoibGVmdCIsIm51ZGdlX3MiOjAuMiwibnVkZ2VfZGlyZWN0aW9uIjoicmlnaHQiLCJudWRnZV9hY3Rpb25zIjp7InBpY2t1cCI6dHJ1ZSwia2VlcCI6ZmFsc2UsInByZXNzIjpmYWxzZSwicmVsZWFzZSI6dHJ1ZX19LCJ2aXNpb24iOnsiYm9hcmRfd2lkdGhfaW4iOjI0LjAsImNvbmZfdGhyZXMiOjAuMjUsImlvdV90aHJlcyI6MC43LCJtYXhfYXJlYSI6MC41LCJvdXRsaW5lX3B4IjoyLCJtYXJrX3BhcnRzIjp0cnVlLCJzaG93X25hbWVzIjp0cnVlLCJuYW1lcl9tb2RlbCI6ImdwdC01LjQtbWluaSIsInByaW9yaXR5X25hbWluZyI6dHJ1ZSwibWF4X2ZwcyI6MTAuMCwic2NlbmVfaGludCI6IlRoZSBwaG90byBzaG93cyB0aGUgd29yayBhcmVhIG9mIGEgc21hbGwgZ2FudHJ5IHJvYm90LCBzbyBpdCBtYXkgaG9sZCBwYXJ0cyBvZiB0aGUgcm9ib3QgaXRzZWxmIChhbHVtaW5pdW0gZnJhbWUgcmFpbHMsIGxlYWQgc2NyZXdzLCBzbW9vdGggcm9kcywgc3RlcHBlciBtb3RvcnMsIGJlbHRzLCBwdWxsZXlzLCBhIGdyaXBwZXIsIGNhYmxlcykgYXMgd2VsbCBhcyBldmVyeWRheSBvYmplY3RzLiJ9LCJiZWhhdmlvdXIiOnsibWFudWFsX2dyaXBwZXJfc3RlcHMiOmZhbHNlLCJncmlwcGVyX2FpIjp0cnVlLCJlcnJfYXV0byI6Im9mZiIsInBsYW5uZXJfZWZmb3J0IjoibG93In19LCJjdXN0b21fdHJhaW5pbmciOltdLCJlcnJvcl9yZWJvdW5kcyI6W3sidGFzayI6InN3YXAgYWxsIHRoZSBvYmplY3RzIG9uIHRoZSBib2FyZCIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJPYmplY3RzIGRpZCBub3Qgc3dhcCBwb3NpdGlvbnM7IHNjcmV3ZHJpdmVyIHJlbWFpbnMgYXQgSDE0IGFuZCB1dGlsaXR5IGtuaWZlIHJlbWFpbnMgYXQgUDExLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDgtMzFUMjA6NDU6MDYifSx7InRhc2siOiJ3YXRlciBteSBwbGFudHMiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiTm8gdmlzaWJsZSBldmlkZW5jZSB0aGUgcGxhbnQgd2FzIHdhdGVyZWQ7IGN1cCBhbmQgcGxhbnQgcmVtYWluIGVzc2VudGlhbGx5IHVuY2hhbmdlZC4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTAxVDE1OjQ2OjEzIn0seyJ0YXNrIjoid2F0ZXIgbXkgcGxhbnRzIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6Ik5vIHZpc2libGUgZXZpZGVuY2UgdGhlIHBsYW50IHdhcyB3YXRlcmVkOyBwbGFudCBhbmQgbXVnIG9ubHkgc2hpZnRlZCBzbGlnaHRseS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTAyVDE0OjMxOjUwIn0seyJ0YXNrIjoiS2VlcCB0aGUgYmxhY2sgc3BvdCBpbiB0aGUgYm9keS4iLCJ2ZXJkaWN0IjoiZG9uZSBjb3JyZWN0bHkiLCJyZWFzb24iOiJibGFjayBzb2NrIHdhcyBtb3ZlZCBpbnRvIHRoZSBib3dsLCB3aXRoIHRoZSBib3dsIHN0aWxsIGNvbnRhaW5pbmcgaXQgaW4gdGhlIGZpbmFsIGltYWdlIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMTo1MToyMiJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNwb3QgaW4gdGhlIGJvZHkuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6ImJsYWNrIHNvY2sgd2FzIG1vdmVkIG5lYXIgSzQgaW5zdGVhZCBvZiBiZWluZyBrZXB0IGluIHRoZSBib3dsL2JvZHkgYXQgUTMiLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDExOjUxOjM2In0seyJ0YXNrIjoic29ydCB0aGUgc29ja2VzIGFuZCBrZWVwIHRoZSB3aGl0ZXMgaW4gdGUgYm93bCIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJXaGl0ZSBzb2NrcyBhcmUgbm90IHZpc2libGUgaW4gdGhlIGJvd2wgaW4gdGhlIGZpbmFsIGltYWdlOyBvbmx5IHRoZSBibGFjayBzb2NrcyByZW1haW4gb24gdGhlIGJvYXJkLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTI6MDM6MDAifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzb2NrcyBzdGFja2VkIHRvZ2V0aGVyLiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJPbmx5IG9uZSBibGFjayBzb2NrIGlzIHZpc2libGUgaW4gdGhlIGZpbmFsIGltYWdlOyB0aGUgdHdvIHNvY2tzIGFyZSBub3QgY29uZmlybWVkIHN0YWNrZWQgdG9nZXRoZXIuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMjowNToxMyJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNvY2tzIHN0YWNrZWQgdG9nZXRoZXIuIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5IiwicmVhc29uIjoiVGhlIHR3byBibGFjayBzb2NrcyBhcmUgc3RhY2tlZCB0b2dldGhlciBpbiB0aGUgZmluYWwgaW1hZ2UuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMjowNToyMyJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNvY2sgaW4gdGhlIGJvd2wuIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5IiwicmVhc29uIjoiYmxhY2sgc29jayBpcyBwbGFjZWQgaW4gdGhlIGdyZWVuIGJvd2wgaW4gdGhlIGZpbmFsIGltYWdlLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTM6MDE6MzQifSx7InRhc2siOiJTb3J0IHRoZSBibGFjayBhbmQgd2hpdGUgc29ja3MsIGFuZCBwdXQgYWxsIHRoZSB3aGl0ZXMgaW4gdGhlIGJvd2wuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6IldoaXRlIHNvY2sgaXMgaW4gdGhlIGJvd2wsIGJ1dCBvbmUgd2hpdGUgc29jayByZW1haW5zIG91dHNpZGUgdGhlIGJvd2wuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxNjoyNzo0OCJ9LHsidGFzayI6IlNvcnQgbXkgY2xvdGhlcyBvciBzb2NrcyBpbnRvIGJsYWNrIGFuZCB3aGl0ZS4gS2VlcCBhbGwgdGhlIGJsYWNrcyBpbiB0aGUgYm93bC4iLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiT25seSBvbmUgYmxhY2sgc29jayBpcyBpbiB0aGUgYm93bDsgdGhlIG90aGVyIGJsYWNrIHNvY2sgaXMgbm90IHZlcmlmaWVkIGluIHRoZSBib3dsLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTY6Mzk6NDIifSx7InRhc2siOiJLZWVwIHRoZSBsZWF2ZXMgaW4gdGhlIGJvd2wuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6IkxlYXZlcyBhcmUgbm90IGZ1bGx5IGluIHRoZSBib3dsOyBwYXJ0IG9mIHRoZSBzcHJpZyByZW1haW5zIG91dHNpZGUgb24gdGhlIHJpbS90YWJsZS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDE2OjQ3OjUyIn0seyJ0YXNrIjoibW9lIHRoZSBia29vayB0byBpdCdzIGxlZnQiLCJ2ZXJzaW9uIjoiRVJSLTMiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5Iiwib2JqZWN0cyI6WyJub3RlYm9vaz13cm9uZyJdLCJyZWFzb24iOiJUaGUgbm90ZWJvb2sgcmVtYWlucyBpbiB0aGUgc2FtZSBwb3NpdGlvbiBhcyBpbiB0aGUgc3RhcnQgaW1hZ2VzIGFuZCB3YXMgbm90IG1vdmVkIGxlZnQuIiwibmV4dCI6IkZJWDogbW92ZSB0aGUgbm90ZWJvb2sgbGVmdCBmcm9tIGl0cyBjdXJyZW50IHBvc2l0aW9uIGFuZCByZWxlYXNlIGl0IHRoZXJlIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0xMC0wMlQxODowNDowMCJ9LHsidGFzayI6Im1vZSB0aGUgYmtvb2sgdG8gaXQncyBsZWZ0IiwidmVyc2lvbiI6IkVSUi0zIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5Iiwib2JqZWN0cyI6WyJub3RlYm9vaz1vayJdLCJyZWFzb24iOiJUaGUgYmxhY2sgbm90ZWJvb2sgaXMgdmlzaWJseSBzaGlmdGVkIGxlZnQgZnJvbSBpdHMgc3RhcnQgcG9zaXRpb24gKGZyb20gYWJvdXQgRy1MIGNvbHVtbnMgdG8gYWJvdXQgRC1KIGNvbHVtbnMpIGFuZCBpcyByZXN0aW5nIG9uIHRoZSBib2FyZCB3aXRoIG5vIGdyaXBwZXIgaG9sZGluZyBpdDsgbm8gb3RoZXIgdGFzayBjb25zdHJhaW50cyBhcmUgdmlzaWJseSB2aW9sYXRlZC4iLCJuZXh0IjoiIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0xMC0wMlQxODowNDoyMiJ9XX0="  # S1_EMBEDDED_STATE
+S1_EMBEDDED_STATE_B64 = "eyJzZXR0aW5ncyI6eyJjYW1lcmEiOnsiem9vbSI6MS4xLCJicmlnaHRuZXNzIjowLCJjb250cmFzdCI6MS4wLCJzYXR1cmF0aW9uIjoxLjAsInNoYXJwbmVzcyI6MC4wLCJyb3RhdGlvbiI6MCwibWlycm9yIjpmYWxzZX0sImdyaWQiOnsibl9jb2xzIjoyMCwibl9yb3dzIjoyMCwiYm94IjpbMjEzLjAsNy43NTk5OTk5OTk5OTk5OTEsOTkwLjI0LDc4NS4wXSwic3F1YXJlX2NlbGxzIjp0cnVlLCJmcmFtZV9zaXplIjpbMTQwOSw3OTJdLCJib3hfcmVsIjpbMC4xNTExNzEwNDMyOTMxMTU2OCwwLjAwOTc5Nzk3OTc5Nzk3OTc4NiwwLjcwMjc5NjMwOTQzOTMxODcsMC45OTExNjE2MTYxNjE2MTYxXX0sInRyaWdfb2Zmc2V0Ijp7ImNhbWVyYV9oZWlnaHRfaW4iOjM1LjAsInRhZ19oZWlnaHRfaW4iOjUuNSwiYm9hcmRfaGVpZ2h0X2luIjowLjAsInBpdm90X3giOjAuMCwicGl2b3RfeSI6MC4wLCJncmlwcGVyX3VwX2Rvd24iOi03LCJncmlwcGVyX3JpZ2h0X2xlZnQiOjAsImdyaXBwZXJfdmVydGljYWxfZGlyZWN0aW9uIjoidXAiLCJncmlwcGVyX2hvcml6b250YWxfZGlyZWN0aW9uIjoibGVmdCIsIm51ZGdlX3MiOjAuMiwibnVkZ2VfZGlyZWN0aW9uIjoicmlnaHQiLCJudWRnZV9hY3Rpb25zIjp7InBpY2t1cCI6dHJ1ZSwia2VlcCI6ZmFsc2UsInByZXNzIjpmYWxzZSwicmVsZWFzZSI6dHJ1ZX19LCJ2aXNpb24iOnsiYm9hcmRfd2lkdGhfaW4iOjI0LjAsImNvbmZfdGhyZXMiOjAuMjUsImlvdV90aHJlcyI6MC43LCJtYXhfYXJlYSI6MC41LCJvdXRsaW5lX3B4IjoyLCJtYXJrX3BhcnRzIjp0cnVlLCJzaG93X25hbWVzIjp0cnVlLCJuYW1lcl9tb2RlbCI6ImdwdC01LjQtbWluaSIsInByaW9yaXR5X25hbWluZyI6ZmFsc2UsIm1heF9mcHMiOjEwLjAsInNjZW5lX2hpbnQiOiJUaGUgcGhvdG8gc2hvd3MgdGhlIHdvcmsgYXJlYSBvZiBhIHNtYWxsIGdhbnRyeSByb2JvdCwgc28gaXQgbWF5IGhvbGQgcGFydHMgb2YgdGhlIHJvYm90IGl0c2VsZiAoYWx1bWluaXVtIGZyYW1lIHJhaWxzLCBsZWFkIHNjcmV3cywgc21vb3RoIHJvZHMsIHN0ZXBwZXIgbW90b3JzLCBiZWx0cywgcHVsbGV5cywgYSBncmlwcGVyLCBjYWJsZXMpIGFzIHdlbGwgYXMgZXZlcnlkYXkgb2JqZWN0cy4ifSwiYmVoYXZpb3VyIjp7Im1hbnVhbF9ncmlwcGVyX3N0ZXBzIjpmYWxzZSwiZ3JpcHBlcl9haSI6dHJ1ZSwiZXJyX2F1dG8iOiJvZmYiLCJwbGFubmVyX2VmZm9ydCI6ImxvdyJ9fSwiY3VzdG9tX3RyYWluaW5nIjpbXSwiZXJyb3JfcmVib3VuZHMiOlt7InRhc2siOiJzd2FwIGFsbCB0aGUgb2JqZWN0cyBvbiB0aGUgYm9hcmQiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiT2JqZWN0cyBkaWQgbm90IHN3YXAgcG9zaXRpb25zOyBzY3Jld2RyaXZlciByZW1haW5zIGF0IEgxNCBhbmQgdXRpbGl0eSBrbmlmZSByZW1haW5zIGF0IFAxMS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA4LTMxVDIwOjQ1OjA2In0seyJ0YXNrIjoid2F0ZXIgbXkgcGxhbnRzIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6Ik5vIHZpc2libGUgZXZpZGVuY2UgdGhlIHBsYW50IHdhcyB3YXRlcmVkOyBjdXAgYW5kIHBsYW50IHJlbWFpbiBlc3NlbnRpYWxseSB1bmNoYW5nZWQuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0wMVQxNTo0NjoxMyJ9LHsidGFzayI6IndhdGVyIG15IHBsYW50cyIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJObyB2aXNpYmxlIGV2aWRlbmNlIHRoZSBwbGFudCB3YXMgd2F0ZXJlZDsgcGxhbnQgYW5kIG11ZyBvbmx5IHNoaWZ0ZWQgc2xpZ2h0bHkuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0wMlQxNDozMTo1MCJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNwb3QgaW4gdGhlIGJvZHkuIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5IiwicmVhc29uIjoiYmxhY2sgc29jayB3YXMgbW92ZWQgaW50byB0aGUgYm93bCwgd2l0aCB0aGUgYm93bCBzdGlsbCBjb250YWluaW5nIGl0IGluIHRoZSBmaW5hbCBpbWFnZSIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTE6NTE6MjIifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzcG90IGluIHRoZSBib2R5LiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJibGFjayBzb2NrIHdhcyBtb3ZlZCBuZWFyIEs0IGluc3RlYWQgb2YgYmVpbmcga2VwdCBpbiB0aGUgYm93bC9ib2R5IGF0IFEzIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMTo1MTozNiJ9LHsidGFzayI6InNvcnQgdGhlIHNvY2tlcyBhbmQga2VlcCB0aGUgd2hpdGVzIGluIHRlIGJvd2wiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiV2hpdGUgc29ja3MgYXJlIG5vdCB2aXNpYmxlIGluIHRoZSBib3dsIGluIHRoZSBmaW5hbCBpbWFnZTsgb25seSB0aGUgYmxhY2sgc29ja3MgcmVtYWluIG9uIHRoZSBib2FyZC4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDEyOjAzOjAwIn0seyJ0YXNrIjoiS2VlcCB0aGUgYmxhY2sgc29ja3Mgc3RhY2tlZCB0b2dldGhlci4iLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiT25seSBvbmUgYmxhY2sgc29jayBpcyB2aXNpYmxlIGluIHRoZSBmaW5hbCBpbWFnZTsgdGhlIHR3byBzb2NrcyBhcmUgbm90IGNvbmZpcm1lZCBzdGFja2VkIHRvZ2V0aGVyLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTI6MDU6MTMifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzb2NrcyBzdGFja2VkIHRvZ2V0aGVyLiIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsInJlYXNvbiI6IlRoZSB0d28gYmxhY2sgc29ja3MgYXJlIHN0YWNrZWQgdG9nZXRoZXIgaW4gdGhlIGZpbmFsIGltYWdlLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTI6MDU6MjMifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzb2NrIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsInJlYXNvbiI6ImJsYWNrIHNvY2sgaXMgcGxhY2VkIGluIHRoZSBncmVlbiBib3dsIGluIHRoZSBmaW5hbCBpbWFnZS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDEzOjAxOjM0In0seyJ0YXNrIjoiU29ydCB0aGUgYmxhY2sgYW5kIHdoaXRlIHNvY2tzLCBhbmQgcHV0IGFsbCB0aGUgd2hpdGVzIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJXaGl0ZSBzb2NrIGlzIGluIHRoZSBib3dsLCBidXQgb25lIHdoaXRlIHNvY2sgcmVtYWlucyBvdXRzaWRlIHRoZSBib3dsLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTY6Mjc6NDgifSx7InRhc2siOiJTb3J0IG15IGNsb3RoZXMgb3Igc29ja3MgaW50byBibGFjayBhbmQgd2hpdGUuIEtlZXAgYWxsIHRoZSBibGFja3MgaW4gdGhlIGJvd2wuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6Ik9ubHkgb25lIGJsYWNrIHNvY2sgaXMgaW4gdGhlIGJvd2w7IHRoZSBvdGhlciBibGFjayBzb2NrIGlzIG5vdCB2ZXJpZmllZCBpbiB0aGUgYm93bC4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDE2OjM5OjQyIn0seyJ0YXNrIjoiS2VlcCB0aGUgbGVhdmVzIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJMZWF2ZXMgYXJlIG5vdCBmdWxseSBpbiB0aGUgYm93bDsgcGFydCBvZiB0aGUgc3ByaWcgcmVtYWlucyBvdXRzaWRlIG9uIHRoZSByaW0vdGFibGUuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxNjo0Nzo1MiJ9LHsidGFzayI6Im1vZSB0aGUgYmtvb2sgdG8gaXQncyBsZWZ0IiwidmVyc2lvbiI6IkVSUi0zIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsIm9iamVjdHMiOlsibm90ZWJvb2s9d3JvbmciXSwicmVhc29uIjoiVGhlIG5vdGVib29rIHJlbWFpbnMgaW4gdGhlIHNhbWUgcG9zaXRpb24gYXMgaW4gdGhlIHN0YXJ0IGltYWdlcyBhbmQgd2FzIG5vdCBtb3ZlZCBsZWZ0LiIsIm5leHQiOiJGSVg6IG1vdmUgdGhlIG5vdGVib29rIGxlZnQgZnJvbSBpdHMgY3VycmVudCBwb3NpdGlvbiBhbmQgcmVsZWFzZSBpdCB0aGVyZSIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMDJUMTg6MDQ6MDAifSx7InRhc2siOiJtb2UgdGhlIGJrb29rIHRvIGl0J3MgbGVmdCIsInZlcnNpb24iOiJFUlItMyIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsIm9iamVjdHMiOlsibm90ZWJvb2s9b2siXSwicmVhc29uIjoiVGhlIGJsYWNrIG5vdGVib29rIGlzIHZpc2libHkgc2hpZnRlZCBsZWZ0IGZyb20gaXRzIHN0YXJ0IHBvc2l0aW9uIChmcm9tIGFib3V0IEctTCBjb2x1bW5zIHRvIGFib3V0IEQtSiBjb2x1bW5zKSBhbmQgaXMgcmVzdGluZyBvbiB0aGUgYm9hcmQgd2l0aCBubyBncmlwcGVyIGhvbGRpbmcgaXQ7IG5vIG90aGVyIHRhc2sgY29uc3RyYWludHMgYXJlIHZpc2libHkgdmlvbGF0ZWQuIiwibmV4dCI6IiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMDJUMTg6MDQ6MjIifV19"  # S1_EMBEDDED_STATE
 try:
     S1_EMBEDDED_STATE = json.loads(
         base64.b64decode(S1_EMBEDDED_STATE_B64).decode("utf-8"))
@@ -5921,6 +5921,8 @@ PLANNER_MODEL = "gpt-5.6-terra"
 # effort, sent to the planner model only. Saved with the settings.
 PLANNER_EFFORTS = (("low", "Low"), ("medium", "Medium"), ("high", "High"))
 PLANNER_EFFORT = "low"      # the cheapest thinking level
+SWEEP_SKIPS_PLANNER = True  # a plain sweep's plan IS S1's recipe: no 20,000-token call to be overruled
+PLANNER_PRUNE = True        # a sweep or a fold sends the planner only its own playbook
 
 
 def planner_effort_label():
@@ -6337,9 +6339,10 @@ def call_model(client, *, model, messages, max_tokens, stage="request",
     once, only transport faults are retried. `priority` asks for OpenAI's
     priority processing tier (faster, billed higher); a model that refuses
     it falls back to the standard tier for the rest of the session.
-    `reasoning` is the reasoning effort ("none" ... "max"); a model that
-    refuses that value is asked again at its own default, and is not sent
-    it again this session.
+    `reasoning` is the reasoning effort ("none" ... "max"), or several in
+    order of preference; a model that refuses a value is asked again with the
+    next one (at its own default after the last), and is not sent the
+    refused one again this session.
     """
     last = None
     for attempt in range(1, API_RETRIES + 1):
@@ -6348,8 +6351,11 @@ def call_model(client, *, model, messages, max_tokens, stage="request",
             tier = _service_tier_for(model, priority)
             if tier:
                 kwargs["service_tier"] = tier
-            if reasoning and (model, reasoning) not in _REASONING_REFUSED:
-                kwargs["reasoning_effort"] = reasoning
+            efforts = [e for e in ([reasoning] if isinstance(reasoning, str)
+                                   else list(reasoning or ()))
+                       if e and (model, e) not in _REASONING_REFUSED]
+            if efforts:
+                kwargs["reasoning_effort"] = efforts[0]
             t0 = time.time()
             while True:
                 try:
@@ -6375,10 +6381,16 @@ def call_model(client, *, model, messages, max_tokens, stage="request",
                             "reasoning_effort", "reasoning effort",
                             "reasoning.effort")):
                         effort = kwargs.pop("reasoning_effort")
-                        print(f"[api] {model} refused reasoning effort "
-                              f"{effort!r} ({str(e)[:80]}) - using its default "
-                              f"from now on")
                         _REASONING_REFUSED.add((model, effort))
+                        later = [x for x in efforts if (model, x) not in _REASONING_REFUSED]
+                        if later:
+                            kwargs["reasoning_effort"] = later[0]
+                            print(f"[api] {model} refused reasoning effort "
+                                  f"{effort!r} ({str(e)[:80]}) - trying {later[0]!r}")
+                        else:
+                            print(f"[api] {model} refused reasoning effort "
+                                  f"{effort!r} ({str(e)[:80]}) - using its default "
+                                  f"from now on")
                     else:
                         raise
                     t0 = time.time()
@@ -6446,6 +6458,7 @@ REGION_BACKGROUND_SHARE = 0.75
 COMPONENT_CONTAINMENT = 0.90
 NAMER_MAX_SIDE = 1600
 NAMER_MAX_TOKENS = 4000
+NAMER_REASONING = "low"    # naming is reading the photo, not reasoning: the cheapest effort
 NAME_FONT = 0.6
 TAG_OBJECT_AREA_MULT = 4.0
 VISION_READY_WAIT_S = 60.0
@@ -6590,9 +6603,30 @@ def object_area(contours):
     return sum(cv2.contourArea(c) for c in contours)
 
 
+COMPONENT_INSIDE = 0.8      # ...and this much of its AREA lies inside that object's outline
+
+
+def _inside_share(child, parent):
+    """The share of `child`'s area that lies inside `parent`'s outline (both
+    lists of contours). A box that merely CONTAINS a part says nothing about
+    a part standing in a notch of its parent: a sleeve beside the planks
+    that frame it is not a part of the planks."""
+    x1, y1, x2, y2 = object_bbox(child)
+    k = max(1, int(max(x2 - x1, y2 - y1) // 96))
+    w, h = (x2 - x1) // k + 2, (y2 - y1) // k + 2
+    cm = np.zeros((h, w), np.uint8)
+    pm = np.zeros((h, w), np.uint8)
+    cv2.drawContours(cm, [((c - (x1, y1)) // k).astype(np.int32) for c in child], -1, 1, -1)
+    cv2.drawContours(pm, [((c - (x1, y1)) // k).astype(np.int32) for c in parent], -1, 1, -1)
+    area = int(cm.sum())
+    return 1.0 if area == 0 else float(np.count_nonzero(cm & pm)) / area
+
+
 def find_parents(objects):
     """For each object, the index of the smallest bigger object it sits mostly
     inside (it's a part of that one: a logo, a button, a sticker), or None.
+    Its box must lie inside the parent's box, and most of its area inside the
+    parent's outline.
     """
     n = len(objects)
     boxes = [object_bbox(c) for c in objects]
@@ -6606,7 +6640,9 @@ def find_parents(objects):
                 continue
             xj1, yj1, xj2, yj2 = boxes[j]
             inter = max(0, min(xi2, xj2) - max(xi1, xj1)) * max(0, min(yi2, yj2) - max(yi1, yj1))
-            if inter / box_area_i >= COMPONENT_CONTAINMENT and (parents[i] is None or areas[j] < areas[parents[i]]):
+            if (inter / box_area_i >= COMPONENT_CONTAINMENT
+                    and (parents[i] is None or areas[j] < areas[parents[i]])
+                    and _inside_share(objects[i], objects[j]) >= COMPONENT_INSIDE):
                 parents[i] = j
     return parents
 
@@ -6960,8 +6996,10 @@ def naming_prompt(n, part_of, scene_hint):
         'object is named for what it is, not for the object under it. For a part, name the part itself '
         '("logo", "sticker", "button", "tray", "bristles", "lip"), not the thing it is on: a dustpan\'s hollow '
         'inside is its "tray", its front edge its "lip", a broom\'s brush end its "bristles". If a number '
-        'marks a shadow, bare surface, '
-        "a gap, or something you can't identify, use \"unknown\".\n\n"
+        'marks bare surface (the table, floor, mat or wood grain around the objects), a shadow or a gap, '
+        'name it "surface". If it is a person\'s hand, arm or fingers (holding or touching something), '
+        'name it "hand". '
+        "If it is a real object you can't identify, use \"unknown\".\n\n"
         "For every number also give:\n"
         '- "color": its main colour in one word ("black", "white", "silver", ...);\n'
         '- "desc": what it looks like in at most 8 words (material, shape, markings);\n'
@@ -7014,6 +7052,7 @@ def ask_for_names(model, images, prompt, n):
     client = make_client()
     text = call_model(client, model=model, max_tokens=NAMER_MAX_TOKENS,
                       stage="Naming", priority=PRIORITY_NAMING,
+                      reasoning=NAMER_REASONING,
                       messages=[{"role": "user", "content": [
                           {"type": "text", "text": prompt},
                           *({"type": "image_url", "image_url": {
@@ -8072,10 +8111,34 @@ def note_opening(entry):
     entry["desc"] = f"{entry.get('desc', '')}; {note}".lstrip("; ")
 
 
+def _flat_side_mouth(pts, c, size):
+    """The mouth of a pan outlined without its handle, as guess_mouth's dict,
+    or None: its one long straight side (a D-shaped pan's flat edge), facing
+    away from the middle. A shape with no side clearly longer than the rest
+    (a rectangle, a circle) gives none."""
+    cnt = np.round(pts * 100).astype(np.int32).reshape(-1, 1, 2)
+    poly2 = cv2.approxPolyDP(cnt, 0.012 * cv2.arcLength(cnt, True), True).reshape(-1, 2) / 100.0
+    sides = []
+    for i in range(len(poly2)):
+        p0, p1 = poly2[i], poly2[(i + 1) % len(poly2)]
+        sides.append((float(np.hypot(*(p1 - p0))), p0, p1))
+    sides.sort(key=lambda t: -t[0])
+    if not sides or sides[0][0] < 0.45 * size:
+        return None
+    if len(sides) > 1 and sides[0][0] < 1.6 * sides[1][0]:
+        return None
+    length, p0, p1 = sides[0]
+    n = np.array([-(p1 - p0)[1], (p1 - p0)[0]]) / length
+    if ((p0 + p1) / 2.0 - c) @ n < 0:
+        n = -n
+    return {"a": tuple(p0), "b": tuple(p1), "n": (float(n[0]), float(n[1]))}
+
+
 def guess_mouth(poly):
     """{"a", "b", "n"} (grid units) for a dustpan outlined whole, or None:
     its handle is the far protrusion, and its mouth the longest straight
-    side facing away from the handle (within about 45 degrees)."""
+    side facing away from the handle (within about 45 degrees). Without a
+    handle in the outline: its one long flat side."""
     try:
         pts = np.array([(float(x), float(y)) for x, y in poly], np.float64)
     except (TypeError, ValueError):
@@ -8093,7 +8156,7 @@ def guess_mouth(poly):
     dist = np.hypot(*(dense - c).T)
     tip = dense[int(dist.argmax())]
     if float(dist.max()) < 1.3 * float(np.median(dist)):
-        return None                         # no handle to tell the front by
+        return _flat_side_mouth(pts, c, size)   # no handle: its one long flat side
     away = -(tip - c) / max(1e-9, float(np.hypot(*(tip - c))))
     cnt = np.round(pts * 100).astype(np.int32).reshape(-1, 1, 2)
     poly2 = cv2.approxPolyDP(cnt, 0.012 * cv2.arcLength(cnt, True), True).reshape(-1, 2) / 100.0
@@ -8214,15 +8277,11 @@ def sweep_recipe(objects):
     pick_notes = []
     geo = pan.get("mouth_geo")
     if not geo:
-        geo = guess_mouth(pan.get("polygon"))
+        geo = _mouth_trimmed(pan.get("polygon"))
         if not geo:
             return {"note": f"the {pan['name']}'s mouth could not be told from its outline"}
-        a_, b_ = np.array(geo["a"], np.float64), np.array(geo["b"], np.float64)
-        if float(np.hypot(*(b_ - a_))) > 2.0:        # the side walls stand at its ends
-            t_ = (b_ - a_) / float(np.hypot(*(b_ - a_)))
-            geo = dict(geo, a=tuple(a_ + t_ * 0.3), b=tuple(b_ - t_ * 0.3))
         pick_notes.append(f"the {pan['name']}'s mouth is taken from its shape "
-                          "(the side facing away from its handle)")
+                          "(the side facing away from its handle, or its long flat side)")
     home = parse_coordinate(str(brush.get("center") or ""))
     if home is None:
         return {"note": "the brush has no cell to pick it up at"}
@@ -8599,7 +8658,8 @@ def sweep_recipe(objects):
             if abs(lats[-1] - st["pos"] @ e) < abs(lats[0] - st["pos"] @ e):
                 lats.reverse()
             used = set()
-            for k, lat in enumerate(lats, 1):
+            for lat in lats:
+                k = st["main"] + 1              # strokes are numbered as they are written
                 fits = (lambda q, u=used: inside(q) and int(math.floor(q @ e)) not in u)
                 pts = st["pts"]
                 ahead = ((pts - L) @ N > 0.0) & (pts @ e >= lat + f_lo - 0.4) & (pts @ e <= lat + f_hi + 0.4)
@@ -8618,7 +8678,8 @@ def sweep_recipe(objects):
                         notes.append(f"stroke {k} is out of reach")
                         continue
                     way, P0 = got
-                    used.add(int(math.floor(P0 @ e)))
+                    first_row = int(math.floor(P0 @ e))
+                    used.add(first_row)
                     # a stroke the walls stop at the lip (a tilted head's
                     # corner poking past the mouth's end) goes in further
                     # toward the middle instead, when that gets it in
@@ -8629,13 +8690,18 @@ def sweep_recipe(objects):
                             break
                         side_in = 1.0 if P0 @ e < mid else -1.0
                         alt = place(st["pos"], P0 + side_in * nudge * e, e,
-                                    lambda q, p=P0, n=nudge: (q @ e - p @ e) * side_in >= n - 0.05
+                                    lambda q, p=P0, n=nudge: inside(q)
+                                    and int(math.floor(q @ e)) not in used - {first_row}
+                                    and (q @ e - p @ e) * side_in >= n - 0.05
                                     and q @ d1 <= behind(ap, q, d1, e) + 0.5)
                         if alt is None:
                             continue
                         t2 = trace(alt[0][-1], alt[1], d1, through)
                         if t2[1] is not None and delivered(t2[0]):
                             way, P0, traced = alt[0], alt[1], t2
+                            used.discard(first_row)
+                            first_row = int(math.floor(P0 @ e))
+                            used.add(first_row)
                     short = P0 @ d1 - behind(ap, P0, d1, e)
                     if short > 0.05:
                         notes.append(f"stroke {k} starts {short:.1f} cells short (reach)")
@@ -8741,12 +8807,13 @@ def sweep_followed(plan, rec) -> bool:
     return _pressed_runs(plan) == want
 
 
-def sweep_plan_text(rec) -> str:
-    """A whole plan made of the recipe, for when the planner's differs."""
+def sweep_plan_text(rec, why="the planner's strokes did not match it") -> str:
+    """A whole plan made of the recipe: for when the planner's differs, and
+    for a plain sweep, where the planner is not asked at all."""
     return ("PLAN:\n- sweep into the " + rec["collector"] + ": " + rec["brush"] + ", "
             + rec["collector"] + " | after: holding nothing\n"
-            "# Sweep computed by S1 from the measured mouth (the planner's "
-            "strokes did not match it).\n" + "\n".join(rec["lines"]) + "\nTask_Completed")
+            "# Sweep computed by S1 from the measured mouth (" + why + ").\n"
+            + "\n".join(rec["lines"]) + "\nTask_Completed")
 
 
 def merge_outlines(outlines):
@@ -8763,6 +8830,220 @@ def merge_outlines(outlines):
     return [c + np.int32([x0, y0]) for c in merged]
 
 
+_NAME_LEAD = (r"(?:(?:bare|the|a|wooden|wood|light|dark|brown|grey|gray|white|black|plain|empty|flat|"
+              r"floor|table|desk|left|right|human|person's|persons)\s+)*")
+_SURFACE_NAME_RE = re.compile(
+    rf"^{_NAME_LEAD}(?:surfaces?|backgrounds?|tables?|tabletops?|table top|floors?|flooring|ground|mats?|"
+    r"desks?|countertops?|counters?|shadows?|gaps?|wood|wood grain|planks?)$")
+_HAND_NAME_RE = re.compile(
+    rf"^{_NAME_LEAD}(?:hands?|arms?|fingers?|wrists?|thumbs?|palms?|persons?|humans?)$")
+UNKNOWN_SURFACE_SHARE = 0.10    # an outline this big (of what Vision looks at) that the namer could not name
+
+
+def is_surface_name(name) -> bool:
+    """"surface", "wood grain", "floor": what lies around the objects."""
+    return bool(_SURFACE_NAME_RE.match(clean_object_name(name)))
+
+
+def is_hand_name(name) -> bool:
+    """"hand", "left hand": a person's, never a "hand brush"."""
+    return bool(_HAND_NAME_RE.match(clean_object_name(name)))
+
+
+def ignored_outlines(snap, namer):
+    """(surface, hands): the indices of the outlines S1 plans around but never
+    with -- bare table the outliner traced, a hand holding something, and an
+    outline as big as a tenth of the board that the namer could not name."""
+    objects, ids = snap["objects"], snap["ids"]
+    region = snap.get("region") or snap.get("box")
+    frame = snap.get("frame")
+    if region is not None:
+        total = max(1.0, (region[2] - region[0]) * (region[3] - region[1]))
+    else:
+        total = float(frame.shape[0] * frame.shape[1]) if frame is not None else 0.0
+    parents = snap.get("parents") or [None] * len(ids)
+    table, hands = set(), set()
+    for i, tid in enumerate(ids):
+        name = namer.names.get(tid)
+        if name and is_hand_name(name):
+            hands.add(i)
+        elif name and is_surface_name(name):
+            table.add(i)
+        elif (not name and tid in namer.asked and total
+              and object_area(objects[i]) >= UNKNOWN_SURFACE_SHARE * total):
+            table.add(i)
+    gone = table | hands
+    surface = set()
+    for i in table:
+        # a "floor" or "wall" the namer called a piece of a bigger thing (a
+        # dustpan's), or that lies in a real object, is that thing's part,
+        # never the table; one lying in a hand is still the table
+        thing = str((namer.info.get(ids[i]) or {}).get("thing") or "").strip()
+        p, seen = parents[i], 0
+        while p is not None and p in gone and seen < len(parents):
+            p, seen = parents[p], seen + 1
+        if not thing and p is None:
+            surface.add(i)
+    return surface, hands
+
+
+def _kept_parents(parents, skipped):
+    """`parents` with every skipped outline stepped over: a part of a plank is
+    a part of whatever the plank itself lies in, or of nothing."""
+    out = list(parents)
+    for i, p in enumerate(parents):
+        seen = 0
+        while p is not None and p in skipped and seen < len(parents):
+            p, seen = parents[p], seen + 1
+        out[i] = p
+    return out
+
+
+def cut_out(contours, cuts):
+    """`contours` with the area of the `cuts` outlines taken out (a hand over
+    a brush's handle): the pieces that are left. Unchanged when the cut barely
+    touches it or would leave next to nothing (then it is the cut itself)."""
+    x1, y1, x2, y2 = object_bbox(contours)
+    mask = np.zeros((y2 - y1 + 1, x2 - x1 + 1), np.uint8)
+    cv2.drawContours(mask, [(c - (x1, y1)).astype(np.int32) for c in contours], -1, 255, -1)
+    area = int(np.count_nonzero(mask))
+    cut = np.zeros_like(mask)
+    hit = False
+    for other in cuts:
+        ox1, oy1, ox2, oy2 = object_bbox(other)
+        if ox2 < x1 or ox1 > x2 or oy2 < y1 or oy1 > y2:
+            continue
+        cv2.drawContours(cut, [(c - (x1, y1)).astype(np.int32) for c in other], -1, 255, -1)
+        hit = True
+    if not hit or area == 0:
+        return contours
+    left = cv2.bitwise_and(mask, cv2.bitwise_not(cut))
+    kept = int(np.count_nonzero(left))
+    if area - kept < 0.03 * area or kept < 0.25 * area:
+        return contours
+    left = cv2.morphologyEx(left, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+    pieces, _ = cv2.findContours(left, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    pieces = [p for p in pieces if cv2.contourArea(p) >= 0.02 * area]
+    if not pieces:
+        return contours
+    return [p + np.int32([x1, y1]) for p in pieces]
+
+
+LEAK_MIN_SHARE = 0.02       # a leak is a lump of at least this share of the outline's area...
+LEAK_KEEP_MIN = 0.55        # ...and the outline keeps at least this share of it
+LEAK_SIDE_PX = 256          # the work is done on a crop this big
+CLEAN_MIN_SHARE = 0.004     # smaller outlines (of the frame) are left as FastSAM drew them
+
+
+def _mask_in(contours, shape, off, scale):
+    m = np.zeros(shape, np.uint8)
+    cv2.drawContours(m, [((c.astype(np.float32) - off) * scale).astype(np.int32)
+                         for c in contours], -1, 255, -1)
+    return m
+
+
+def trim_leaks(frame, contours, others=()):
+    """The outline with the table taken out of it. FastSAM's mask sometimes
+    runs out across a strip of the table beside an object (a white shirt's mask
+    taking in the dark planks at its side), and the shape read from it is then
+    the shirt AND the planks. Pixels inside the mask that look like the table
+    around the object and not like the object, lying in a lump on the mask's
+    edge, are cut off. `others` are outlines of other things, kept out of the
+    sample of the table. Unchanged when the object looks like the table (they
+    cannot be told apart), or when most of it would go."""
+    x1, y1, x2, y2 = object_bbox(contours)
+    pad = max(10, int(0.12 * max(x2 - x1, y2 - y1)))
+    height, width = frame.shape[:2]
+    X1, Y1 = max(0, x1 - pad), max(0, y1 - pad)
+    X2, Y2 = min(width, x2 + pad + 1), min(height, y2 + pad + 1)
+    if X2 - X1 < 20 or Y2 - Y1 < 20:
+        return contours
+    scale = min(1.0, LEAK_SIDE_PX / float(max(X2 - X1, Y2 - Y1)))
+    crop = frame[Y1:Y2, X1:X2]
+    small = (cv2.resize(crop, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+             if scale < 1 else crop)
+    lab = cv2.cvtColor(small, cv2.COLOR_BGR2LAB).astype(np.float32)
+    off = np.float32([X1, Y1])
+    mask = _mask_in(contours, small.shape[:2], off, scale)
+    area = int(np.count_nonzero(mask))
+    if area < 300:
+        return contours
+    r = max(2, int(0.04 * max(mask.shape)))
+    ring = (cv2.dilate(mask, np.ones((3 * r, 3 * r), np.uint8))
+            & ~cv2.dilate(mask, np.ones((r, r), np.uint8)))
+    for other in others:
+        ring &= ~_mask_in(other, small.shape[:2], off, scale)
+    inside, around = mask > 0, ring > 0
+    if np.count_nonzero(around) < 150:
+        return contours
+    table = np.median(lab[around], axis=0)
+    thing = np.median(lab[inside], axis=0)
+    for _ in range(2):          # the colour of the part of it that is NOT table-like
+        near_thing = inside & (np.linalg.norm(lab - thing, axis=2) < np.linalg.norm(lab - table, axis=2))
+        if np.count_nonzero(near_thing) < 0.3 * area:
+            break
+        thing = np.median(lab[near_thing], axis=0)
+    gap = float(np.linalg.norm(thing - table))
+    if gap < 22:
+        return contours
+    d_thing = np.linalg.norm(lab - thing, axis=2)
+    d_table = np.linalg.norm(lab - table, axis=2)
+    leak = (inside & (d_table < 0.6 * d_thing) & (d_thing > 0.4 * gap)).astype(np.uint8) * 255
+    leak = cv2.morphologyEx(leak, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+    n, labels, stats, _ = cv2.connectedComponentsWithStats(leak, connectivity=8)
+    edge = inside & ~(cv2.erode(mask, np.ones((5, 5), np.uint8)) > 0)
+    drop = np.zeros_like(mask)
+    for k in range(1, n):
+        if stats[k, cv2.CC_STAT_AREA] >= LEAK_MIN_SHARE * area and edge[labels == k].any():
+            drop[labels == k] = 255
+    if not drop.any():
+        return contours
+    left = cv2.bitwise_and(mask, cv2.bitwise_not(cv2.dilate(drop, np.ones((3, 3), np.uint8))))
+    left = cv2.morphologyEx(left, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8))
+    n, labels, stats, _ = cv2.connectedComponentsWithStats(left, connectivity=8)
+    if n <= 1:
+        return contours
+    biggest = int(stats[1:, cv2.CC_STAT_AREA].max())
+    keep = np.zeros_like(left)
+    for k in range(1, n):
+        if stats[k, cv2.CC_STAT_AREA] >= 0.08 * biggest:
+            keep[labels == k] = 255
+    if np.count_nonzero(keep) < LEAK_KEEP_MIN * area:
+        return contours
+    found, _ = cv2.findContours(keep, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    out = [(c.astype(np.float32) / scale + off).round().astype(np.int32)
+           for c in found if len(c) >= 3]
+    return out or contours
+
+
+def clean_outlines(objects, parents, skipped, frame, is_robot):
+    """The outlines with the table taken out of every top-level object's mask."""
+    if frame is None:
+        return objects
+    total = float(frame.shape[0] * frame.shape[1])
+    out = list(objects)
+
+    def inside(j, i):
+        seen = 0
+        while j is not None and seen < len(parents):
+            if j == i:
+                return True
+            j, seen = parents[j], seen + 1
+        return False
+
+    for i, contours in enumerate(objects):
+        if (i in skipped or parents[i] is not None or is_robot(i)
+                or object_area(contours) < CLEAN_MIN_SHARE * total):
+            continue
+        others = [objects[j] for j in range(len(objects))
+                  if j != i and j not in skipped and not inside(j, i)]
+        try:
+            out[i] = trim_leaks(frame, contours, others)
+        except Exception as e:
+            print(f"[vision] outline cleanup skipped for #{i + 1}: {e}")
+    return out
+
+
 def planner_objects(snap, namer, grid: Grid):
     """A Vision AI snapshot as the planner's object list.
 
@@ -8777,6 +9058,24 @@ def planner_objects(snap, namer, grid: Grid):
     frame = snap.get("frame")
     names, info = namer.names, namer.info
     cw, ch = cell_size_in(grid)
+    surface, hands = ignored_outlines(snap, namer)
+    skipped = surface | hands
+    namer.left_out = {"hands": len(hands), "surface": len(surface)}
+    if skipped:
+        parents = _kept_parents(parents, skipped)
+        if hands:
+            cuts = [objects[h] for h in sorted(hands)]
+            objects = [objects[i] if i in skipped else cut_out(objects[i], cuts)
+                       for i in range(len(objects))]
+        print("[vision] not planned with: " + ", ".join(
+            f"#{i + 1} {'hand' if i in hands else 'surface'}" for i in sorted(skipped)))
+    trimmed = clean_outlines(objects, parents, skipped, frame,
+                             lambda i: bool((info.get(ids[i]) or {}).get("robot")))
+    for i, (a, b) in enumerate(zip(objects, trimmed)):
+        if a is not b:
+            print(f"[vision] #{i + 1}: the table was cut out of its outline "
+                  f"({object_area(a):.0f} -> {object_area(b):.0f} px)")
+    objects = trimmed
 
     def meta(i):
         return info.get(ids[i]) or {}
@@ -8804,7 +9103,7 @@ def planner_objects(snap, namer, grid: Grid):
 
     entries, components = {}, {}
     for i, contours in enumerate(objects):
-        if meta(i).get("robot"):
+        if meta(i).get("robot") or i in skipped:
             continue
         poly = outline_polygon(contours, grid)
         if poly is None:
@@ -9222,6 +9521,11 @@ def garment_family(obj) -> str:
         for family, words in GARMENT_FAMILIES:
             if any(_hint_matches(w, low) for w in words):
                 return family
+    if obj.get("polygon") and GENERIC_GARMENT_RE.search(name):
+        if "shape_family" not in obj:
+            obj["shape_family"] = _shape_family(obj["polygon"])
+        if obj["shape_family"]:
+            return obj["shape_family"]
     if fold_landmarks(obj, family="unknown"):
         return "unknown"
     return ""
@@ -9899,7 +10203,8 @@ def fold_recipe_text(objects, grid=None) -> str:
             lines.append(f"  note: {rec['note']}")
     if not lines:
         return ""
-    return ("FOLD RECIPES (computed from the landmarks vision located; each "
+    return ("FOLD RECIPES (computed from the landmarks vision located or S1 "
+            "measured from the garment's outline; each "
             "line is one pickup/keep pair - write exactly these, in this "
             "order, with these cells):\n" + "\n".join(lines))
 
@@ -9940,6 +10245,673 @@ def cell_size_in(grid=None) -> tuple:
     return w, h
 
 
+# --------------------------------------------------------------------------
+# Shape analysis. Vision (FastSAM and the namer) lists only what it happened
+# to outline. A pan's handle and opening, a brush's bristles and handle, a
+# shirt's sleeves, shoulders, collar and hem are usually NOT outlined on
+# their own -- yet the outline shows them. S1 reads them off it and hands
+# them to the planner as COMPONENTS marked "(from its shape)", plus a line
+# on the object's shape and on which neighbour it touches, on which side.
+# --------------------------------------------------------------------------
+SHAPE_PX = 10               # raster pixels per grid cell
+SHAPE_MIN_MIRROR = 0.72     # a garment's outline is read only if it mirrors this well
+SHAPE_INSET = 0.35          # grips sit this far in from an edge (cells)
+
+# Opening-bearing things (a dustpan's mouth, a pan's whole top).
+COLLECTOR_WORDS = ("dustpan", "dust pan", "scoop", "collector")
+CONTAINER_WORDS = COLLECTOR_WORDS + (
+    "pan", "saucepan", "skillet", "wok", "pot", "teapot", "mug", "cup",
+    "bowl", "kettle", "jug", "pitcher", "bucket", "pail", "basket", "bin",
+    "vase")
+# Long tools: the word -> what the wide end is called.
+TOOL_HEADS = {
+    "broom": "bristles", "brush": "bristles", "sweeper": "bristles",
+    "mop": "mop head", "duster": "duster head", "whisk": "head",
+    "spatula": "head", "turner": "head", "spoon": "bowl", "ladle": "bowl",
+    "knife": "blade", "fork": "tines", "hammer": "head", "rake": "head",
+    "shovel": "blade",
+}
+
+
+def _shape_raster(poly):
+    """The outline as a mask, centred on its own centroid so that anything
+    can be rotated or mirrored about the middle without leaving the canvas."""
+    pts = np.array([(float(x), float(y)) for x, y in poly], np.float64)
+    gc = np.array(_poly_centroid([(float(x), float(y)) for x, y in pts]), np.float64)
+    r = float(np.hypot(*(pts - gc).T).max()) * SHAPE_PX
+    n = int(2 * math.ceil(r) + 10)
+    c = np.array([n / 2.0, n / 2.0])
+    mask = np.zeros((n, n), np.uint8)
+    cv2.fillPoly(mask, [np.round((pts - gc) * SHAPE_PX + c).astype(np.int32)], 1)
+    return {"mask": mask, "gc": gc, "c": c, "n": n}
+
+
+def _px_to_grid(ras, p):
+    return ras["gc"] + (np.asarray(p, np.float64) - ras["c"]) / SHAPE_PX
+
+
+def _mirror_iou(mask, c, theta):
+    """How well the mask matches itself mirrored across the line through its
+    centre at angle `theta` (0..1)."""
+    c2, s2 = math.cos(2.0 * theta), math.sin(2.0 * theta)
+    R = np.array([[c2, s2], [s2, -c2]])
+    M = np.hstack([R, (c - R @ c)[:, None]])
+    refl = cv2.warpAffine(mask, M, mask.shape[::-1], flags=cv2.INTER_NEAREST)
+    union = int(((mask > 0) | (refl > 0)).sum())
+    return float(((mask > 0) & (refl > 0)).sum()) / union if union else 0.0
+
+
+def _symmetry_axis(ras):
+    """(angle, mirror score) of the line a garment mirrors best about."""
+    mask, c = ras["mask"], ras["c"]
+    best_deg, best = 0.0, -1.0
+    for deg in range(0, 180, 4):
+        v = _mirror_iou(mask, c, math.radians(deg))
+        if v > best:
+            best_deg, best = float(deg), v
+    for deg in np.arange(best_deg - 3.0, best_deg + 3.01, 1.0):
+        v = _mirror_iou(mask, c, math.radians(deg))
+        if v > best:
+            best_deg, best = float(deg), v
+    return math.radians(best_deg), best
+
+
+def _upright(ras, up):
+    """The mask turned about its centre until the unit vector `up` (pixel
+    coordinates, y down) points to the top. -> (mask, 2x3 matrix)."""
+    a = math.atan2(up[1], up[0])
+    b = -math.pi / 2.0 - a
+    R = np.array([[math.cos(b), -math.sin(b)], [math.sin(b), math.cos(b)]])
+    M = np.hstack([R, (ras["c"] - R @ ras["c"])[:, None]])
+    n = ras["n"]
+    return cv2.warpAffine(ras["mask"], M, (n, n), flags=cv2.INTER_NEAREST), M
+
+
+def _unwarp(ras, M):
+    """A function taking an upright pixel to a grid point."""
+    Mi = cv2.invertAffineTransform(M)
+    return lambda p: _px_to_grid(ras, Mi @ np.array([float(p[0]), float(p[1]), 1.0]))
+
+
+def _profile(U):
+    """Row by row: the filled runs of an upright mask."""
+    n = U.shape[0]
+    rows = np.nonzero(U.any(1))[0]
+    y0, y1 = int(rows[0]), int(rows[-1])
+    left, right = np.zeros(n), np.zeros(n)
+    width, runs = np.zeros(n), np.zeros(n, int)
+    segs = {}
+    for y in range(y0, y1 + 1):
+        xs = np.nonzero(U[y])[0]
+        if len(xs) == 0:
+            segs[y] = []
+            continue
+        cut = np.nonzero(np.diff(xs) > 2)[0]
+        starts = np.concatenate([[xs[0]], xs[cut + 1]])
+        ends = np.concatenate([xs[cut], [xs[-1]]])
+        segs[y] = list(zip(starts.tolist(), ends.tolist()))
+        left[y], right[y], width[y], runs[y] = xs[0], xs[-1], len(xs), len(starts)
+    return {"y0": y0, "y1": y1, "L": y1 - y0 + 1, "left": left, "right": right,
+            "width": width, "runs": runs, "segs": segs}
+
+
+def _top_cue(P, family):
+    """Positive when the garment's top end is the upper one, negative when
+    it is the lower one, near 0 when its outline does not say."""
+    y0, y1, L = P["y0"], P["y1"], P["L"]
+    w, runs = P["width"], P["runs"]
+    wmax = max(1.0, float(w[y0:y1 + 1].max()))
+    k = max(2, int(0.35 * L))
+    kk = max(2, int(0.45 * L))
+    e = max(2, int(0.05 * L))
+    wtop, wbot = float(w[y0:y0 + k].max()), float(w[y1 - k + 1:y1 + 1].max())
+    split_top = float((runs[y0:y0 + kk] >= 2).mean())
+    split_bot = float((runs[y1 - kk + 1:y1 + 1] >= 2).mean())
+    ex_top = float(w[y0:y0 + e].mean()) / wmax
+    ex_bot = float(w[y1 - e + 1:y1 + 1].mean()) / wmax
+    if family == "bottoms":
+        return 2.0 * (split_bot - split_top)
+    if family == "sleeved":
+        return (wtop - wbot) / wmax + 0.7 * (ex_bot - ex_top)
+    return (split_top - split_bot) + 0.7 * (ex_bot - ex_top) + 0.4 * (wbot - wtop) / wmax
+
+
+def _garment_marks(ras, family):
+    """({landmark name: grid point}, note) for a garment, read from its
+    outline, or ({}, why not). Names are the ones the fold framework knows
+    (FOLD_ROLES): shoulders, sleeves, collar, hem, waist, cuffs, crotch."""
+    theta, iou = _symmetry_axis(ras)
+    if iou < SHAPE_MIN_MIRROR:
+        return {}, f"its outline mirrors itself only {iou:.2f}"
+    up = np.array([math.cos(theta), math.sin(theta)])
+    if up[1] > 0.05 or (abs(up[1]) <= 0.05 and up[0] > 0):
+        up = -up                                  # default: top toward row 1
+    U, M = _upright(ras, up)
+    P = _profile(U)
+    if _top_cue(P, family) < -0.04:
+        up = -up
+        U, M = _upright(ras, up)
+        P = _profile(U)
+    y0, y1, L = P["y0"], P["y1"], P["L"]
+    S = SHAPE_PX
+    cx = float(ras["c"][0])
+    ins = SHAPE_INSET * S
+    wid = P["width"]
+
+    def row(frac):
+        return int(min(y1, max(y0, round(y0 + frac * L))))
+
+    def edges(y):
+        segs = P["segs"].get(y) or [(cx, cx)]
+        return float(segs[0][0]), float(segs[-1][1])
+
+    tops = np.where(U.any(0), U.argmax(0), 10 ** 6)
+    body = float(np.median(wid[row(0.6):y1 + 1])) or 1.0
+    pts = {}
+
+    def shoulder(side, lo, hi):
+        """The highest point of the top edge on one side, between lo and hi
+        of the half body width out from the middle."""
+        xs = [int(round(cx + side * f * body)) for f in np.linspace(lo, hi, 25)]
+        xs = [x for x in xs if 0 <= x < U.shape[1] and tops[x] < 10 ** 6]
+        if not xs:
+            return None
+        ymin = min(int(tops[x]) for x in xs)
+        want = cx + side * 0.34 * body
+        x = min((x for x in xs if tops[x] <= ymin + 1), key=lambda x: abs(x - want))
+        return (x - side * 0.0, ymin + 0.6 * ins)
+
+    def hem():
+        yh = row(0.96)
+        l, r = edges(yh)
+        pts["hem_left"] = (l + ins, yh - 0.3 * ins)
+        pts["hem_right"] = (r - ins, yh - 0.3 * ins)
+        pts["hem"] = (cx, y1 - ins)
+
+    if family == "bottoms":
+        yw = row(0.05)
+        l, r = edges(yw)
+        pts["waist_left"] = (l + ins, yw + 0.3 * ins)
+        pts["waist_right"] = (r - ins, yw + 0.3 * ins)
+        pts["waist"] = (cx, y0 + ins)
+        yc = row(0.94)
+        segs = P["segs"].get(yc) or []
+        if len(segs) >= 2:
+            legs = [segs[0], segs[-1]]
+        else:
+            l, r = edges(yc)
+            legs = [(l, l + 0.45 * (r - l)), (r - 0.45 * (r - l), r)]
+        pts["cuff_left"] = ((legs[0][0] + legs[0][1]) / 2.0, yc)
+        pts["cuff_right"] = ((legs[1][0] + legs[1][1]) / 2.0, yc)
+        for y in range(y1, y0, -1):
+            if P["runs"][y] == 1:
+                pts["crotch"] = (cx, y + 0.0)
+                break
+    elif family == "sleeved":
+        yz = row(0.7)
+        yl = y0 + int(np.argmin(P["left"][y0:yz + 1]))
+        yr = y0 + int(np.argmax(P["right"][y0:yz + 1]))
+        pts["sleeve_left"] = (float(P["left"][yl]) + ins, float(yl))
+        pts["sleeve_right"] = (float(P["right"][yr]) - ins, float(yr))
+        for side, nm in ((-1, "shoulder_left"), (1, "shoulder_right")):
+            s = shoulder(side, 0.12, 0.58)
+            if s is not None:
+                pts[nm] = s
+        yneck = int(tops[int(round(cx))]) if tops[int(round(cx))] < 10 ** 6 else y0
+        shoulder_y = min([p[1] for k, p in pts.items() if k.startswith("shoulder")] or [y0])
+        pts["collar"] = (cx, (yneck + 0.8 * ins) if yneck - shoulder_y > 0.02 * L
+                         else (y0 + ins))
+        hem()
+    else:                                         # sleeveless
+        straps = (P["runs"][y0:row(0.12) + 1] >= 2).mean() >= 0.5
+        neck = False
+        sl = shoulder(-1, 0.12, 0.58)
+        sr = shoulder(1, 0.12, 0.58)
+        yneck = int(tops[int(round(cx))]) if tops[int(round(cx))] < 10 ** 6 else y0
+        ytop = min([s[1] for s in (sl, sr) if s is not None] or [y0])
+        neck = straps or (yneck - ytop) > 0.04 * L
+        if neck and sl is not None and sr is not None:
+            names = ("strap_left", "strap_right") if straps else ("shoulder_left", "shoulder_right")
+            pts[names[0]], pts[names[1]] = sl, sr
+            if straps:
+                pts["shoulder_left"], pts["shoulder_right"] = sl, sr
+            pts["collar"] = (cx, (yneck + 0.8 * ins) if yneck > ytop + 2 else (y0 + ins))
+        else:
+            yw = row(0.05)
+            l, r = edges(yw)
+            pts["waist_left"] = (l + ins, yw + 0.3 * ins)
+            pts["waist_right"] = (r - ins, yw + 0.3 * ins)
+        hem()
+    un = _unwarp(ras, M)
+    return {k: un(p) for k, p in pts.items()}, ""
+
+
+
+GENERIC_GARMENT_RE = re.compile(r"(?:^|\s)(?:garment|clothing|apparel|outfit)$")
+
+
+def _shape_family(poly):
+    """"sleeved" / "sleeveless" / "bottoms" for a garment vision could only
+    call "garment", read from its outline -- or "" when it will not say."""
+    try:
+        ras = _shape_raster(poly)
+        theta, iou = _symmetry_axis(ras)
+        if iou < SHAPE_MIN_MIRROR:
+            return ""
+        up = np.array([math.cos(theta), math.sin(theta)])
+        U, _ = _upright(ras, up)
+        P = _profile(U)
+    except Exception:
+        return ""
+    y0, y1, L = P["y0"], P["y1"], P["L"]
+    kk = max(2, int(0.4 * L))
+    split_a = float((P["runs"][y0:y0 + kk] >= 2).mean())
+    split_b = float((P["runs"][y1 - kk + 1:y1 + 1] >= 2).mean())
+    if max(split_a, split_b) >= 0.35 and min(split_a, split_b) < 0.1:
+        return "bottoms"
+    w = P["width"]
+    k = max(2, int(0.4 * L))
+    body = float(min(np.median(w[y0:y0 + k]), np.median(w[y1 - k + 1:y1 + 1]))) or 1.0
+    top = float(w[y0:y0 + max(2, int(0.35 * L))].max())
+    bot = float(w[y1 - max(2, int(0.35 * L)) + 1:y1 + 1].max())
+    if max(top, bot) >= 1.3 * body and abs(top - bot) >= 0.2 * body:
+        return "sleeved"
+    return "sleeveless"
+
+
+def _part_at(name, pt, aka=()):
+    """A derived part at one point: a small square on the cell it falls in."""
+    cell = parse_coordinate(_fold_point_name(pt))
+    if cell is None:
+        return None
+    entry = {"name": name,
+             "polygon": [[pt[0] - 0.12, pt[1] - 0.12], [pt[0] + 0.12, pt[1] - 0.12],
+                         [pt[0] + 0.12, pt[1] + 0.12], [pt[0] - 0.12, pt[1] + 0.12]],
+             "center": coordinate_name(*cell), "touches": coordinate_name(*cell),
+             "aka": list(aka), "derived": True}
+    set_center_pt(entry, pt)
+    return entry
+
+
+def _part_region(name, poly, aka=()):
+    """A derived part covering a region: its own cells."""
+    if not poly or len(poly) < 3:
+        return None
+    cell, cells, pt = polygon_to_cells(poly)
+    if cell is None:
+        return None
+    entry = {"name": name, "polygon": [[float(p[0]), float(p[1])] for p in poly],
+             "center": coordinate_name(*cell),
+             "touches": ",".join(coordinate_name(*c) for c in cells) or coordinate_name(*cell),
+             "aka": list(aka), "derived": True}
+    set_center_pt(entry, pt)
+    return entry
+
+
+def _region_polygon(ras, region, M=None):
+    """A mask region (upright if M is given) as a grid polygon, or None."""
+    if M is not None:
+        n = ras["n"]
+        region = cv2.warpAffine(region, M, (n, n),
+                                flags=cv2.INTER_NEAREST | cv2.WARP_INVERSE_MAP)
+    cs, _ = cv2.findContours(region.astype(np.uint8), cv2.RETR_EXTERNAL,
+                             cv2.CHAIN_APPROX_SIMPLE)
+    if not cs:
+        return None
+    c = max(cs, key=cv2.contourArea)
+    if cv2.contourArea(c) < 8:
+        return None
+    c = cv2.approxPolyDP(c, 0.6, True).reshape(-1, 2)
+    if len(c) < 3:
+        return None
+    return [list(map(float, _px_to_grid(ras, p))) for p in c]
+
+
+def _lobes(ras, k):
+    """The parts of the outline that stick out of its core (what an opening
+    of radius k leaves behind): [(region mask, tip px, base px, reach px)],
+    longest reach first. A pan's handle is one."""
+    mask = ras["mask"]
+    ker = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * k + 1, 2 * k + 1))
+    core = cv2.morphologyEx(mask, cv2.MORPH_OPEN, ker)
+    if core.sum() == 0:
+        return core, []
+    ys, xs = np.nonzero(core)
+    cc = np.array([xs.mean(), ys.mean()])
+    core_r = float(np.hypot(xs - cc[0], ys - cc[1]).max())
+    rest = ((mask > 0) & (core == 0)).astype(np.uint8)
+    n, lab, stats, _ = cv2.connectedComponentsWithStats(rest, connectivity=8)
+    near = cv2.distanceTransform(1 - core, cv2.DIST_L2, 3)
+    out = []
+    for i in range(1, n):
+        if stats[i, cv2.CC_STAT_AREA] < max(30, 0.02 * mask.sum()):
+            continue
+        reg = (lab == i).astype(np.uint8)
+        ry, rx = np.nonzero(reg)
+        d = np.hypot(rx - cc[0], ry - cc[1])
+        t = int(np.argmax(d))
+        reach = float(d[t]) - core_r
+        if reach < 0.6 * SHAPE_PX:
+            continue
+        if reach * reach < 1.3 * float(stats[i, cv2.CC_STAT_AREA]):
+            continue                    # short and fat: a corner of the body, not a handle
+        b = int(np.argmin(near[ry, rx]))
+        out.append((reg, np.array([rx[t], ry[t]], float),
+                    np.array([rx[b], ry[b]], float), reach))
+    out.sort(key=lambda o: -o[3])
+    return core, out
+
+
+def _name_has(words, name):
+    return any(_hint_matches(w, name) for w in words)
+
+
+PIECE_WORD_RE = re.compile(
+    r"(?:handle|neck|button|lip|wall|rim|edge|hole|patch|sticker|tape|stain|cap|"
+    r"lid|knob|base|floor|tray|head|bristles?|blade|tines?|piece|part)$")
+
+
+def _is_piece(name):
+    """A name that says it is a piece of something ("dustpan handle")."""
+    return bool(PIECE_WORD_RE.search(name or ""))
+
+
+def _mouth_trimmed(poly):
+    """guess_mouth's side, pulled in a wall's thickness at each end."""
+    geo = guess_mouth(poly)
+    if not geo:
+        return None
+    a, b = np.array(geo["a"], np.float64), np.array(geo["b"], np.float64)
+    if float(np.hypot(*(b - a))) > 2.0:
+        t = (b - a) / float(np.hypot(*(b - a)))
+        geo = dict(geo, a=tuple(a + t * 0.3), b=tuple(b - t * 0.3))
+    return geo
+
+
+def _container_parts(o, ras, name):
+    """([parts], [desc notes], mouth geo or None) for a pan, mug, bowl,
+    dustpan...: its handle (the lobe sticking out) and its opening."""
+    mask = ras["mask"]
+    dist = cv2.distanceTransform(mask, cv2.DIST_L2, 3)
+    R = float(dist.max())
+    if R < 0.8 * SHAPE_PX:
+        return [], [], None
+    k = max(2, int(round(0.55 * R)))
+    core, lobes = _lobes(ras, k)
+    parts, notes, geo = [], [], None
+    centre = np.array(_poly_centroid([tuple(p) for p in o["polygon"]]), np.float64)
+    handle = None
+    if lobes:
+        reg, tip, base, reach = lobes[0]
+        grown = cv2.dilate(reg, np.ones((3, 3), np.uint8))       # join it to the body
+        poly = _region_polygon(ras, grown)
+        handle = _part_region("handle", poly) if poly else None
+        if handle is not None:
+            parts.append(handle)
+            tip_g = _px_to_grid(ras, tip)
+            side = compass(tip_g[0] - centre[0], tip_g[1] - centre[1])
+            notes.append(f"handle toward the {side} (tip at "
+                         f"{coordinate_name(*parse_coordinate(_fold_point_name(tip_g)))})")
+    if _name_has(COLLECTOR_WORDS, name):
+        geo = _mouth_trimmed(o["polygon"])
+        if geo:
+            span = _mouth_note((geo["a"], geo["b"]), centre)
+            if span:
+                how = ("away from its handle" if handle is not None
+                       else "its long flat side")
+                notes.insert(0, f"opening faces {span[0]} (from its shape: {how}); "
+                                f"its mouth runs {span[1]}")
+                geo = span[2]
+    inner = cv2.erode(core, cv2.getStructuringElement(
+        cv2.MORPH_ELLIPSE, (2 * max(1, int(0.25 * R)) + 1,) * 2))
+    poly = _region_polygon(ras, inner if inner.sum() >= 30 else core)
+    opening = _part_region("opening", poly, aka=["inside"]) if poly else None
+    if opening is not None:
+        parts.append(opening)
+        if geo is None and handle is not None:
+            notes.append("opening: its whole top, the handle is the grip")
+    return parts, notes, geo
+
+
+def _tool_parts(o, ras, name):
+    """([parts], [notes]) for a long tool (broom, brush, spoon, knife...):
+    its wide end (bristles, bowl, blade...) and its thin handle."""
+    word = next((w for w in TOOL_HEADS if _name_has((w,), name)), None)
+    if word is None:
+        return [], []
+    mask = ras["mask"]
+    ys, xs = np.nonzero(mask)
+    pts = np.stack([xs, ys], 1).astype(np.float64)
+    ev, vec = np.linalg.eigh(np.cov((pts - pts.mean(0)).T))
+    if math.sqrt(ev[1] / max(ev[0], 1e-9)) < 1.8:
+        return [], []
+    axis = vec[:, 1]
+    up = axis if axis[1] < 0 else -axis
+    U, M = _upright(ras, up)
+    P = _profile(U)
+    y0, y1, L = P["y0"], P["y1"], P["L"]
+    w = np.convolve(P["width"][y0:y1 + 1], np.ones(5) / 5.0, mode="same")
+    band = max(3, int(0.3 * L))
+    head_top = w[:band].max() >= w[-band:].max()
+    ends = w[:band] if head_top else w[-band:]
+    stem = w[-band:] if head_top else w[:band]
+    head_w, handle_w = float(ends.max()), float(np.median(stem))
+    if handle_w <= 0 or head_w < 1.4 * handle_w:
+        return [], []
+    cut = handle_w + 0.5 * (head_w - handle_w)
+    order = range(y1 - y0, -1, -1) if head_top else range(0, y1 - y0 + 1)
+    split = None
+    for i in order:                                # from the handle end toward the head
+        if w[i] >= cut:
+            split = y0 + i
+            break
+    if split is None:
+        return [], []
+    Uh = np.zeros_like(U)
+    Ud = np.zeros_like(U)
+    if head_top:
+        Ud[y0:split + 1] = U[y0:split + 1]
+        Uh[split + 1:y1 + 1] = U[split + 1:y1 + 1]
+    else:
+        Uh[y0:split] = U[y0:split]
+        Ud[split:y1 + 1] = U[split:y1 + 1]
+    parts = []
+    hp = _region_polygon(ras, Uh, M)
+    dp = _region_polygon(ras, Ud, M)
+    if hp:
+        e = _part_region("handle", hp)
+        if e:
+            parts.append(e)
+    if dp:
+        e = _part_region(TOOL_HEADS[word], dp)
+        if e:
+            parts.append(e)
+    note = ""
+    if len(parts) == 2:
+        c = np.array(_poly_centroid([tuple(p) for p in o["polygon"]]), np.float64)
+        hc = np.array(_poly_centroid([tuple(p) for p in hp]), np.float64)
+        note = (f"{TOOL_HEADS[word]} at one end, thin handle toward the "
+                f"{compass(hc[0] - c[0], hc[1] - c[1])}")
+    return parts, [note] if note else []
+
+
+def _garment_parts(o, ras, family):
+    """([parts], note) -- a garment's fold landmarks from its outline."""
+    marks, why = _garment_marks(ras, family)
+    poly = o["polygon"]
+    cen = _poly_centroid([tuple(p) for p in poly])
+    parts = []
+    for nm, pt in marks.items():
+        if not _point_in_poly(pt[0], pt[1], poly):
+            pt = _pull_inside_polygon(pt, [tuple(p) for p in poly], cen)
+        e = _part_at(nm, pt)
+        if e is not None:
+            parts.append(e)
+    return parts, why
+
+
+def _listed_roles(o):
+    """Lower-case names of the parts already on an object."""
+    return " ".join(str(c.get("name") or "").lower() for c in o.get("components") or ())
+
+
+def derive_parts(o, fold=False):
+    """(parts, desc notes, mouth geo, why not) read from `o`'s outline,
+    leaving out whatever vision already listed."""
+    name = clean_object_name(o.get("name")) or ""
+    poly = o.get("polygon")
+    if not poly or len(poly) < 3 or not name:
+        return [], [], None, ""
+    ras = _shape_raster(poly)
+    if int(ras["mask"].sum()) < 40:
+        return [], [], None, ""
+    if _is_piece(name):
+        return [], [], None, ""
+    listed = _listed_roles(o)
+    family = garment_family(o)
+    if family in ("sleeved", "sleeveless", "bottoms") and fold:
+        parts, why = _garment_parts(o, ras, family)
+        have = fold_landmarks(o, family)
+        parts = [p for p in parts
+                 if not any(p["name"] in FOLD_ROLES.get(r, ()) or p["name"] == r
+                            for r in have)] if have else parts
+        return parts, [], None, why
+    if _name_has(CONTAINER_WORDS, name):
+        parts, notes, geo = _container_parts(o, ras, name)
+        parts = [p for p in parts if p["name"] not in listed
+                 and not (p["name"] == "opening" and re.search(
+                     r"opening|mouth|lip|tray|inside|interior", listed))]
+        return parts, notes, geo, ""
+    if any(_name_has((w,), name) for w in TOOL_HEADS):
+        parts, notes = _tool_parts(o, ras, name)
+        parts = [p for p in parts if p["name"] not in listed
+                 and not (p["name"] == "handle" and "handle" in listed)
+                 and not (p["name"] != "handle" and re.search(r"bristle|head|blade|tine|bowl", listed))]
+        return parts, notes, None, ""
+    return [], [], None, ""
+
+
+def shape_text(o):
+    """One short sentence on the outline's shape, or ''."""
+    poly = o.get("polygon")
+    if not poly or len(poly) < 3:
+        return ""
+    pts = np.array([(float(x), float(y)) for x, y in poly], np.float32)
+    (cx, cy), (w, h), ang = cv2.minAreaRect(pts)
+    cw, ch = cell_size_in()
+    cell_in = (cw + ch) / 2.0
+    long_c, short_c = max(w, h), min(w, h)
+    if short_c <= 1e-6 or long_c < 1.0:
+        return ""
+    area = _poly_area([tuple(p) for p in pts])
+    hull = cv2.convexHull(pts).reshape(-1, 2)
+    solid = area / max(_poly_area([tuple(p) for p in hull]), 1e-6)
+    bits = []
+    if long_c / short_c >= 1.8:
+        a = ang if w >= h else ang + 90.0
+        a = (a + 90.0) % 180.0 - 90.0            # -90..90, y down
+        if abs(a) < 15:
+            run = "left-right"
+        elif abs(a) > 75:
+            run = "up-down"
+        else:
+            run = "down-right" if a > 0 else "up-right"
+        bits.append(f"elongated, runs {run}, {long_c * cell_in:.1f} in long and "
+                    f"{short_c * cell_in:.1f} in wide")
+    if solid < 0.78:
+        bits.append("irregular outline (notches or parts sticking out)")
+    return "shape: " + ", ".join(bits) if bits else ""
+
+
+def _unreach(cell):
+    return cell is None or cell[1] in unreachable_rows() or cell[0] in unreachable_cols()
+
+
+def add_derived_parts(objects, fold=False):
+    """Give every object the parts its outline shows and vision did not
+    list, and its shape in the DESC. Never raises: a failed read leaves the
+    object as it was."""
+    for o in objects or ():
+        try:
+            had_mouth = bool(o.get("mouth_geo"))
+            parts, notes, geo, why = derive_parts(o, fold)
+            if had_mouth:                   # the listed tray already says where it opens
+                notes = [n for n in notes if not str(n).startswith("opening faces")]
+            parts = [p for p in parts if not _unreach(parse_coordinate(p["center"]))]
+            if parts:
+                o["components"] = list(o.get("components") or []) + parts
+                print(f"[shape] {o.get('name')}: read {', '.join(p['name'] for p in parts)} "
+                      f"from its outline")
+            elif why:
+                print(f"[shape] {o.get('name')}: parts not read ({why})")
+            if geo and not o.get("mouth_geo"):
+                o["mouth_geo"] = geo
+            extra = [n for n in notes if n]
+            st = shape_text(o)
+            if st:
+                extra.append(st)
+            if extra:
+                o["desc"] = "; ".join([x for x in (o.get("desc"), *extra) if x])
+        except Exception as e:
+            print(f"[shape] {o.get('name')}: could not read the outline ({e})")
+    return objects
+
+
+def add_contact_notes(objects):
+    """Say, for every object, which neighbours it touches and on which side
+    of ITSELF ("up" is toward row 1, "right" toward later columns)."""
+    polys = [(o, o.get("polygon")) for o in objects or ()]
+    polys = [(o, p) for o, p in polys if p and len(p) >= 3]
+    if len(polys) < 2:
+        return objects
+    W, H = CONFIG.n_cols * SHAPE_PX, CONFIG.n_rows * SHAPE_PX
+    masks = []
+    for o, p in polys:
+        m = np.zeros((H, W), np.uint8)
+        cv2.fillPoly(m, [np.round(np.array(p, np.float64) * SHAPE_PX).astype(np.int32)], 1)
+        masks.append(m)
+    grow = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    grown = [cv2.dilate(m, grow) for m in masks]
+    notes = {id(o): [] for o, _ in polys}
+    for i in range(len(polys)):
+        for j in range(len(polys)):
+            if i == j:
+                continue
+            mi, mj = masks[i], masks[j]
+            ai = int(mi.sum())
+            if ai < 10:
+                continue
+            inside = int((mi & mj).sum()) / ai
+            oi, oj = polys[i][0], polys[j][0]
+            if str(oi.get("name")) == str(oj.get("name")):
+                continue
+            ci = np.array(_poly_centroid([tuple(p) for p in polys[i][1]]))
+            aj = int(mj.sum())
+            if inside < 0.85 and aj >= 10 and int((mi & mj).sum()) / aj >= 0.85:
+                cj = np.array(_poly_centroid([tuple(p) for p in polys[j][1]]))
+                notes[id(oi)].append((aj, f"holds the {oj['name']} in its {compass(*(cj - ci))} part"))
+                continue
+            if inside >= 0.85:
+                cj = np.array(_poly_centroid([tuple(p) for p in polys[j][1]]))
+                notes[id(oi)].append((ai, f"lies in the {compass(*(ci - cj))} part of the {oj['name']}"))
+                continue
+            contact = ((grown[i] & mj) | (mi & grown[j])).astype(np.uint8)
+            n = int(contact.sum())
+            if n < 6:
+                continue
+            ys, xs = np.nonzero(contact)
+            at = np.array([xs.mean(), ys.mean()]) / SHAPE_PX
+            side = compass(*(at - ci))
+            kind = "overlaps" if int((mi & mj).sum()) > 0 else "touches"
+            notes[id(oi)].append((n, f"{kind} the {oj['name']} on its {side} side"))
+    for o, _ in polys:
+        found = sorted(notes[id(o)], key=lambda t: -t[0])[:3]
+        if found:
+            o["desc"] = "; ".join([x for x in (o.get("desc"),) if x]
+                                  + [t for _, t in found])
+    return objects
+
+
 A3_TERRA_SYSTEM = """
 You are S1-SRC, the controller of a ProLabs V12.2 Precision Cartesian Gantry robot.
 
@@ -9964,6 +10936,10 @@ assume either way; read what this OBJECT LIST gives:
 - A LISTED part is exactly where its bracketed cells are. Use them as the
   part's footprint - which side of its object it lies on, where it starts
   and ends, how wide it is. Its CENTER is only its middle cell.
+- A part marked (from its shape) was not outlined by vision: S1 measured it
+  from the object's outline - a pan's handle and opening, a brush's bristles
+  and handle, a garment's shoulders, sleeves, collar, hem, waist, cuffs and
+  crotch. It is as exact as a listed part: use its cells the same way.
 - An absent part is never missing - it is on its object. Find it from the
   object's own SHAPE - its TOUCHES footprint, one run of cells per row (e.g.
   N4-P4,N5-Q5) - and its DESC, the way the playbooks below say (the
@@ -9980,6 +10956,15 @@ assume either way; read what this OBJECT LIST gives:
   is all their cells together. Pick it up once, by the piece a hand would
   hold (the handle), and read the other piece's cells as that part of it
   (the bristle head).
+An object's DESC may also carry what S1 measured from its outline: "shape:
+elongated, runs up-down, 9.5 in long and 3.8 in wide"; "handle toward the
+right (tip at O11)"; "opening faces left (from its shape: away from its
+handle); its mouth runs from E14 to E7"; and which neighbours it touches,
+on which side of ITSELF: "touches the dustpan on its right side",
+"overlaps the hand brush on its up-left side", "lies in the down-right part
+of the dustpan". Directions are on the board seen from above: up = toward
+row 1, down = toward the last row, right = toward later columns. Read them
+as measurements, not as guesses.
 Matching rules:
 - Operator says "start button" / "drum" / "door" -> match that part of the
   parent object.
@@ -11214,7 +12199,8 @@ or top and the left does - then mirror everything (right onto left, and the
 length fold uses the left side's hem and shoulder).
 
 USE THE FOLD RECIPE. On a fold task the input carries a FOLD RECIPES block:
-one entry per garment, computed from the landmarks vision actually located,
+one entry per garment, computed from the landmarks vision located or that S1
+measured from the garment's outline (parts marked "(from its shape)"),
 by exactly this framework, with the cells worked out. Write its moves as
 pickup/keep pairs IN THAT ORDER WITH THOSE CELLS, one pair per line of the
 recipe, and add nothing - no extra press, smoothing, shoulder-to-shoulder,
@@ -11870,14 +12856,69 @@ def build_out_of_reach_rule() -> str:
            f"listed object because of where it is.")
 
 
-def build_planner_system() -> str:
-    """S1-SRC's own system prompt, resized to this board."""
-    return (A3_TERRA_SYSTEM
+_SWEEP_EXTRA_RE = re.compile(
+    r"\b(?:then|after|afterwards?|before|also|plus|while|until|mop|wipe|wash|fold|empty|throw|dump|"
+    r"pour|stack|tidy|sort|bring|take|hang|put|place|move|pick|carry|return|store)\b|;", re.I)
+_FOLD_EXTRA_RE = re.compile(
+    r"\b(?:then|after|afterwards?|before|also|plus|put|place|stack|pile|move|iron|hang|wash|sweep|"
+    r"mop|store|drawer|shelf|pick)\b|;", re.I)
+
+
+def sweep_only_task(task) -> bool:
+    """A task that is just "sweep ...": S1's recipe is then the whole plan."""
+    t = task or ""
+    return is_sweep_task(t) and not is_fold_task(t) and not _SWEEP_EXTRA_RE.search(t)
+
+
+def recipe_is_the_plan(sweep, task, history="", resume=""):
+    """The whole plan, from S1's own sweep recipe, when the task is just a
+    sweep and the recipe covers it -- the strokes are measured geometry, a plan
+    that differs from them is thrown away anyway, so the planner is not paid
+    to write it. None when the planner is needed."""
+    if (SWEEP_SKIPS_PLANNER and sweep and sweep.get("lines")
+            and not resume and not history and sweep_only_task(task)):
+        return sweep_plan_text(
+            sweep, "a plain sweep is the recipe itself, so the planner was not asked")
+    return None
+
+
+def planner_prompt_kind(task, history="") -> str:
+    """"sweep" / "fold" for a task that is only that, else "full"."""
+    t = task or ""
+    if not history and sweep_only_task(t):
+        return "sweep"
+    if is_fold_task(t) and not is_sweep_task(t) and not _FOLD_EXTRA_RE.search(t):
+        return "fold"
+    return "full"
+
+
+_PLAYBOOKS_TAIL = "## APPENDIX - household task category"
+_PLAYBOOK_KEEP = {"sweep": ("## 1 / 1b. Sweep", "## 2. Mop a Floor"),
+                  "fold": ("## 5. Fold Laundry", "## 6. Appliance")}
+
+
+def build_planner_system(kind="full") -> str:
+    """S1-SRC's own system prompt, resized to this board. For a task that is
+    only a sweep or only a fold (`kind`), the playbooks of every other task
+    are left out: they are over half of the prompt and none of it applies."""
+    text = (A3_TERRA_SYSTEM
             .replace("{COLS}", str(CONFIG.n_cols))
             .replace("{ROWS}", str(CONFIG.n_rows))
             .replace("{N_CELLS}", str(CONFIG.n_cols * CONFIG.n_rows))
             .replace("{LAST_COL}", CONFIG.columns[-1])
             .replace("{OUT_OF_REACH_RULE}", build_out_of_reach_rule()))
+    keep = _PLAYBOOK_KEEP.get(kind) if PLANNER_PRUNE else None
+    if keep:
+        head = text.find("# S1-SRC Task Playbooks")
+        first = text.find("## 1 / 1b. Sweep")           # the first playbook
+        start, end = text.find(keep[0]), text.find(keep[1])
+        tail = text.find(_PLAYBOOKS_TAIL)
+        if 0 <= head < first <= start < end <= tail:
+            text = (text[:first]
+                    + "(Only the playbook this task needs is included; the other task playbooks "
+                      "are left out to save space.)\n\n"
+                    + text[start:end] + "\n" + text[tail:])
+    return text
 
 
 DEXTERITY_MODEL = "gpt-5.4-mini"
@@ -11993,6 +13034,8 @@ def _format_component(c) -> str:
     grip = str(c.get("grip") or "").strip().lower()
     if grip in ("hold", "avoid"):
         tok += f" (grip: {grip})"
+    if c.get("derived"):
+        tok += " (from its shape)"
     aka = c.get("aka")
     if isinstance(aka, str):
         aka = [aka]
@@ -12087,7 +13130,7 @@ def object_list_text(objs) -> str:
     return "\n".join(obj_to_line(o) for o in objs)
 
 
-def vision_report_text(objs, nothing_new=False) -> str:
+def vision_report_text(objs, nothing_new=False, left_out=None) -> str:
     """Everything vision found, for the operator to read before the plan.
 
     The planner's own OBJECT: lines are too wide for the chat column, so the
@@ -12117,6 +13160,15 @@ def vision_report_text(objs, nothing_new=False) -> str:
                 named.append(f"{cname}@{ccell}" if ccell else str(cname))
             bits.append("  parts: " + ", ".join(named))
         lines.append("".join(bits))
+    if left_out and (left_out.get("hands") or left_out.get("surface")):
+        gone = []
+        if left_out.get("hands"):
+            gone.append(f"{left_out['hands']} hand outline(s)")
+        if left_out.get("surface"):
+            gone.append(f"{left_out['surface']} patch(es) of table")
+        lines.append("Left out of the plan: " + " and ".join(gone)
+                     + (" - keep hands clear while the gantry moves."
+                        if left_out.get("hands") else "."))
     return "\n".join(lines)
 
 
@@ -14325,6 +15377,7 @@ class AIJob:
         self.vision_shown = False
         # True when the board held nothing new, so nothing was named.
         self.nothing_new = False
+        self.left_out = {}
 
         self.questions = []
         self.answers = None
@@ -14439,6 +15492,7 @@ class AIJob:
                 print(f"[vision] {problem} - planning with the names there are")
         namer.remember(snap, carried.values())
         objects = planner_objects(snap, namer, self.grid)
+        self.left_out = dict(getattr(namer, "left_out", None) or {})
         if not objects:
             raise ModelError("Vision AI found no objects on the board to "
                              "work with (only the robot itself).")
@@ -14518,6 +15572,8 @@ class AIJob:
                               or not is_fold_task(self.history)
                               else f"{self.task} (fold, per: {self.history})")
             objects = add_cloth_corners(objects)
+            objects = add_derived_parts(objects, fold=is_fold_task(effective_task))
+            add_contact_notes(objects)
             self._publish_vision(objects, final=True)
             gap_note = fold_landmark_error(objects, self.task)
             if gap_note:
@@ -14583,12 +15639,17 @@ class AIJob:
             print("\n=== PLANNER INPUT ===")
             print(user)
 
-            system = build_planner_system()
-            self.plan = call_model(
-                client, model=PLANNER_MODEL, max_tokens=6000, stage="Planner",
-                reasoning=PLANNER_EFFORT,
-                messages=[{"role": "system", "content": system},
-                          {"role": "user", "content": user}])
+            system = build_planner_system(planner_prompt_kind(self.task, self.history))
+            recipe_plan = recipe_is_the_plan(sweep, self.task, self.history, self.resume)
+            if recipe_plan:
+                self.plan = recipe_plan
+                print("[sweep] the recipe is the whole plan - the planner was not called")
+            else:
+                self.plan = call_model(
+                    client, model=PLANNER_MODEL, max_tokens=6000, stage="Planner",
+                    reasoning=PLANNER_EFFORT,
+                    messages=[{"role": "system", "content": system},
+                              {"role": "user", "content": user}])
             print("\n=== PLAN ===")
             print(self.plan)
             if sweep and sweep.get("lines") and not sweep_followed(self.plan, sweep):
@@ -17967,7 +19028,8 @@ def main():
             return
         state.ai_objects = objects
         chat_say(state, "assistant", vision_report_text(
-            objects, nothing_new=getattr(job, "nothing_new", False)))
+            objects, nothing_new=getattr(job, "nothing_new", False),
+            left_out=getattr(job, "left_out", None)))
 
     def pump_questions():
         """Put the clarity stage's question to the operator, one at a time."""
@@ -20694,6 +21756,107 @@ def run_single_file_self_test():
         _near_dirt = dict(_dirt, center="J11", touches="J11")
         check_top(sweep_recipe([_pan, _br, _near_dirt]).get("dirt_lanes") == 0,
                   "dirt already in front of the mouth got an extra stroke")
+        # -- parts read off the outline: a shirt, pants, a pan, a brush
+        _g["GRIPPER_OFFSET_UP_DOWN"] = _g["GRIPPER_OFFSET_RIGHT_LEFT"] = 0
+
+        def _poly_obj(name, pts, deg=0.0, at=(10.0, 8.0)):
+            a = math.radians(deg)
+            R = np.array([[math.cos(a), -math.sin(a)], [math.sin(a), math.cos(a)]])
+            P = np.array(pts, float)
+            P = (R @ (P - P.mean(0)).T).T + at
+            poly = [[float(x), float(y)] for x, y in P]
+            cell, cells, pt = polygon_to_cells(poly)
+            o = {"name": name, "polygon": poly, "aka": [], "components": [], "desc": "",
+                 "center": coordinate_name(*cell),
+                 "touches": ",".join(coordinate_name(*c) for c in cells)}
+            set_center_pt(o, pt)
+            return o
+        _tee = [(-0.8, 0), (-3, 0), (-5.6, 0.9), (-5.1, 3.3), (-3, 3.0), (-3, 8), (3, 8), (3, 3.0),
+                (5.1, 3.3), (5.6, 0.9), (3, 0), (0.8, 0), (0.55, 0.9), (-0.55, 0.9)]
+        for _deg in (0.0, 180.0, 90.0, 33.0):
+            _o = _poly_obj("t-shirt", _tee, _deg)
+            add_derived_parts([_o], fold=True)
+            _names = {c["name"] for c in _o["components"]}
+            check_top({"sleeve_left", "sleeve_right", "shoulder_left", "shoulder_right",
+                       "collar", "hem_left", "hem_right"} <= _names,
+                      f"a shirt's parts were not read from its outline at {_deg}: {_names}")
+            _fr = fold_recipe(_o)
+            check_top(_fr["kind"] == "sleeved top" and not _fr["missing"] and len(_fr["moves"]) == 2
+                      and _fr["moves"][0]["pick_name"].startswith("sleeve")
+                      and _fr["moves"][1]["pick_name"].startswith("hem")
+                      and not _fr.get("fallback"),
+                      f"a shirt read from its outline was not folded as a shirt at {_deg}: {_fr}")
+            _hem = next(c for c in _o["components"] if c["name"] == "hem_right")
+            _sho = next(c for c in _o["components"] if c["name"] == "shoulder_right")
+            _hp, _sp = _hem["center_pt"], _sho["center_pt"]
+            check_top(math.hypot(_hp[0] - _sp[0], _hp[1] - _sp[1]) > 5.0
+                      and all(_point_in_poly(c["center_pt"][0], c["center_pt"][1], _o["polygon"])
+                              for c in _o["components"]),
+                      f"a shirt's parts are not spread over the shirt at {_deg}")
+        check_top(not add_derived_parts([_poly_obj("t-shirt", _tee)], fold=False)[0]["components"],
+                  "a shirt's parts were read on a task that does not fold")
+        _o = _poly_obj("gray garment", _tee, 25.0)
+        add_derived_parts([_o], fold=True)
+        _fr = fold_recipe(_o)
+        check_top(garment_family(_o) == "sleeved" and _fr["kind"] == "sleeved top"
+                  and not _fr["missing"],
+                  f"a garment vision could only call a garment was not read from its outline: "
+                  f"{garment_family(_o)} {_fr['kind']} {_fr['missing']}")
+        check_top(not garment_family(_poly_obj("clothing rack", _tee)),
+                  "a clothing rack was taken for a garment")
+        _o = _poly_obj("pants", [(-3, 0), (3, 0), (3, 10), (0.4, 10), (0.4, 4), (-0.4, 4), (-0.4, 10), (-3, 10)], 90.0)
+        add_derived_parts([_o], fold=True)
+        _fr = fold_recipe(_o)
+        check_top({"waist_left", "waist_right", "cuff_left", "cuff_right", "crotch"}
+                  <= {c["name"] for c in _o["components"]}
+                  and _fr["kind"] == "legged bottom" and not _fr["missing"],
+                  f"pants were not read from their outline: {_fr}")
+        _dp = _poly_obj("dustpan", [(-3, -3.8), (1, -3.8), (3.2, -2.7), (3.9, -1), (3.9, 0), (7, 0), (7, 1.2),
+                                    (3.9, 1.2), (3.9, 2), (3.2, 3), (1, 3.8), (-3, 3.8)])
+        add_derived_parts([_dp])
+        check_top({"handle", "opening"} <= {c["name"] for c in _dp["components"]}
+                  and "opening faces left (from its shape" in _dp["desc"]
+                  and _dp.get("mouth_geo") and _dp["mouth_geo"]["n"][0] < -0.9
+                  and "(from its shape)" in obj_to_line(_dp),
+                  f"a dustpan's handle and opening were not read: {_dp['desc']}")
+        _nh = _poly_obj("dustpan", [(-3, -3.8), (1, -3.8), (3.2, -2.7), (3.9, -1), (3.9, 2), (3.2, 3), (1, 3.8), (-3, 3.8)], 20.0)
+        add_derived_parts([_nh])
+        check_top(_nh.get("mouth_geo") and "its long flat side" in _nh["desc"]
+                  and "opening faces" in _nh["desc"]
+                  and not guess_mouth([(0, 0), (6, 0), (6, 6), (0, 6)]),
+                  f"a handle-less D-shaped pan got no mouth from its flat side: {_nh['desc']}")
+        _dp2 = _poly_obj("dustpan", [(-3, -3.8), (1, -3.8), (3.2, -2.7), (3.9, -1), (3.9, 0), (7, 0), (7, 1.2),
+                                     (3.9, 1.2), (3.9, 2), (3.2, 3), (1, 3.8), (-3, 3.8)])
+        _dp2["components"] = [{"name": "tray", "center": _dp2["center"], "touches": _dp2["touches"],
+                               "polygon": _dp2["polygon"]},
+                              {"name": "handle", "center": _dp2["center"], "touches": _dp2["center"],
+                               "polygon": _dp2["polygon"]}]
+        add_derived_parts([_dp2])
+        check_top([c["name"] for c in _dp2["components"]] == ["tray", "handle"],
+                  "a part vision listed was read again from the outline")
+        _br2 = _poly_obj("hand brush", [(-1.6, 0), (1.6, 0), (1.6, 1.4), (0.35, 1.4), (0.35, 7.9), (-0.35, 7.9),
+                                        (-0.35, 1.4), (-1.6, 1.4)], 40.0)
+        add_derived_parts([_br2])
+        check_top({"handle", "bristles"} <= {c["name"] for c in _br2["components"]}
+                  and "elongated" in _br2["desc"],
+                  f"a brush's head and handle were not read: {_br2['components']} {_br2['desc']}")
+        _pc = _poly_obj("dustpan handle", [(-3, -3.8), (1, -3.8), (3.2, -2.7), (3.9, -1), (3.9, 0), (7, 0),
+                                           (7, 1.2), (3.9, 1.2), (3.9, 2), (3.2, 3), (1, 3.8), (-3, 3.8)])
+        check_top(not add_derived_parts([_pc])[0]["components"],
+                  "a piece of a dustpan got an opening and a handle of its own")
+        _a = _poly_obj("hand brush", [(0, 0), (4, 0), (4, 2), (0, 2)], 0.0, at=(5.0, 5.0))
+        _b = _poly_obj("dustpan", [(0, 0), (4, 0), (4, 4), (0, 4)], 0.0, at=(8.0, 5.0))
+        add_contact_notes([_a, _b])
+        _big = _poly_obj("dustpan", [(0, 0), (6, 0), (6, 6), (0, 6)], 0.0, at=(10.0, 10.0))
+        _small = _poly_obj("tape", [(0, 0), (1, 0), (1, 1), (0, 1)], 0.0, at=(8.6, 8.6))
+        add_contact_notes([_big, _small])
+        check_top("holds the tape in its up-left part" in _big["desc"]
+                  and "lies in the up-left part of the dustpan" in _small["desc"]
+                  and "overlaps" not in _big["desc"],
+                  f"a pan with something lying in it did not say it holds it: {_big['desc']}")
+        check_top("overlaps the dustpan on its right side" in _a["desc"]
+                  and "overlaps the hand brush on its left side" in _b["desc"],
+                  f"which side an object touches was not said: {_a['desc']} | {_b['desc']}")
         # an outlined brush: the claw comes to rest on the brush itself
         _brp = dict(_br, center="H16", touches="F15-J15,F16-J16",
                     polygon=[(5.2, 14.6), (9.9, 14.6), (9.9, 16.4), (5.2, 16.4)],
@@ -22179,6 +23342,107 @@ def run_single_file_self_test():
           "CANNOT FOLD/MISSING: line)")
     check(not fold_landmark_error([broken_top], "move the shirt"),
           "a garment missing fold landmarks blocked a task that does not fold")
+
+
+    # -- stages 41-43: cheaper calls, and a photo with a table and hands in it
+    check(sweep_only_task("sweep the dust into the dustpan") and sweep_only_task("Sweep the board")
+          and not sweep_only_task("sweep the floor, then fold the shirt")
+          and not sweep_only_task("sweep it and put the brush back")
+          and not sweep_only_task("fold the t-shirt"),
+          "sweep_only_task misjudged a task")
+    check(planner_prompt_kind("fold the t-shirt") == "fold"
+          and planner_prompt_kind("sweep the board") == "sweep"
+          and planner_prompt_kind("sweep the board", "earlier: fold the shirt") == "full"
+          and planner_prompt_kind("fold the shirt and put it on the shelf") == "full"
+          and planner_prompt_kind("move the cup to B2") == "full",
+          "planner_prompt_kind chose the wrong prompt")
+    _pfull, _psw, _pfo = (build_planner_system(), build_planner_system("sweep"),
+                          build_planner_system("fold"))
+    check(len(_psw) < 0.7 * len(_pfull) and len(_pfo) < 0.6 * len(_pfull)
+          and "## 1 / 1b. Sweep" in _psw and "## 5. Fold Laundry" not in _psw
+          and "## 2. Mop a Floor" not in _psw and "USE THE SWEEP RECIPE" in _psw
+          and "## 5. Fold Laundry" in _pfo and "## 1 / 1b. Sweep" not in _pfo
+          and all(h in _psw and h in _pfo for h in (
+              "## COMMANDS", "## RULES", "## OUTPUT FORMAT", "## APPENDIX - household task category")),
+          "the pruned planner prompts lost a core section or kept the wrong playbook")
+    _gp = globals()
+    _was_prune, _gp["PLANNER_PRUNE"] = PLANNER_PRUNE, False
+    try:
+        check(build_planner_system("sweep") == _pfull, "PLANNER_PRUNE off still pruned the prompt")
+    finally:
+        _gp["PLANNER_PRUNE"] = _was_prune
+    _rec_s = {"lines": ["goto_coordinate = A, 1", "pickup"], "collector": "dustpan", "brush": "hand brush"}
+    _rp = recipe_is_the_plan(_rec_s, "sweep the dust into the dustpan")
+    check(_rp and "goto_coordinate = A, 1" in _rp and _rp.rstrip().endswith("Task_Completed")
+          and recipe_is_the_plan(_rec_s, "sweep, then fold the shirt") is None
+          and recipe_is_the_plan(_rec_s, "sweep the board", "earlier task") is None
+          and recipe_is_the_plan(_rec_s, "sweep the board", "", "re-plan the rest") is None
+          and recipe_is_the_plan(None, "sweep the board") is None
+          and recipe_is_the_plan({"lines": []}, "sweep the board") is None,
+          "recipe_is_the_plan skipped (or kept) the planner wrongly")
+    check(all(is_surface_name(n) for n in ("surface", "wooden table", "wood grain", "floor mat", "the floor", "shadow"))
+          and not any(is_surface_name(n) for n in ("hand brush", "table lamp", "wooden spoon", "rice grain",
+                                                   "dustpan", "t-shirt", "mat knife", "unknown", "")),
+          "is_surface_name misjudged a name")
+    check(all(is_hand_name(n) for n in ("hand", "left hand", "fingers", "human hand"))
+          and not any(is_hand_name(n) for n in ("hand brush", "hand towel", "hand mixer", "handle", "")),
+          "is_hand_name misjudged a name")
+    _Lp = [np.array([[100, 100], [400, 100], [400, 200], [200, 200], [200, 400], [100, 400]],
+                    np.int32).reshape(-1, 1, 2)]
+    _inL = [np.array([[120, 120], [180, 120], [180, 180], [120, 180]], np.int32).reshape(-1, 1, 2)]
+    _notch = [np.array([[250, 250], [380, 250], [380, 380], [250, 380]], np.int32).reshape(-1, 1, 2)]
+    _fp = find_parents([_Lp, _inL, _notch])
+    check(_fp == [None, 0, None],
+          f"a sleeve in the notch of a frame's box counted as a part of the frame: {_fp}")
+    _bru = [np.array([[100, 100], [160, 100], [160, 500], [100, 500]], np.int32).reshape(-1, 1, 2)]
+    _hnd = [np.array([[60, 100], [200, 100], [200, 240], [60, 240]], np.int32).reshape(-1, 1, 2)]
+    _far = [np.array([[300, 100], [400, 100], [400, 200], [300, 200]], np.int32).reshape(-1, 1, 2)]
+    _cut = cut_out(_bru, [_hnd])
+    check(object_area(_cut) < 0.7 * object_area(_bru) and object_bbox(_cut)[1] >= 235
+          and cut_out(_bru, [_far]) is _bru and cut_out(_bru, [_bru]) is _bru,
+          "cut_out did not take a hand out of a brush (or cut what it should not)")
+    _lf = np.zeros((600, 600, 3), np.uint8)
+    _lf[:] = (35, 55, 90)
+    cv2.rectangle(_lf, (250, 100), (450, 500), (235, 235, 235), -1)
+    _lm = [np.array([[130, 100], [450, 100], [450, 500], [130, 500]], np.int32).reshape(-1, 1, 2)]
+    _lt = trim_leaks(_lf, _lm)
+    check(object_area(_lt) < 0.75 * object_area(_lm) and 240 <= object_bbox(_lt)[0] <= 262
+          and object_bbox(_lt)[2] >= 440,
+          f"the table was not cut out of a shirt's mask: {object_bbox(_lt)} {object_area(_lt)}")
+    check(trim_leaks(np.full((600, 600, 3), 120, np.uint8), _lm) is _lm,
+          "an object the colour of the table was trimmed")
+    _gf = np.full((1000, 1000, 3), 200, np.uint8)
+    _go = [_square(200, 200, 500, 400), _square(600, 100, 900, 900), _square(150, 250, 250, 330),
+           _square(100, 600, 500, 900), _square(520, 650, 560, 690)]
+    _gn = ObjectNamer()
+    _gn.names = {1: "t-shirt", 2: "wood grain", 3: "left hand"}
+    _gn.asked = {1, 2, 3, 4, 5}
+    _gs = {"frame": _gf, "box": _board, "objects": _go, "ids": [1, 2, 3, 4, 5],
+           "parents": find_parents(_go)}
+    _gl = planner_objects(_gs, _gn, _vgrid)
+    _plain = planner_objects(dict(_gs, objects=[_go[0]], ids=[1], parents=[None]), _gn, _vgrid)
+    check(sorted(o["name"] for o in _gl) == ["t-shirt", "unidentified object"]
+          and _poly_area(next(o for o in _gl if o["name"] == "t-shirt")["polygon"])
+          < 0.97 * _poly_area(_plain[0]["polygon"]),
+          f"the table, the hand and a big unnamed outline were planned with: {[o['name'] for o in _gl]}")
+    _gn.info = {2: {"thing": "dustpan"}}
+    check(any("wood grain" in o["name"] for o in planner_objects(_gs, _gn, _vgrid)),
+          "a piece of a bigger thing was thrown out as the table")
+    check("keep hands clear" in vision_report_text(_gl, left_out={"hands": 2, "surface": 1})
+          and "2 hand outline(s) and 1 patch(es) of table" in vision_report_text(
+              _gl, left_out={"hands": 2, "surface": 1})
+          and "Left out" not in vision_report_text(_gl, left_out={"hands": 0, "surface": 0})
+          and "Left out" not in vision_report_text(_gl),
+          "the vision report does not say what was left out of the plan")
+    _hs = [_square(200, 200, 500, 400), _square(550, 200, 750, 600), _square(600, 300, 680, 500)]
+    _hn = ObjectNamer()
+    _hn.names = {1: "t-shirt", 2: "hand", 3: "surface"}
+    _hn.asked = {1, 2, 3}
+    _hp = find_parents(_hs)
+    _hl = planner_objects({"frame": _gf, "box": _board, "objects": _hs, "ids": [1, 2, 3],
+                           "parents": _hp}, _hn, _vgrid)
+    check(_hp[2] == 1 and [o["name"] for o in _hl] == ["t-shirt"],
+          f"a patch of table lying in a hand was planned with: {[o['name'] for o in _hl]} {_hp}")
 
     folder = os.path.dirname(SCRIPT_PATH)
     allowed = {os.path.basename(SCRIPT_PATH),

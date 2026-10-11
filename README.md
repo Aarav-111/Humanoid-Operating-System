@@ -6,9 +6,9 @@
 
 NVIDIA's CEO has spoken about the need for a general-purpose robot breakthrough before humanoids can scale. HOS is our team's attempt at that: a foundational software and hardware framework that gives humanoid robots a generalized, reasoning-driven "mind."
 
-Instead of training isolated models per task (the approach used by most VLA models, including Gemini Robotics and π0.5), HOS uses an LLM-driven control layer for multi-modal decision-making. This repository covers the full HOS system: the mobile base for locomotion and spatial movement, and the robotic arm for manipulation.
+Instead of training isolated models per task (the approach used by most VLA models, including Gemini Robotics and Ï0.5), HOS uses an LLM-driven control layer for multi-modal decision-making. This repository covers the full HOS system: the mobile base for locomotion and spatial movement, and the robotic arm for manipulation.
 
-> **Status:** Active research and prototyping.
+> **Status:** HOS 1.5 released (11 October 2026). Active research and prototyping continue.
 
 ---
 
@@ -16,7 +16,6 @@ Instead of training isolated models per task (the approach used by most VLA mode
 
 - [Why HOS](#why-hos)
 - [Recent Updates](#recent-updates)
-- [Demo Videos](#demo-videos)
 - [System architecture](#system-architecture)
 - [A3-Terra at a glance](#a3-terra-at-a-glance)
 - [How the planning loop works](#how-the-planning-loop-works)
@@ -46,24 +45,18 @@ HOS is organized around two physical roles:
 
 The A-series physical simulators concentrate first on the arm-and-workspace layer: a bounded, camera-visible scene where perception and action can be measured, rehearsed, and improved before deployment to a broader robot platform.
 
-**Latest development (11 October 2026):** S1.5-SRC source now lives at [Software/S1.5-SRC.py](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Software/S1.5-SRC.py) (renamed from the earlier preview file and expanded). [Shell 1.5 firmware](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Shell_1.5.ino) adds P3 continuous height following: the Z axis tracks a saved VL53L0X distance target, pauses Z and XY on missing or stale sensor readings, and rejects targets below 35 mm. Z travel is now calculated from the confirmed 8 mm lead screw. The [Hardware](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware) folder now includes HOS-Trigonometry-1.5 hardware documentation (PDF) and [3D Models](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware/3D%20Models) with printable STL parts for the gantry, gripper, and AprilTag connector. These are source-level advances; they are not a completed release or proof of hardware reliability.
+**Latest development (11 October 2026):** S1.5-SRC source now lives at [Software/S1.5-SRC.py](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Software/S1.5-SRC.py) (renamed from the earlier preview file and expanded). [Shell 1.5 firmware](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Shell_1.5.ino) adds P3 continuous height following: the Z axis tracks a saved VL53L0X distance target, pauses Z and XY on missing or stale sensor readings, and rejects targets below 35 mm. Z travel is now calculated from the confirmed 8 mm lead screw. The [Hardware](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware) folder now includes HOS-Trigonometry-1.5 hardware documentation (PDF) and [3D Models](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware/3D%20Models) with printable STL parts for the gantry, gripper, and AprilTag connector. These parts make up the HOS 1.5 release (11 October 2026). The release does not by itself prove hardware reliability.
 
 ---
 
 ## Recent Updates
 
-- **11 October 2026:** Published the [HOS 1.5 task compilation](https://www.youtube.com/watch?v=wpmh6HE-oz8) demo video on the Prolabs Robotics YouTube channel.
+- **11 October 2026:** HOS 1.5 released. It brings together S1.5-SRC software, Shell 1.5 firmware, HOS-Trigonometry-1.5 hardware documentation, and the 3D-printable models.
 - **9 October 2026:** Added [3D Models](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware/3D%20Models) with STL files: AprilTag connector, basic robot, gripper parts (including a sponge gripper part), hub, L-bracket, legs, pulley mount, XY inter-axis connector, Y-axis holder, and Z-axis mounter. ([639e62a](https://github.com/Aarav-111/Humanoid-Operating-System/commit/639e62aad5e9a11a8b92fb78df90f71074acb815))
 - **8 to 9 October 2026:** Added HOS-Trigonometry-1.5 hardware documentation to the [Hardware](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware) folder, including an updated v2 file. ([ed2d997](https://github.com/Aarav-111/Humanoid-Operating-System/commit/ed2d997), [3b786a4](https://github.com/Aarav-111/Humanoid-Operating-System/commit/3b786a4))
 - **7 to 8 October 2026:** Renamed `S1.5-SRC-Preview.py` to [`S1.5-SRC.py`](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Software/S1.5-SRC.py) and expanded the source. ([d3a7a41](https://github.com/Aarav-111/Humanoid-Operating-System/commit/d3a7a41), [bfbd408](https://github.com/Aarav-111/Humanoid-Operating-System/commit/bfbd408))
 - **5 October 2026:** Shell 1.5 firmware gained P3 continuous height following with sensor-based pause and recovery, plus Z steps per mm based on the 8 mm lead screw. ([2929d86](https://github.com/Aarav-111/Humanoid-Operating-System/commit/2929d86))
 - **4 October 2026:** Added the S1.5-SRC preview (live-camera ERR-3 verification, a cannot-verify verdict, optional step or task checks, and failed-step replanning limited to two automatic attempts) and Shell 1.5 firmware (VL53L0X distance sensing, saved distance targets, distance telemetry). Older A-series and Shell files were removed from the current tree.
-
----
-
-## Demo Videos
-
-- **11 October 2026:** [HOS 1.5 task compilation](https://www.youtube.com/watch?v=wpmh6HE-oz8)
 
 ---
 
@@ -220,8 +213,8 @@ Roadmap items are research goals, not shipping commitments.
 - [x] A3-Terra launch
 - [x] S1-SRC (Software Robot Control)
 - [ ] HOS 1
-- [ ] S1.5-SRC (source in `Software/S1.5-SRC.py`; full release pending)
-- [ ] HOS 1.5
+- [x] S1.5-SRC (released with HOS 1.5; source in `Software/S1.5-SRC.py`)
+- [x] HOS 1.5
 - [ ] HOS-2.0
 
 ### Planned physical robot versions

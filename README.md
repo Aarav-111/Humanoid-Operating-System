@@ -23,6 +23,7 @@ Instead of training isolated models per task (the approach used by most VLA mode
 - [Supported interaction model](#supported-interaction-model)
 - [Navigate this repository](#navigate-this-repository)
 - [Simulator history](#simulator-history)
+- [Demo Videos](#demo-videos)
 - [Roadmap](#roadmap)
 - [Benchmarking](#benchmarking)
 - [Safety and responsible use](#safety-and-responsible-use)
@@ -51,6 +52,7 @@ The A-series physical simulators concentrate first on the arm-and-workspace laye
 
 ## Recent Updates
 
+- **11 October 2026:** Published the [HOS 1.5 task compilation](https://www.youtube.com/watch?v=wpmh6HE-oz8) video on the Prolabs Robotics YouTube channel. See [Demo Videos](#demo-videos).
 - **9 October 2026:** Added [3D Models](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware/3D%20Models) with STL files: AprilTag connector, basic robot, gripper parts (including a sponge gripper part), hub, L-bracket, legs, pulley mount, XY inter-axis connector, Y-axis holder, and Z-axis mounter. ([639e62a](https://github.com/Aarav-111/Humanoid-Operating-System/commit/639e62aad5e9a11a8b92fb78df90f71074acb815))
 - **8 to 9 October 2026:** Added HOS-Trigonometry-1.5 hardware documentation to the [Hardware](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware) folder, including an updated v2 file. ([ed2d997](https://github.com/Aarav-111/Humanoid-Operating-System/commit/ed2d997), [3b786a4](https://github.com/Aarav-111/Humanoid-Operating-System/commit/3b786a4))
 - **7 to 8 October 2026:** Renamed `S1.5-SRC-Preview.py` to [`S1.5-SRC.py`](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Software/S1.5-SRC.py) and expanded the source. ([d3a7a41](https://github.com/Aarav-111/Humanoid-Operating-System/commit/d3a7a41), [bfbd408](https://github.com/Aarav-111/Humanoid-Operating-System/commit/bfbd408))
@@ -196,6 +198,14 @@ Simulation is how the HOS team tests planning behavior before committing it to a
 | **A2.3 - A2.6-Sol** | Progressive physical-simulation iterations; A2.6-Sol established the direction for richer task planning in a physical simulator. |
 | **A3-Terra** | Current A-series evolution, emphasizing robust image intake, measured scene localization, component-level reasoning, gripper guidance, simulation-first review, and guarded hardware connection. |
 | **A4-Astra** | Upcoming A-series evolution, for complex 3D manuplation |
+
+---
+
+## Demo Videos
+
+| Date | Video |
+| --- | --- |
+| 11 October 2026 | [HOS 1.5 task compilation](https://www.youtube.com/watch?v=wpmh6HE-oz8) |
 
 ---
 

@@ -26,6 +26,7 @@ Instead of training isolated models per task (the approach used by most VLA mode
 - [Simulator history](#simulator-history)
 - [Roadmap](#roadmap)
 - [Benchmarking](#benchmarking)
+- [Running Cost](#running-cost)
 - [Safety and responsible use](#safety-and-responsible-use)
 - [Team and contact](#team-and-contact)
 
@@ -46,12 +47,13 @@ HOS is organized around two physical roles:
 
 The A-series physical simulators concentrate first on the arm-and-workspace layer: a bounded, camera-visible scene where perception and action can be measured, rehearsed, and improved before deployment to a broader robot platform.
 
-**Latest development (11 October 2026):** S1.5-SRC source now lives at [Software/S1.5-SRC.py](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Software/S1.5-SRC.py) (renamed from the earlier preview file and expanded). [Shell 1.5 firmware](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Shell_1.5.ino) adds P3 continuous height following: the Z axis tracks a saved VL53L0X distance target, pauses Z and XY on missing or stale sensor readings, and rejects targets below 35 mm. Z travel is now calculated from the confirmed 8 mm lead screw. The [Hardware](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware) folder now includes HOS-Trigonometry-1.5 hardware documentation (PDF) and [3D Models](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware/3D%20Models) with printable STL parts for the gantry, gripper, and AprilTag connector. These parts make up the HOS 1.5 release (11 October 2026). The release does not by itself prove hardware reliability.
+**Latest development (11 October 2026):** S1.5-SRC source now lives at [Software/S1.5-SRC.py](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Software/S1.5-SRC.py) (renamed from the earlier preview file and expanded). [Shell 1.5 firmware](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Shell_1.5.ino) adds P3 continuous height following: the Z axis tracks a saved VL53L0X distance target, pauses Z and XY on missing or stale sensor readings, and rejects targets below 35 mm. Z travel is now calculated from the confirmed 8 mm lead screw. The [Hardware](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware) folder now includes HOS-Trigonometry-1.5 hardware documentation (PDF) and [3D Models](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware/3D%20Models) with printable STL parts for the gantry, gripper, and AprilTag connector. These parts make up the HOS 1.5 release (11 October 2026). The release does not by itself prove hardware reliability. A later S1.5-SRC update on the same day moved every AI stage (vision naming, dexterity, planner, and ERR) to OpenAI `gpt-6-luna` at low reasoning effort and turned on ERR on the Go and the final ERR check by default.
 
 ---
 
 ## Recent Updates
 
+- **11 October 2026:** Large [S1.5-SRC](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Software/S1.5-SRC.py) update (about 5,600 lines added, 1,100 removed). All AI stages now use OpenAI `gpt-6-luna` at low reasoning effort (the planner used `gpt-5.6-terra` and vision naming used `gpt-5.4-mini` before). ERR on the Go is now on by default: after each pickup the operator gets YES / NO, and NO runs the new `gpt-6-luna` Vision AI Sequence (park, look again, re-name the objects, retry the pickup). The final ERR check is on by default, with an optional ERR redo (off by default, at most 2). Also added: saved automatic gripper timing, an AprilTag search when the tag is out of view, and placement handling for words such as "between", "line up", and "side". ([7fe076e](https://github.com/Aarav-111/Humanoid-Operating-System/commit/7fe076e6622cab2954850d361ee9b7810eea0f29))
 - **11 October 2026:** HOS 1.5 released. It brings together S1.5-SRC software, Shell 1.5 firmware, HOS-Trigonometry-1.5 hardware documentation, and the 3D-printable models.
 - **11 October 2026:** Published the [HOS 1.5 task compilation](https://www.youtube.com/watch?v=wpmh6HE-oz8) demo video on the Prolabs Robotics YouTube channel.
 - **9 October 2026:** Added [3D Models](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware/3D%20Models) with STL files: AprilTag connector, basic robot, gripper parts (including a sponge gripper part), hub, L-bracket, legs, pulley mount, XY inter-axis connector, Y-axis holder, and Z-axis mounter. ([639e62a](https://github.com/Aarav-111/Humanoid-Operating-System/commit/639e62aad5e9a11a8b92fb78df90f71074acb815))
@@ -243,6 +245,53 @@ Roadmap items are research goals, not shipping commitments.
 The K5D simulator scored **99% on the MMRO benchmark** for general-purpose robot intelligence.
 
 Benchmark methodology and scoring material are available here: [MMRO materials](https://drive.google.com/drive/folders/1bAwEW-q3GPSAHZffDW0udatJOwSDtqaD?usp=sharing).
+
+---
+
+## Running Cost
+
+All numbers below are **estimates**, not measured bills. They cover the AI API only and were worked out from the code in [`Software/S1.5-SRC.py`](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Software/S1.5-SRC.py) at commit [7fe076e](https://github.com/Aarav-111/Humanoid-Operating-System/commit/7fe076e6622cab2954850d361ee9b7810eea0f29).
+
+### What HOS calls
+
+- **Provider:** OpenAI API (Chat Completions, your own API key).
+- **Model:** `gpt-6-luna` for every reasoning and vision stage, at `low` reasoning effort, standard tier (the priority tier is off).
+- **Optional voice input:** `gpt-4o-transcribe` (fallback `whisper-1`). Not included below.
+
+### Price used
+
+`gpt-6-luna`, standard tier: **$0.10 per 1M input tokens**, $0.01 per 1M cached input tokens, **$0.50 per 1M output tokens**. Source: [OpenAI gpt-6-luna model page](https://developers.openai.com/api/docs/models/gpt-6-luna), checked 11 October 2026. Exchange rate used: 1 USD = 96.78 INR ([dollarrupee.in](https://dollarrupee.in/), 10 October 2026).
+
+### Cost per model call
+
+| Call | When it runs | Tokens in (est.) | Tokens out incl. reasoning (est.) | Cost (USD) | Cost (INR) |
+| --- | --- | --- | --- | --- | --- |
+| Vision naming | Start of a task (2 high-detail photos) | 5,000 | 1,500 | $0.0013 | Rs 0.12 |
+| Dexterity check | Once per task | 2,000 | 500 | $0.0005 | Rs 0.04 |
+| Planner | Once per task (a plain sweep skips it) | 20,000 | 3,000 | $0.0035 | Rs 0.34 |
+| ERR final check | End of task (1 photo) | 3,500 | 1,000 | $0.0009 | Rs 0.08 |
+| Vision AI Sequence | Only after an operator NO | 3,500 | 1,000 | $0.0009 | Rs 0.08 |
+
+ERR on the Go asks the operator YES / NO after each pickup. A YES makes no model call.
+
+### Cost per task
+
+| Scenario | Model calls | Per task (USD) | Per task (INR) | Per 100 tasks (USD) | Per 100 tasks (INR) |
+| --- | --- | --- | --- | --- | --- |
+| Typical (no failures) | 4 | about $0.006 | about Rs 0.59 | about $0.60 | about Rs 59 |
+| Worst case (2 replans, each with a Vision AI Sequence and a new plan) | 8 | about $0.015 | about Rs 1.43 | about $1.47 | about Rs 143 |
+
+**Assumptions:** planner input of about 20,000 tokens (the size noted in the code); photo token counts are rough guesses for high-detail images; no prompt caching (caching would lower input cost); output includes reasoning tokens at low effort; taxes and transcription are not included. Real costs change with the task, the scene, and OpenAI pricing. Check the `[timing]` lines S1.5-SRC prints, which show real tokens in and out for each call.
+
+### Hardware
+
+The [HOS-Trigonometry-1.5 hardware documentation](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware) has a bill of materials but no part prices, so no hardware cost is given here. Main parts:
+
+- Arduino Uno and CNC Shield V3, with 3 or 4 A4988 stepper drivers
+- 3 or 4 NEMA 17 stepper motors and a 12 V, 10 A power supply
+- 2020 V-slot frame, GT2 belts and pulleys (X and Y), T8 lead screw (Z), 8 mm smooth rods
+- VL53L0X-class time-of-flight sensor, IR object sensor, sponge grip face
+- Analog joystick, AprilTag 36h11, 3D-printed brackets and carriage parts, wiring
 
 ---
 

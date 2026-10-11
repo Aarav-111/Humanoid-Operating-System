@@ -106,7 +106,7 @@ ALPHABET = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 DEBUG_INPUT = bool(os.environ.get("S1_DEBUG_INPUT"))
 
 SCRIPT_PATH = os.path.abspath(__file__)
-S1_EMBEDDED_STATE_B64 = "eyJzZXR0aW5ncyI6eyJjYW1lcmEiOnsiem9vbSI6MS4xLCJicmlnaHRuZXNzIjowLCJjb250cmFzdCI6MS4wLCJzYXR1cmF0aW9uIjoxLjAsInNoYXJwbmVzcyI6MC4wLCJyb3RhdGlvbiI6MCwibWlycm9yIjpmYWxzZX0sImdyaWQiOnsibl9jb2xzIjoyMCwibl9yb3dzIjoyMCwiYm94IjpbMjEzLjAsNy43NTk5OTk5OTk5OTk5OTEsOTkwLjI0LDc4NS4wXSwic3F1YXJlX2NlbGxzIjp0cnVlLCJmcmFtZV9zaXplIjpbMTQwOSw3OTJdLCJib3hfcmVsIjpbMC4xNTExNzEwNDMyOTMxMTU2OCwwLjAwOTc5Nzk3OTc5Nzk3OTc4NiwwLjcwMjc5NjMwOTQzOTMxODcsMC45OTExNjE2MTYxNjE2MTYxXX0sInRyaWdfb2Zmc2V0Ijp7ImNhbWVyYV9oZWlnaHRfaW4iOjM1LjAsInRhZ19oZWlnaHRfaW4iOjUuNSwiYm9hcmRfaGVpZ2h0X2luIjowLjAsInBpdm90X3giOjAuMCwicGl2b3RfeSI6MC4wLCJncmlwcGVyX3VwX2Rvd24iOi03LCJncmlwcGVyX3JpZ2h0X2xlZnQiOjAsImdyaXBwZXJfdmVydGljYWxfZGlyZWN0aW9uIjoidXAiLCJncmlwcGVyX2hvcml6b250YWxfZGlyZWN0aW9uIjoibGVmdCIsIm51ZGdlX3MiOjAuMiwibnVkZ2VfZGlyZWN0aW9uIjoicmlnaHQiLCJudWRnZV9hY3Rpb25zIjp7InBpY2t1cCI6dHJ1ZSwia2VlcCI6ZmFsc2UsInByZXNzIjpmYWxzZSwicmVsZWFzZSI6dHJ1ZX19LCJ2aXNpb24iOnsiYm9hcmRfd2lkdGhfaW4iOjI0LjAsImNvbmZfdGhyZXMiOjAuMjUsImlvdV90aHJlcyI6MC43LCJtYXhfYXJlYSI6MC41LCJvdXRsaW5lX3B4IjoyLCJtYXJrX3BhcnRzIjp0cnVlLCJzaG93X25hbWVzIjp0cnVlLCJuYW1lcl9tb2RlbCI6ImdwdC01LjQtbWluaSIsInByaW9yaXR5X25hbWluZyI6ZmFsc2UsIm1heF9mcHMiOjEwLjAsInNjZW5lX2hpbnQiOiJUaGUgcGhvdG8gc2hvd3MgdGhlIHdvcmsgYXJlYSBvZiBhIHNtYWxsIGdhbnRyeSByb2JvdCwgc28gaXQgbWF5IGhvbGQgcGFydHMgb2YgdGhlIHJvYm90IGl0c2VsZiAoYWx1bWluaXVtIGZyYW1lIHJhaWxzLCBsZWFkIHNjcmV3cywgc21vb3RoIHJvZHMsIHN0ZXBwZXIgbW90b3JzLCBiZWx0cywgcHVsbGV5cywgYSBncmlwcGVyLCBjYWJsZXMpIGFzIHdlbGwgYXMgZXZlcnlkYXkgb2JqZWN0cy4ifSwiYmVoYXZpb3VyIjp7Im1hbnVhbF9ncmlwcGVyX3N0ZXBzIjpmYWxzZSwiZ3JpcHBlcl9haSI6dHJ1ZSwiZXJyX2F1dG8iOiJvZmYiLCJwbGFubmVyX2VmZm9ydCI6ImxvdyJ9fSwiY3VzdG9tX3RyYWluaW5nIjpbXSwiZXJyb3JfcmVib3VuZHMiOlt7InRhc2siOiJzd2FwIGFsbCB0aGUgb2JqZWN0cyBvbiB0aGUgYm9hcmQiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiT2JqZWN0cyBkaWQgbm90IHN3YXAgcG9zaXRpb25zOyBzY3Jld2RyaXZlciByZW1haW5zIGF0IEgxNCBhbmQgdXRpbGl0eSBrbmlmZSByZW1haW5zIGF0IFAxMS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA4LTMxVDIwOjQ1OjA2In0seyJ0YXNrIjoid2F0ZXIgbXkgcGxhbnRzIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6Ik5vIHZpc2libGUgZXZpZGVuY2UgdGhlIHBsYW50IHdhcyB3YXRlcmVkOyBjdXAgYW5kIHBsYW50IHJlbWFpbiBlc3NlbnRpYWxseSB1bmNoYW5nZWQuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0wMVQxNTo0NjoxMyJ9LHsidGFzayI6IndhdGVyIG15IHBsYW50cyIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJObyB2aXNpYmxlIGV2aWRlbmNlIHRoZSBwbGFudCB3YXMgd2F0ZXJlZDsgcGxhbnQgYW5kIG11ZyBvbmx5IHNoaWZ0ZWQgc2xpZ2h0bHkuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0wMlQxNDozMTo1MCJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNwb3QgaW4gdGhlIGJvZHkuIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5IiwicmVhc29uIjoiYmxhY2sgc29jayB3YXMgbW92ZWQgaW50byB0aGUgYm93bCwgd2l0aCB0aGUgYm93bCBzdGlsbCBjb250YWluaW5nIGl0IGluIHRoZSBmaW5hbCBpbWFnZSIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTE6NTE6MjIifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzcG90IGluIHRoZSBib2R5LiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJibGFjayBzb2NrIHdhcyBtb3ZlZCBuZWFyIEs0IGluc3RlYWQgb2YgYmVpbmcga2VwdCBpbiB0aGUgYm93bC9ib2R5IGF0IFEzIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMTo1MTozNiJ9LHsidGFzayI6InNvcnQgdGhlIHNvY2tlcyBhbmQga2VlcCB0aGUgd2hpdGVzIGluIHRlIGJvd2wiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiV2hpdGUgc29ja3MgYXJlIG5vdCB2aXNpYmxlIGluIHRoZSBib3dsIGluIHRoZSBmaW5hbCBpbWFnZTsgb25seSB0aGUgYmxhY2sgc29ja3MgcmVtYWluIG9uIHRoZSBib2FyZC4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDEyOjAzOjAwIn0seyJ0YXNrIjoiS2VlcCB0aGUgYmxhY2sgc29ja3Mgc3RhY2tlZCB0b2dldGhlci4iLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiT25seSBvbmUgYmxhY2sgc29jayBpcyB2aXNpYmxlIGluIHRoZSBmaW5hbCBpbWFnZTsgdGhlIHR3byBzb2NrcyBhcmUgbm90IGNvbmZpcm1lZCBzdGFja2VkIHRvZ2V0aGVyLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTI6MDU6MTMifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzb2NrcyBzdGFja2VkIHRvZ2V0aGVyLiIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsInJlYXNvbiI6IlRoZSB0d28gYmxhY2sgc29ja3MgYXJlIHN0YWNrZWQgdG9nZXRoZXIgaW4gdGhlIGZpbmFsIGltYWdlLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTI6MDU6MjMifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzb2NrIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsInJlYXNvbiI6ImJsYWNrIHNvY2sgaXMgcGxhY2VkIGluIHRoZSBncmVlbiBib3dsIGluIHRoZSBmaW5hbCBpbWFnZS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDEzOjAxOjM0In0seyJ0YXNrIjoiU29ydCB0aGUgYmxhY2sgYW5kIHdoaXRlIHNvY2tzLCBhbmQgcHV0IGFsbCB0aGUgd2hpdGVzIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJXaGl0ZSBzb2NrIGlzIGluIHRoZSBib3dsLCBidXQgb25lIHdoaXRlIHNvY2sgcmVtYWlucyBvdXRzaWRlIHRoZSBib3dsLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTY6Mjc6NDgifSx7InRhc2siOiJTb3J0IG15IGNsb3RoZXMgb3Igc29ja3MgaW50byBibGFjayBhbmQgd2hpdGUuIEtlZXAgYWxsIHRoZSBibGFja3MgaW4gdGhlIGJvd2wuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6Ik9ubHkgb25lIGJsYWNrIHNvY2sgaXMgaW4gdGhlIGJvd2w7IHRoZSBvdGhlciBibGFjayBzb2NrIGlzIG5vdCB2ZXJpZmllZCBpbiB0aGUgYm93bC4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDE2OjM5OjQyIn0seyJ0YXNrIjoiS2VlcCB0aGUgbGVhdmVzIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJMZWF2ZXMgYXJlIG5vdCBmdWxseSBpbiB0aGUgYm93bDsgcGFydCBvZiB0aGUgc3ByaWcgcmVtYWlucyBvdXRzaWRlIG9uIHRoZSByaW0vdGFibGUuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxNjo0Nzo1MiJ9LHsidGFzayI6Im1vZSB0aGUgYmtvb2sgdG8gaXQncyBsZWZ0IiwidmVyc2lvbiI6IkVSUi0zIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsIm9iamVjdHMiOlsibm90ZWJvb2s9d3JvbmciXSwicmVhc29uIjoiVGhlIG5vdGVib29rIHJlbWFpbnMgaW4gdGhlIHNhbWUgcG9zaXRpb24gYXMgaW4gdGhlIHN0YXJ0IGltYWdlcyBhbmQgd2FzIG5vdCBtb3ZlZCBsZWZ0LiIsIm5leHQiOiJGSVg6IG1vdmUgdGhlIG5vdGVib29rIGxlZnQgZnJvbSBpdHMgY3VycmVudCBwb3NpdGlvbiBhbmQgcmVsZWFzZSBpdCB0aGVyZSIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMDJUMTg6MDQ6MDAifSx7InRhc2siOiJtb2UgdGhlIGJrb29rIHRvIGl0J3MgbGVmdCIsInZlcnNpb24iOiJFUlItMyIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsIm9iamVjdHMiOlsibm90ZWJvb2s9b2siXSwicmVhc29uIjoiVGhlIGJsYWNrIG5vdGVib29rIGlzIHZpc2libHkgc2hpZnRlZCBsZWZ0IGZyb20gaXRzIHN0YXJ0IHBvc2l0aW9uIChmcm9tIGFib3V0IEctTCBjb2x1bW5zIHRvIGFib3V0IEQtSiBjb2x1bW5zKSBhbmQgaXMgcmVzdGluZyBvbiB0aGUgYm9hcmQgd2l0aCBubyBncmlwcGVyIGhvbGRpbmcgaXQ7IG5vIG90aGVyIHRhc2sgY29uc3RyYWludHMgYXJlIHZpc2libHkgdmlvbGF0ZWQuIiwibmV4dCI6IiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMDJUMTg6MDQ6MjIifV19"  # S1_EMBEDDED_STATE
+S1_EMBEDDED_STATE_B64 = "eyJzZXR0aW5ncyI6eyJjYW1lcmEiOnsiem9vbSI6MS4xLCJicmlnaHRuZXNzIjowLCJjb250cmFzdCI6MS4wLCJzYXR1cmF0aW9uIjoxLjAsInNoYXJwbmVzcyI6MC4wLCJyb3RhdGlvbiI6MCwibWlycm9yIjpmYWxzZX0sImdyaWQiOnsibl9jb2xzIjoyMCwibl9yb3dzIjoyMCwiYm94IjpbMjEzLjAsNy43NTk5OTk5OTk5OTk5OTEsOTkwLjI0LDc4NS4wXSwic3F1YXJlX2NlbGxzIjp0cnVlLCJmcmFtZV9zaXplIjpbMTQwOSw3OTJdLCJib3hfcmVsIjpbMC4xNTExNzEwNDMyOTMxMTU2OCwwLjAwOTc5Nzk3OTc5Nzk3OTc4NiwwLjcwMjc5NjMwOTQzOTMxODcsMC45OTExNjE2MTYxNjE2MTYxXX0sInRyaWdfb2Zmc2V0Ijp7ImNhbWVyYV9oZWlnaHRfaW4iOjM1LjAsInRhZ19oZWlnaHRfaW4iOjUuNSwiYm9hcmRfaGVpZ2h0X2luIjowLjAsInBpdm90X3giOjAuMCwicGl2b3RfeSI6MC4wLCJncmlwcGVyX3VwX2Rvd24iOi03LCJncmlwcGVyX3JpZ2h0X2xlZnQiOjAsImdyaXBwZXJfdmVydGljYWxfZGlyZWN0aW9uIjoidXAiLCJncmlwcGVyX2hvcml6b250YWxfZGlyZWN0aW9uIjoibGVmdCIsIm51ZGdlX3MiOjAuMiwibnVkZ2VfZGlyZWN0aW9uIjoicmlnaHQiLCJudWRnZV9hY3Rpb25zIjp7InBpY2t1cCI6dHJ1ZSwia2VlcCI6ZmFsc2UsInByZXNzIjpmYWxzZSwicmVsZWFzZSI6dHJ1ZX19LCJ2aXNpb24iOnsiYm9hcmRfd2lkdGhfaW4iOjI0LjAsImNvbmZfdGhyZXMiOjAuMjUsImlvdV90aHJlcyI6MC43LCJtYXhfYXJlYSI6MC41LCJvdXRsaW5lX3B4IjoyLCJtYXJrX3BhcnRzIjp0cnVlLCJzaG93X25hbWVzIjp0cnVlLCJuYW1lcl9tb2RlbCI6ImdwdC01LjQtbWluaSIsInByaW9yaXR5X25hbWluZyI6ZmFsc2UsIm1heF9mcHMiOjEwLjAsInNjZW5lX2hpbnQiOiJUaGUgcGhvdG8gc2hvd3MgdGhlIHdvcmsgYXJlYSBvZiBhIHNtYWxsIGdhbnRyeSByb2JvdCwgc28gaXQgbWF5IGhvbGQgcGFydHMgb2YgdGhlIHJvYm90IGl0c2VsZiAoYWx1bWluaXVtIGZyYW1lIHJhaWxzLCBsZWFkIHNjcmV3cywgc21vb3RoIHJvZHMsIHN0ZXBwZXIgbW90b3JzLCBiZWx0cywgcHVsbGV5cywgYSBncmlwcGVyLCBjYWJsZXMpIGFzIHdlbGwgYXMgZXZlcnlkYXkgb2JqZWN0cy4ifSwiYmVoYXZpb3VyIjp7Im1hbnVhbF9ncmlwcGVyX3N0ZXBzIjpmYWxzZSwiZ3JpcHBlcl9haSI6dHJ1ZSwiZXJyX2F1dG8iOiJvZmYiLCJwbGFubmVyX2VmZm9ydCI6ImxvdyJ9fSwiY3VzdG9tX3RyYWluaW5nIjpbXSwiZXJyb3JfcmVib3VuZHMiOlt7InRhc2siOiJzd2FwIGFsbCB0aGUgb2JqZWN0cyBvbiB0aGUgYm9hcmQiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiT2JqZWN0cyBkaWQgbm90IHN3YXAgcG9zaXRpb25zOyBzY3Jld2RyaXZlciByZW1haW5zIGF0IEgxNCBhbmQgdXRpbGl0eSBrbmlmZSByZW1haW5zIGF0IFAxMS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA4LTMxVDIwOjQ1OjA2In0seyJ0YXNrIjoid2F0ZXIgbXkgcGxhbnRzIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6Ik5vIHZpc2libGUgZXZpZGVuY2UgdGhlIHBsYW50IHdhcyB3YXRlcmVkOyBjdXAgYW5kIHBsYW50IHJlbWFpbiBlc3NlbnRpYWxseSB1bmNoYW5nZWQuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0wMVQxNTo0NjoxMyJ9LHsidGFzayI6IndhdGVyIG15IHBsYW50cyIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJObyB2aXNpYmxlIGV2aWRlbmNlIHRoZSBwbGFudCB3YXMgd2F0ZXJlZDsgcGxhbnQgYW5kIG11ZyBvbmx5IHNoaWZ0ZWQgc2xpZ2h0bHkuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0wMlQxNDozMTo1MCJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNwb3QgaW4gdGhlIGJvZHkuIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5IiwicmVhc29uIjoiYmxhY2sgc29jayB3YXMgbW92ZWQgaW50byB0aGUgYm93bCwgd2l0aCB0aGUgYm93bCBzdGlsbCBjb250YWluaW5nIGl0IGluIHRoZSBmaW5hbCBpbWFnZSIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTE6NTE6MjIifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzcG90IGluIHRoZSBib2R5LiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJibGFjayBzb2NrIHdhcyBtb3ZlZCBuZWFyIEs0IGluc3RlYWQgb2YgYmVpbmcga2VwdCBpbiB0aGUgYm93bC9ib2R5IGF0IFEzIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMTo1MTozNiJ9LHsidGFzayI6InNvcnQgdGhlIHNvY2tlcyBhbmQga2VlcCB0aGUgd2hpdGVzIGluIHRlIGJvd2wiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiV2hpdGUgc29ja3MgYXJlIG5vdCB2aXNpYmxlIGluIHRoZSBib3dsIGluIHRoZSBmaW5hbCBpbWFnZTsgb25seSB0aGUgYmxhY2sgc29ja3MgcmVtYWluIG9uIHRoZSBib2FyZC4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDEyOjAzOjAwIn0seyJ0YXNrIjoiS2VlcCB0aGUgYmxhY2sgc29ja3Mgc3RhY2tlZCB0b2dldGhlci4iLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiT25seSBvbmUgYmxhY2sgc29jayBpcyB2aXNpYmxlIGluIHRoZSBmaW5hbCBpbWFnZTsgdGhlIHR3byBzb2NrcyBhcmUgbm90IGNvbmZpcm1lZCBzdGFja2VkIHRvZ2V0aGVyLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTI6MDU6MTMifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzb2NrcyBzdGFja2VkIHRvZ2V0aGVyLiIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsInJlYXNvbiI6IlRoZSB0d28gYmxhY2sgc29ja3MgYXJlIHN0YWNrZWQgdG9nZXRoZXIgaW4gdGhlIGZpbmFsIGltYWdlLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTI6MDU6MjMifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzb2NrIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsInJlYXNvbiI6ImJsYWNrIHNvY2sgaXMgcGxhY2VkIGluIHRoZSBncmVlbiBib3dsIGluIHRoZSBmaW5hbCBpbWFnZS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDEzOjAxOjM0In0seyJ0YXNrIjoiU29ydCB0aGUgYmxhY2sgYW5kIHdoaXRlIHNvY2tzLCBhbmQgcHV0IGFsbCB0aGUgd2hpdGVzIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJXaGl0ZSBzb2NrIGlzIGluIHRoZSBib3dsLCBidXQgb25lIHdoaXRlIHNvY2sgcmVtYWlucyBvdXRzaWRlIHRoZSBib3dsLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTY6Mjc6NDgifSx7InRhc2siOiJTb3J0IG15IGNsb3RoZXMgb3Igc29ja3MgaW50byBibGFjayBhbmQgd2hpdGUuIEtlZXAgYWxsIHRoZSBibGFja3MgaW4gdGhlIGJvd2wuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6Ik9ubHkgb25lIGJsYWNrIHNvY2sgaXMgaW4gdGhlIGJvd2w7IHRoZSBvdGhlciBibGFjayBzb2NrIGlzIG5vdCB2ZXJpZmllZCBpbiB0aGUgYm93bC4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDE2OjM5OjQyIn0seyJ0YXNrIjoiS2VlcCB0aGUgbGVhdmVzIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJMZWF2ZXMgYXJlIG5vdCBmdWxseSBpbiB0aGUgYm93bDsgcGFydCBvZiB0aGUgc3ByaWcgcmVtYWlucyBvdXRzaWRlIG9uIHRoZSByaW0vdGFibGUuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxNjo0Nzo1MiJ9LHsidGFzayI6Im1vZSB0aGUgYmtvb2sgdG8gaXQncyBsZWZ0IiwidmVyc2lvbiI6IkVSUi0zIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsIm9iamVjdHMiOlsibm90ZWJvb2s9d3JvbmciXSwicmVhc29uIjoiVGhlIG5vdGVib29rIHJlbWFpbnMgaW4gdGhlIHNhbWUgcG9zaXRpb24gYXMgaW4gdGhlIHN0YXJ0IGltYWdlcyBhbmQgd2FzIG5vdCBtb3ZlZCBsZWZ0LiIsIm5leHQiOiJGSVg6IG1vdmUgdGhlIG5vdGVib29rIGxlZnQgZnJvbSBpdHMgY3VycmVudCBwb3NpdGlvbiBhbmQgcmVsZWFzZSBpdCB0aGVyZSIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMDJUMTg6MDQ6MDAifSx7InRhc2siOiJtb2UgdGhlIGJrb29rIHRvIGl0J3MgbGVmdCIsInZlcnNpb24iOiJFUlItMyIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsIm9iamVjdHMiOlsibm90ZWJvb2s9b2siXSwicmVhc29uIjoiVGhlIGJsYWNrIG5vdGVib29rIGlzIHZpc2libHkgc2hpZnRlZCBsZWZ0IGZyb20gaXRzIHN0YXJ0IHBvc2l0aW9uIChmcm9tIGFib3V0IEctTCBjb2x1bW5zIHRvIGFib3V0IEQtSiBjb2x1bW5zKSBhbmQgaXMgcmVzdGluZyBvbiB0aGUgYm9hcmQgd2l0aCBubyBncmlwcGVyIGhvbGRpbmcgaXQ7IG5vIG90aGVyIHRhc2sgY29uc3RyYWludHMgYXJlIHZpc2libHkgdmlvbGF0ZWQuIiwibmV4dCI6IiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMDJUMTg6MDQ6MjIifSx7InRhc2siOiJyZWRvIiwidmVyc2lvbiI6IkVSUiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJvYmplY3RzIjpbImNsb3RoPXdyb25nIiwid29vZCBibG9jaz13cm9uZyJdLCJyZWFzb24iOiJUaGUgY2xvdGggc3RheWVkIGF0IEc3IGluc3RlYWQgb2YgYmVpbmcgbW92ZWQsIGFuZCB0aGUgd29vZCBibG9jayB3YXMgZGlzcGxhY2VkIGZyb20gQTEzIHRvIEExMS4iLCJuZXh0IjoiRklYOiBNb3ZlIHRoZSBjbG90aCBmcm9tIEc3IHRvIEQxMTsgcmV0dXJuIHRoZSB3b29kIGJsb2NrIGZyb20gQTExIHRvIEExMy4iLCJtb2RlbCI6ImdwdC02LWx1bmEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTExVDE2OjM4OjQxIn0seyJ0YXNrIjoia2VlcCB0aGUgY2xvdGggdG8gaXQncyByaWdodCIsInZlcnNpb24iOiJFUlIiLCJ2ZXJkaWN0IjoiZG9uZSBjb3JyZWN0bHkiLCJvYmplY3RzIjpbImNsb3RoPW9rIl0sInJlYXNvbiI6IlRoZSBjbG90aCBtb3ZlZCByaWdodCBmcm9tIEs1IHRvIFAzIGFuZCBpcyB2aXNpYmxlIG9uIHRoZSBib2FyZC4iLCJuZXh0IjoiIiwibW9kZWwiOiJncHQtNi1sdW5hIiwidGltZXN0YW1wIjoiMjAyNi0xMC0xMVQxNzoyNToyMCJ9XX0="  # S1_EMBEDDED_STATE
 try:
     S1_EMBEDDED_STATE = json.loads(
         base64.b64decode(S1_EMBEDDED_STATE_B64).decode("utf-8"))
@@ -209,6 +209,8 @@ def flush_embedded_state(timeout=2.0):
 
 
 SETTINGS_PATH = SCRIPT_PATH
+AUTO_GRIPPER_SETTINGS_PATH = os.path.join(
+    os.path.dirname(SCRIPT_PATH), "settings.json")
 
 
 class GridConfig:
@@ -1597,18 +1599,51 @@ def grip_command(angle) -> str:
 JOG_PULSE_S = 0.1
 SIMPLE_JOG_PULSE_S = 0.2
 SLOW_APPROACH_CELLS = 1
+# Arrived means centred: the tag's centre this close (a share of a cell) to
+# its stop cell's centre, each way -- anywhere in the cell left an object
+# picked up near one edge of its cell and put down near the other up to a
+# cell short of where the plan put it.
+CENTRE_TOL = 0.12
+CENTRE_SETTLE_S = 0.15    # an offset is believed from a frame taken this long
+                          # after the stop -- the view of the tag runs behind --
+CENTRE_SETTLE_MAX_S = 2.0 # or after this long, should no such frame come
+CENTRE_MAX_TRIES = 3      # timed nudges per axis, then it is taken as it is
+CENTRE_SPEED = 1.0        # the slow jog's speed (cells/s) until one is measured
 TAG_HOLD_SECONDS = 0.35
 AUTO_GRIP_COMMAND_DELAY_S = 1.0
 AUTO_PULSE_S = 0.1
 AUTO_PICKUP_HX_S = 1.0       # a pickup: hd first, then hx for this long
+AUTO_PICKUP_HU_SCALE = 1.0    # pickup hu uses measured hd duration times this scale
+AUTO_GRIP_P1_SETTLE_S = 0.5   # second g90 settle before saving height with p1
 AUTO_PRESS_RUN_S = 3.0       # the runner's own press (no card) runs this long
 AUTO_ACTION_GAP_S = 0.3
 AUTO_GRIP_DOWN_MAX_S = 25.0
 AUTO_PRESS_BACKOFF_S = 0.2
 AUTO_RELEASE_DURATION_S = 3.0
+AUTO_RETRY_DELAY_S = 1.0
 MOVE_RETRIES = 3        # a move the board refuses is tried again this many times
 AUTO_RELEASE_P3_MAX_S = 8.0     # no stop from the board this long after p3: lift anyway
 AUTO_ACTION_MAX_S = 90.0
+
+AUTO_GRIPPER_TIMING_SETTINGS = {
+    "height_pulse_s": ("AUTO_PULSE_S", 0.05, 1.0, 0.05),
+    "pickup_hd_timeout_s": ("AUTO_GRIP_DOWN_MAX_S", 1.0, 60.0, 1.0),
+    "pickup_hx_duration_s": ("AUTO_PICKUP_HX_S", 0.1, 10.0, 0.1),
+    "pickup_hu_scale": ("AUTO_PICKUP_HU_SCALE", 0.25, 2.0, 0.05),
+    "command_delay_s": ("AUTO_GRIP_COMMAND_DELAY_S", 0.1, 5.0, 0.1),
+    "g90_settle_s": ("AUTO_GRIP_P1_SETTLE_S", 0.1, 3.0, 0.1),
+    "action_gap_s": ("AUTO_ACTION_GAP_S", 0.05, 3.0, 0.05),
+    "press_hu_backoff_s": ("AUTO_PRESS_BACKOFF_S", 0.05, 2.0, 0.05),
+    "release_hu_duration_s": ("AUTO_RELEASE_DURATION_S", 0.1, 10.0, 0.1),
+    "retry_delay_s": ("AUTO_RETRY_DELAY_S", 0.1, 5.0, 0.1),
+    "p3_timeout_s": ("AUTO_RELEASE_P3_MAX_S", 1.0, 30.0, 0.5),
+    "action_timeout_s": ("AUTO_ACTION_MAX_S", 10.0, 300.0, 5.0),
+    "press_duration_s": ("AUTO_PRESS_RUN_S", 0.1, 10.0, 0.1),
+}
+AUTO_GRIPPER_DEFAULTS = {
+    key: globals()[name] for key, (name, _lo, _hi, _step)
+    in AUTO_GRIPPER_TIMING_SETTINGS.items()
+}
 
 GRIPPER_NUDGE_S = 0.2
 GRIPPER_NUDGE_DIRECTION = "left"
@@ -2335,7 +2370,9 @@ class TagTracker:
         self.max_width = max_width
         self.detector = AprilTagDetector()
         self._pending = None
+        self._pending_t = 0.0
         self._result = ([], None, None)
+        self._result_t = 0.0      # when the frame behind _result was taken
         self._busy = False
         self._lock = threading.Lock()
         self._wake = threading.Event()
@@ -2359,6 +2396,7 @@ class TagTracker:
             if self._pending is not None:
                 return
             self._pending = frame.copy()
+            self._pending_t = now
             self._taken_at = now
         self._wake.set()
 
@@ -2374,12 +2412,17 @@ class TagTracker:
             return [], None
         return corners, ids
 
+    def result_time(self) -> float:
+        """time.monotonic() when the frame behind latest() was taken."""
+        with self._lock:
+            return self._result_t
+
     def _loop(self):
         while not self._stop.is_set():
             self._wake.wait(0.05)
             self._wake.clear()
             with self._lock:
-                frame = self._pending
+                frame, taken = self._pending, self._pending_t
                 self._pending = None
             if frame is None:
                 continue
@@ -2398,6 +2441,7 @@ class TagTracker:
                     corners = [c / ds for c in corners]
                 with self._lock:
                     self._result = (corners, ids, shape)
+                    self._result_t = taken
             except Exception as e:
                 print(f"[tags] detection failed: {e}")
             finally:
@@ -2748,6 +2792,10 @@ VISION_MIN_LONG_SIDE = 1400
 VISION_MAX_LONG_SIDE = 2200
 VISION_MAX_SCALE = 3.0
 VISION_PAD_FRAC = 0.055
+# ERR's board photos are drawn smaller than the planner's: the camera gives
+# about 53 px a cell, so no photo detail is lost at 60 -- only the printed
+# cell names shrink -- and each photo costs about half the tokens.
+ERR_CELL_PX = 60
 
 
 def vision_long_side() -> int:
@@ -2762,7 +2810,7 @@ CROP_DIM_ALPHA = 0.45
 
 def render_board_region(frame_bgr, grid: Grid, c0, r0, c1, r1,
                         long_side=None, overlay_poly=None, labels=True,
-                        subject_poly=None):
+                        subject_poly=None, shrink=False):
     """A rectangle of cells, drawn as the model should see it.
 
     The display frame is the wrong picture to reason over: the board is a
@@ -2775,6 +2823,7 @@ def render_board_region(frame_bgr, grid: Grid, c0, r0, c1, r1,
     sides. The model reads the label under an object instead of counting to
     it. Coordinates stay absolute grid units at any zoom, so a close-up of
     D9-M12 answers in exactly the same numbers the whole board would.
+    `shrink` lets a board bigger than `long_side` be drawn smaller.
     """
     if frame_bgr is None:
         return None
@@ -2795,10 +2844,11 @@ def render_board_region(frame_bgr, grid: Grid, c0, r0, c1, r1,
     board = frame_bgr[iy0:iy1, ix0:ix1]
     target = long_side or vision_long_side()
     scale = target / float(max(board.shape[:2]))
-    scale = max(1.0, min(VISION_MAX_SCALE, scale))
-    if scale > 1.0:
+    scale = min(VISION_MAX_SCALE, scale if shrink else max(1.0, scale))
+    if scale != 1.0:
         board = cv2.resize(board, None, fx=scale, fy=scale,
-                           interpolation=cv2.INTER_CUBIC)
+                           interpolation=cv2.INTER_CUBIC if scale > 1.0
+                           else cv2.INTER_AREA)
     bh, bw = board.shape[:2]
 
     if subject_poly is not None and len(subject_poly) >= 3:
@@ -2878,6 +2928,13 @@ def render_vision_board(frame_bgr, grid: Grid, labels=True):
     """The whole board, drawn for the model."""
     return render_board_region(frame_bgr, grid, 0, 0,
                                CONFIG.n_cols, CONFIG.n_rows, labels=labels)
+
+
+def render_err_board(frame_bgr, grid: Grid):
+    """The whole board for ERR's before/after photos, at ERR_CELL_PX a cell."""
+    return render_board_region(
+        frame_bgr, grid, 0, 0, CONFIG.n_cols, CONFIG.n_rows,
+        long_side=ERR_CELL_PX * max(CONFIG.n_cols, CONFIG.n_rows), shrink=True)
 
 
 @dataclass
@@ -3291,6 +3348,16 @@ class SettingsPanel:
             MANUAL_GRIPPER_STEPS = not MANUAL_GRIPPER_STEPS
             save_settings(self.cam, self.grid)
 
+        def step_auto_gripper_timing(key, delta):
+            name, lo, hi, increment = AUTO_GRIPPER_TIMING_SETTINGS[key]
+            value = globals()[name] + increment * delta
+            precision = max(0, -int(math.floor(math.log10(increment))))
+            globals()[name] = round(clamp(value, lo, hi), precision)
+            if not save_auto_gripper_timing_settings():
+                return (f"{key}: changed for this run but could not be "
+                        "saved to settings.json")
+            return None
+
         def step_dexterity_check(_d):
             global DEXTERITY_CHECK
             DEXTERITY_CHECK = not DEXTERITY_CHECK
@@ -3298,7 +3365,20 @@ class SettingsPanel:
         def step_err_auto(d):
             global ERR_AUTO
             keys = [k for k, _ in ERR_AUTO_MODES]
-            ERR_AUTO = keys[(keys.index(ERR_AUTO) + d) % len(keys)]
+            try:
+                i = keys.index(ERR_AUTO)
+            except ValueError:
+                i = 0
+            ERR_AUTO = keys[(i + d) % len(keys)]
+            # Settings change is persisted by the usual settings save path.
+
+        def step_err_final(_d):
+            global ERR_FINAL
+            ERR_FINAL = not ERR_FINAL
+
+        def step_err_redo(_d):
+            global ERR_REDO
+            ERR_REDO = not ERR_REDO
 
         def step_board_width(d):
             global BOARD_WIDTH_IN
@@ -3394,6 +3474,46 @@ class SettingsPanel:
             SettingRow("automatic_gripper", "Automatic gripper actions",
                        lambda: "On" if not MANUAL_GRIPPER_STEPS else "Off",
                        step_automatic_gripper, toggle=True),
+            SettingRow("auto_height_pulse", "Height pulse (hd/hu)",
+                       lambda: f"{AUTO_PULSE_S:.2f}s",
+                       lambda d: step_auto_gripper_timing("height_pulse_s", d),
+                       section="AUTOMATIC GRIPPER TIMING"),
+            SettingRow("auto_hd_timeout", "HD contact timeout",
+                       lambda: f"{AUTO_GRIP_DOWN_MAX_S:.1f}s",
+                       lambda d: step_auto_gripper_timing("pickup_hd_timeout_s", d)),
+            SettingRow("auto_hx_duration", "Pickup HX duration",
+                       lambda: f"{AUTO_PICKUP_HX_S:.1f}s",
+                       lambda d: step_auto_gripper_timing("pickup_hx_duration_s", d)),
+            SettingRow("auto_hu_scale", "Pickup HU lift scale",
+                       lambda: f"{AUTO_PICKUP_HU_SCALE:.2f}x",
+                       lambda d: step_auto_gripper_timing("pickup_hu_scale", d)),
+            SettingRow("auto_command_delay", "Gripper command delay",
+                       lambda: f"{AUTO_GRIP_COMMAND_DELAY_S:.1f}s",
+                       lambda d: step_auto_gripper_timing("command_delay_s", d)),
+            SettingRow("auto_g90_settle", "G90 settle before P1",
+                       lambda: f"{AUTO_GRIP_P1_SETTLE_S:.1f}s",
+                       lambda d: step_auto_gripper_timing("g90_settle_s", d)),
+            SettingRow("auto_action_gap", "Gap between actions",
+                       lambda: f"{AUTO_ACTION_GAP_S:.2f}s",
+                       lambda d: step_auto_gripper_timing("action_gap_s", d)),
+            SettingRow("auto_press_backoff", "Press HU backoff",
+                       lambda: f"{AUTO_PRESS_BACKOFF_S:.2f}s",
+                       lambda d: step_auto_gripper_timing("press_hu_backoff_s", d)),
+            SettingRow("auto_release_hu", "Release HU duration",
+                       lambda: f"{AUTO_RELEASE_DURATION_S:.1f}s",
+                       lambda d: step_auto_gripper_timing("release_hu_duration_s", d)),
+            SettingRow("auto_retry_delay", "Retry delay",
+                       lambda: f"{AUTO_RETRY_DELAY_S:.1f}s",
+                       lambda d: step_auto_gripper_timing("retry_delay_s", d)),
+            SettingRow("auto_p3_timeout", "P3 arrival timeout",
+                       lambda: f"{AUTO_RELEASE_P3_MAX_S:.1f}s",
+                       lambda d: step_auto_gripper_timing("p3_timeout_s", d)),
+            SettingRow("auto_action_timeout", "Automatic action timeout",
+                       lambda: f"{AUTO_ACTION_MAX_S:.0f}s",
+                       lambda d: step_auto_gripper_timing("action_timeout_s", d)),
+            SettingRow("auto_press_duration", "Automatic press duration",
+                       lambda: f"{AUTO_PRESS_RUN_S:.1f}s",
+                       lambda d: step_auto_gripper_timing("press_duration_s", d)),
             SettingRow("board_width", "Board width (in)",
                        lambda: f"{BOARD_WIDTH_IN:g} in", step_board_width,
                        section="VISION"),
@@ -3416,9 +3536,15 @@ class SettingsPanel:
             SettingRow("dexterity_check", "Dexterity check",
                        lambda: "On" if DEXTERITY_CHECK else "Off",
                        step_dexterity_check, toggle=True),
-            SettingRow("err_auto", "Automatic check",
-                       lambda: dict(ERR_AUTO_MODES)[ERR_AUTO],
-                       step_err_auto, section="ERROR REBOUNDS"),
+            SettingRow("err_auto", "ERR on the Go (after pickups)",
+                       lambda: dict(ERR_AUTO_MODES).get(ERR_AUTO, "Off"),
+                       step_err_auto, section="ERR", toggle=True),
+            SettingRow("err_final", "ERR (final check)",
+                       lambda: "On" if ERR_FINAL else "Off",
+                       step_err_final, toggle=True),
+            SettingRow("err_redo", "ERR redo when not done",
+                       lambda: "On" if ERR_REDO else "Off",
+                       step_err_redo, toggle=True),
             SettingRow("refresh_rate", "Refresh rate",
                        lambda: ("Uncapped" if REFRESH_RATE == 0
                                else f"{REFRESH_RATE} fps"),
@@ -3467,7 +3593,9 @@ class SettingsPanel:
                 continue
             if b.kind == "step":
                 row, delta = b.value
-                row.step(delta)
+                result = row.step(delta)
+                if isinstance(result, str):
+                    return result
                 return f"{row.label}: {row.read()}"
             if b.kind == "corners":
                 self.edit_corners = not self.edit_corners
@@ -3478,8 +3606,10 @@ class SettingsPanel:
                 save_settings(self.cam, self.grid)
                 return "Boundary reset."
             if b.kind == "save":
-                save_settings(self.cam, self.grid)
-                return f"Saved to {os.path.basename(SETTINGS_PATH)}"
+                if not save_settings(self.cam, self.grid):
+                    return "Could not save all settings; see the console for details."
+                return (f"Saved to {os.path.basename(SETTINGS_PATH)} and "
+                        f"{os.path.basename(AUTO_GRIPPER_SETTINGS_PATH)}")
             if b.kind == "close":
                 self.visible = False
                 self.edit_corners = False
@@ -4045,8 +4175,93 @@ class ConsolePanel:
                 drawn, self._anim, under, 1.0 - self._anim, 0)
 
 
+def auto_gripper_timing_settings():
+    """Current adjustable serial-action timings, ready for settings.json."""
+    return {key: float(globals()[name])
+            for key, (name, _lo, _hi, _step)
+            in AUTO_GRIPPER_TIMING_SETTINGS.items()}
+
+
+def save_auto_gripper_timing_settings() -> bool:
+    """Atomically save only this feature's settings, preserving other JSON keys."""
+    path = AUTO_GRIPPER_SETTINGS_PATH
+    temp_path = None
+    try:
+        try:
+            with open(path, "r", encoding="utf-8") as fh:
+                data = json.load(fh)
+            if not isinstance(data, dict):
+                raise ValueError("settings.json root must be an object")
+        except FileNotFoundError:
+            data = {}
+        data["automatic_gripper"] = auto_gripper_timing_settings()
+        fd, temp_path = tempfile.mkstemp(
+            prefix=".settings-", suffix=".tmp", dir=os.path.dirname(path))
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            json.dump(data, fh, indent=2, sort_keys=True)
+            fh.write("\n")
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(temp_path, path)
+        print(f"[settings] saved automatic gripper timings to {path}")
+        return True
+    except (OSError, ValueError, TypeError) as exc:
+        print(f"[settings] could not save automatic gripper timings to "
+              f"{path}: {exc}")
+        if temp_path:
+            try:
+                os.unlink(temp_path)
+            except FileNotFoundError:
+                pass
+            except OSError as cleanup_error:
+                print(f"[settings] could not remove temporary file "
+                      f"{temp_path}: {cleanup_error}")
+        return False
+
+
+def load_auto_gripper_timing_settings(settings_path=None):
+    """Restore safe defaults, then overlay validated settings.json values."""
+    for key, (name, _lo, _hi, _step) in AUTO_GRIPPER_TIMING_SETTINGS.items():
+        globals()[name] = AUTO_GRIPPER_DEFAULTS[key]
+    path = settings_path or AUTO_GRIPPER_SETTINGS_PATH
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+    except FileNotFoundError:
+        return
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"[settings] could not read automatic gripper timings from "
+              f"{path}: {exc}; keeping defaults")
+        return
+    if not isinstance(data, dict):
+        print(f"[settings] ignoring malformed settings root in {path}")
+        return
+    values = data.get("automatic_gripper", {})
+    if not isinstance(values, dict):
+        print(f"[settings] ignoring malformed automatic_gripper settings in {path}")
+        return
+    for key, (name, lo, hi, _step) in AUTO_GRIPPER_TIMING_SETTINGS.items():
+        value = values.get(key)
+        if value is None:
+            continue
+        if (isinstance(value, (int, float)) and not isinstance(value, bool)
+                and math.isfinite(value) and lo <= value <= hi):
+            globals()[name] = float(value)
+        else:
+            print(f"[settings] automatic_gripper {key}: {value!r} is invalid "
+                  f"- keeping {AUTO_GRIPPER_DEFAULTS[key]!r}")
+
+
+# What the saved settings were written by. 2 (2026-10-10): ERR on the Go asks
+# after pickups only and ERR is the final check, so a saved ERR mode from
+# before is not carried over -- both start on (ERR's redo off), and what is
+# saved from now on is kept.
+SETTINGS_REV = 2
+
+
 def save_settings(cam: CameraSettings, grid: Grid):
     data = {
+        "rev": SETTINGS_REV,
         "camera": {
             "zoom": cam.zoom, "brightness": cam.brightness,
             "contrast": cam.contrast, "saturation": cam.saturation,
@@ -4090,12 +4305,17 @@ def save_settings(cam: CameraSettings, grid: Grid):
             "manual_gripper_steps": MANUAL_GRIPPER_STEPS,
             "gripper_ai": GRIPPER_AI,
             "err_auto": ERR_AUTO,
+            "err_final": ERR_FINAL,
+            "err_redo": ERR_REDO,
             "planner_effort": PLANNER_EFFORT,
         },
     }
     S1_EMBEDDED_STATE["settings"] = data
-    if persist_embedded_state():
+    embedded_saved = persist_embedded_state()
+    gripper_saved = save_auto_gripper_timing_settings()
+    if embedded_saved:
         print(f"[settings] saved inside {SETTINGS_PATH}")
+    return embedded_saved and gripper_saved
 
 
 def load_settings():
@@ -4135,13 +4355,24 @@ def load_settings():
     load_vision_settings(data.get("vision", {}))
 
     global MANUAL_GRIPPER_STEPS, GRIPPER_AI, ERR_AUTO, PLANNER_EFFORT
+    global ERR_FINAL, ERR_REDO
     behaviour = data.get("behaviour", {})
     MANUAL_GRIPPER_STEPS = bool(behaviour.get(
         "manual_gripper_steps", MANUAL_GRIPPER_STEPS))
     GRIPPER_AI = bool(behaviour.get("gripper_ai", GRIPPER_AI))
-    if behaviour.get("err_auto") in dict(ERR_AUTO_MODES):
-        ERR_AUTO = behaviour["err_auto"]
+    rev = data.get("rev")
+    if isinstance(rev, int) and rev >= SETTINGS_REV:
+        if behaviour.get("err_auto") in dict(ERR_AUTO_MODES):
+            ERR_AUTO = behaviour["err_auto"]
+        elif behaviour.get("err_auto") == "task":
+            # the old "After the task" mode: the final check only
+            ERR_AUTO, ERR_FINAL = "off", True
+        if isinstance(behaviour.get("err_final"), bool):
+            ERR_FINAL = behaviour["err_final"]
+        if isinstance(behaviour.get("err_redo"), bool):
+            ERR_REDO = behaviour["err_redo"]
     # (a saved planner_effort is ignored: every start is on the cheap level)
+    load_auto_gripper_timing_settings()
 
     g = data.get("grid", {})
     CONFIG.n_cols = max(MIN_N, min(MAX_N_COLS, int(g.get("n_cols", CONFIG.n_cols))))
@@ -5220,8 +5451,9 @@ class GripperPanel:
             if not self._g90_resent:
                 if ARDUINO.send_command(grip_command(GRIP_MAX_DEG)):
                     self._g90_resent = True
-                    self.auto_grip_up_until = now + 0.5
-                    self.last_msg = f"Sent g90 again -- {HEIGHT_SAVE_CMD} in 0.5s."
+                    self.auto_grip_up_until = now + AUTO_GRIP_P1_SETTLE_S
+                    self.last_msg = (f"Sent g90 again -- {HEIGHT_SAVE_CMD} in "
+                                     f"{AUTO_GRIP_P1_SETTLE_S:.1f}s.")
                 return
             # The jaws are shut on it: the board saves this height, for a
             # press later in the run to go back down to (p3).
@@ -5236,9 +5468,10 @@ class GripperPanel:
                 and now >= self.auto_grip_up_until):
             if ARDUINO.send_command(HEIGHT_UP_CMD):
                 self.auto_grip_phase = self.AUTO_GRIP_UP
-                self.auto_grip_up_until = now + self.auto_grip_down_duration
+                hu_duration = self.auto_grip_down_duration * AUTO_PICKUP_HU_SCALE
+                self.auto_grip_up_until = now + hu_duration
                 self.last_msg = (f"Automatic gripping: sent hu for "
-                                 f"{self.auto_grip_down_duration:.1f}s.")
+                                 f"{hu_duration:.1f}s.")
             return
         if (self.auto_grip_phase == self.AUTO_GRIP_UP
                 and now >= self.auto_grip_up_until):
@@ -5463,10 +5696,10 @@ class GripperPanel:
                                      f"trying again ({self.move_retries}/{MOVE_RETRIES}).")
                     if self.auto_grip_phase in (self.AUTO_GRIP_DOWN, self.AUTO_GRIP_WAIT_DOWN):
                         self.auto_grip_phase = self.AUTO_GRIP_WAIT_DOWN
-                        self.auto_grip_up_until = now + 1.0
+                        self.auto_grip_up_until = now + AUTO_RETRY_DELAY_S
                     else:
                         self.offset_phase = "wait_action"
-                        self.offset_until = now + 1.0
+                        self.offset_until = now + AUTO_RETRY_DELAY_S
                     return True
                 ARDUINO.halt()
                 self.auto_grip_phase = self.AUTO_GRIP_IDLE
@@ -5914,9 +6147,12 @@ class GripperPanel:
 
 OPENAI_API_KEY = "ADD YOUR OPENAI API KEY HERE"
 
-NAMER_MODELS = ("gpt-5.4-mini", "gpt-5.4")
+# Vision AI names with gpt-6-luna, its alternate included (user, 2026-10-10):
+# a saved "gpt-5.4-mini"/"gpt-5.4" is no longer offered, so it is ignored.
+NAMER_MODELS = ("gpt-6-luna",)
 NAMER_MODEL = NAMER_MODELS[0]
-PLANNER_MODEL = "gpt-5.6-terra"
+PLANNER_MODEL = "gpt-6-luna"
+PLANNER_MAX_TOKENS = 16000
 # The message box's thinking pill, as in A3-Terra: the planner's reasoning
 # effort, sent to the planner model only. Saved with the settings.
 PLANNER_EFFORTS = (("low", "Low"), ("medium", "Medium"), ("high", "High"))
@@ -5936,12 +6172,18 @@ def set_planner_effort(value) -> bool:
         return False
     PLANNER_EFFORT = value
     return True
-# Error Rebounds: the cheapest model that reads photos well (gpt-6-luna,
-# $0.10 / $0.50 per 1M tokens), thinking as little as still reasons --
-# every checked step waits on it. ERR_MAX_TOKENS covers that reasoning too.
-ERR_MODEL = "gpt-6-luna"
-ERR_REASONING = "low"
+# The board's objects after a NO (each outline as the task object it most
+# probably is) and ERR, the final check that look powers, both use
+# gpt-6-luna at low effort; so does the residual replan behind ERR's
+# (optional) redo.
+DECISIONS_MODEL = "gpt-6-luna"
+DECISIONS_REASONING = "low"
+ERR_MODEL = DECISIONS_MODEL
+ERR_REASONING = DECISIONS_REASONING
 ERR_MAX_TOKENS = 2500
+ERR_RESIDUAL_MODEL = "gpt-6-luna"
+ERR_RESIDUAL_REASONING = "low"
+ERR_RESIDUAL_MAX_TOKENS = 4000
 
 STT_MODEL = "gpt-4o-transcribe"
 STT_FALLBACK_MODEL = "whisper-1"
@@ -6947,75 +7189,115 @@ def label_points(objects, parents):
     return points
 
 
-def naming_images(frame, objects, parents, box, is_part=None):
+def naming_images(frame, objects, parents, box, is_part=None, max_side=None):
     """Two JPEGs of the same view, cropped to the board: the plain picture, and one
     with the objects to name outlined and numbered 1..n. The plain one matters: the
     outlines and numbers cover small parts, and the model names them better seeing both.
     `is_part` colours an object red even when the thing it's part of isn't being named.
+    `max_side` (NAMER_MAX_SIDE when None) caps the photos' long side; outlines and
+    numbers are drawn so they come out the same size however much the photo shrinks.
     """
+    view = frame
+    if box is not None:
+        crop, _ = board_crop(frame, box)
+        view = crop if crop is not None else frame
+    scale = min(1.0, (max_side or NAMER_MAX_SIDE) / max(view.shape[:2]))
+    k = 1.0 / scale
+    line, fs, ft = max(2, round(2 * k)), 0.7 * k, max(2, round(2 * k))
+    px, py, edge = round(4 * k), round(5 * k), max(1, round(k))
     marked = frame.copy()
-    for k, (contours, p) in enumerate(zip(objects, parents)):
-        part = is_part[k] if is_part is not None else p is not None
-        cv2.drawContours(marked, contours, -1, (0, 0, 255) if part else (0, 255, 0), 2)
+    for j, (contours, p) in enumerate(zip(objects, parents)):
+        part = is_part[j] if is_part is not None else p is not None
+        cv2.drawContours(marked, contours, -1, (0, 0, 255) if part else (0, 255, 0), line)
     for n, (x, y) in enumerate(label_points(objects, parents), 1):
-        (tw, th), _ = cv2.getTextSize(str(n), cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
-        cv2.rectangle(marked, (x - tw // 2 - 4, y - th // 2 - 5), (x + tw // 2 + 4, y + th // 2 + 5), (255, 255, 255), -1)
-        cv2.rectangle(marked, (x - tw // 2 - 4, y - th // 2 - 5), (x + tw // 2 + 4, y + th // 2 + 5), (0, 0, 0), 1)
-        cv2.putText(marked, str(n), (x - tw // 2, y + th // 2), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
+        (tw, th), _ = cv2.getTextSize(str(n), cv2.FONT_HERSHEY_SIMPLEX, fs, ft)
+        cv2.rectangle(marked, (x - tw // 2 - px, y - th // 2 - py), (x + tw // 2 + px, y + th // 2 + py), (255, 255, 255), -1)
+        cv2.rectangle(marked, (x - tw // 2 - px, y - th // 2 - py), (x + tw // 2 + px, y + th // 2 + py), (0, 0, 0), edge)
+        cv2.putText(marked, str(n), (x - tw // 2, y + th // 2), cv2.FONT_HERSHEY_SIMPLEX, fs, (0, 0, 0), ft)
     images = []
     for img in (frame, marked):
         if box is not None:
             crop, _ = board_crop(img, box)
             img = crop if crop is not None else img
-        scale = min(1.0, NAMER_MAX_SIDE / max(img.shape[:2]))
         if scale < 1:
             img = cv2.resize(img, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
         images.append(cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 90])[1].tobytes())
     return images
 
 
-def naming_prompt(n, part_of, scene_hint):
+def naming_prompt(n, part_of, scene_hint, facts=()):
     """part_of[k] is what object k+1 is a part of (another number, or an object
-    already named), or None.
+    already named), or None. `facts` are outline_facts' lines for the numbers:
+    each outline's measured size and colour.
 
-    Vision AI's prompt, word for word, plus what the planner needs beyond a
-    name: a colour and a few words of description to match the operator's
-    words against, which outlines are the robot itself (never planned with),
-    and whether a red outline is really a separate thing lying on the bigger
-    one -- a sock in a bowl is picked up on its own; a mug's handle is not.
+    Vision AI's prompt, plus what the planner needs beyond a name: a colour and
+    a few words of description to match the operator's words against, which
+    outlines are the robot itself (never planned with), and whether a red
+    outline is really a separate thing lying on the bigger one -- a sock in a
+    bowl is picked up on its own; a mug's handle is not.
     """
     parts = "\n".join(f"- {k + 1} is a part of {p}" for k, p in enumerate(part_of) if p)
+    measured = "\n".join(facts)
     return (
-        f"These are two photos of the same workbench seen from above. {scene_hint.strip()} The first photo is "
-        "the plain view. In the second, each object to name is outlined and has a white label with a number "
-        f"from 1 to {n} placed on it. Red outlines are parts of a bigger object:\n"
+        f"These are two photos of the same board seen from above by a fixed camera. {scene_hint.strip()} "
+        "The first photo is the plain view of the whole board. In the second, each outline to name is drawn "
+        f"with a white label holding its number, from 1 to {n}. Red outlines are parts of a bigger object:\n"
         f"{parts or '- (none)'}\n\n"
-        "Name what each number is with a short, specific everyday name of 1-3 lowercase words, "
-        'e.g. "stepper motor", "notebook", "usb cable", "screwdriver". Name each number by what lies inside '
-        'its OWN outline - look at exactly that patch in the plain photo: something lying on top of another '
-        'object is named for what it is, not for the object under it. For a part, name the part itself '
-        '("logo", "sticker", "button", "tray", "bristles", "lip"), not the thing it is on: a dustpan\'s hollow '
-        'inside is its "tray", its front edge its "lip", a broom\'s brush end its "bristles". If a number '
-        'marks bare surface (the table, floor, mat or wood grain around the objects), a shadow or a gap, '
-        'name it "surface". If it is a person\'s hand, arm or fingers (holding or touching something), '
-        'name it "hand". '
-        "If it is a real object you can't identify, use \"unknown\".\n\n"
+        + (f"MEASURED BY S1 (each number's outline as the vision system traced it, its size - a "
+           f"turned one measured as itself):\n{measured}\n\n" if measured else "")
+        + "Name what each number is with the short everyday name a person would use, 1-3 lowercase words "
+        '(e.g. "notebook", "cloth", "usb cable", "screwdriver", "stepper motor") - the common word, not a '
+        'rarer synonym ("cloth", not "fabric"). Name each number by what lies inside its OWN outline - look '
+        "at exactly that patch in the plain photo: something lying on top of another object is named for "
+        "what it is, not for the object under it. A green outline with red outlines inside it is the WHOLE "
+        "object: name it for the whole thing (a dustpan whose tray is traced inside it is the \"dustpan\"), "
+        "even when its number sits on one end of it - the red outlines are its parts, each named on its own. "
+        "Check the name against the measured size: a 1 in strip at a book's edge is its tab or band, not a "
+        'cable. For a part, name the part itself ("logo", "lettering", "sticker", "button", "handle", "lid"), '
+        "not the thing it is on. Be specific only when you are sure: when you can't tell exactly what "
+        "something is, use the plain general word a person would (a scattering of small bits you can't "
+        'identify is "debris") rather than a specific guess. Name only what you can see: never use a name '
+        "because it appears in these instructions. Only when the board really holds a "
+        "dustpan or a brush, name their pieces this way: a dustpan's hollow inside is its \"tray\", its front "
+        "edge its \"lip\", a brush's or broom's brush end its \"bristles\".\n\n"
+        "THE ROBOT is in view too: its aluminium frame, steel rods, lead screw, stepper motors, belts, the "
+        "carriage block riding on the rods and the gripper under it - and everything fixed to the carriage "
+        "or the gripper: sponge or foam pads on the jaws, wires, connectors, small circuit boards, zip ties, "
+        "brackets. A number on any of these is the robot, named for what it is (\"gripper\", \"sponge "
+        'pad", "wires", "carriage"): follow it in the plain photo to what it is fixed to. Things lying loose '
+        "on the board are not the robot, whatever they look like.\n\n"
+        "If a number marks bare surface (the table, floor, board, grid, cutting mat or wood grain around the "
+        'objects), a shadow, a reflection or a gap, name it "surface". If it is a person\'s hand, arm or '
+        'fingers (holding or touching something), name it "hand". If it is a real object you can\'t identify, '
+        'use "unknown".\n\n'
         "For every number also give:\n"
         '- "color": its main colour in one word ("black", "white", "silver", ...);\n'
-        '- "desc": what it looks like in at most 8 words (material, shape, markings);\n'
-        '- "robot": true only when it is the robot\'s own machinery (its frame, rails, lead screws, '
-        "rods, motors, belts, pulleys, carriage, cables or gripper); false for anything lying on "
-        "the board, whatever it looks like - when unsure, false;\n"
+        '- "desc": a useful visual description in 12-30 words covering material, shape, surface or texture, '
+        "markings, condition, orientation and visible boundaries or distinctive details; "
+        "include every clearly visible feature, not just a generic category. Be concrete "
+        "and prioritize what distinguishes this exact item: overall shape, apparent material, "
+        "color, texture or markings, orientation, condition, and whether its visible edges "
+        "are straight, rounded, irregular, folded, chipped or partly hidden. Mention its "
+        "approximate size relative to nearby objects when clear; do not invent measurements "
+        "or details hidden from view. Prefer \"small, round, red plastic lid; scuffed surface, "
+        "raised rim, lying flat\" over \"red lid\", and \"long, narrow, silver metal tool "
+        "with a flat end, angled from upper left to lower right\" over \"metal tool\". "
+        "If a feature is uncertain, omit it rather than guess;\n"
+        '- "robot": true when it is the robot\'s own machinery or anything fixed to it (frame, rails, lead '
+        "screws, rods, motors, belts, pulleys, carriage, gripper, the pads on its jaws, its wires, connectors "
+        "and circuit boards); false for anything lying loose on the board, whatever it looks like - when "
+        "unsure, false;\n"
         '- "loose": only for a red-outlined part - true when it is a separate thing, or a piece of one, '
         "lying on or in the bigger object that could be lifted off on its own (a sock in a bowl, a pen on "
-        "a book, a brush lying in a dustpan - its handle and its bristles alike), false when it is "
+        "a book, a hand brush lying in a dustpan - its handle and its bristles alike), false when it is "
         "attached to the bigger object or printed on it (a handle, a lid, a button, a logo);\n"
         '- "thing": when the number is only a PIECE of a bigger thing whose other pieces carry other '
-        "numbers (a brush's handle, head and bristles; a dustpan's back wall, its lip and its floor), the "
-        'everyday name of that WHOLE thing ("hand brush", "dustpan") - the same words for EVERY piece of '
-        "it, its biggest piece and its handle included, and for a loose red-outlined piece too (the brush "
-        'lying in the dustpan: "hand brush"); "" only when the number is a whole thing by itself or a '
-        'part of the bigger object it is drawn on.\n\n'
+        "numbers (a stapler's top and base, a toy car's body and wheels; a brush's handle and its bristles), "
+        'the everyday name of that WHOLE thing ("stapler", "toy car", "hand brush") - the same words for EVERY '
+        "piece of it, its biggest piece and its handle included, and for a loose red-outlined piece too; "
+        '"" only when the number is a whole thing by itself or a part of the bigger object it is drawn on.\n\n'
+        "Do not guess or return coordinates: S1 derives each outline's complete board-cell footprint "
+        "from its measured polygon. Describe only details visibly supported by the photos.\n"
         'Reply with JSON only: {"objects": [{"n": 1, "name": "...", "color": "...", "desc": "...", '
         '"robot": false, "loose": false, "thing": ""}, ...]}, one entry for every number.'
     )
@@ -7367,7 +7649,14 @@ class ObjectNamer:
         sub_parents = [pending.index(full[i]) if full[i] in pending else None for i in pending]
         images = naming_images(frame, [objects[i] for i in pending], sub_parents, box,
                                is_part=[full[i] is not None for i in pending])
-        return (images, naming_prompt(len(pending), part_of, VISION_SCENE_HINT),
+        try:
+            facts = outline_facts({"frame": frame, "objects": objects,
+                                   "box": box}, pending, colour=False)
+        except Exception as e:
+            print(f"[vision] no measured sizes for naming: {e}")
+            facts = []
+        return (images, naming_prompt(len(pending), part_of, VISION_SCENE_HINT,
+                                      facts),
                 [ids[i] for i in pending], NAMER_MODEL)
 
     def _run(self, images, prompt, ids, model):
@@ -7550,7 +7839,7 @@ class LiveVision:
             self.namer.say("Wait for the outlines to appear first")
             return
         self.namer.start(view["frame"], view["objects"], view["ids"],
-                         view.get("region") or view["box"])
+                         view["box"])
 
     def snapshot(self, timeout=VISION_READY_WAIT_S, on_wait=None):
         """The last result, for a task -- waiting up to `timeout` for the
@@ -7608,6 +7897,8 @@ def draw_live_vision(frame, view, names, info, scale):
                       for contours in view["objects"]]]
     for scaled, tid, p in zip(cached[2], view["ids"], parents):
         meta = info.get(tid) or {}
+        if is_surface_name(names.get(tid) or ""):
+            continue        # bare board, mat, grid, shadow: not an object
         if meta.get("robot"):
             color = (150, 150, 150)
         elif p is not None and VISION_MARK_PARTS and not meta.get("loose"):
@@ -7622,7 +7913,7 @@ def draw_live_vision(frame, view, names, info, scale):
     placed = []
     for tid, (x, y), part in sorted(view["labels"], key=lambda e: e[1][1]):
         name = names.get(tid)
-        if not name:
+        if not name or is_surface_name(name):
             continue
         meta = info.get(tid) or {}
         (tw, th), base = cv2.getTextSize(name, cv2.FONT_HERSHEY_SIMPLEX, NAME_FONT, 2)
@@ -8178,6 +8469,7 @@ def guess_mouth(poly):
 
 
 SWEEP_TASK_RE = re.compile(r"(?<!\w)(sweep\w*|broom\w*|dust ?pan|dustpan)(?!\w)", re.I)
+SWEEP_MIN_STROKES = 4   # distinct mouth lanes, whenever the measured opening allows
 SWEEP_DEPTH = 5         # the cleaning area runs this many cells out from the mouth
 SWEEP_STOP_IN = 0.15    # the claw comes to rest this far into a cell, past the edge it came in by
 SWEEP_LIP_IN = 0.5      # a stroke ends with the bristles' front this far past the lip
@@ -8655,6 +8947,11 @@ def sweep_recipe(objects):
                 lats = [lo_l + t for t in range(int(math.floor(hi_l - lo_l + 1e-6)) + 1)]
                 if hi_l - lats[-1] > 0.25:
                     lats.append(hi_l)
+                if hi_l - lo_l >= SWEEP_MIN_STROKES - 1:
+                    # Keep at least four distinct one-cell-spaced lanes when
+                    # the opening and bristle footprint leave room for them.
+                    lats.extend(lo_l + i for i in range(SWEEP_MIN_STROKES))
+                    lats = sorted(set(round(lat, 6) for lat in lats))
             if abs(lats[-1] - st["pos"] @ e) < abs(lats[0] - st["pos"] @ e):
                 lats.reverse()
             used = set()
@@ -8715,6 +9012,9 @@ def sweep_recipe(objects):
                         past = lip_past(end)
                         if not len(past) or past.min() < 0.05:
                             notes.append(f"stroke {k} stops short of the lip (the walls)")
+            if st["main"] < SWEEP_MIN_STROKES:
+                notes.append(f"only {st['main']} distinct lanes fit the measured mouth "
+                             "and bristle footprint")
             if approach is not None:
                 lines.append(f"{_goto_line(approach)}   # back to the {brush['name']}'s place")
             lines += [f"{_goto_line(grip)}   # the {brush['name']} back where it was", "keep"]
@@ -8776,6 +9076,8 @@ def sweep_recipe_text(rec) -> str:
             f"stroke(s), each one move {rec.get('axis', 'in')} into the mouth"
             + (f" except {rec['dirt_lanes']} first pushing dust from beside the mouth "
                "in front of it" if rec.get("dirt_lanes") else "")
+            + f"; {rec.get('strokes', 0)} distinct main lane(s), target at least "
+            f"{SWEEP_MIN_STROKES} whenever the measured geometry allows"
             + f", covering {rec['covered']} of the {rec['target']} cells of the "
             f"{SWEEP_DEPTH}-step area outside the mouth and the dirt"
             + (f"; {rec['note']}" if rec.get("note") else "")
@@ -8810,9 +9112,14 @@ def sweep_followed(plan, rec) -> bool:
 def sweep_plan_text(rec, why="the planner's strokes did not match it") -> str:
     """A whole plan made of the recipe: for when the planner's differs, and
     for a plain sweep, where the planner is not asked at all."""
+    strokes = rec.get("strokes")
+    limit_note = (f"# Only {strokes} distinct broom lanes fit the measured "
+                  "mouth and bristle footprint.\n"
+                  if strokes is not None and strokes < SWEEP_MIN_STROKES else "")
     return ("PLAN:\n- sweep into the " + rec["collector"] + ": " + rec["brush"] + ", "
             + rec["collector"] + " | after: holding nothing\n"
             "# Sweep computed by S1 from the measured mouth (" + why + ").\n"
+            + limit_note
             + "\n".join(rec["lines"]) + "\nTask_Completed")
 
 
@@ -8831,10 +9138,11 @@ def merge_outlines(outlines):
 
 
 _NAME_LEAD = (r"(?:(?:bare|the|a|wooden|wood|light|dark|brown|grey|gray|white|black|plain|empty|flat|"
-              r"floor|table|desk|left|right|human|person's|persons)\s+)*")
+              r"blue|green|gridded|grid|squared|floor|table|desk|left|right|human|person's|persons)\s+)*")
 _SURFACE_NAME_RE = re.compile(
     rf"^{_NAME_LEAD}(?:surfaces?|backgrounds?|tables?|tabletops?|table top|floors?|flooring|ground|mats?|"
-    r"desks?|countertops?|counters?|shadows?|gaps?|wood|wood grain|planks?)$")
+    r"desks?|countertops?|counters?|shadows?|gaps?|wood|wood grain|planks?|boards?|board surface|"
+    r"grids?|grid lines?|grid ?mats?|cutting ?mats?|work ?surfaces?|workbench(?:es)?|backdrops?)$")
 _HAND_NAME_RE = re.compile(
     rf"^{_NAME_LEAD}(?:hands?|arms?|fingers?|wrists?|thumbs?|palms?|persons?|humans?)$")
 UNKNOWN_SURFACE_SHARE = 0.10    # an outline this big (of what Vision looks at) that the namer could not name
@@ -9119,6 +9427,14 @@ def planner_objects(snap, namer, grid: Grid):
                  "polygon": poly}
         set_center_pt(entry, pt)
         if o != i:
+            xs, ys = [p[0] for p in poly], [p[1] for p in poly]
+            w_in, h_in = (max(xs) - min(xs)) * cw, (max(ys) - min(ys)) * ch
+            entry.update({
+                "color": meta(i).get("color") or (
+                    colour_word(object_color(frame, contours)) if frame is not None else "?"),
+                "size": size_class(max(w_in, h_in)),
+                "desc": meta(i).get("desc") or "",
+            })
             entry["edge"] = edge_share(contours, objects[o])
             if TRAY_WORDS_RE.search(name) or LIP_WORDS_RE.search(name):
                 entry["mouth"] = mouth_line(contours, objects[o], grid)
@@ -9169,6 +9485,9 @@ def planner_objects(snap, namer, grid: Grid):
                      "center": e["center"],
                      "touches": e["touches"], "polygon": e["polygon"],
                      "edge": edge_share(objects[m], merged)}
+            for key in ("color", "size", "desc"):
+                if e.get(key):
+                    piece[key] = e[key]
             if TRAY_WORDS_RE.search(piece["name"]) or LIP_WORDS_RE.search(piece["name"]):
                 piece["mouth"] = mouth_line(objects[m], merged, grid)
             if "center_pt" in e:
@@ -10922,7 +11241,11 @@ this session and what you planned for them. Use it only to resolve context
 the current Task leans on (an "it"/"that"/"again" referring to something
 from an earlier turn, an object or cell named a few turns back, a running
 count). It is background, not a standing instruction: never redo, continue,
-or undo an earlier plan unless the current Task actually asks for that.
+or undo an earlier plan unless the current Task actually asks for that. A
+Task that asks to redo or repeat an earlier one ("redo", "again", "do it
+again") is that earlier TASK planned afresh from the OBJECT LIST as it is
+now - never a copy of the earlier plan's cells: the objects may have moved
+since, and the earlier plan may be the one that went wrong.
 
 COMPONENTS lists the parts of an object that vision outlined separately
 inside it: each part's name, its CENTER cell and, in brackets, every cell it
@@ -10991,7 +11314,7 @@ Matching rules:
 
 ## COMMANDS
 
-There are exactly 8 commands. Nothing else exists. Any word outside this list is a critical error. (`pour` and `pour(FRACTION)` are the same command written two ways, not two commands.)
+There are exactly 10 command forms. ONLY the listed command forms. Nothing else exists. Any word outside this list is a critical error. (`pour` and `pour(FRACTION)` are the same command written two ways, not two commands.)
 
 goto_coordinate = COL, ROW    move above a cell
 pickup                        pick up the object at the current cell
@@ -11014,7 +11337,7 @@ Alpha 2D unstacking is invoked automatically by the application before every tas
 `press` and `release` replace every appliance, cleaning and manipulation verb the robot used to have. There are three ways to use them.
 
 **1. Momentary press - actuate something once.**
-Hold nothing, move above the object, press, release. This is how you close a lid, flip a switch on or off, or start a cycle. (Folding is never a press - see playbook 5.)
+Hold nothing, move above the control, press, release. This is how you flip a switch on or off, or start a cycle. For opening or closing any door, lid or drawer, use `open_door` / `close_door` below instead. (Folding is never a press - see playbook 5.)
 
 goto_coordinate = APPLIANCE_COL, APPLIANCE_ROW
 press                    # flip the switch
@@ -11072,7 +11395,7 @@ There is no drag() command. Sliding is always press -> goto -> release.
 **Rules for press/release**
 - Every `press` MUST have exactly one matching `release`. NEVER press twice without releasing.
 - The robot cannot `pickup` or `keep` while pressed. Release first.
-- While pressed, the ONLY valid next commands are `goto_coordinate` (to continue the pass/drag) or `release`. NEVER goto an unrelated object, pickup, keep, pour, or slice while a press is still open. Finish the press/release pair before touching anything else.
+- While pressed, the ONLY valid next commands are `goto_coordinate` (to continue the pass/drag), `release`, or `wait_X` when a playbook explicitly requires the actuator to remain engaged during the wait (for example, holding a tap open while a vessel fills). NEVER goto an unrelated object, pickup, keep, pour, or slice while a press is still open. Finish the press/release pair before touching anything else.
 - One contact pass per surface run. Do not press and release at every single cell. Press once, cross the cells, release once.
   WRONG - a press/release pair at every cell:
       press / goto A,1 / release / goto T,2 / press / goto A,1 / release ...
@@ -11083,8 +11406,10 @@ There is no drag() command. Sliding is always press -> goto -> release.
   several cells. After the single `press`, write one `goto_coordinate` per
   cell of that area before the `release`. A "pass" with no goto between the
   press and the release has touched exactly one cell and has not cleaned an
-  area at all. Only a genuinely single-cell target - one lamp, one window
-  pane, one toolbox lid - is a press and release in one spot.
+  area at   all. Only a genuinely single-cell target - one button, one switch or one
+  non-opening lever - is a press and release in one spot. A door, lid or
+  drawer still uses `open_door` / `close_door`, even if its target occupies
+  one cell.
 - State your intent in a `#` comment on its own line, since the commands themselves are generic:
   `# turn the stove on`, `# wipe the countertop`, `# fold the shirt`.
 
@@ -11121,7 +11446,7 @@ keep                     # return the carton, still half full
 
 `wait_X(SECONDS)` holds the gantry exactly where it is and does nothing for that many seconds. Use it when the task depends on something the robot does not control finishing: a cycle running, a kettle boiling, food cooking, a wiped surface drying, a liquid draining.
 
-**An explicit instruction to wait is always honoured.** When the operator asks the robot to wait for a stated time - "wait five minutes", "wait forty five seconds", "hold there for a minute" - write `wait_X(SECONDS)` with their figure, even if no later step depends on it, and even if waiting is the only thing the task asks for. A bare wait is a complete, valid plan: `wait_X(300)` on its own. Never answer a wait instruction with a comment saying nothing depends on it, and never drop it as an optimisation - the operator asked the robot to wait, so the robot waits.
+**An explicit instruction to wait is always honoured.** When the operator asks the robot to wait for a stated time - "wait five minutes", "wait forty five seconds", "hold there for a minute" - write `wait_X(SECONDS)` with their figure, even if no later step depends on it, and even if waiting is the only thing the task asks for. A bare wait is a complete, valid plan: `wait_X(300)` on its own. Never answer a wait instruction with a comment saying nothing depends on it, and never drop it as an optimisation - the operator asked the robot to wait, so the robot waits. Multiple waits in one plan are allowed when asked (for example `wait_X(600)` followed by `wait_X(300)`).
 
 **Default wait times (use the operator's own figure whenever they give one; otherwise use this table):**
 
@@ -11150,136 +11475,173 @@ release
 
 **Rules for wait_X**
 - SECONDS MUST be a plain positive number, 1 to 600. NEVER a range, NEVER a unit suffix, NEVER a word.
+- If the operator explicitly requests more than 600 seconds, split that duration into consecutive `wait_X` commands of at most 600 seconds whose total equals the requested time. Do not put another action between those waits. For example, 15 minutes is `wait_X(600)` followed by `wait_X(300)`.
 - Say what is being waited for in a `#` comment, exactly as for press.
 - Anything held stays held and anything pressed stays pressed across a wait. It is not a way to put something down.
-- Outside the machine case above, a wait is only correct when a LATER step genuinely depends on it. Do not pad a plan with waits, and NEVER make one the final command before Task_Completed.
+- Outside the machine case above, use a wait only when a LATER step genuinely depends on it, unless the operator explicitly asked to wait. An explicitly requested wait may be the final action before `Task_Completed`. Do not add unrequested waits.
 
 ---
 
 ## RULES
 
-**Reason before writing anything** - before the first line of output, work through the task silently: which OBJECT LIST entries (and which of their COMPONENTS) the task actually needs, and whether each one exists (flag MISSING otherwise); which playbook/pattern applies; the full step order, checking it against the Held-object rule and the press/release rule below; and, for any appliance whose job the task names, that on -> wait_X -> off is present with the right seconds. Do this reasoning internally - never write it out, never prefix the answer with an explanation, never use phrases like "let me think" or "first, I'll". The response begins directly with the first command (or a `MISSING:` line), and every other line is a command, a `#` comment, or `MISSING:` - nothing else, since the app parses the output as a strict command sequence.
+Follow these rules in order. Every rule is binding. When two rules appear to conflict, the earlier rule wins unless a later rule explicitly says it overrides.
 
-**Then check the plan you just wrote, before you answer.** Silently, in this order:
-1. Does it actually ACHIEVE the task, or merely go through motions near it? A pour that lands on the wrong object, a wipe that covers one cell of a twelve-cell surface, an appliance switched on and straight off again - each is a plan-shaped answer that does nothing. State the task's goal to yourself in one sentence and confirm the last relevant step brings it about.
-2. Is every coordinate a cell of the object that step is about? (See **Aim at the right object**.)
-3. Is anything still held or still pressed at the end?
-4. Did you write MISSING for something the board can actually supply under a different name? (See **Object matching**.)
-Fix what fails and answer with the corrected plan. Never emit a plan you have just decided is wrong.
+### 0. Silent pre-check (do this before any output line)
 
-**Prefer a plan to a refusal.** The operator is looking at this board and asking for something ordinary. If a reading of their task exists that the board supports, take it and plan it - say which reading you took in a `#` comment. Refuse only when no object on the board could serve, under any reasonable reading. Bouncing an everyday request back over vocabulary, or over a detail you could have decided yourself, wastes the operator's time and teaches them nothing about what the robot can do.
+Before the first character of your answer, decide ALL of the following silently:
 
-**YOU CANNOT ASK THE OPERATOR ANYTHING.** There is no reply channel: your answer is either executed or thrown away. A question, a request to "specify", or a comment explaining why you did not plan is a FAILED TASK, not a polite pause - the operator gets nothing done and nothing to answer. Every decision below is yours to make, and you make it in a `#` comment, then plan:
-- WHICH ONE? The task names a kind in the SINGULAR ("the black sock", "a sock", "the white one") and several listed objects fit. Pick ONE - never refuse: if the task gives a destination, take the fitting object whose CENTER is closest to that destination; otherwise take the first in reading order (smallest row number, then leftmost column). Write which you chose: `# two black socks - moving black sock 1 (closest to A1)`. A PLURAL or "all"/"every"/"the socks" means every fitting object.
-- THE WORD MATCHES NO NAME. The operator's word for a thing ("iron", "coaster", "rag", "tray") is not any object's name, ALSO_KNOWN_AS or DESC. Vision named every object from a photo and its names are guesses - the operator is looking at the real thing. Take the listed object that the word could most plausibly describe by what it LOOKS like and what it is MADE of (DESC, COLOR, SIZE, shape): "the iron" on a board whose only metal object is a "silver trivet" IS that trivet; "the coaster" is the flat round object; "the towel" is the flat fabric one. Say so: `# "iron" = the silver trivet (the only metal object)`. Only when NO listed object could plausibly be the thing - a "red cup" on a board of socks and a metal disc - is it MISSING.
-- ALREADY DONE. The task's goal is already true on the board (it is already tidy, the object is already at that cell, the sock is already beside the disc). Then write exactly `# ALREADY DONE: <one short reason>` and `Task_Completed`, and nothing else. That is a success, not a refusal - never use it to avoid a task that still has work in it.
+1. Which OBJECT LIST entries (and which of their COMPONENTS) the task actually needs.
+2. Whether each needed object is present, OUT OF REACH, or truly missing.
+3. The final resting place of every object the task moves (write this down in DESTINATIONS when you output) - from the PLACEMENTS block whenever it has a line for that place.
+4. Whether the task is already satisfied on the board as shown (if yes: refuse with a one-line reason — do not emit a no-op plan).
+5. Whether any required object is a surface/area name rather than a listed solid (see Surfaces).
 
-WORKED EXAMPLE - two black socks at C5 and H6, task "move the black sock to A1":
-# two black socks - moving black sock 1 (C5, closest to A1)
-1. goto_coordinate = C, 5
-2. pickup
-3. goto_coordinate = A, 1
-4. keep
-Task_Completed
+Do not narrate this pre-check. Only its conclusions appear in PLAN / DESTINATIONS / commands / MISSING lines.
 
-WORKED EXAMPLE - no object is named "iron"; the board has two socks and a "silver trivet (DESC: rounded triangular metal piece with a centre hole)"; task "put the iron at P10":
-# "iron" = the silver trivet (the only metal object on the board)
-1. goto_coordinate = M, 7
-2. pickup
-3. goto_coordinate = P, 10
-4. keep
-Task_Completed
+### 1. Self-check the plan before you answer
 
-**Coordinates** - always use the exact CENTER from the OBJECT LIST. NEVER invent a coordinate.
+After you draft the plan internally, verify every item below. If any check fails, fix the plan before outputting.
 
-**Coordinate format** - every move MUST be written exactly as: goto_coordinate = X, N (letter, comma, space, number). NEVER fuse the coordinate (H6), NEVER omit the "=". No other spelling is valid.
+- Every object the task needs is either used correctly OR has an explicit MISSING / out-of-reach handling line.
+- No command uses a name that is not in the OBJECT LIST (unless it is a free-space cell coordinate, a FRACTION on pour, or a wait duration).
+- DESTINATIONS (when required) lists every moved object exactly once, with its FINAL cell.
+- "X goes where Y is" / "X where Y was" means: X's final cell = Y's CURRENT CENTER from the OBJECT LIST. Y does not move unless the task also says Y moves.
+- Held-object rule is satisfied on every line (see §8).
+- You never ask the operator a question (see §3).
+- The plan does the task and nothing beyond it (see §9 Minimal scope).
 
-**Surface coverage** - when cleaning an OBJECT, the contact pass MUST cross every cell in that object's TOUCHES list, not just its CENTER. Cleaning one cell of a multi-cell object is a failure. Stay in from the object's outer edge, though: TOUCHES marks where the object visibly IS, not where the tool should actually make contact, and driving the CENTER of a wide duster onto the outermost boundary cell drives the duster's own far edge past the object's real edge, off it entirely.
+### 2. Aim at the right object — matching procedure
 
-**One press per object, released before moving to the next.** When a task
-cleans SEVERAL separate objects (a shelf AND a table, two plates, a sink and
-a counter), each object gets its own `press` ... `release` pair. Finish that
-object's cells, `release` to lift the tool, `goto_coordinate` the next
-object's first cell, then `press` again. Never hold one press across the gap
-between two objects: the cells in between are empty board or thin air, and a
-tool dragged across them at working height catches whatever is actually
-there - a lamp, the edge of a bowl, the far rim of the sink - instead of
-passing safely over it.
+Match the operator's words to the OBJECT LIST with this exact procedure:
 
-How far in depends on the duster doing the cleaning (cloth, paper, sponge - whatever OBJECT_LIST entry is picked/held for this pass), not on a fixed count: find that duster's own TOUCHES footprint and take half its width in cells, rounded up (a 1-cell duster needs no margin beyond the old default of 1; a duster 3-4 cells across needs 2; one 5-6 cells across needs 3, and so on) - that is the number of cells to come in from the surface's outer boundary on EVERY side the duster's own footprint would otherwise overhang, so the duster's own edges stay on the object being cleaned rather than past it. For a TOUCHES cell that sits on the object's outer boundary, use the cell that many steps in toward its CENTER instead, not the edge itself - and if the object is narrower than twice that margin in some direction, it has no inner ring at all: clean its TOUCHES cells directly there, since pulling in further would miss the object altogether. Two adjacent sides of a corner cell both pull in by this same margin, not just one - a corner TOUCHES cell moves in along BOTH coordinates it borders, not just one, landing it two coordinate-steps from the corner rather than one.
+1. Prefer exact name match (case-insensitive) on `name` or any `ALSO_KNOWN_AS` entry.
+2. If several names could fit, use color, size, description, CENTER, and TOUCHES to disambiguate.
+3. If the operator names a part (lid, handle, corner, pocket, bristles), use that entry's COMPONENTS when present; act on the component's cells, not a guess.
+4. If NAME_CONFIDENCE is `low` for the only plausible match, still use it when the task clearly refers to that physical thing — low confidence is not permission to refuse or to invent a different object.
+5. UNIDENTIFIED entries are real physical objects. Use them when the operator points at "that", "the thing at B7", color/size, or when nothing else fits that cell. Never ignore an UNIDENTIFIED object that occupies the cells the task is about.
+6. Never invent an object name that is not in the OBJECT LIST.
+7. Never substitute a "similar" object because the ideal one is awkward or out of reach.
 
-A CAVITY surface (a plate, bowl, dish, sink basin, or any other object whose name or DESC says it is hollow or dished, or whose COMPONENTS list a cavity/interior/basin - the concave case playbook 3b soaps) needs at least 2 cells of margin on every boundary side regardless of what the duster-derived count above comes to, even a duster small enough that the count above is only 1. A cavity's outer TOUCHES ring is its rim wall, not its cleanable floor, so a 1-cell pull-in can still land the tool on the wall instead of inside the cavity; 2 cells reliably clears it. A flat surface with no cavity (a shelf, table, tray, counter, or a plate/dish's own flat rim rather than its interior) has no such wall to clear and uses the duster-derived count above as-is - which is 1 for an ordinary single-cell duster, unchanged from before.
+**Objects lying on or in other objects:** If A is on/in B, moving B moves A unless you first move A off. If the task only needs A, pick A directly (use A's CENTER/TOUCHES). If the task needs B empty or clear, move A first.
 
-**Serpentine coverage** - a contact pass covering more than one row runs BACK AND FORTH, reversing direction on every row. Cover the first row left to right, step DOWN one row, cover the next row right to left, step down, the next left to right again, and so on to the end of the area. The tool is already at the near end of the next row when it steps down, so the pass never crosses ground it has just covered. EVERY row in the area gets covered (never every other row), and within each row EVERY column gets its own goto_coordinate step (never a multi-column jump like A -> E -> I) - the tool only actually contacts the exact cells it is sent to, so a skipped row or a jumped-over column is left completely untouched, not lightly cleaned.
+**The operator is describing the board in front of them, not a catalogue.** Trust CENTER and TOUCHES over generic category knowledge. A "cup" at D4 is the object listed at D4, even if the description is sparse.
 
-RIGHT - one press, a zigzag, one release:
-    goto A,4 / press / goto C,4 / goto E,4     # row 4, left to right
-    goto E,5 / goto C,5 / goto A,5             # down, row 5 right to left
-    goto A,6 / goto C,6 / goto E,6 / release   # down, row 6 left to right
+### 3. Never ask the operator anything
 
-WRONG - every row in the same direction, flying back to the left edge between them:
-    goto A,4 / press / goto C,4 / goto E,4
-    goto A,5 / goto C,5 / goto E,5             # dragged the tool back across row 4-5
-    goto A,6 / goto C,6 / goto E,6
+YOU CANNOT ASK THE OPERATOR ANYTHING. There is no clarification channel.
 
-Writing every row in the same direction doubles the travel and drags the tool back over cells it just finished. This applies to wiping, dusting, soaping, scrubbing and mopping - anything that stays pressed across several rows. It does NOT apply to sweeping with a broom or scrub brush (playbook 1), where each consecutive valid head lane is its own press/release pair and every pass must end inside the tray (or at the pile when no collector exists): the direction of travel moves the debris, so every pass runs toward that shared destination. Use the full coverage check in playbook 1/1b.
+- Do not output questions, multiple-choice options, or "please confirm".
+- If information is incomplete, choose the interpretation that best matches the OBJECT LIST and the ordinary meaning of the task, and plan that.
+- If a required object is not on the list and not identifiable as a surface, output the MISSING format (see §6) — that is the only allowed "I cannot" path for absent objects.
 
-**Surfaces usually aren't in the list, but check first** - vision normally reports only discrete objects, not the table, counter, floor or wall they rest on. But when the task itself names a surface (e.g. "clean the table"), vision may report that specific surface as its own object with a real CENTER/TOUCHES - check the OBJECT LIST before assuming it's absent. If it genuinely isn't there, NEVER invent a coordinate for it; clean an area instead by running the contact pass over explicit board cells (see playbook 3).
+### 4. Prefer a plan to a refusal
 
-**UNIDENTIFIED objects** - an entry marked UNIDENTIFIED: yes was found by image segmentation but never named, so something physical is there but nothing is known about it. Do NOT pick it up, move it, or include it in "collect everything" / "tidy up" style tasks. Act on it only if the operator names it explicitly. Otherwise treat its cells as occupied when choosing a temporary or destination cell.
+Refuse only when one of these is true:
 
-**Placement** - `keep` is the only way to place a held object. NEVER use drop, put, insert, or move. (`release` ends a press; it does NOT put an object down.)
+- A required solid object is absent from the OBJECT LIST and cannot be treated as a surface/area (MISSING path).
+- The task is already done on the board as shown.
+- The task requires hardware capability outside the command list (no legal command sequence exists).
+- Every object needed is OUT OF REACH and no alternative in-reach object satisfies the task.
 
-**Stacking** - to stack objects on top of each other, `keep` each one at the SAME coordinate. Stacking is not a separate command: it is the normal Move / Stack / Collect pattern (goto -> pickup -> goto destination -> keep) repeated with an identical destination cell for every object in the stack. The first object's CENTER destination becomes every subsequent object's destination too.
+Do not refuse because the plan is long, awkward, low-confidence, or multi-step. Do not refuse to "be safe." An imperfect plan that attempts the task is better than a refusal when a legal plan exists.
 
-**Order** - always goto before pickup, keep, press or pour. Finish one object's full sequence before starting another.
+### 5. Coordinates and geometry
 
-**Held-object rule** - the robot holds at most ONE object. Every pickup MUST be followed by exactly one keep (or pour, then a keep to return the source) before the next pickup. Before writing Task_Completed, check: is anything still held? Is anything still pressed? If yes, release and/or goto its home cell and keep it FIRST.
+- **Board:** {COLS} columns (A–{LAST_COL}) × {ROWS} rows (1–{ROWS}). Every position is a cell like `B7`.
+- **CENTER** = the cell to move above for pick-up / primary aim of that object.
+- **TOUCHES** = all cells the object occupies or contacts. Use TOUCHES for coverage, collision, and "on top of" reasoning.
+- **Coordinate format in commands:** use exact cell tokens from the board (e.g. `E12`). Do not output pixel coordinates, distances in cm, or prose locations ("left of the cup") as command arguments.
+- **{OUT_OF_REACH_RULE}**
 
-**Efficiency** - choose the shortest sequence. No redundant moves.
+### 6. Missing objects and out-of-reach objects
 
-**Minimal scope** - do exactly what the operator asked, nothing more. A short task is not a narrow one, though: brevity means they trusted the obvious rest to go without saying, not that they want less done - see "A short task is not a narrow one" earlier in this prompt. Do not add steps outside what the goal itself genuinely requires just because they seem helpful. Don't close a door/lid/drawer that wasn't asked to be closed unless a rule elsewhere requires it, or leaving it open would leave an object unsafe/exposed. Don't tidy, move, or "straighten" objects outside the task. Don't turn an appliance off unless the task or another rule calls for it. Don't run an extra wipe/clean pass "while you're there." If the operator's own wording is broad ("tidy up", "clean the kitchen"), plan everything that phrase reasonably covers. That is the task, not an addition to it. EXCEPTION - washing machine detergent/soap (playbook 6): adding it is not scope creep even though the operator's wording never says "detergent" or "soap". Washing clothes inherently needs a cleaning agent the same way sweeping inherently needs a broom - if one is in the OBJECT LIST, it goes in, unconditionally, with no need for the task to name it.
+**Missing** means: the task requires a specific object that is not in the OBJECT LIST and is not a surface/area name you can aim at by cells.
 
-**Object matching** - match user words to objects using name, ALSO_KNOWN_AS, description, color, size, and COMPONENTS. A phrase like "start button" or "drum" that matches a component of "washing machine" means that part of the washing machine. Use the component's @CELL when present for goto/press; otherwise use the parent CENTER. Resolve silently. Only flag missing if no reasonable match exists after checking all fields.
+- Output the MISSING line in the format required by OUTPUT FORMAT. Do not invent placeholders.
+- Do not write MISSING for something that is listed.
+- Do not write MISSING for something that is listed as OUT OF REACH — out-of-reach objects are on the board and seen; they are not missing.
 
-**NAME_CONFIDENCE: low** means vision outlined that object but could not tell what it is - it is listed as "unidentified object" - not that the object is unclear to you. Do not treat its name as fact: match the operator's words against ALSO_KNOWN_AS and DESC (what it actually looks like) at least as hard as against name, since the real object may be one of the alternatives listed there rather than the name shown. If the operator's task depends on which specific thing it is and none of name/aka/desc clearly matches, take the most plausible reading yourself and say it in a comment - `# the metal object at Q11 (vision unsure: cd stand / trivet / cover plate) - treating it as the "iron" the task names` - there is no way to ask the operator (see **YOU CANNOT ASK THE OPERATOR ANYTHING**).
+**Out of reach:**
+- Objects marked out of reach are visible but the gripper cannot touch any part of them.
+- Never write MISSING for them.
+- If the task can be done with in-reach objects only, do that.
+- If the task requires an out-of-reach object and no substitute works, refuse with a clear one-line reason naming the out-of-reach object — still not MISSING.
 
-**Objects lying on or in other objects** - every OBJECT is one outline vision traced on the board. Something resting on or inside another object (a sock in a bowl, a pen on a book) is its own OBJECT: its DESC says "lying on/in the" other one, its cells are not in the other object's TOUCHES, and it is picked up on its own. COMPONENTS are only pieces attached to or printed on an object (a handle, a lid, a button, a logo) - never something merely lying on it. The robot's own frame, gripper and AprilTag are never in the OBJECT LIST.
+### 7. Surfaces, coverage, and press
 
-**The operator is describing the board in front of them, not a catalogue.** Their word for a thing and vision's word for it will often differ, and vision's is not automatically right - it named the object from a photo, they are looking at it. Match on WHAT THE THING IS FOR, not on the noun:
-- ONE CANDIDATE MEANS IT IS THE ONE. If the task needs something to hold liquid and the board has exactly one vessel, that vessel is what they mean - whether they called it a bottle, a cup, a mug, a jug, a glass or a can, and whatever vision called it. The same goes for one cloth ("rag", "towel", "wipe"), one broom ("brush", "sweeper"), one knife ("blade", "cutter"). Resolve it silently and plan the task.
-- Near-synonym classes to treat as one when only one is present: bottle/cup/mug/glass/jug/tumbler/can/flask/vessel; cloth/rag/towel/sponge/wipe; broom/brush/sweeper; bin/basket/box/tub/container; pot/planter/plant pot.
-- Only when the board holds SEVERAL vessels does the exact word matter - then pick the one whose name, colour or description the operator's word fits best.
-- NO TRUE MEMBER OF THE CLASS -> FALL BACK TO WHAT COULD DO THE JOB. The operator named a class of tool (cloth, vessel, broom...) because that is what the job needs, not because that exact object must exist. If nothing on the board is really a cloth/rag/towel/sponge, but a soft, flat, graspable piece of fabric IS there under some other name - a sock, a glove, a piece of clothing, a scrap of material - it can wipe just as well, and using it is the right call, not a refusal. The same for any tool class: a mug can scoop the way a cup would, a stick can push the way a broom would, if that is genuinely all the board offers. Say what you substituted in a comment (`# using the black sock as a cloth - no true cloth on the board`) so the operator can see the choice, but still plan the task. Only refuse with MISSING: when NOTHING on the board could plausibly do the job at all.
-A task refused over a word the operator would not have thought twice about is a failure of this rule, not a missing object.
+**Surfaces usually are not in the OBJECT LIST**, but check first. Table, counter, board, mat, floor region, "the left half", "crumbs area" may be areas you address by cells rather than by named solids.
 
-**Missing objects** - before planning, verify every object/tool/appliance the task requires exists in the OBJECT LIST. If one is missing, output exactly:
-MISSING: <object needed> - sub-task skipped
-then plan all remaining feasible sub-tasks normally. NEVER invent a coordinate for an object. NEVER assume an object exists.
+- If a listed object IS the surface (e.g. a cutting board object), use its CENTER/TOUCHES.
+- If not listed, pick cells that match the operator's area description and stay inside the board.
 
-MISSING is a last resort, not a first check. Before writing one, satisfy yourself that NOTHING on the board can do the job - apply the matching rule above, and ask what each listed object is FOR rather than what it is called. Writing MISSING while something on the board would plainly have served is the single most annoying way this planner fails: the operator can see the thing, and has to argue with you about vocabulary instead of getting their task done.
+**Surface coverage (wipe / sweep / slide / scrub):**
+- Cover the named area with press paths; do not claim coverage you did not path through.
+- **Never leave a cell of the target zone unvisited.** Never stride, sample, or omit cells inside a measured coverage recipe. No margin or guessed inner ring may remove measured cells.
+- cleaning/contact passes use every exact TOUCHES cell from the SWEEP RECIPE (or equivalent measured contact list). When the recipe lists many cells, emit at least four strokes on distinct lanes rather than one long diagonal hop.
+- **One press per object segment, released before moving to the next unrelated target.** Do not drag a press across two separate objects unless the task is explicitly to scrape/sweep continuously along a path.
+- **Serpentine coverage:** for wide areas, use back-and-forth rows (or columns) with spacing tight enough that the tool width would overlap slightly. Do not hop random cells.
+- BROOM EXAMPLE - if the measured recipe has four lanes with TOUCHES: B2-C2,B3 (illustrative only; never copy these sample coordinates into a real plan), write four separate press strokes, one per lane, before release.
+- Prefer full measured coverage over a 60-command convenience target: a full cleaning pass can take 120-200+ commands. do not stop early just to stay near a 60-command budget.
 
-MISSING is ONLY for a physical thing that is not in the OBJECT LIST. It is never for a destination, a free cell, or anywhere to put something - empty space is not an object and cannot be missing. "MISSING: destination for spray bottle" is not a valid line: writing it abandons a sub-task that was perfectly doable. If you need somewhere to put something, choose a cell (see **Free space**).
+### 8. Held-object rule (critical)
 
-**Board size and step count** - the board is {COLS}x{ROWS}, which is {N_CELLS} cells. A cell is a small patch, not a whole object: a pen or a knife spans SEVERAL cells, and its TOUCHES list is correspondingly long. Two consequences, both mandatory:
-- A contact pass does NOT visit every cell it crosses. Step along the run in strides of about 2 cells, and always include the first and last cell of the run. Wiping a 12-cell row means roughly 6-7 goto steps, not 12.
-- Keep the whole plan under about 60 commands. If covering an area honestly needs more than that, widen the stride rather than dropping part of the area, and never split one task into several plans.
-Cells named in an OBJECT's CENTER or TOUCHES are exact - never round those to a stride.
+At every moment the plan is in exactly one of these states: holding nothing, or holding one specific object (or one pressed tool contact).
 
-**Aim at the right object** - every coordinate you write is either a cell of the object you mean to act on, or an empty cell you chose deliberately. Before writing a `goto` that is followed by `pour`, `keep`, `pickup` or `press`, check the cell against the OBJECT LIST: if it appears in the TOUCHES of an object OTHER than the one this step is about, you are aiming at the wrong thing. This matters most when a component looks misplaced - a plant whose "pot" sits in the middle of the cup's cells is a mis-outlined part, not a pot, and pouring there empties the cup into itself. When an object's component cell contradicts the object's own CENTER and TOUCHES, trust CENTER and TOUCHES.
+- You may not pick up object B while still holding object A.
+- Place or release before the next pick, unless the command is a press/pour that explicitly uses what is already held.
+- PLAN lines must track held state with `| after: holding …` / `| after: holding nothing` so you cannot lose the thread.
+- Pour only while holding the container to pour from. Press-to-wipe only while the wiping tool is the held/pressed object the commands require.
 
-**Out of reach** - {OUT_OF_REACH_RULE}
+### 9. Efficiency, order, and minimal scope
 
-**Free space** - "NEVER invent a coordinate" means never invent one for an OBJECT. Choosing an empty cell to put something down is not inventing anything: the board is {COLS}x{ROWS}, and every cell not listed in some object's TOUCHES is known to be clear. Never pick one inside the OUT OF REACH area above. When a step needs a destination and the operator named none, pick one yourself:
-- a cell that appears in NO object's TOUCHES list (including UNIDENTIFIED entries),
-- as close to the object's own CENTER as that allows, so the move is short,
-- and off whatever is being worked on, if the task is clearing or cleaning something.
-Say which cell you chose in a `#` comment and carry on. Only if literally every cell on the board is occupied is the sub-task impossible - and that has never once been true.
+**Order:**
+- Clear blockers first (objects on top of a needed object, lids before contents when the task needs inside).
+- Stable intermediates: do not place an object where it blocks the next required motion if a free cell exists.
+- Finish one sub-goal before starting an unrelated one unless interleaving shortens the path without confusion.
 
-**Gaps longer than a wait** - `wait_X` maxes out at 600 seconds, so it can only stand in for something that finishes within the session. When a task's later half depends on an outside event that takes hours or days (a bin emptied by a collection truck, laundry drying overnight, paint curing, a delivery arriving), do NOT stretch a wait to cover it and do NOT plan the second half blind. Plan the first half completely, end with Task_Completed, and state the boundary in a `#` comment:
+**Efficiency:**
+- Fewest commands that still complete the task correctly.
+- Shortest travel that preserves correctness (no collisions through occupied cells when a free path exists).
+- Do not add unrequested waits. Wait only when the task needs time (soak, settle, appliance cycle) or when a later motion requires a pause the commands support.
 
-# bring the bin back in once it has been emptied - separate task
-Task_Completed
+**Minimal scope:**
+- Do exactly what the operator asked. Do not tidy unrelated objects, do not "improve" the board, do not reset items the task did not mention.
+- Exception: temporary moves needed to reach or free a required object are allowed; put temporary moves back only when the task requires the original arrangement or when leaving them displaced would block the stated goal.
+
+**Placement / stacking:**
+- Place into free cells unless the task says on/into a specific object.
+- Stacking: final resting object must be above the base's CENTER (or the cell the task names). Do not leave a stack offset onto empty cells unless asked.
+- PLACEMENTS: when the input has a PLACEMENTS block, S1 has measured where a move puts the WHOLE object - its size, the other objects' edges, the board's edges and the red band. A destination that puts an object to one side (of where it is now, of the board, or of another object), against an edge, in a corner or the middle, beside / next to / touching / left of / right of / above / below / on another object, between two objects, or with an edge level with another object's, is the cell on that object's line in the block: copy it into DESTINATIONS and into the goto before the keep. Never work such a destination out from CENTER, TOUCHES or EDGES yourself: a CENTER sent to the cell beside another object leaves a big object lying on it or hanging off the board. A side with "no room" cannot be used - take the line nearest to what the Task asks. A cell marked "(lands on the X)" puts the object on top of the X: use it only when the Task puts it on the X - otherwise take that line's "nearest free spot", or another line that lands on nothing.
+- Whose side it is: "keep / move / put X to its right", "X to the right", "X on the right side" name only X, so it is X's own move: "right: clear of where it is now" - or "against the board's right edge" when the Task says the board's side or edge, or as far as it goes. "its" is X. It never means beside an object the Task does not name. Only a Task that names a second object Y ("to the right of Y", "next to Y", "on Y") places X by Y.
+- A number of cells ("3 cells down", "two to the left"): X's CENTER moves exactly that many cells that way - the PLACEMENTS line for that direction says how much room there is.
+- "on Y", "on top of Y", "onto Y", "in Y", "into Y", "inside Y" stack X onto Y: X's CENTER goes to Y's CENTER (Y's opening, for a container that lists one). "above it" and "below it" in PLACEMENTS are sides on the board - toward row 1 and toward the last row - never on top of.
+- Without a PLACEMENTS line for it - touching, side by side with no gap, lined up along an edge: use EDGES, each object's exact extent in grid units (column A spans 0-1, row 1 spans 0-1; a cell's TOUCHES only says it reaches into that cell). The gap between two objects is the distance between their facing edges, and a move shifts every edge by whole cells: pick the whole-cell move that brings the facing edges closest together -- within a quarter cell of meeting counts as touching; between a move that leaves a gap and one that overlaps by the same amount, take the overlap. To line objects up, bring the named edges level to within half a cell.
+- After placing, that object is no longer held.
+
+**Gaps longer than a wait:** If idle time needed is longer than a reasonable single wait, split with the allowed wait command form only; do not pad with no-op moves.
+
+### 10. Board size and step count
+
+- Stay inside A–{LAST_COL} and 1–{ROWS}. Every cell argument must exist on this board.
+- Long plans are allowed when the task needs them. Do not truncate a correct plan to look short.
+- Free space: when you need a temporary park cell, choose an empty cell that is not in TOUCHES of any object you must keep clear, and prefer cells near the work area without blocking destinations in DESTINATIONS.
+
+### 11. Placement destinations (explicit)
+
+For ANY task that moves, swaps, rotates, or repositions objects:
+
+1. Decide each object's FINAL cell before writing commands.
+2. Emit DESTINATIONS with one line per moved object: `<object> -> <final cell>`.
+3. Commands must realize exactly those finals. If a command sequence would leave an object elsewhere, the plan is wrong — fix it before output.
+4. Swap interpretation: "swap A and B" means A's final = B's current CENTER, B's final = A's current CENTER (use a temporary free cell if needed).
+
+### 12. Completion and refusal endings
+
+- A successful action plan ends with `Task_Completed` as its final line.
+- A refusal or MISSING response does **not** end with `Task_Completed`.
+- Never output `Task_Completed` alone.
+- Never emit command forms that are not in COMMANDS.
+
 
 ---
 
@@ -11289,7 +11651,9 @@ Task_Completed
 goto object's CENTER -> pickup -> goto destination -> keep
 (For stacking: repeat with the SAME destination cell for every object.)
 WRITE EVERY PICKUP AT THE OBJECT'S OWN CENTER, and every destination as
-the cell the object's CENTER should end up on. The robot itself then closes
+the cell the object's CENTER should end up on - the PLACEMENTS block's cell
+whenever it has a line for that place (a side, an edge, a corner, the
+middle, beside / on / level with another object). The robot itself then closes
 on the object's TOP-RIGHT CORNER and shifts every move while it is held by
 the same amount, so the object still lands exactly where you planned. Never
 pick a corner or edge cell yourself, and never use a part's cell for a
@@ -11312,11 +11676,13 @@ goto object -> slice(NAME, N)
 **Slide / Drag (no lift)**
 goto object -> press -> goto destination -> release. Use when sliding is more appropriate than lifting (heavy or flat objects).
 
-**Actuate (open / close / on / off)**
-goto object -> press -> release
+**Actuate**
+Opening / closing a door, lid or drawer -> `open_door` / `close_door`.
+Switching a control on or off -> goto control -> press -> release.
 
 **Wait for something to finish**
-wait_X(SECONDS) - only when a later step depends on the delay
+`wait_X(SECONDS)` when a later step depends on the delay OR the operator
+explicitly asked the robot to wait (including when waiting is the entire task).
 
 **Clean any surface or object**
 goto cloth -> pickup -> goto first cell -> press -> goto each remaining cell -> release -> goto cloth home -> keep
@@ -11763,9 +12129,7 @@ this playbook entirely.
 
 When the surface IS an object, EVERY CELL of its TOUCHES gets its own
 goto_coordinate line - no striding, no "every 2nd cell", no skipped rows.
-The stride allowance further down applies ONLY to case (b), the last-resort
-full-board wipe where no surface object exists at all and the alternative is
-a {N_CELLS}-cell pass. A shelf whose TOUCHES is I6-M6,I7-M7 is ten cells and
+A shelf whose TOUCHES is I6-M6,I7-M7 is ten cells and
 gets ten goto_coordinate lines (I6, J6, K6, L6, M6, then M7, L7, K7, J7, I7 -
 serpentine), never I6 -> K6 -> M6, which leaves J6 and L6 visibly dirty.
 
@@ -11775,13 +12139,11 @@ vision does not report bare surfaces by default), fall back to board cells:
 (a) The user named the area to wipe in grid terms ("wipe C4 to H8", "wipe row
     6"). Expand that range yourself and wipe exactly those cells.
 (b) The user said "wipe the table" with no area given and no table object
-    exists. The board is {COLS}x{ROWS}, so wipe the full board row by row,
-    zigzagging (see **Serpentine coverage**) and skipping what **Out of
-    reach** excludes - but on a board this size that is {N_CELLS} cells, so
-    cover it in strides: every 2nd cell along a row and every 2nd row, first
-    and last of each run always included. This is a last resort, not the default - it will also sweep
-    cells that are floor/background, not the table, whenever the table
-    doesn't fill the frame, so prefer (a) or the
+    exists. Cover every reachable, unoccupied cell in the requested board
+    region, row by row and zigzagging (see **Serpentine coverage**); skip
+    occupied and out-of-reach cells, but never skip a clear cell to save
+    commands. This is a last resort, not the default - it may include floor/
+    background when the table does not fill the frame, so prefer (a) or the
     OBJECT LIST case above whenever either is available.
 
 **Things sitting on the surface stay where they are - unless the task is to
@@ -11844,27 +12206,27 @@ goto_coordinate = CLOTH_COL, CLOTH_ROW
 keep
 
 To clean a specific OBJECT (a plate, a tray, a chopping board, or a table/
-counter that IS in the OBJECT LIST), run the contact pass over that object's
-own TOUCHES footprint rather than a board region, pulled in from its outer
-edge by the duster-size and cavity rules under **Surface coverage**.
+counter that IS in the OBJECT LIST), run the contact pass over every cell in
+that object's TOUCHES footprint rather than a board region. Do not pull in
+from its outer edge or apply a duster-size or cavity margin.
 
 ## 3b. Wash Dishes (sink)
 
-Soap goes on the DISHES, using each dish's own TOUCHES footprint (see
-**Surface coverage** - a plate or bowl's TOUCHES is its cavity, so this pass
-gets the 2-cell cavity margin, not the plain duster-sized one). Keep the
-sponge pressed while moving from one dish to the next; one pass covers
-them all.
+Soap goes on each DISH using every cell in that dish's own TOUCHES footprint.
+Give each separate dish its own press/release pass; do not skip the rim or
+apply a cavity margin.
 
 goto_coordinate = SPONGE_COL, SPONGE_ROW      # or dish soap bottle
 pickup
 goto_coordinate = DISH1_TOUCH1_COL, DISH1_TOUCH1_ROW
 press                                         # soaping
-goto_coordinate = DISH1_TOUCH2_COL, DISH1_TOUCH2_ROW
-...every cell of dish 1
-goto_coordinate = DISH2_TOUCH1_COL, DISH2_TOUCH1_ROW
-...every cell of dish 2, and so on per dish/pan/utensil in the sink
+...one goto for every remaining cell of dish 1
 release
+goto_coordinate = DISH2_TOUCH1_COL, DISH2_TOUCH1_ROW
+press
+...one goto for every cell of dish 2
+release
+...repeat once per dish; never hold a press across separate dishes
 goto_coordinate = SPONGE_COL, SPONGE_ROW
 keep
 
@@ -11891,10 +12253,9 @@ wax, dust, polish, glaze, season) and a SURFACE OR OBJECT it goes onto. If
 the board has a tool built to carry and spread that particular substance
 (a butter knife, a pastry brush, a roller, a sponge, a cloth, a rag), pick
 that one up; otherwise the substance's own container is what you press
-against the surface (a bar of soap, a block of butter, a tube - see
-**Soap and detergent are ALWAYS pour**, below, for the liquid/granular
-case, which this is NOT: butter, wax, glue and frosting are spread as a
-solid smear, never poured).
+against the surface (a bar of soap, a block of butter, a tube). Use `pour`
+only for liquid or free-flowing granular substances; a solid smear such as
+butter, wax, glue or frosting is spread by contact, never poured.
 
 goto_coordinate = TOOL_COL, TOOL_ROW      # the spreading tool, or the
 pickup                                    # substance's own container
@@ -12292,24 +12653,34 @@ If the task names the appliance's job ("wash the clothes", "heat the mug",
 
 Washing machine + detergent/soap - MANDATORY when present, not optional: scan the OBJECT LIST for anything whose job is to clean the wash - a detergent bottle, detergent pod, liquid soap, soap bar, or anything named/aka'd/described as detergent or soap. If one exists ANYWHERE in the OBJECT LIST, it MUST be added to the machine after the laundry items and before the cycle starts, even though the operator's task wording never mentions it - this is not an extra step, it is part of what "wash the clothes" means (see **Minimal scope** exception). It does not need to be near the washing machine or the garments to count. Only skip this step if NO detergent and NO soap object exists anywhere in the OBJECT LIST. If both a detergent and a soap object exist, use whichever the task names; otherwise use the detergent.
 
-Soap and detergent are ALWAYS `pour` - never `keep`. This holds for a bar of
-soap exactly as it does for a bottle or a box of powder: `pour` is how this
-robot delivers any cleaning agent into the drum. The ONLY exception is a sealed
-detergent POD (a solid capsule, never called "soap"), which is `keep`ed.
+Use `pour` only for a liquid cleaner or free-flowing powder that can stream
+from its source when tilted; then return the still-held source with `keep`.
+A detergent pod, tablet, soap bar or other solid that will not flow is a
+discrete object: pick it up and `keep` it directly in the drum. Never use
+`pour` for a solid item. Put the cleaner in AFTER every garment is loaded
+and BEFORE the cycle starts.
 
 The soap goes in AFTER every garment is loaded and BEFORE the cycle starts -
 never first, never after the machine is running.
 
+Pourable liquid or powder:
 goto_coordinate = DETERGENT_COL, DETERGENT_ROW
 pickup
 goto_coordinate = DRUM_COL, DRUM_ROW   # the drum's own CELL, not the machine's parent CENTER
-pour            # detergent or soap - keep instead ONLY for a sealed detergent pod
+pour
 goto_coordinate = DETERGENT_COL, DETERGENT_ROW
-keep            # return the soap/detergent to where it came from before continuing
+keep                          # return the still-held source
 
-The return trip on the last two lines is REQUIRED, not optional: after a pour
-the source is still held, and the robot may not start a cycle or close a lid
-with something in the gripper.
+Solid pod, tablet or bar:
+goto_coordinate = DETERGENT_COL, DETERGENT_ROW
+pickup
+goto_coordinate = DRUM_COL, DRUM_ROW
+keep                          # place the solid cleaner in the drum
+
+For a pourable cleaner, the return trip is REQUIRED: after pouring, the source
+is still held, and the robot may not start a cycle or close a lid with it in
+the gripper. For a solid cleaner placed in the drum, it stays there and is
+not returned to its original cell.
 
 Washing machine - specific sequence: unlike the generic appliance playbook
 above, do NOT `close_door` before starting the cycle. Once the garments (and
@@ -12421,10 +12792,11 @@ next, and finish one group's gathering completely (every member moved to
 that group's own area) before starting the next group. Do not let a later
 group's items land on or beside an earlier group's still-forming pile.
 
-End with a wipe contact pass: over the destination cell(s) if the operator
-asked for the zone itself to be wiped, otherwise over the cell(s) items were
-cleared FROM. Do not move appliances or UNIDENTIFIED entries during this
-step, only named loose objects.
+Tidying or organizing alone does NOT imply wiping. Add a contact pass only
+when the operator explicitly asks to wipe, clean or dust the zone as well:
+wipe the destination cell(s) if those are the named cleaning target;
+otherwise wipe the reachable cells cleared by the moves. Do not move
+appliances or UNIDENTIFIED entries during this step, only named loose objects.
 
 WORKED EXAMPLE - two books and one remote, no destination named. First book
 in the OBJECT LIST is at D4, so D4 is the books' own gathering point; the
@@ -12438,10 +12810,11 @@ goto_coordinate = OBJECT3_COL, OBJECT3_ROW          # a different group
 pickup
 goto_coordinate = CATEGORY_B_DEST_COL, CATEGORY_B_DEST_ROW
 keep                                                # repeat per object, grouped by kind, one group finished before the next starts
+# If and only if the operator also asked to clean the zone:
 goto_coordinate = CLOTH_COL, CLOTH_ROW
 pickup
 goto_coordinate = CLEARED_CELL1_COL, CLEARED_CELL1_ROW
-press                                               # final wipe-down of the cells cleared
+press                                               # wipe the cleared cells
 goto_coordinate = CLEARED_CELL2_COL, CLEARED_CELL2_ROW
 ...one goto per cleared cell
 release
@@ -12759,9 +13132,9 @@ polish, season, glaze, dab, smear, coat, rub, oil, wax, glue, sunscreen,
 paint) that all reduce to the same handful of shapes - recognising that is
 the job, not matching a verb to a name.
 
-- **Momentary press -> release**: turning any appliance on/off, opening/closing any door/lid/drawer, pressing any switch/button, turning any dial, squeezing any dispenser, actuating any lever. -> playbook shape 1 (press/release section).
-- **press -> wait_X -> release, on/off pair**: any full appliance cycle (wash, dry, dishwasher, brew, bake, microwave, steep, simmer, rice cooker, air fryer, toast, charge). -> playbook 6.
-- **pickup broom/brush -> consecutive collecting lanes -> keep broom/brush**: any sweep (room/floor/table). Leave the collector in place. Sweep its full-width rectangle exactly five steps outward from the opening lip (the side its listed tray runs out to; else the dustpan's widest edge, read from its shape), using every valid head lane one step apart from one side edge to the other. Verify that the translated bristles cover every target cell; do not reduce the task to two nearby strokes. Align outside the lip, then enter front-on and release at the shared point inside the tray. Apply head-to-CENTER offsets; the top-right grip correction is applied automatically later. No collector: use one shared pile cell. No cloth, bottle or serpentine. -> playbook 1/1b.
+- **Momentary press -> release**: turning any appliance on/off, pressing any switch/button, turning any dial, squeezing any dispenser, actuating any lever. Opening/closing a door, lid or drawer uses `open_door` / `close_door`. -> playbook shape 1 (press/release section).
+- **press/release -> wait_X -> press/release**: any full appliance cycle (wash, dry, dishwasher, brew, bake, microwave, steep, simmer, rice cooker, air fryer, toast, charge); the initial press starts it, the wait lets it run, and the second press stops it. A tap held open while a container fills instead uses press -> wait_X -> release. -> playbooks 6 and 17.
+- **pickup broom/brush -> consecutive collecting lanes -> keep broom/brush**: any sweep (room/floor/table). Leave the collector in place. Sweep its full-width rectangle exactly five steps outward from the opening lip (the side its listed tray runs out to; else the dustpan's widest edge, read from its shape), using every valid head lane one grid step apart from one side edge to the other. Make at least four distinct strokes when the mouth and bristle footprint permit; never repeat a lane to pad the count. Verify that the translated bristles cover every target cell; do not reduce the task to two nearby strokes. Align outside the lip, then enter front-on and release at the shared point inside the tray. Apply head-to-CENTER offsets; the top-right grip correction is applied automatically later. No collector: use one shared pile cell and at least four distinct strokes when the target area permits. No cloth, bottle or serpentine. -> playbook 1/1b.
 - **pickup mop -> contact pass -> keep mop**: mopping. -> playbook 2.
 - **pickup cloth/tool/source -> contact pass over every cell -> keep it**: ANY task whose physical action is "hold something against a surface and move it across every cell that needs it" - wiping, scrubbing, soaping, washing, dusting a surface/dish/glass, AND JUST AS MUCH spreading, coating or applying any substance across a surface or object with a tool or its own container (butter on bread, frosting on a cake, oil in a pan, sunscreen on a tray, wax on a table, glue between two pieces, paint on a panel, chalk on a board) - it is the identical motion regardless of which of those words the operator used. NEVER use a spray bottle for any of these. -> playbooks 3, 3b, 3c.
 - **pickup source -> goto destination -> pour -> return source**: pouring any liquid or granular/solid substance into a container, and watering any plant. -> playbooks 7, 13, 18.
@@ -12783,47 +13156,74 @@ time - never memorised per task name.
 
 ## OUTPUT FORMAT
 
-First output a PLAN header, one line per sub-task, tracking held state:
+Output sections in this exact order. Do not reorder. Do not wrap the answer in Markdown fences or JSON. Do not wrap any block in fence markers.
+
+### A) PLAN block (always first)
+
+Write exactly like this (no fences):
 
 PLAN:
 - <sub-task>: <objects used> | after: holding nothing
-(any missing required object -> write its MISSING line instead)
+- <sub-task>: <objects used> | after: holding <object>
 
-For ANY task that moves, swaps, rotates, or repositions objects, the PLAN MUST
-also include a DESTINATIONS block:
+Rules for PLAN lines:
+- One line per sub-task, in execution order.
+- End every line with `| after: holding nothing` or `| after: holding <exact object name>`.
+- If a required object is missing, do **not** write a fake plan for it — use the MISSING format in section D instead of commands.
+- Names in PLAN must match OBJECT LIST names (or a clear surface/area label).
+
+### B) DESTINATIONS block (required for every move/swap/rotate/reposition task)
+
+Write exactly like this (no fences):
 
 DESTINATIONS:
-- <object> -> <final cell>     (one line per moved object)
+- <object> -> <final cell>
 
-CHECK: "X goes where Y is" means X's final cell is Y's CURRENT cell (Y's CENTER
-in the OBJECT LIST). It does NOT mean Y moves to X's cell. Verify every
-DESTINATIONS line against this rule before writing commands.
+- One line per moved object. Final cell is where that object must rest when the plan finishes.
+- CHECK before commands: "X goes where Y is" means X's final cell is Y's **current** CENTER from the OBJECT LIST. It does **not** mean Y moves to X's cell unless the task also moves Y.
+- If nothing moves (pure press/wait/pour-in-place with no relocation), you may omit DESTINATIONS.
 
-Then the commands. Alpha 2D unstacking is invoked by the application itself
-before every task. Do NOT output an invoke command:
+### C) Summary + commands (operator-visible part)
 
-# one-line summary of what this plan will physically do, in plain English
-1. command
-2. command
+Immediately after PLAN/DESTINATIONS, write exactly like this (no fences):
+
+# <one plain-English line: what this plan will physically do>
+1. <command>
+2. <command>
 ...
 Task_Completed
 
-The `#` summary line above is MANDATORY and always exactly one line, written
-before the first numbered command - the operator sees only that line and the
-commands, never the PLAN/DESTINATIONS blocks above, so it must stand alone as
-a plain-English description of the plan (e.g. "Sweep the crumbs from the
-table into the pile at the corner.") - never "step 1" style, never restating
-the operator's own wording verbatim, never a MISSING line (that has its own
-format below).
+**`#` summary line — MANDATORY when you output commands:**
+- Exactly one line.
+- Plain English description of the physical result (e.g. `# Sweep the crumbs into the pile at A1.`).
+- Not "step 1…", not a verbatim paste of the operator's wording, not a MISSING line.
+- The operator may see only this summary and the numbered commands — not the PLAN/DESTINATIONS blocks — so the summary must stand alone.
 
-Strict: numbered lines contain ONLY the eight commands.
-If no physical action can be planned, explain the reason in the summary
-and output no commands. Never output Task_Completed alone for a refused or
-unresolved task; completion is only the terminator of a real action plan.
-No Markdown, no JSON, no explanations, no confidence scores. A short `#` comment
-may be appended to a command or written on its own line; everything after `#`
-is ignored by the robot and exists only to say which real-world action a generic
-press was meant to perform. Task_Completed is the final line of an action plan.
+**Numbered commands:**
+- Each line is `N. <command>` where `<command>` is exactly one form from COMMANDS.
+- No extra prose on the command line except an optional ` # comment` after the command (everything after `#` is ignored by the robot; use it only to name the real-world action a generic press performs).
+- No Markdown, JSON, bullet lists, confidence scores, or explanations between commands.
+- `Task_Completed` is the final line of a real action plan.
+
+### D) When you cannot plan physical action
+
+If no legal action plan exists (true MISSING object, already-done task, impossible hardware request, permanently out-of-reach with no alternative):
+
+- Still start with PLAN only if it helps state the blocker briefly; otherwise go straight to a single `#` summary line that states the reason.
+- Output **no** numbered commands.
+- Output **no** `Task_Completed`.
+- For a missing required object, use exactly:
+
+MISSING: <object name as the operator called it>
+
+(Use the project's established MISSING line form if a more specific template appears in the task message; never invent substitute objects.)
+
+### E) Strict inventory of allowed output characters in command lines
+
+- Command lines may contain only: the number, the period, spaces, and a legal command form (plus optional ` # comment`).
+- Any word on a command line that is not part of COMMANDS is a critical error.
+
+
 """
 
 
@@ -12921,7 +13321,9 @@ def build_planner_system(kind="full") -> str:
     return text
 
 
-DEXTERITY_MODEL = "gpt-5.4-mini"
+DEXTERITY_MODEL = "gpt-6-luna"
+DEXTERITY_REASONING = "low"     # a one-word verdict: the cheapest thinking
+DEXTERITY_MAX_TOKENS = 2000     # room for its reasoning before the verdict
 
 DEXTERITY_CHECK = False
 
@@ -13010,7 +13412,8 @@ token above, including the curly braces.
 def check_dexterity(client, task: str) -> str:
     """"dexterous" | "non-dexterous". Anything unreadable passes as non-."""
     raw = call_model(
-        client, model=DEXTERITY_MODEL, max_tokens=600, stage="Dexterity",
+        client, model=DEXTERITY_MODEL, max_tokens=DEXTERITY_MAX_TOKENS,
+        stage="Dexterity", reasoning=DEXTERITY_REASONING,
         messages=[{"role": "system", "content": DEXTERITY_SYSTEM},
                   {"role": "user", "content": task}]).lower()
     if "non-dexterous" in raw or "non_dexterous" in raw:
@@ -13031,6 +13434,13 @@ def _format_component(c) -> str:
     cells = compact_cells(_touch_cells(c))
     if cells:
         tok += f" [{cells}]"
+    details = []
+    for key, label in (("color", "color"), ("size", "size"), ("desc", "appearance")):
+        value = str(c.get(key) or "").strip()
+        if value and value != "?":
+            details.append(f"{label}: {value}")
+    if details:
+        tok += " (" + "; ".join(details) + ")"
     grip = str(c.get("grip") or "").strip().lower()
     if grip in ("hold", "avoid"):
         tok += f" (grip: {grip})"
@@ -13115,9 +13525,16 @@ def obj_to_line(o) -> str:
     comps_s = "; ".join(_format_component(c) for c in comps) if comps else "(none)"
     touches = compact_cells(_touch_cells(o)) or o.get("touches", "")
     conf = "low - treat this name as a guess" if o.get("name_uncertain") else "ok"
+    poly = o.get("polygon") or []
+    edges = ""
+    if len(poly) >= 3:
+        xs, ys = [float(q[0]) for q in poly], [float(q[1]) for q in poly]
+        edges = (f"EDGES: left {min(xs):.1f} right {max(xs):.1f} "
+                 f"top {min(ys):.1f} bottom {max(ys):.1f}  ")
     return (f"OBJECT: {o.get('name', 'object')}  "
             f"CENTER: {o.get('center', '')}  "
             f"TOUCHES: {touches}  "
+            + edges +
             f"COLOR: {o.get('color', '?')}  "
             f"SIZE: {o.get('size', '?')}  "
             f"DESC: {o.get('desc', '')}  "
@@ -13133,33 +13550,41 @@ def object_list_text(objs) -> str:
 def vision_report_text(objs, nothing_new=False, left_out=None) -> str:
     """Everything vision found, for the operator to read before the plan.
 
-    The planner's own OBJECT: lines are too wide for the chat column, so the
-    same content is folded into one short line per object: where it is, what
-    it spans, and which of its parts were outlined. `nothing_new` says the
-    names are the ones from before: nothing new was on the board.
+    The planner's own OBJECT: lines are too wide for the chat column, so this
+    shows each object's complete touched-cell list and measured visual details.
+    `nothing_new` says the names are the ones from before.
     """
     if not objs:
         return "Vision found nothing on the board."
     lines = [f"Vision - {len(objs)} object(s) on the board"
              + (" (nothing new, names kept):" if nothing_new else ":")]
     for o in objs:
-        cells = [c for c in str(o.get("touches") or "").split(",") if c.strip()]
+        cells = _touch_cells(o)
         span = f" ({len(cells)} cells)" if len(cells) > 1 else ""
-        bits = [f"* {o.get('name', 'object')} @ {o.get('center', '?')}{span}"]
+        lines.append(f"* {o.get('name', 'object')} @ {o.get('center', '?')}{span}")
+        if cells:
+            lines.append("  every touched cell: " + ", ".join(cells))
         colour = str(o.get("color") or "").strip()
         if colour and colour != "?":
-            bits.append(f"  {colour}")
+            lines.append("  color: " + colour)
+        if o.get("size"):
+            lines.append("  size: " + str(o["size"]))
+        if o.get("desc"):
+            lines.append("  appearance: " + str(o["desc"]))
         if o.get("name_uncertain"):
-            bits.append("  [unnamed - the naming model could not tell what it is]")
+            lines.append("  [unnamed - the naming model could not tell what it is]")
         comps = o.get("components") or []
-        if comps:
-            named = []
-            for c in comps:
-                cname = c.get("name", "part") if isinstance(c, dict) else str(c)
-                ccell = c.get("center") if isinstance(c, dict) else None
-                named.append(f"{cname}@{ccell}" if ccell else str(cname))
-            bits.append("  parts: " + ", ".join(named))
-        lines.append("".join(bits))
+        for c in comps:
+            if isinstance(c, dict):
+                part_cells = _touch_cells(c)
+                lines.append(f"  part {c.get('name', 'part')} @ {c.get('center', '?')}"
+                             + (": " + ", ".join(part_cells) if part_cells else ""))
+                if c.get("color") and c["color"] != "?":
+                    lines.append("    color: " + str(c["color"]))
+                if c.get("size"):
+                    lines.append("    size: " + str(c["size"]))
+                if c.get("desc"):
+                    lines.append("    appearance: " + str(c["desc"]))
     if left_out and (left_out.get("hands") or left_out.get("surface")):
         gone = []
         if left_out.get("hands"):
@@ -13173,11 +13598,6 @@ def vision_report_text(objs, nothing_new=False, left_out=None) -> str:
 
 
 POLY_SAMPLES = 8
-POLY_TOUCH_THRESHOLD = 0.28
-POLY_RELATIVE_CUT = 0.34
-POLY_MIN_COVER = 0.04
-
-
 def _poly_area(poly):
     n = len(poly)
     if n < 3:
@@ -13210,6 +13630,39 @@ def _poly_centroid(poly):
     return (cx / (6.0 * a), cy / (6.0 * a))
 
 
+def _clip_poly_axis(poly, axis, edge, keep_greater):
+    """Clip a polygon to one side of an axis-aligned edge."""
+    if not poly:
+        return []
+    out = []
+    prev = poly[-1]
+    prev_in = prev[axis] >= edge if keep_greater else prev[axis] <= edge
+    for curr in poly:
+        curr_in = curr[axis] >= edge if keep_greater else curr[axis] <= edge
+        if curr_in != prev_in:
+            delta = curr[axis] - prev[axis]
+            if abs(delta) > 1e-12:
+                t = (edge - prev[axis]) / delta
+                cross = [prev[0] + t * (curr[0] - prev[0]),
+                         prev[1] + t * (curr[1] - prev[1])]
+                cross[axis] = edge
+                out.append(tuple(cross))
+        if curr_in:
+            out.append(curr)
+        prev, prev_in = curr, curr_in
+    return out
+
+
+def _clip_poly_to_cell(poly, col, row):
+    """Clip a polygon to the unit square for one board cell."""
+    clipped = [tuple(map(float, point)) for point in poly]
+    for axis, edge, keep_greater in (
+            (0, col, True), (0, col + 1, False),
+            (1, row, True), (1, row + 1, False)):
+        clipped = _clip_poly_axis(clipped, axis, edge, keep_greater)
+    return clipped
+
+
 def _point_in_poly(x, y, poly):
     inside = False
     n = len(poly)
@@ -13221,10 +13674,6 @@ def _point_in_poly(x, y, poly):
             inside = not inside
         x0, y0 = x1, y1
     return inside
-
-
-MAX_TOUCH_CELLS_SLACK = 1.6
-MAX_TOUCH_CELLS_PAD = 6
 
 
 CENTROID_AGREE_CELLS = 0.25
@@ -13258,7 +13707,7 @@ def set_center_pt(entry, pt):
         entry["center_pt"] = [float(pt[0]), float(pt[1])]
 
 
-def polygon_to_cells(poly, cap=None):
+def polygon_to_cells(poly):
     """A (col, row) polygon in grid units -> (center_cell, touches, center_pt).
 
     `center_pt` is the same centre BEFORE it is snapped to a cell -- the
@@ -13268,16 +13717,13 @@ def polygon_to_cells(poly, cap=None):
     an eighth of its width and reads as plainly off. The overlay draws the
     honest point; only the robot rounds.
 
-    Coverage is measured by sampling points inside each candidate cell, so a
-    thin or diagonal object only claims the cells it actually crosses rather
-    than its whole bounding box -- the same rule S1-SRC's polygon_to_cells
-    uses in its own ruler space.
+    Cell contact is determined by polygon/cell intersection, so thin or
+    diagonal outlines include every cell they cross, not just cells that
+    happened to contain one of the coverage samples.
 
-    The number of cells is then capped against the outline's own area. A
-    plant traced with long slack diagonals used to come back holding every
-    cell on the board, which is not a location: it overlapped every other
-    object, made the planner's OBJECT line thousands of characters long, and
-    made any cell on the board look like part of the plant.
+    Every covered board cell is retained. The search is bounded to the board,
+    so the footprint cannot create off-board coordinates; dropping cells
+    would make contact and cleaning coverage incomplete.
     """
     xs = [p[0] for p in poly]
     ys = [p[1] for p in poly]
@@ -13288,55 +13734,37 @@ def polygon_to_cells(poly, cap=None):
     ci_lo = max(0, int(x0)); ci_hi = min(CONFIG.n_cols - 1, int(x1))
     ri_lo = max(0, int(y0)); ri_hi = min(CONFIG.n_rows - 1, int(y1))
 
-    cov = {}
+    overlaps = {}
     sum_x = sum_y = 0.0
-    n_in = 0
+    total_area = 0.0
     for ci in range(ci_lo, ci_hi + 1):
         for ri in range(ri_lo, ri_hi + 1):
-            hits = 0
-            for si in range(POLY_SAMPLES):
-                sx = ci + (si + 0.5) / POLY_SAMPLES
-                for sj in range(POLY_SAMPLES):
-                    sy = ri + (sj + 0.5) / POLY_SAMPLES
-                    if _point_in_poly(sx, sy, poly):
-                        hits += 1
-                        sum_x += sx
-                        sum_y += sy
-            n_in += hits
-            if hits:
-                cov[(ci, ri)] = hits / float(POLY_SAMPLES * POLY_SAMPLES)
+            clipped = _clip_poly_to_cell(poly, ci, ri)
+            area = _poly_area(clipped)
+            if area > 1e-10:
+                overlaps[(ci, ri)] = area
+                cx, cy = _poly_centroid(clipped)
+                sum_x += cx * area
+                sum_y += cy * area
+                total_area += area
 
-    if not cov:
+    if not overlaps:
         return None, [], None
-    best = max(cov.values())
-    cut = min(POLY_TOUCH_THRESHOLD, max(POLY_MIN_COVER, best * POLY_RELATIVE_CUT))
-    touches = [c for c, f in cov.items() if f >= cut]
-    if not touches:
-        return None, [], None
+    touches = list(overlaps)
 
-    if cap is None:
-        cap = max(8, int(math.ceil(MAX_TOUCH_CELLS_SLACK * _poly_area(poly)
-                                   + MAX_TOUCH_CELLS_PAD)))
-    if len(touches) > cap:
-        claimed = len(touches)
-        touches = sorted(touches, key=lambda c: -cov[c])[:cap]
-        print(f"[cells] outline claimed {claimed} cells for "
-              f"{_poly_area(poly):.1f} cells of area - kept the {cap} "
-              f"best-covered")
-
-    wx = sum_x / n_in
-    wy = sum_y / n_in
+    wx, wy = ((sum_x / total_area, sum_y / total_area) if total_area
+              else _poly_centroid(poly))
     gx, gy = _poly_centroid(poly)
     if abs(gx - wx) <= CENTROID_AGREE_CELLS and abs(gy - wy) <= CENTROID_AGREE_CELLS:
         wx, wy = gx, gy
     wc = min(CONFIG.n_cols - 1, max(0, int(round(wx, 9))))
     wr = min(CONFIG.n_rows - 1, max(0, int(round(wy, 9))))
-    if (wc, wr) in cov or _cell_enclosed(cov, wc, wr):
+    if (wc, wr) in overlaps or _cell_enclosed(overlaps, wc, wr):
         centre = (wc, wr)
     else:
-        centre = min(cov.keys(),
+        centre = min(overlaps,
                      key=lambda cr: ((cr[0] + 0.5 - wx) ** 2
-                                     + (cr[1] + 0.5 - wy) ** 2, -cov[cr]))
+                                     + (cr[1] + 0.5 - wy) ** 2, -overlaps[cr]))
     if centre not in touches:
         touches.append(centre)
     touches.sort(key=lambda c: (c[1], c[0]))
@@ -13532,43 +13960,6 @@ def size_class(span_in: float) -> str:
     return "small" if span_in < 4.0 else "medium" if span_in <= 10.0 else "large"
 
 
-GRIP_PART_PRIORITY = ("handle", "grip", "shaft", "stick", "pole", "stem",
-                      "strap", "neck", "rim", "edge", "wall", "body", "base")
-
-GRIP_AVOID_PARTS = (
-    "blade", "cutting edge", "sharp", "tooth", "teeth", "tine", "point",
-    "burner", "hob", "hotplate", "heating element", "element", "flame",
-    "bristle", "brush head", "mop head", "head", "pad", "sponge",
-    "spout", "nozzle", "trigger", "button", "switch", "dial", "knob",
-    "screen", "display", "glass", "window", "panel",
-    "cavity", "interior", "drum", "opening", "slot", "contents", "lid",
-)
-
-GRIP_HAZARD_PARTS = ("blade", "cutting edge", "sharp", "tooth", "teeth",
-                     "tine", "burner", "hob", "hotplate", "heating element",
-                     "flame")
-
-
-def _is_hazard_part(name: str) -> bool:
-    low = str(name or "").strip().lower()
-    return any(bad in low for bad in GRIP_HAZARD_PARTS)
-
-
-def _is_avoid_part(name: str, extra=()) -> bool:
-    low = str(name or "").strip().lower()
-    if not low:
-        return True
-    bad_words = tuple(GRIP_AVOID_PARTS) + tuple(
-        str(e).strip().lower() for e in extra if str(e).strip())
-    return any(bad and bad in low for bad in bad_words)
-
-
-def _comp_verdict(c) -> str:
-    """The component pass's own verdict for a part: 'hold', 'avoid', or ''."""
-    v = str(c.get("grip") or "").strip().lower()
-    return v if v in ("hold", "avoid") else ""
-
-
 def object_cells(o) -> set:
     """Every cell an object occupies, upper-cased, CENTER included."""
     cells = {str(o.get("center") or "").strip().upper()}
@@ -13672,155 +14063,6 @@ def cell_on_object(o, cell: str, slack: int = GRIP_CELL_SLACK) -> bool:
                for c in known)
 
 
-def default_grip_part(o):
-    """Best graspable component of an object, as (part_name, cell), or None.
-
-    Deterministic and offline -- it reads only what the component pass
-    already measured. This is what makes the feature degrade gracefully:
-    with Gripper AI off, timed out, or simply silent about this object, a
-    knife whose handle was outlined is still picked up by the handle.
-    """
-    best = None
-    for c in (o.get("components") or []):
-        name = c.get("name") or ""
-        cell = str(c.get("center") or "").strip().upper()
-        verdict = _comp_verdict(c)
-        if not cell or verdict == "avoid" or _is_hazard_part(name):
-            continue
-        if verdict != "hold" and _is_avoid_part(name):
-            continue
-        if not cell_on_object(o, cell):
-            continue
-        rank = next((i for i, key in enumerate(GRIP_PART_PRIORITY)
-                    if key in name.lower()), None)
-        if rank is None:
-            if verdict != "hold":
-                continue
-            rank = len(GRIP_PART_PRIORITY)
-        if best is None or rank < best[0]:
-            best = (rank, name, cell)
-    return (best[1], best[2]) if best else None
-
-
-def _match_object(name: str, objs: list):
-    low = str(name or "").strip().lower()
-    if not low:
-        return None
-    for o in objs:
-        if str(o.get("name", "")).strip().lower() == low:
-            return o
-    for o in objs:
-        aka = o.get("aka") or []
-        if isinstance(aka, str):
-            aka = [aka]
-        if any(str(a).strip().lower() == low for a in aka):
-            return o
-    for o in objs:
-        on = str(o.get("name", "")).strip().lower()
-        if on and (on in low or low in on):
-            return o
-    return None
-
-
-def _component_cell(o, part: str, extra_avoid=()):
-    low = str(part or "").strip().lower()
-    if not low or _is_hazard_part(low) or _is_avoid_part(low, extra_avoid):
-        return None, None
-    comps = o.get("components") or []
-    for c in comps:
-        if (c.get("name") or "").strip().lower() == low:
-            if _comp_verdict(c) == "avoid" or _is_hazard_part(c.get("name")):
-                return None, None
-            cell = str(c.get("center") or "").strip().upper()
-            return (c.get("name"), cell) if cell else (None, None)
-    for c in comps:
-        cn = (c.get("name") or "").strip().lower()
-        if not cn or _comp_verdict(c) == "avoid":
-            continue
-        if (cn in low or low in cn) and not _is_avoid_part(cn, extra_avoid):
-            cell = str(c.get("center") or "").strip().upper()
-            if cell:
-                return c.get("name"), cell
-    return None, None
-
-
-def resolve_grip_cells(grips: list, objs: list) -> list:
-    """Gripper AI's answer + the object list -> grip points the planner can use.
-
-    Every returned cell is one the OBJECT LIST already contained for that
-    object. A model answer naming an unknown object, an unsafe part, or a
-    cell not on the object is discarded rather than corrected -- the
-    fallback (the object's own CENTER) is the behaviour the planner had
-    anyway. Objects the model skipped are filled in from their components,
-    so grip points exist even when the call returned nothing at all.
-    """
-    resolved, claimed = [], set()
-
-    for g in grips or []:
-        if not isinstance(g, dict):
-            continue
-        o = _match_object(g.get("object"), objs)
-        if o is None:
-            continue
-        name = str(o.get("name", "object"))
-        if name in claimed:
-            continue
-        avoid = g.get("avoid") or []
-        if isinstance(avoid, str):
-            avoid = [avoid]
-        center = str(o.get("center") or "").strip().upper()
-
-        part_name = str(g.get("part") or "").strip()
-        part, cell = _component_cell(o, part_name, avoid)
-        source = "part"
-        if cell and not cell_on_object(o, cell):
-            part, cell = None, None
-        if not cell:
-            raw = str(g.get("cell") or "").strip().upper()
-            if (raw in object_cells(o)
-                    and not _is_hazard_part(part_name)
-                    and not _is_avoid_part(part_name, avoid)):
-                part, cell, source = (part_name or None), raw, "vision"
-        if not cell:
-            fallback = default_grip_part(o)
-            if fallback:
-                part, cell, source = fallback[0], fallback[1], "parts"
-        if not cell or not cell_on_object(o, cell):
-            continue
-
-        cell = top_right_grip_cell(o)
-        source = "camera-top-right"
-        override = bool(center and cell != center)
-        if not (override or g.get("approach") or avoid or g.get("why")):
-            continue
-        claimed.add(name)
-        resolved.append({
-            "object": name, "part": part or "", "cell": cell, "center": center,
-            "approach": str(g.get("approach") or "").strip().lower(),
-            "avoid": [str(a).strip() for a in avoid if str(a).strip()],
-            "why": str(g.get("why") or "").strip(),
-            "source": source, "override": override,
-        })
-
-    for o in objs:
-        name = str(o.get("name", "object"))
-        if name in claimed:
-            continue
-        corner_cell = top_right_grip_cell(o)
-        if not corner_cell:
-            continue
-        center = str(o.get("center") or "").strip().upper()
-        if corner_cell == center:
-            continue
-        claimed.add(name)
-        resolved.append({
-            "object": name, "part": "top-right corner", "cell": corner_cell,
-            "center": center, "approach": "", "avoid": [], "why": "",
-            "source": "camera-top-right", "override": True,
-        })
-    return resolved
-
-
 GRIP_SUBST_RE = re.compile(
     r"(goto_coordinate\s*[:=]?\s*)([A-Za-z]{1,2})\s*,?\s*(\d{1,2})\b", re.I)
 
@@ -13828,105 +14070,6 @@ GRIP_SUBST_RE = re.compile(
 def _bare_command(line: str) -> str:
     l = re.sub(r"^\s*\d+\.\s*", "", line)
     return l.split("#", 1)[0].strip()
-
-
-def _shift_coordinate_line(line: str, dc: int, dr: int):
-    """Rewrite one goto_coordinate line's cell by (dc, dr) columns/rows.
-
-    Returns the rewritten line, or the line unchanged if it does not parse
-    or the shifted cell falls off the board (better to place dead-centre
-    than to send the gantry somewhere CONFIG never validated).
-    """
-    m = GRIP_SUBST_RE.search(line)
-    if not m:
-        return line
-    coord = parse_coordinate(f"{m.group(2).upper()}{m.group(3)}")
-    if coord is None:
-        return line
-    col_idx, row_idx = coord[0] + dc, coord[1] + dr
-    if not (0 <= col_idx < CONFIG.n_cols and 0 <= row_idx < CONFIG.n_rows):
-        return line
-    name = coordinate_name(col_idx, row_idx)
-    nm = re.match(r"([A-Za-z]{1,2})(\d{1,2})", name)
-    return GRIP_SUBST_RE.sub(
-        lambda mm, _c=nm.group(1), _r=nm.group(2): f"{mm.group(1)}{_c}, {_r}",
-        line, count=1)
-
-
-def apply_grip_substitution(text: str, grips: list):
-    """The ONLY place a grip point changes what the robot does.
-
-    For each object with an override, finds the goto_coordinate that leads
-    straight into that object's FIRST pickup and rewrites the coordinate on
-    that one line, leaving every other line, every other cell, every later
-    pickup of the same object untouched. A goto not immediately followed by
-    pickup (a slide, a press, a contact pass) is never touched, and neither
-    is a cell no override names.
-
-    Gripping off-centre moves the object's own centre with it: the jaws
-    close on the grip cell, so whatever the gripper is holding sits shifted
-    from centre by exactly (grip cell - object centre), the whole time it is
-    held. The very next goto_coordinate -> keep after that pickup -- the
-    object's placement, per the planner's own "finish one object's full
-    sequence before starting another" rule -- is shifted by that same
-    vector, so it is the OBJECT's centre that lands on the destination
-    cell the plan asked for, not the gripper's off-centre contact point.
-
-    Returns (possibly-rewritten text, [grip dicts actually applied]).
-    """
-    overrides = {}
-    for g in grips or []:
-        if g.get("override") and g.get("center") and g.get("cell"):
-            overrides.setdefault(str(g["center"]).strip().upper(), g)
-    if not overrides:
-        return text, []
-
-    lines = text.splitlines()
-    used, applied = set(), []
-    pending = None
-    place_shift = None
-
-    for i, line in enumerate(lines):
-        bare = _bare_command(line)
-        if not bare:
-            continue
-        low = bare.lower()
-        if low.startswith("goto_coordinate"):
-            m = GRIP_SUBST_RE.search(bare)
-            pending = (i, m) if m else None
-            if place_shift is not None:
-                dc, dr = place_shift
-                lines[i] = _shift_coordinate_line(lines[i], dc, dr)
-            continue
-        if low == "pickup":
-            if pending is not None:
-                i0, m0 = pending
-                cell = f"{m0.group(2).upper()}{m0.group(3)}"
-                g = overrides.get(cell)
-                if g is not None and cell not in used:
-                    grip_coord = parse_coordinate(g["cell"])
-                    centre_coord = parse_coordinate(cell)
-                    nm = re.match(r"([A-Za-z]{1,2})(\d{1,2})", g["cell"])
-                    if nm:
-                        lines[i0] = GRIP_SUBST_RE.sub(
-                            lambda mm, _c=nm.group(1), _r=nm.group(2):
-                                f"{mm.group(1)}{_c}, {_r}",
-                            lines[i0], count=1)
-                        used.add(cell)
-                        applied.append(g)
-                        if grip_coord is not None and centre_coord is not None:
-                            place_shift = (grip_coord[0] - centre_coord[0],
-                                          grip_coord[1] - centre_coord[1])
-                            if place_shift == (0, 0):
-                                place_shift = None
-            pending = None
-            continue
-        if low == "keep":
-            place_shift = None
-            pending = None
-            continue
-        pending = None
-    return "\n".join(lines), applied
 
 
 def _cells_of(o, shift=(0, 0)):
@@ -13937,6 +14080,34 @@ def _cells_of(o, shift=(0, 0)):
         if c is not None:
             out.add((c[0] + shift[0], c[1] + shift[1]))
     return out
+
+
+def object_at_cell(objs, moved, cell, slack=0):
+    """The index of the object at grid `cell` (col, row), each object shifted
+    by `moved[i]` (where the plan has carried it so far), or None.
+
+    An object whose own CENTER is the cell wins; otherwise the smallest
+    object covering it. With `slack`, a cell no object covers falls to the
+    object with a cell nearest it, at most `slack` cells away (ties: the
+    smaller object) -- a pickup written one cell off its object."""
+    hits = [i for i, o in enumerate(objs) if cell in _cells_of(o, moved[i])]
+    if not hits and slack > 0:
+        near = []
+        for i, o in enumerate(objs):
+            cells = _cells_of(o, moved[i])
+            if cells:
+                d = min(max(abs(cell[0] - c[0]), abs(cell[1] - c[1]))
+                        for c in cells)
+                if d <= slack:
+                    near.append((d, len(cells), i))
+        return min(near)[2] if near else None
+    if not hits:
+        return None
+    for i in hits:
+        c = parse_coordinate(str(objs[i].get("center") or ""))
+        if c is not None and (c[0] + moved[i][0], c[1] + moved[i][1]) == cell:
+            return i
+    return min(hits, key=lambda i: len(_cells_of(objs[i])))
 
 
 def _press_part_cells(o, shift=(0, 0)):
@@ -14026,15 +14197,8 @@ def enforce_gripper_targets(text: str, objects, task=""):
     changes = []
     moved = [(0, 0)] * len(objs)
 
-    def find(cell):
-        hits = [i for i, o in enumerate(objs) if cell in _cells_of(o, moved[i])]
-        if not hits:
-            return None
-        for i in hits:
-            c = parse_coordinate(str(objs[i].get("center") or ""))
-            if c is not None and (c[0] + moved[i][0], c[1] + moved[i][1]) == cell:
-                return i
-        return min(hits, key=lambda i: len(_cells_of(objs[i])))
+    def find(cell, slack=0):
+        return object_at_cell(objs, moved, cell, slack)
 
     def try_shift(gi, planned, idx, target, action, where):
         """Apply (target - planned) to `gi` and every goto in its held
@@ -14069,7 +14233,10 @@ def enforce_gripper_targets(text: str, objects, task=""):
             holding = None
             if last_goto is not None and last_goto[1] is not None:
                 gi, planned = last_goto
-                idx = find(planned)
+                # a pickup cell just off the object still means that object:
+                # it is gripped at ITS top-right corner, never at the cell
+                # the planner happened to write
+                idx = find(planned, GRIP_CELL_SLACK)
                 if idx is not None and planned not in fold_cells:
                     o = objs[idx]
                     tr = parse_coordinate(top_right_grip_cell(o))
@@ -14114,8 +14281,538 @@ def gripper_target_lines(changes: list) -> list:
             f"- {c['where']} (plan said {c['was']})" for c in changes]
 
 
+# ---------------------------------------------------------------------------
+# PLACEMENTS -- where a move puts the WHOLE object, measured by S1 (user,
+# 2026-10-11: "keep the cloth to it's right" was planned onto the bottom
+# left: the planner read "it" as a small block at A13 and sent the cloth's
+# CENTER to the cell beside it, as if the 6 x 6-cell cloth were one cell --
+# half of it off the board and into the red band). An object's size, the
+# other objects' edges, the board's edges and the red band are geometry S1
+# measures from the outlines; the planner only chooses which placement the
+# task means and copies its cell. A move is whole cells of the object's
+# CENTER (the planner's pickup and keep cells; the grip shift onto the
+# top-right corner moves both alike, so the object moves the same).
+# ---------------------------------------------------------------------------
+PLACE_TOL = 0.2          # an outline this far past the reachable board is still on it
+PLACE_MAX_MOVERS = 6     # objects with lines of their own when the task names none
+PLACE_ON_BOARD = True    # keep_moves_on_board: no put-down off the reachable board
+# a task that puts something to a side, an edge, a corner or the middle --
+# of itself, of the board ("to its right", "the top-left corner", "3 cells
+# down") -- or by another object ("left of", "next to", "touching", "line
+# up"): only then is a PLACEMENTS block worth its tokens
+PLACE_SIDE_RE = re.compile(
+    r"\b(?:left|right|up|upward|upwards|down|downward|downwards|top|bottom|"
+    r"corner|corners|middle|cent(?:re|er)|side|edge|edges|row|column|"
+    r"cells?|squares?|spaces?)\b", re.I)
+PLACE_REL_RE = re.compile(
+    r"\b(?:of|beside|besides|next|near|nearer|closer|close|by|touch\w*|"
+    r"against|between|above|below|under|underneath|over|line|lined|lines|"
+    r"align\w*|level|flush|behind|front)\b", re.I)
+PLACE_LEVEL_RE = re.compile(r"\b(?:line|lined|lines|align\w*|level|flush|edge|edges)\b", re.I)
+PLACE_PRONOUN_RE = re.compile(
+    r"\b(?:it|them|this|that|these|those)\b(?!\s*['’]\s*s\b)", re.I)
+PLACE_BETWEEN_RE = re.compile(r"\bbetween\b", re.I)
+# a task that only points back at the last one ("redo", "do it again")
+PLACE_REDO_RE = re.compile(r"\b(?:redo|re-do|again|repeat|retry|same)\b", re.I)
+
+
+def _round_half_up(x) -> int:
+    return int(math.floor(x + 0.5))
+
+
+def _object_box(o):
+    """(left, right, top, bottom) of an object in grid units: its outline,
+    else its cells. None when it has neither."""
+    poly = o.get("polygon") if isinstance(o, dict) else None
+    if poly and len(poly) >= 3:
+        try:
+            xs = [float(p[0]) for p in poly]
+            ys = [float(p[1]) for p in poly]
+            return min(xs), max(xs), min(ys), max(ys)
+        except (TypeError, ValueError, IndexError):
+            pass
+    cells = [parse_coordinate(c) for c in object_cells(o)] if isinstance(o, dict) else []
+    cells = [c for c in cells if c is not None]
+    if not cells:
+        return None
+    return (min(c[0] for c in cells), max(c[0] for c in cells) + 1,
+            min(c[1] for c in cells), max(c[1] for c in cells) + 1)
+
+
+def _shift_box(box, dx, dy):
+    l, r, t, b = box
+    return l + dx, r + dx, t + dy, b + dy
+
+
+def _place_area():
+    """(c0, r0, c1, r1): the reachable board in grid units (the red band
+    left out)."""
+    cells = reachable_cells()
+    return cells if cells is not None else (0, 0, CONFIG.n_cols, CONFIG.n_rows)
+
+
+def place_room(box, area=None):
+    """(dx_lo, dx_hi, dy_lo, dy_hi): the whole-cell moves that keep all of
+    `box` on the reachable board (PLACE_TOL of slack). An object already
+    over an edge may stay as it is, never go further out; one too big to
+    fit is centred."""
+    c0, r0, c1, r1 = area or _place_area()
+    l, r, t, b = box
+    out = []
+    for lo_edge, hi_edge, a, z in ((c0, c1, l, r), (r0, r1, t, b)):
+        lo = math.ceil(lo_edge - a - PLACE_TOL)
+        hi = math.floor(hi_edge - z + PLACE_TOL)
+        if lo > hi:
+            lo = hi = _round_half_up(((lo_edge + hi_edge) - (a + z)) / 2.0)
+        out += [min(lo, 0), max(hi, 0)]
+    return tuple(out)
+
+
+def _span_words(box) -> str:
+    """"columns D-J, rows 4-10": the cells a box reaches into."""
+    l, r, t, b = box
+
+    def run(a, z, n, names):
+        i0 = int(max(0, min(n - 1, math.floor(a + 0.05))))
+        i1 = int(max(i0, min(n - 1, math.ceil(z - 0.05) - 1)))
+        return str(names[i0]) + ("" if i1 == i0 else f"-{names[i1]}")
+    return (f"columns {run(l, r, CONFIG.n_cols, CONFIG.columns)}, "
+            f"rows {run(t, b, CONFIG.n_rows, CONFIG.rows)}")
+
+
+def _poly_overlap(p, q, scale=8) -> float:
+    """Area, in cells, where two grid-unit polygons overlap (rasterised)."""
+    if not p or not q or len(p) < 3 or len(q) < 3:
+        return 0.0
+    xs = [float(v[0]) for v in p] + [float(v[0]) for v in q]
+    ys = [float(v[1]) for v in p] + [float(v[1]) for v in q]
+    x0, y0 = math.floor(min(xs)), math.floor(min(ys))
+    w = int(math.ceil((max(xs) - x0) * scale)) + 2
+    h = int(math.ceil((max(ys) - y0) * scale)) + 2
+    if w <= 2 or h <= 2 or w * h > 4_000_000:
+        return 0.0
+    masks = []
+    for poly in (p, q):
+        m = np.zeros((h, w), np.uint8)
+        pts = np.array([[(float(v[0]) - x0) * scale, (float(v[1]) - y0) * scale]
+                        for v in poly], np.float32)
+        cv2.fillPoly(m, [np.round(pts).astype(np.int32)], 1)
+        masks.append(m)
+    return float(np.count_nonzero(masks[0] & masks[1])) / float(scale * scale)
+
+
+def _object_poly(o, box=None):
+    """The object's outline, else its box as one."""
+    poly = o.get("polygon") or []
+    if len(poly) >= 3:
+        return [(float(v[0]), float(v[1])) for v in poly]
+    l, r, t, b = box or _object_box(o)
+    return [(l, t), (r, t), (r, b), (l, b)]
+
+
+def _carried_with(objs, i) -> set:
+    """The objects that go along when object i is picked up: smaller ones
+    (under a quarter of its size) lying on it or stuck to its edge -- the
+    notebook's tab."""
+    own = _object_poly(objs[i])
+    size = max(1e-6, _poly_area(own))
+    out = set()
+    for j, other in enumerate(objs):
+        if j == i or _object_box(other) is None:
+            continue
+        q = _object_poly(other)
+        if (_poly_area(q) < 0.25 * size
+                and (_poly_overlap(own, q) > 0.0 or _polys_touch(own, q, 0.15))):
+            out.add(j)
+    return out
+
+
+def _lands_on(objs, i, dx, dy, skip=()) -> list:
+    """The names of the other objects object i would lie on (or under) after
+    moving (dx, dy): more than a quarter cell of their outlines overlapping
+    (what it carries along aside)."""
+    o = objs[i]
+    poly = [(x + dx, y + dy) for x, y in _object_poly(o)]
+    carried = _carried_with(objs, i) if (dx, dy) != (0, 0) else set()
+    hit = []
+    for j, other in enumerate(objs):
+        if j == i or j in skip or j in carried or _object_box(other) is None:
+            continue
+        if _poly_overlap(poly, _object_poly(other)) > 0.25:
+            hit.append(str(other.get("name") or "object"))
+    return hit
+
+
+def _free_spot(objs, i, dx, dy, axis, lo, hi, keep=None, skip=()):
+    """The (dx, dy) nearest the given one, sliding along `axis` ("x" / "y")
+    within [lo, hi] only, where object i lands on nothing (`skip` aside)
+    and keep(dx, dy) holds; None when there is no such spot."""
+    for k in range(1, max(0, hi - lo) + 1):
+        for sgn in (1, -1):
+            cand = (dx, dy + sgn * k) if axis == "y" else (dx + sgn * k, dy)
+            v = cand[1] if axis == "y" else cand[0]
+            if not lo <= v <= hi:
+                continue
+            if keep is not None and not keep(*cand):
+                continue
+            if not _lands_on(objs, i, *cand, skip=skip):
+                return cand
+    return None
+
+
+def mentioned_objects(task, objects) -> list:
+    """Indices of the objects the task names, in the order it names them:
+    an object's name or an ALSO_KNOWN_AS entry, whole or by its last word
+    ("the notebook" for a "black notebook"), singular or plural."""
+    text = " " + " ".join(re.findall(r"[a-z]+", (task or "").lower())) + " "
+    first = {}
+    for i, o in enumerate(objects or ()):
+        aka = o.get("aka") or []
+        aka = [aka] if isinstance(aka, str) else list(aka)
+        for name in [o.get("name") or ""] + aka:
+            words = re.findall(r"[a-z]+", str(name).lower())
+            if not words:
+                continue
+            for cand in {" ".join(words), words[-1]}:
+                if len(cand) < 3:
+                    continue
+                for end in ("", "s", "es"):
+                    at = text.find(f" {cand}{end} ")
+                    if at >= 0 and at < first.get(i, 10 ** 9):
+                        first[i] = at
+    return sorted(first, key=lambda i: (first[i], i))
+
+
+def _relation_moves(box, pbox):
+    """{relation: (dx, dy)}: the whole-cell move of an object with `box`
+    that brings its facing edge closest to `pbox`'s (a tie goes to the
+    overlap: touching beats a gap), keeping it level with the other object
+    when it already is, else centring it on it across the other axis."""
+    l, r, t, b = box
+    pl, pr, pt, pb = pbox
+    ocx, ocy = (l + r) / 2.0, (t + b) / 2.0
+    pcx, pcy = (pl + pr) / 2.0, (pt + pb) / 2.0
+    keep_y = 0 if pt <= ocy <= pb else _round_half_up(pcy - ocy)
+    keep_x = 0 if pl <= ocx <= pr else _round_half_up(pcx - ocx)
+    return {"left of": (int(math.floor(pl - r + 0.5)), keep_y),
+            "right of": (int(math.ceil(pr - l - 0.5)), keep_y),
+            "above": (keep_x, int(math.floor(pt - b + 0.5))),
+            "below": (keep_x, int(math.ceil(pb - t - 0.5)))}
+
+
+def _relation_holds(rel, box, pbox, dx, dy) -> bool:
+    """After the move, is the object on that side of the other and touching
+    it -- at most half a cell over or apart, and level with it across the
+    other axis?"""
+    l, r, t, b = _shift_box(box, dx, dy)
+    pl, pr, pt, pb = pbox
+    gap = {"left of": pl - r, "right of": l - pr,
+           "above": pt - b, "below": t - pb}[rel]
+    level = (min(b, pb) - max(t, pt) if rel in ("left of", "right of")
+             else min(r, pr) - max(l, pl))
+    return -0.5 <= gap <= 0.75 and level > 0.25
+
+
+def _between_move(box, pbox, qbox):
+    """(dx, dy) centring an object in the gap between two others, and the
+    gap's width in cells (negative: they overlap), or None."""
+    l, r, t, b = box
+    ocx, ocy = (l + r) / 2.0, (t + b) / 2.0
+    if pbox[1] <= qbox[0] or qbox[1] <= pbox[0]:
+        a, z = (pbox[1], qbox[0]) if pbox[1] <= qbox[0] else (qbox[1], pbox[0])
+        tx = (a + z) / 2.0
+        ty = ((pbox[2] + pbox[3]) + (qbox[2] + qbox[3])) / 4.0
+        return _round_half_up(tx - ocx), _round_half_up(ty - ocy), z - a, r - l
+    if pbox[3] <= qbox[2] or qbox[3] <= pbox[2]:
+        a, z = (pbox[3], qbox[2]) if pbox[3] <= qbox[2] else (qbox[3], pbox[2])
+        ty = (a + z) / 2.0
+        tx = ((pbox[0] + pbox[1]) + (qbox[0] + qbox[1])) / 4.0
+        return _round_half_up(tx - ocx), _round_half_up(ty - ocy), z - a, b - t
+    return None
+
+
+def placement_lines(objects, task) -> list:
+    """The PLACEMENTS block's lines (see placement_recipe_text). Side moves
+    for the objects the task names (every object, when it names none or
+    stands one in with "it"); placements by another object -- touching it
+    on a side, beside it, level with it, between two -- only for the first
+    object named (or the stood-in ones), by the others named."""
+    task = task or ""
+    side, rel = PLACE_SIDE_RE.search(task), PLACE_REL_RE.search(task)
+    if not (side or rel):
+        return []
+    objs = [o for o in objects or ()
+            if parse_coordinate(str(o.get("center") or "")) is not None
+            and _object_box(o) is not None]
+    if not objs:
+        return []
+    named = mentioned_objects(task, objs)
+    if not named:
+        movers, refs = list(range(len(objs))), []
+    elif len(named) < 2 and PLACE_PRONOUN_RE.search(task):
+        # "put it next to the cup": "it" is one of the others
+        movers = [i for i in range(len(objs)) if i not in named] or list(named)
+        refs = list(named)
+    else:
+        movers, refs = list(named), list(named)
+    movers = movers[:PLACE_MAX_MOVERS]
+    stood_in = bool(named) and len(named) < 2 and movers != list(named)
+    relating = (set(movers) if stood_in else set(movers[:1])) if rel else set()
+    c0, r0, c1, r1 = _place_area()
+    last_row = CONFIG.rows[r1 - 1]
+
+    def cell(o, dx, dy):
+        c = parse_coordinate(str(o.get("center") or ""))
+        col, row = c[0] + dx, c[1] + dy
+        if not (0 <= col < CONFIG.n_cols and 0 <= row < CONFIG.n_rows):
+            return None
+        return coordinate_name(col, row)
+
+    def dest(i, dx, dy, skip=(), free=None):
+        """The cell for a move, and what it lands on. `free`: (axis, lo, hi,
+        keep, what) -- where to look for the nearest spot that lands on
+        nothing, sliding the move along that axis only (keep(dx, dy): the
+        spot still is what the line says)."""
+        where = cell(objs[i], dx, dy)
+        if where is None:
+            return "no room"
+        on = _lands_on(objs, i, dx, dy, skip)
+        if not on:
+            return where
+        note = f"lands on the {', the '.join(on)}"
+        if free is not None:
+            axis, lo, hi, keep, what = free
+            got = _free_spot(objs, i, dx, dy, axis, lo, hi, keep, skip)
+            if got is not None and cell(objs[i], *got) is not None:
+                note += f"; nearest free spot {what}: {cell(objs[i], *got)}"
+        return f"{where} ({note})"
+
+    lines = []
+    for i in movers:
+        o = objs[i]
+        name = str(o.get("name") or "object")
+        box = _object_box(o)
+        lo_x, hi_x, lo_y, hi_y = place_room(box)
+        l, r, t, b = box
+        lines.append(f"{name} - CENTER {str(o.get('center')).upper()}, now covers "
+                     f"{_span_words(box)} (about {r - l:.1f} x {b - t:.1f} cells):")
+        for word, sign, size, lo, hi, edge, unit in (
+                ("right", 1, r - l, lo_x, hi_x, "the board's right edge", "column"),
+                ("left", -1, r - l, lo_x, hi_x, "the board's left edge", "column"),
+                ("up", -1, b - t, lo_y, hi_y, "the board's top edge (row 1)", "row"),
+                ("down", 1, b - t, lo_y, hi_y,
+                 f"the bottom of the reach (row {last_row})", "row")):
+            room = hi if sign > 0 else -lo
+            clear = max(1, int(math.ceil(size - PLACE_TOL)))
+
+            def mv(n, _sign=sign, _unit=unit, _what="that side"):
+                d = _sign * n
+                if _unit == "column":
+                    return dest(i, d, 0, free=("y", lo_y, hi_y, None, _what))
+                return dest(i, 0, d, free=("x", lo_x, hi_x, None, _what))
+            if room <= 0:
+                lines.append(f"  {word}: no room - it already lies against {edge}")
+            elif room < clear:
+                lines.append(f"  {word}: only {room} {unit}{'s' if room > 1 else ''} "
+                             f"of room - against {edge}: "
+                             f"{mv(room, _what='against that edge')}")
+            elif room == clear:
+                lines.append(f"  {word}: clear of where it is now, against {edge}: "
+                             f"{mv(clear, _what='against that edge')}")
+            else:
+                lines.append(f"  {word}: clear of where it is now {mv(clear)}; "
+                             f"against {edge} {mv(room, _what='against that edge')}")
+        mx = max(lo_x, min(hi_x, _round_half_up(((c0 + c1) - (l + r)) / 2.0)))
+        my = max(lo_y, min(hi_y, _round_half_up(((r0 + r1) - (t + b)) / 2.0)))
+        middle = dest(i, mx, my)
+        if "lands on" in middle:
+            ring = sorted(((ax, ay) for ax in range(lo_x, hi_x + 1)
+                           for ay in range(lo_y, hi_y + 1)),
+                          key=lambda q: ((q[0] - mx) ** 2 + (q[1] - my) ** 2, q))
+            for q in ring[:120]:
+                if not _lands_on(objs, i, *q):
+                    middle = middle[:-1] + f"; nearest free spot: {cell(o, *q)})"
+                    break
+        lines.append(f"  corners: top-left {dest(i, lo_x, lo_y)}, top-right "
+                     f"{dest(i, hi_x, lo_y)}, bottom-left {dest(i, lo_x, hi_y)}, "
+                     f"bottom-right {dest(i, hi_x, hi_y)}; middle of the reachable "
+                     f"board {middle}")
+        if i not in relating:
+            continue
+        for j in refs:
+            if j == i:
+                continue
+            p = objs[j]
+            pname = str(p.get("name") or "object")
+            pbox = _object_box(p)
+            sides = {}
+            for rel_word, (dx, dy) in _relation_moves(box, pbox).items():
+                fx, fy = max(lo_x, min(hi_x, dx)), max(lo_y, min(hi_y, dy))
+                if _relation_holds(rel_word, box, pbox, fx, fy):
+                    sides[rel_word] = (fx, fy)
+            def along(w, _box=box, _pbox=pbox):
+                axis = "y" if w in ("left of", "right of") else "x"
+                lo, hi = (lo_y, hi_y) if axis == "y" else (lo_x, hi_x)
+                return (axis, lo, hi,
+                        lambda dx, dy, _w=w: _relation_holds(_w, _box, _pbox, dx, dy),
+                        "still touching it")
+            label = {"left of": "left of it", "right of": "right of it",
+                     "above": "above it (toward row 1)",
+                     "below": "below it (toward the last row)"}
+            parts = [f"{label[w]} {dest(i, *sides[w], skip=(j,), free=along(w))}"
+                     if w in sides else f"{label[w]}: no room"
+                     for w in ("left of", "right of", "above", "below")]
+            lines.append(f"  touching the {pname}: " + "; ".join(parts))
+            if sides:
+                near = min(sides, key=lambda k: (abs(sides[k][0]) + abs(sides[k][1]),
+                                                list(sides).index(k)))
+                lines.append(f"  next to the {pname} (its nearest side: {label[near]}): "
+                             f"{dest(i, *sides[near], skip=(j,), free=along(near))}")
+            if PLACE_LEVEL_RE.search(task):
+                pl, pr, pt, pb = pbox
+                levels = []
+                for word, dx, dy in (("top", 0, _round_half_up(pt - t)),
+                                     ("bottom", 0, _round_half_up(pb - b)),
+                                     ("left", _round_half_up(pl - l), 0),
+                                     ("right", _round_half_up(pr - r), 0)):
+                    ok = lo_x <= dx <= hi_x and lo_y <= dy <= hi_y
+                    levels.append(f"{word} {dest(i, dx, dy) if ok else 'no room'}")
+                lines.append(f"  an edge of it level with the same edge of the "
+                             f"{pname}: " + "; ".join(levels))
+        if PLACE_BETWEEN_RE.search(task):
+            others = [j for j in refs if j != i]
+            if len(others) >= 2:
+                p, q = objs[others[0]], objs[others[1]]
+                got = _between_move(box, _object_box(p), _object_box(q))
+                if got is not None:
+                    dx, dy, gap, need = got
+                    dx, dy = max(lo_x, min(hi_x, dx)), max(lo_y, min(hi_y, dy))
+                    tight = (f" (the gap is {max(gap, 0.0):.1f} cells, it is "
+                             f"{need:.1f} wide: it overlaps them)" if gap < need - 0.25
+                             else "")
+                    lines.append(f"  between the {p.get('name')} and the "
+                                 f"{q.get('name')}: {cell(o, dx, dy)}{tight}")
+    return lines
+
+
+def placement_task_text(task, history="") -> str:
+    """The words the PLACEMENTS block reads: the task -- and, for one that
+    only points back ("redo", "do it again"; the user, 2026-10-11, typed
+    "redo" after "keep the cloth to it's right"), the operator's last real
+    task from CONVERSATION SO FAR as well."""
+    task = task or ""
+    if history and PLACE_REDO_RE.search(task) and not PLACE_SIDE_RE.search(task):
+        asked = [ln[len("User:"):].strip() for ln in str(history).splitlines()
+                 if ln.startswith("User:")]
+        for earlier in reversed(asked):
+            if earlier and not (PLACE_REDO_RE.search(earlier)
+                                and len(earlier.split()) <= 4):
+                return f"{earlier} -- {task}"
+    return task
+
+
+def placement_recipe_text(objects, task) -> str:
+    """The PLACEMENTS block for the planner: for the objects the task names
+    (every object when it names none), the cell to send each one's CENTER
+    to for every side, edge, corner and neighbour -- measured so the WHOLE
+    object lands there, on the reachable board. Empty for a task with no
+    side, edge, corner or neighbour in it."""
+    lines = placement_lines(objects, task)
+    if not lines:
+        return ""
+    c0, r0, c1, r1 = _place_area()
+    return ("PLACEMENTS (measured by S1 from the outlines. Each cell is where "
+            "to send the object's CENTER - pickup at its CENTER, keep at the "
+            "cell - so that ALL of it lands as the line says, on the reachable "
+            f"board: columns {CONFIG.columns[c0]}-{CONFIG.columns[c1 - 1]}, rows "
+            f"{CONFIG.rows[r0]}-{CONFIG.rows[r1 - 1]}. Copy the cell of the line "
+            "the Task means; never work a destination out from sizes yourself):\n"
+            + "\n".join(lines))
+
+
+def keep_moves_on_board(text: str, objects, task=""):
+    """Rewrite a plan so every object it puts down lies WHOLLY on the
+    reachable board: a keep that would leave part of its object off the
+    board or in the red band moves just far enough back in (an object
+    already over an edge may stay where it was, never go further out).
+    Runs before enforce_gripper_targets, on the planner's own cells (the
+    object moves keep cell - pickup cell). Folds and sweeps are left alone.
+    Returns (text, [change dicts])."""
+    objs = list(objects or [])
+    if not text or not objs or is_fold_task(task) or is_sweep_task(task):
+        return text, []
+    lines = text.splitlines()
+    bares = [_bare_command(l) for l in lines]
+    lows = [b.lower() if b else "" for b in bares]
+    boxes = [_object_box(o) for o in objs]
+    moved = [(0, 0)] * len(objs)
+    changes = []
+
+    def goto_cell(i):
+        m = GRIP_SUBST_RE.search(bares[i])
+        return parse_coordinate(f"{m.group(2).upper()}{m.group(3)}") if m else None
+
+    # `drop`: the last goto while an object is held -- where its keep puts
+    # it down, whatever presses or pours came in between
+    last_goto, held, drop = None, None, None
+    for i, low in enumerate(lows):
+        if not low:
+            continue
+        if low.startswith("goto_coordinate"):
+            last_goto = (i, goto_cell(i))
+            if held is not None:
+                drop = last_goto
+            continue
+        if low == "pickup":
+            held = drop = None
+            if last_goto is not None and last_goto[1] is not None:
+                idx = object_at_cell(objs, moved, last_goto[1], GRIP_CELL_SLACK)
+                if idx is not None:
+                    held, drop = (idx, last_goto[1]), last_goto
+        elif low == "keep":
+            if held is not None and drop is not None and drop[1] is not None:
+                idx, pick = held
+                gi, drop = drop
+                dx, dy = drop[0] - pick[0], drop[1] - pick[1]
+                if boxes[idx] is not None:
+                    box = _shift_box(boxes[idx], *moved[idx])
+                    lo_x, hi_x, lo_y, hi_y = place_room(box)
+                    fx, fy = max(lo_x, min(hi_x, dx)), max(lo_y, min(hi_y, dy))
+                    new = (pick[0] + fx, pick[1] + fy)
+                    if ((fx, fy) != (dx, dy) and 0 <= new[0] < CONFIG.n_cols
+                            and 0 <= new[1] < CONFIG.n_rows):
+                        lines[gi] = _set_goto_cell(lines[gi], *new)
+                        changes.append({"object": objs[idx].get("name"),
+                                        "was": coordinate_name(*drop),
+                                        "now": coordinate_name(*new),
+                                        "dx": fx - dx, "dy": fy - dy})
+                        dx, dy = fx, fy
+                moved[idx] = (moved[idx][0] + dx, moved[idx][1] + dy)
+            held = drop = None
+        last_goto = None
+    return "\n".join(lines), changes
+
+
+def placement_change_lines(changes: list) -> list:
+    """keep_moves_on_board's changes -> one sentence each, for the transcript."""
+    out = []
+    for c in changes:
+        bits = []
+        for d, pos, neg, unit in ((c.get("dx", 0), "further right", "further left",
+                                   "column"),
+                                  (c.get("dy", 0), "lower", "higher", "row")):
+            if d:
+                bits.append(f"{abs(d)} {unit}{'s' if abs(d) > 1 else ''} "
+                            f"{pos if d > 0 else neg}")
+        out.append(f"the {c['object']} goes down " + " and ".join(bits)
+                   + f" than the plan said ({c['was']}), so all of it stays "
+                     f"on the reachable board")
+    return out
+
+
 GOTO_RE = re.compile(
     r"goto_coordinate\s*[:=]?\s*([A-Za-z]{1,2})\s*,?\s*(\d{1,2})\b", re.I)
+WAIT_COMMAND_RE = re.compile(r"wait_X\(\s*(\d+(?:\.\d+)?)\s*\)", re.I)
 
 
 def parse_plan_commands(text: str):
@@ -14917,6 +15614,50 @@ class PlanRunner:
         self._advance(state)
         return True
 
+    def retry_action(self, state, action_index: int) -> bool:
+        """Re-enter a failed checked step (and its preceding goto, if any).
+
+        ERR on the Go's re-pickup: the plan as it stands (gpt-6-luna
+        sequence may have moved the goto to the object's new top-right
+        corner first), the same automatic action. No residual LM.
+
+        `auto_wait` and `auto_failed` are the app's wiring to the gripper
+        card, not per-step state, and are left alone: clearing them made a
+        retried pickup "finish" after HOLD_SECONDS while the gripper was
+        still on its way down, and the question came up mid-pickup.
+        """
+        if not self.commands:
+            return False
+        try:
+            action_index = int(action_index)
+        except (TypeError, ValueError):
+            return False
+        if action_index < 0 or action_index >= len(self.commands):
+            return False
+        start = action_index
+        if start > 0 and GOTO_RE.match(str(self.commands[start - 1]).strip()):
+            start = start - 1
+        self.await_step = False
+        self.await_auto = False
+        self.await_speech = False
+        self.speech_until = 0.0
+        self._step_offered = False
+        self.auto_press_started_at = 0.0
+        self._auto_stop_until = 0.0
+        self._clear_manual()
+        if not hasattr(self, "plunge"):
+            self.plunge = PlungeSequence()
+        else:
+            self.plunge.abort()
+        self.active = True
+        self.finished = False
+        self.mode = "idle"
+        self.hold_until = 0.0
+        self.label = ""
+        self.index = start - 1
+        self._advance(state)
+        return True
+
     def _clear_manual(self):
         """Drop any pending manual step. A stale instruction left on the
         card would otherwise sit there after a stop, and the next run would
@@ -14981,13 +15722,29 @@ class PlanRunner:
             print(f"[plan] {step}: move to {coordinate_name(*coord)}")
             return
 
+        bare = cmd.split("(", 1)[0].strip().lower()
+        if bare == "wait_x":
+            wait_match = WAIT_COMMAND_RE.fullmatch(cmd.strip())
+            seconds = float(wait_match.group(1)) if wait_match else 0.0
+            if not 1.0 <= seconds <= 600.0:
+                self.stop(state, f"Stopped at step {step}: invalid wait duration.")
+                state.action_label = ("INVALID WAIT", C_RED)
+                return
+            self.mode = "hold"
+            self.hold_until = time.time() + seconds
+            self.label = action_label(cmd)
+            state.action_label = (self.label, C_OVERLAY)
+            state.status_message = f"Step {step}: {self.label}"
+            print(f"[plan] {step}: {self.label}")
+            self.await_speech = False
+            return
+
         self.mode = "hold"
         self.hold_until = time.time() + HOLD_SECONDS
         self.label = action_label(cmd)
         state.action_label = (self.label, C_OVERLAY)
         state.status_message = f"Step {step}: {self.label}"
         print(f"[plan] {step}: {self.label}")
-        bare = cmd.split("(", 1)[0].strip().lower()
         if bare == "press":
             self._pressed, self._moved_pressed = True, False
             note_press_moved(False)
@@ -15356,12 +16113,15 @@ class AIJob:
     """
 
     def __init__(self, frame_bgr, task: str, history: str = "", vision=None,
-                 board_source=None, resume: str = ""):
+                 board_source=None, resume: str = "", residual: bool = False):
         self.frame = frame_bgr
         self._board_source = board_source
         # replan_note() when this job carries a task on from a failed step:
         # the planner then writes only what is left of it.
         self.resume = resume or ""
+        # ERR on the Go residual recovery: cheap planner merges from the fail
+        # point; ordinary planning still uses PLANNER_MODEL.
+        self.residual = bool(residual)
         self.vision = vision
         self.grid = None
         self.task = task
@@ -15385,8 +16145,15 @@ class AIJob:
         self.blocked = False
         self.rejected = ""
         self.grips_applied = []
+        # keep_moves_on_board's changes: put-downs moved back onto the board
+        self.placed = []
         self.already_done = ""
         self.out_of_reach = []
+        # The board as this task saw it, and what the namer said of each
+        # outline: gpt-6-luna names a later look at the board from
+        # these, and only these.
+        self.snap = None
+        self.known_info = {}
         self._answered = threading.Event()
         self._thread = threading.Thread(target=self._run, daemon=True)
 
@@ -15483,14 +16250,16 @@ class AIJob:
                             f"({NAMER_MODEL}{tier})...")
             t0 = time.time()
             problem = namer.name_now(snap["frame"], snap["objects"],
-                                     snap["ids"],
-                                     snap.get("region") or snap["box"])
+                                     snap["ids"], snap["box"])
             print(f"[timing] naming for the task took {time.time() - t0:.1f} s")
             if problem:
                 if not any(tid in namer.names for tid in snap["ids"]):
                     raise ModelError(problem)
                 print(f"[vision] {problem} - planning with the names there are")
         namer.remember(snap, carried.values())
+        self.snap = snap
+        self.known_info = {tid: dict(namer.info.get(tid) or {})
+                           for tid in snap["ids"]}
         objects = planner_objects(snap, namer, self.grid)
         self.left_out = dict(getattr(namer, "left_out", None) or {})
         if not objects:
@@ -15527,12 +16296,12 @@ class AIJob:
         return snap, carried
 
     def _render_before_photo(self):
-        """The board as the task found it, for Error Rebounds' CHECK."""
+        """The board as the task found it, for ERR's final check."""
         if self.frame is not None or not self._board_source:
             return
         source, grid_now = self._board_source
         try:
-            board = render_vision_board(source, grid_now)
+            board = render_err_board(source, grid_now)
         except Exception as e:
             print(f"[vision] before photo failed ({e}) - using the raw frame")
             board = None
@@ -15571,7 +16340,11 @@ class AIJob:
             effective_task = (self.task if is_fold_task(self.task)
                               or not is_fold_task(self.history)
                               else f"{self.task} (fold, per: {self.history})")
-            objects = add_cloth_corners(objects)
+            # a plain cloth's four corners are fold grips: listed as its
+            # parts for a fold only -- on a move, "right_mid" beside "keep
+            # the cloth to its right" is a part to misread the task by
+            if is_fold_task(effective_task):
+                objects = add_cloth_corners(objects)
             objects = add_derived_parts(objects, fold=is_fold_task(effective_task))
             add_contact_notes(objects)
             self._publish_vision(objects, final=True)
@@ -15598,9 +16371,9 @@ class AIJob:
                 print(f"[dexterity] refused as dexterous: {task!r}")
                 return
 
-            self._set_stage(f"Re-planning the rest of the task "
-                            f"({PLANNER_MODEL})..." if self.resume else
-                            f"Planning the task ({PLANNER_MODEL})...")
+            self._set_stage(f"Planning the rest with {PLANNER_MODEL}..."
+                            if self.resume else
+                            f"Planning with {PLANNER_MODEL}...")
             history_note = (f"CONVERSATION SO FAR:\n{self.history}\n\n"
                             if self.history else "")
             recipes = ""
@@ -15621,6 +16394,17 @@ class AIJob:
                           f"{sweep['covered']}/{sweep['target']} cells")
                 elif sweep:
                     print(f"[sweep] no recipe: {sweep.get('note')}")
+            if planner_prompt_kind(self.task, self.history) == "full":
+                # where each move puts the whole object, measured -- the
+                # planner copies a cell instead of working one out
+                try:
+                    place = placement_recipe_text(
+                        self.objects, placement_task_text(self.task, self.history))
+                except Exception as e:
+                    place = ""
+                    print(f"[placement] failed ({e}) - planner works from EDGES")
+                if place:
+                    recipes = (recipes + "\n\n" if recipes else "") + place
             reach_note = ""
             if self.out_of_reach:
                 reach_note = (
@@ -15645,9 +16429,18 @@ class AIJob:
                 self.plan = recipe_plan
                 print("[sweep] the recipe is the whole plan - the planner was not called")
             else:
+                p_model = (ERR_RESIDUAL_MODEL if self.residual else PLANNER_MODEL)
+                p_tokens = (ERR_RESIDUAL_MAX_TOKENS if self.residual
+                            else PLANNER_MAX_TOKENS)
+                p_reason = (ERR_RESIDUAL_REASONING if self.residual
+                            else PLANNER_EFFORT)
+                p_stage = ("ERR residual" if self.residual else "Planner")
+                if self.residual:
+                    self._set_stage(
+                        f"ERR on the Go residual ({ERR_RESIDUAL_MODEL})...")
                 self.plan = call_model(
-                    client, model=PLANNER_MODEL, max_tokens=6000, stage="Planner",
-                    reasoning=PLANNER_EFFORT,
+                    client, model=p_model, max_tokens=p_tokens, stage=p_stage,
+                    reasoning=p_reason,
                     messages=[{"role": "system", "content": system},
                               {"role": "user", "content": user}])
             print("\n=== PLAN ===")
@@ -15662,10 +16455,19 @@ class AIJob:
                     and not plan_already_done(self.plan)):
                 note = no_action_retry_note(self.plan)
                 print(f"[planner] no actions - retrying once ({note[:80]}...)")
-                self._set_stage(f"Planning again ({PLANNER_MODEL})...")
+                p_model = (ERR_RESIDUAL_MODEL if self.residual else PLANNER_MODEL)
+                p_tokens = (ERR_RESIDUAL_MAX_TOKENS if self.residual
+                            else PLANNER_MAX_TOKENS)
+                p_reason = (ERR_RESIDUAL_REASONING if self.residual
+                            else PLANNER_EFFORT)
+                self._set_stage(
+                    "ERR residual again..." if self.residual
+                    else f"Planning again with {PLANNER_MODEL}...")
                 retry = call_model(
-                    client, model=PLANNER_MODEL, max_tokens=6000,
-                    stage="Planner (retry)", reasoning=PLANNER_EFFORT,
+                    client, model=p_model, max_tokens=p_tokens,
+                    stage=("ERR residual (retry)" if self.residual
+                           else "Planner (retry)"),
+                    reasoning=p_reason,
                     messages=[{"role": "system", "content": system},
                               {"role": "user", "content": user},
                               {"role": "assistant", "content": self.plan},
@@ -15701,6 +16503,12 @@ class AIJob:
                                  + "No physical actions were planned; "
                                  "the task has not been completed.")
 
+            if PLACE_ON_BOARD:
+                self.plan, self.placed = keep_moves_on_board(
+                    self.plan, self.objects, effective_task)
+                if self.placed:
+                    print("[placement] kept on the board:\n" + "\n".join(
+                        f"  {ln}" for ln in placement_change_lines(self.placed)))
             if GRIPPER_AI:
                 self.plan, self.grips_applied = enforce_gripper_targets(
                     self.plan, self.objects, effective_task)
@@ -15716,17 +16524,40 @@ class AIJob:
 
 
 ERR3_PROMPT = """
-You are the Error Rebound AI, the verification step for a robot task.
+You are ERR, the final error-response check for a robot task: after the
+robot has run its plan, you tell the operator whether the task was done
+properly.
 
 INPUTS
 - Task description
 - Initial image: the board at planning time (same grid on all images)
-- Final image: the board after execution
+- Final image: the board after execution (the gripper parked out of the
+  camera's way when it could be)
 - Optional: execution-start image (fresh scene captured just before execution)
-- Optional: object list from the original detection (treat as fallible)
-- Optional: extra-viewpoint images of the final scene
+- Optional: BEFORE OBJECT LIST - every object at planning time, by name,
+  with its cells (from Vision AI; fallible)
+- Optional: AFTER OBJECT LIST - the same objects after execution under the
+  SAME names, with their cells now, and which of them could not be seen
+  (from gpt-6-luna, which named each outline in the final image only from
+  the BEFORE list; fallible)
+- Optional: MEASURED BY S1 - for every object in the lists, its outline
+  before against its outline after: the cell then and now, how far its
+  centre moved, how far it turned, how much its outline still overlaps where
+  it was, S1's call (MOVED, MOVED WITH another object, STAYED, NOT SEEN or
+  OUT OF REACH), and whether the plan picks it up or slides it
 - Optional: execution events (grasp result, drops, collisions, gripper
   release, contact or charging sensor readings)
+
+ONE 2D VIEW FROM ABOVE - NOTHING LEAVES THE BOARD
+The camera sees the board only from above, in 2D. Nobody removes objects
+from the board. An object that was on the board before and cannot be seen
+now is STILL on the board: under or inside another object (stacked on,
+covered by, or put in it) or hidden by the gripper. Never call an object
+missing, lost or removed. Decide whether that hidden place fits the task:
+under or inside the object the task named (a stack, "put X in Y") can be
+success; under the wrong object is wrong; when the place cannot be told,
+mark the object unverified rather than wrong. Heights and stacking are not
+seen directly: read them from what covers what, the outlines and the lists.
 
 GOAL
 Decide whether the task goal was achieved AND no constraints were violated,
@@ -15755,8 +16586,9 @@ OBJECTS: <name>=ok|unverified; ...
 REASON: <short factual explanation>
 NEXT: RETAKE: <view, angle, gripper clearance, or sensor evidence needed>
 
-OBJECTS has one entry per named object or subtask. For single-object tasks,
-list that one object.
+OBJECTS has one entry for EVERY object in the BEFORE OBJECT LIST - the
+task's own objects first, then every other object - even for a task about
+one object; without a list, one entry per named object or subtask.
 
 RULES
 
@@ -15775,9 +16607,11 @@ is unreadable. Minor camera shifts that do not affect readability are ignored.
 
 3. OCCLUSION
 If an object is hidden inside a container, under another object, or behind the
-gripper and cannot be individually confirmed, mark it unverified. Use logged
-placement evidence if provided. Otherwise request RETAKE (move the gripper
-clear or use another view). Do not guess.
+gripper and cannot be individually confirmed, mark it unverified - unless the
+task itself puts it there (stacking, "put X in Y") and the covering object is
+the right one, which is evidence of success (see ONE 2D VIEW above). Use
+logged placement evidence if provided. Otherwise request RETAKE (move the
+gripper clear or use another view). Do not guess.
 
 4. HIDDEN OUTCOMES
 When the goal itself depends on a state not visible from position (charging,
@@ -15794,11 +16628,12 @@ ok.
 If objects share a coordinate, verify each by name against its own target.
 The presence of some object at a coordinate does not satisfy the requirement.
 
-7. OBJECT LIST IS FALLIBLE
-The object list is evidence, not truth. Compare it with the initial image. If
-they disagree, decide by what is visible; if that cannot be resolved, mark the
-affected objects unverified. Track each object's identity from initial to
-final image.
+7. OBJECT LISTS ARE FALLIBLE
+The object lists are evidence, not truth. Compare the BEFORE list with the
+initial image and the AFTER list with the final image. If they disagree,
+decide by what is visible; if that cannot be resolved, mark the affected
+objects unverified. Track each object's identity from initial to final
+image: the AFTER list's names are the BEFORE list's names.
 
 8. STALE START STATE
 Applies only if an execution-start image is provided. If it differs materially
@@ -15820,9 +16655,20 @@ are not errors.
 11. CONSTRAINTS PRESERVED
 A correct final appearance is not enough. Using events (if provided) and the
 images, confirm that no object was dropped, no collision occurred, and no
-unrelated object was displaced or damaged. A violated constraint means
+unrelated object was displaced or damaged. An object hidden under another is
+not "dropped" or "removed" by itself (ONE 2D VIEW above). A violated constraint means
 Done_wrong,_redo even if the arrangement looks right. If events are not
 provided, judge from the images alone.
+When MEASURED BY S1 is given, use it for every object, as it is:
+- MOVED, and the plan does not pick it up or slide it, and the task does not
+  ask to change it: it was displaced - mark it wrong.
+- MOVED WITH an object the plan moves (attached to it or lying on it, it went
+  just where that object's move carried it): it went along with that object -
+  ok, unless the task says it must stay put or be parted from it.
+- STAYED: ok, unless the task needed it to move.
+- NOT SEEN: follow ONE 2D VIEW above and rule 3.
+Only an object whose label is plainly wrong in the FINAL image (a different
+thing entirely) may be marked unverified instead of following S1's call.
 
 12. VERDICT PRECEDENCE
 - Any condition clearly unmet or any constraint violated -> Done_wrong,_redo
@@ -15830,25 +16676,60 @@ provided, judge from the images alone.
 - Otherwise, any condition not confirmable -> Cannot_verify.
 - Otherwise, every condition verified with evidence and no constraint
   violated -> Done_correctly.
-Prefer Cannot_verify over guessing in either direction.
+Prefer Cannot_verify over guessing in either direction. S1 holds your
+VERDICT to this precedence over your OBJECTS line.
 """.strip()
 
-# The one checker, by the name the operator knows it by (ERR-2, the old
-# two-line verdict, is gone).
-ERR_NAME = "ERR-3"
-# Automatic checking, off until switched on in Settings:
-#   "step" - after each finished plan step except moves (goto) and waits
-#   "task" - once, when the whole plan has finished
-ERR_AUTO_MODES = (("off", "Off"), ("step", "Every step"),
-                  ("task", "After the task"))
-ERR_AUTO = "off"
-ERR_STEP_SKIP = ("goto", "wait", "task_completed", "complete")
-# A step that fails its check pops up CONTINUE ANYWAY / REPLAN; the default
-# one happens on its own after STEP_FAIL_WAIT_S. Replanning is automatic at
-# most REPLAN_AUTO_LIMIT times per task -- after that the popup waits for a
-# click, so a step the camera keeps failing cannot loop on paid calls.
+# Two error checks (user, 2026-10-10), both on by default:
+#   ERR on the Go - after each finished PICKUP (never keep, press, release,
+#     pour...), the operator says YES / NO; NO runs the gpt-6-luna Vision
+#     AI sequence and picks the object up again.
+#   ERR - the final check, when a physical run has finished: the AprilTag
+#     parks on C18 and stays there (no jogs -- user, 2026-10-11),
+#     gpt-6-luna names the board from the task's own objects, and ERR
+#     says whether the task was done properly. Redoing what it finds not
+#     done is off by default (ERR_REDO).
+ERR_NAME = "ERR on the Go"
+ERR_FINAL_NAME = "ERR"
+ERR_AUTO_MODES = (("off", "Off"), ("step", "On"))
+ERR_AUTO = "step"  # ERR on the Go: on by default
+ERR_FINAL = True   # ERR: on by default
+ERR_REDO = False   # ERR's redo of a task not done properly: off by default
+ERR_REDO_LIMIT = 2
+# Only these steps are asked about (user, 2026-10-10: "it should only happen
+# in pickup, not in the other functions").
+ERR_STEP_ACTIONS = ("pickup",)
+# After a pickup, the operator gets YES / NO for STEP_FAIL_WAIT_S. YES (or
+# silence) continues. NO runs the gpt-6-luna Vision AI sequence: park out
+# of the camera's way, look again, name every outline from the task's own
+# object list, and pick the same object up again at its top-right corner.
 STEP_FAIL_WAIT_S = 3.0
 REPLAN_AUTO_LIMIT = 2
+# Legacy park cell (unused by the same-step retry NO path).
+ERR_HOME_COL = "A"
+
+
+def err_redo_note(plan_text, reason, fix) -> str:
+    """The planner's brief for ERR's redo: the task ran, ERR found it not
+    done properly; plan only what is still needed, from the board now."""
+    return (
+        "REDO AFTER THE FINAL CHECK - finish this task; do NOT plan it from "
+        "the start again.\n"
+        "The robot already ran your plan for this task. The final check "
+        f"(ERR) says it was NOT done properly: {reason or 'no reason given.'}"
+        f"\nERR's correction: {fix or 'none given - decide from the board'}"
+        f"\n\nYOUR EARLIER ANSWER:\n{(plan_text or '').strip() or '(not kept)'}"
+        "\n\nThe OBJECT LIST above is the board as it is NOW. Plan ONLY what "
+        "is still needed to finish the task, and leave every object that is "
+        "already right where it is. The camera sees one 2D view from above "
+        "and nothing leaves the board: an object you cannot see is under or "
+        "inside another one. Answer in the usual format: the # summary line, "
+        "the numbered commands, Task_Completed.")
+
+
+def err_any_on() -> bool:
+    """Either error check on: ERR on the Go or the final ERR."""
+    return ERR_AUTO == "step" or ERR_FINAL
 
 
 def _bare_step(cmd: str) -> str:
@@ -15858,12 +16739,12 @@ def _bare_step(cmd: str) -> str:
 
 
 def step_is_checked(cmd: str) -> bool:
-    """True for every step that does something to an object -- pickup, keep,
-    press, release, pour, slice, door steps... -- and False for a
-    goto_coordinate (only a move), a wait_X and Task_Completed."""
+    """True for a pickup only (ERR_STEP_ACTIONS); False for keep, press,
+    release, pour, slice, door steps, a goto_coordinate, a wait_X and
+    Task_Completed."""
     if GOTO_RE.match(cmd.strip()):
         return False
-    return not _bare_step(cmd).startswith(ERR_STEP_SKIP)
+    return _bare_step(cmd) in ERR_STEP_ACTIONS
 
 
 def _cell_before(cmds, index):
@@ -15973,7 +16854,7 @@ def replan_note(cmds, plan_text, index, word, reason, fix,
 
 
 def step_events(runner, index: int) -> str:
-    """ERR-3's EXECUTION EVENTS for one finished step: what the app knows,
+    """ERR's EXECUTION EVENTS for one finished step: what the app knows,
     and nothing it does not."""
     cmds = list(getattr(runner, "commands", None) or [])
     n = len(cmds)
@@ -15990,7 +16871,7 @@ def step_events(runner, index: int) -> str:
 
 
 def execution_events(runner) -> str:
-    """What the app itself logged about the last physical run, for ERR-3's
+    """What the app itself logged about the last physical run, for ERR's
     EXECUTION EVENTS input. Only what is actually known: which plan steps
     were carried out, and that no grasp/contact/force readings exist -- so
     the checker cannot mistake a dispatched "pickup" for a confirmed grasp."""
@@ -16023,28 +16904,36 @@ def append_err_history(record: dict):
 
 
 class ErrorReboundJob:
-    """The before/after check, on a worker thread.
+    """ERR, the final before/after check, on a worker thread.
 
     Same shape as AIJob so the loop can poll it the same way: the thread
     writes only to its own fields, and a failure lands in `error` without
-    disturbing the board.
+    disturbing the board. `after_list` is gpt-6-luna's object list
+    of the finished board (the task's own names) and `unseen` the task's
+    objects it could not see -- under or inside something, since nothing
+    leaves the board.
     """
 
     def __init__(self, task: str, before_bgr, after_bgr, object_list: str = "",
-                 start_source=None, events: str = ""):
+                 start_source=None, events: str = "", after_list: str = "",
+                 unseen=(), moves: str = ""):
         self.task = task
         self.before = before_bgr
         self.after = after_bgr
         self.object_list = object_list or ""
-        self.version = ERR_NAME
+        self.after_list = after_list or ""
+        self.unseen = [str(u) for u in (unseen or ()) if str(u).strip()]
+        self.moves = moves or ""    # MEASURED BY S1 (err_moves_text)
+        self.version = ERR_FINAL_NAME
         # (frame, grid) as the board looked when EXECUTE was pressed.
         # Rendered on this thread, not under the operator's click.
         self.start_source = start_source
         self.events = events or ""
         self._lock = threading.Lock()
-        self.stage = (f"Error Rebounds {self.version} - comparing before and "
-                      f"after ({ERR_MODEL})...")
+        self.stage = (f"{ERR_FINAL_NAME} - checking the finished task "
+                      f"({ERR_MODEL})...")
         self.verdict = ""
+        self.model_verdict = ""     # the reply's own, before err_verdict_from_objects
         self.reason = ""
         self.objects = []
         self.next = ""
@@ -16072,22 +16961,27 @@ class ErrorReboundJob:
             b64_start = None
             if self.start_source:
                 source, grid_then = self.start_source
-                start = render_vision_board(source, grid_then)
+                start = render_err_board(source, grid_then)
                 b64_start = encode_jpeg_b64(start if start is not None
                                             else source)
 
             messages = self._messages(b64_before, b64_after, b64_start)
             client = make_client()
-            print(f"\n=== ERROR REBOUNDS {self.version} INPUT ===")
+            print(f"\n=== {self.version} INPUT ===")
             print(messages[1]["content"][0]["text"])
             self.raw = call_model(
                 client, model=ERR_MODEL, max_tokens=ERR_MAX_TOKENS,
                 reasoning=ERR_REASONING,
-                stage=f"Error Rebounds {self.version}", messages=messages)
-            print(f"\n=== ERROR REBOUNDS {self.version} ===")
+                stage=self.version, messages=messages)
+            print(f"\n=== {self.version} ===")
             print(self.raw)
             (self.verdict, self.objects, self.reason,
              self.next) = self._parse(self.raw)
+            self.model_verdict = self.verdict
+            self.verdict = err_verdict_from_objects(self.verdict, self.objects)
+            if self.verdict != self.model_verdict:
+                print(f"[err] the reply said {self.model_verdict!r}; its "
+                      f"OBJECTS line makes it {self.verdict!r}")
         except Exception as e:
             self.error = str(e)
         finally:
@@ -16106,8 +17000,20 @@ class ErrorReboundJob:
 
         parts = [f"TASK:\n{self.task}"]
         if self.object_list.strip():
-            parts.append("OBJECT LIST (from the original detection -- "
+            parts.append("BEFORE OBJECT LIST (Vision AI at planning time -- "
                          f"fallible):\n{self.object_list}")
+        if self.after_list.strip():
+            parts.append(f"AFTER OBJECT LIST ({DECISIONS_MODEL} on the "
+                         "finished board, the gripper parked out of view; the "
+                         f"same names -- fallible):\n{self.after_list}")
+        if self.unseen:
+            parts.append("NOT SEEN AFTER (still on the board -- nothing leaves "
+                         "it -- so under or inside another object, or "
+                         "hidden): " + ", ".join(self.unseen))
+        if self.moves.strip():
+            parts.append("MEASURED BY S1 (each object's outline before against "
+                         "its outline after -- use these as they are):\n"
+                         + self.moves)
         parts.append("EXECUTION EVENTS:\n" + (
             self.events.strip() or "None logged -- judge from the images."))
         parts.append("Images follow, each after its label. All show the same "
@@ -16169,6 +17075,1696 @@ class ErrorReboundJob:
         return verdict, objects, reason, fields.get("NEXT", "")
 
 
+# ---------------------------------------------------------------------------
+# gpt-6-luna Vision AI Sequence (user, 2026-10-10; first called the
+# "Decisions API Vision AI Sequence" -- the user: "use gpt 6 luna instead")
+#
+# After a pickup the operator answers NO to (or the main window's button):
+#   1. the jaws open (g0), so a half-held object drops where it was;
+#   2. the gantry parks out of the camera's way: the AprilTag to C18 (the
+#      user, 2026-10-11: "should go to C18 not B19"), then dq for 3 s and
+#      lq for 3 s;
+#   3. Vision AI (FastSAM) outlines the board again and gpt-6-luna labels
+#      every outline: the one of the task's OWN objects -- the ones Vision AI
+#      named at the task's start -- it most probably is, or none, with that
+#      label's probability (the user: "classify each object based on
+#      whichever is the highest probability"; "luna doesn't need to give
+#      outlines, just fastsam outline should be labelled"). Never a new
+#      name, and S1 adds no guess of its own;
+#   4. the gantry comes back (rq 3 s, uq 3 s, then up until the tag shows);
+#   5. the object the pickup was after is picked up again at its top-right
+#      corner (wherever it lies now), and the same question is asked again.
+#      No outline labelled as it: it is picked up again at the same cell.
+# The button runs 1-4 on its own and then puts the gantry back where it was.
+# ERR's final check runs 2-3 only: the tag parks on C18 and the photo is
+# taken from there -- no dq/lq out of view and none back (user, 2026-10-11:
+# "after the task has been completed, come back to C18 ... don't go lq, rq
+# ... just check with the final ERR"). The gantry stays on C18.
+# ---------------------------------------------------------------------------
+DECISIONS_NAME = f"{DECISIONS_MODEL} Vision AI Sequence"
+DECISIONS_MAX_TOKENS = 4000
+DECISIONS_MAX_SIDE = 768        # labelling's photos (naming keeps NAMER_MAX_SIDE)
+DECISIONS_TIE = 10.0          # one label on two outlines this close in
+                              # probability (percent): the one more like the
+                              # task's object
+DSEQ_PARK_CELL = "C18"        # where the AprilTag parks: near the board's bottom left
+DSEQ_JOGS = (("dq", 3.0), ("lq", 3.0))          # then on, slowly, out of view
+DSEQ_RETURN_JOGS = (("rq", 3.0), ("uq", 3.0))   # the same way back
+DSEQ_GAP_S = 1.0              # between one move's stop and the next letter
+DSEQ_RELEASE_S = 1.0          # the jaws open this long before anything moves
+DSEQ_SETTLE_S = 1.0           # the board holds still this long before the photo
+DSEQ_VIEW_MARGIN_S = 0.4      # ...and the outlines used are this much newer
+DSEQ_PARK_MAX_S = 30.0        # each leg of the park gets this long
+DSEQ_VIEW_MAX_S = 10.0        # fresh outlines must arrive within this
+DSEQ_HOME_MAX_S = 60.0        # the button: this long to get back where it was
+TAG_SEARCH_LETTER = "uq"      # no tag in view: up, slowly -- nothing else
+TAG_SEARCH_MAX_S = 20.0       # at most this long, then stop and say so
+TAG_SEARCH_SIDE_S = 12.0      # then (not the pre-task pop-up) toward the middle
+PREP_START_S = 3.0            # tag in view: the task starts this long after
+PREP_LOOK_S = 1.0             # the camera gets this long before any search
+TAG_LOST_S = 0.5              # a run's tag out of view this long (after its
+                              # TAG_HOLD_SECONDS): stop, and go up until seen
+
+
+class TagUpSearch:
+    """No AprilTag in view: keep going up, slowly, until it is (user,
+    2026-10-10). The caller watches for the tag and calls stop(); after
+    TAG_SEARCH_MAX_S of climbing this stops by itself and reports
+    "gave_up", and the caller keeps waiting for the tag. With `legs`
+    ([(slow letter, seconds)], see search_legs) it makes those moves in
+    turn instead -- for a tag lost while S1 was steering; the pre-task
+    pop-up climbs only.
+
+    The guidance's stop is de-duplicated against the last direction it
+    sent: if that is not "s", its next send_direction(None) would cut the
+    climb short, so a stop goes out first and the climb starts DSEQ_GAP_S
+    later (the board reads letters with no separator)."""
+
+    def __init__(self, now=None, legs=None):
+        now = time.monotonic() if now is None else now
+        self.legs = list(legs or [(TAG_SEARCH_LETTER, TAG_SEARCH_MAX_S)])
+        self.leg = 0
+        self.started = now
+        self.until = now
+        self.moved_at = None
+        self.quieted = False       # the guidance's owed stop has gone out
+        self.state = "wait"        # wait -> moving -> ... -> gave_up | stopped
+
+    def tick(self, now=None) -> str:
+        """One frame with no tag in view. Returns the state."""
+        now = time.monotonic() if now is None else now
+        if self.state == "moving":
+            if now - self.moved_at >= self.legs[self.leg][1]:
+                ARDUINO.halt()
+                self.leg += 1
+                if self.leg >= len(self.legs):
+                    self.state = "gave_up"
+                else:
+                    self.state, self.until = "wait", now + DSEQ_GAP_S
+            return self.state
+        if self.state != "wait" or now < self.until:
+            return self.state
+        if (not self.quieted and ARDUINO.connected
+                and getattr(ARDUINO, "_last_sent", None) != "s"):
+            ARDUINO.halt()
+            self.quieted = True
+            self.until = now + DSEQ_GAP_S
+            return self.state
+        if ARDUINO.send_command(self.legs[self.leg][0]):
+            self.state, self.moved_at = "moving", now
+        elif now - self.started >= sum(t for _, t in self.legs):
+            self.state = "gave_up"         # no board to move
+        return self.state
+
+    def stop(self):
+        """The tag is in view, or the search is called off."""
+        if self.state == "moving":
+            ARDUINO.halt()
+        if self.state in ("wait", "moving"):
+            self.state = "stopped"
+
+
+def side_toward_centre(col):
+    """The slow letter that moves a tag last seen in column `col` toward the
+    board's middle: "rq" from the left half (or not seen at all), "lq" from
+    the right half."""
+    if col is None or col < CONFIG.n_cols / 2.0:
+        return DIRECTION_LETTERS["right"] + SLOW_SUFFIX
+    return DIRECTION_LETTERS["left"] + SLOW_SUFFIX
+
+
+SEARCH_EDGE_COLS = 2          # lost this near a side edge (and not low): sideways first
+SEARCH_LOW_ROWS = 6           # lost this near the bottom: up first, whatever the side
+
+
+def search_legs(col, row):
+    """The slow moves that bring a tag lost while S1 was steering back into
+    view, from the cell it was last seen in. Up first -- it is almost always
+    lost past the board's bottom edge, where a tag standing above the board
+    shows further out than it is (user: "keep going up until it finds it")
+    -- then toward the middle sideways. Lost by a side edge higher up, the
+    sideways move comes first (climbing along that edge finds nothing); lost
+    near the top, down replaces up."""
+    up = DIRECTION_LETTERS["up"] + SLOW_SUFFIX
+    if col is None or row is None:
+        return [(up, TAG_SEARCH_MAX_S)]
+    down = DIRECTION_LETTERS["down"] + SLOW_SUFFIX
+    vertical = (up if row >= CONFIG.n_rows / 3.0 else down, TAG_SEARCH_MAX_S)
+    sideways = (side_toward_centre(col), TAG_SEARCH_SIDE_S)
+    by_side = min(col, CONFIG.n_cols - 1 - col) <= SEARCH_EDGE_COLS
+    low = row >= CONFIG.n_rows - SEARCH_LOW_ROWS
+    return [sideways, vertical] if by_side and not low else [vertical, sideways]
+
+
+def _centre_point(o):
+    """An object's unrounded centre (col, row) in grid units, or None."""
+    pt = o.get("center_pt") if isinstance(o, dict) else None
+    if pt and len(pt) == 2:
+        return float(pt[0]), float(pt[1])
+    c = parse_coordinate(str((o or {}).get("center") or ""))
+    return (c[0] + 0.5, c[1] + 0.5) if c is not None else None
+
+
+def _round_cells(v) -> int:
+    return int(math.floor(float(v) + 0.5))
+
+
+_ABOUT_SIZE_RE = re.compile(r",?\s*about \d+(?:\.\d+)? x \d+(?:\.\d+)? in")
+
+
+def poly_size_in(poly, grid=None):
+    """(long side, short side, angle) of a grid-unit polygon's tightest
+    turned rectangle, sides in inches -- a turned object measures as itself
+    -- or None."""
+    if not poly or len(poly) < 3:
+        return None
+    cw, ch = cell_size_in(grid)
+    pts = np.float32([(float(q[0]) * cw, float(q[1]) * ch) for q in poly])
+    (_, _), (w, h), angle = cv2.minAreaRect(pts)
+    if w < h:
+        w, h, angle = h, w, angle + 90.0
+    return float(w), float(h), float(angle % 180.0)
+
+
+def size_words(poly, grid=None) -> str:
+    """"about 7.7 x 10.7 in" (short side first), "long and thin" when it is."""
+    size = poly_size_in(poly, grid)
+    if size is None:
+        return ""
+    long_in, short_in, _ = size
+    return (f"about {short_in:.1f} x {long_in:.1f} in"
+            + (", long and thin" if long_in >= 3.0 * max(short_in, 0.05) else ""))
+
+
+def decision_known_line(o, grid=None) -> str:
+    """One KNOWN OBJECTS line: its name, colour, size class, description,
+    measured size and where it was when the task started."""
+    name = str(o.get("name") or "object")
+    bits = [b for b in (str(o.get("color") or "").strip(),
+                        str(o.get("size") or "").strip()) if b and b != "?"]
+    desc = _ABOUT_SIZE_RE.sub("", str(o.get("desc") or "")).strip().strip(",;")
+    measured = size_words(o.get("polygon"), grid)
+    where = str(o.get("center") or "").strip()
+    cells = compact_cells(_touch_cells(o))
+    return (f'- "{name}"' + (f" ({', '.join(bits)})" if bits else "")
+            + (f": {desc}" if desc else "")
+            + (f"; {measured}" if measured else "")
+            + (f"; was at {where}" if where else "")
+            + (f", covering {cells}" if cells else ""))
+
+
+LOOSE_MIN_CELLS = 4.0         # a red outline this big (grid cells), sized like
+                              # a task object, is that object lying on another
+
+
+def labelled_outlines(snap, known=(), known_grid=None) -> list:
+    """The outlines gpt-6-luna labels, in number order: the top-level ones.
+    A red part inside another outline (a logo, printed text, a ribbon) gets
+    no number -- it stays a part of the object around it (the user: "non
+    red parts"). Only a red outline at least LOOSE_MIN_CELLS big whose long
+    side is within half to twice a task object's is numbered too: a whole
+    object lying on another (a cloth put on a notebook), not a detail of
+    it."""
+    objects = snap["objects"]
+    parents = snap.get("parents") or find_parents(objects)
+    longs = [sz[0] for sz in (poly_size_in(o.get("polygon"), known_grid)
+                              for o in known or ()) if sz]
+    grid = None
+    out = []
+    for i, p in enumerate(parents):
+        if p is None:
+            out.append(i)
+            continue
+        if not longs:
+            continue
+        if grid is None:
+            fh, fw = snap["frame"].shape[:2]
+            grid = Grid(fw, fh, list(snap["box"]), square_cells=False)
+        poly = outline_polygon(objects[i], grid)
+        size = poly_size_in(poly, grid)
+        if (poly and size and abs(_poly_area(poly)) >= LOOSE_MIN_CELLS
+                and any(0.5 * L <= size[0] <= 2.0 * L for L in longs)):
+            out.append(i)
+    return out
+
+
+# Outlines kept from the task's start (user, 2026-10-10: "PERFECTED"):
+# FastSAM sometimes traces a small attached thing (a notebook's tab) into
+# its neighbour's outline on a later look, which leaves gpt-6-luna nothing to
+# label. A known object with no outline of its own now gets its task-start
+# outline back -- where it was, or moved along with what was around it --
+# when the photo there still shows it; gpt-6-luna labels it like any other.
+KEEP_OWN_IOU = 0.5            # an outline overlapping it this much is its own
+KEEP_NCC = 0.6                # the object and a ring round it must be shaped
+                              # this alike, before and now (normalised correlation)
+KEEP_COLOUR = 50.0            # ...and the object itself this close in colour (BGR)
+KEEP_RING = 0.35              # the ring: this share of the object's size (px)
+KEEP_RADIUS = 2.5             # feature matches this many object sizes round it
+KEEP_MIN_MATCHES = 6          # (at least) tell how its surroundings moved
+
+
+def _px_poly(poly, grid):
+    return np.float32([grid.grid_to_pixel(float(q[0]), float(q[1]))
+                       for q in poly])
+
+
+def _fill(shape, pts):
+    m = np.zeros(shape[:2], np.uint8)
+    cv2.fillPoly(m, [np.int32(np.round(pts))], 255)
+    return m
+
+
+def _looks_alike(a, b, mask, obj=None) -> bool:
+    """Whether two pictures show the same thing: the object (`obj`) about
+    the same colour, and it with the ring round it (`mask`) the same shape --
+    normalised correlation of their grey levels (or, where both are flat,
+    about the same brightness). The ring alone is not enough: round a small
+    tab it is mostly the notebook's edge, which stays when the tab is gone."""
+    sel = mask > 0
+    if int(sel.sum()) < 30:
+        return False
+    if obj is not None:
+        inner = obj > 0
+        if int(inner.sum()) >= 10:
+            ca = a[inner].reshape(-1, 3).astype(np.float32).mean(axis=0)
+            cb = b[inner].reshape(-1, 3).astype(np.float32).mean(axis=0)
+            if float(np.linalg.norm(ca - cb)) > KEEP_COLOUR:
+                return False
+    ga = cv2.cvtColor(a, cv2.COLOR_BGR2GRAY).astype(np.float32)[sel]
+    gb = cv2.cvtColor(b, cv2.COLOR_BGR2GRAY).astype(np.float32)[sel]
+    sa, sb = float(ga.std()), float(gb.std())
+    if sa < 3.0 and sb < 3.0:
+        return abs(float(ga.mean()) - float(gb.mean())) < 10.0
+    if sa < 3.0 or sb < 3.0:
+        return False
+    ncc = float(((ga - ga.mean()) * (gb - gb.mean())).mean()) / (sa * sb)
+    return ncc >= KEEP_NCC
+
+
+def _local_motions(kb, kn, matches, centre, radius):
+    """How the things round `centre` (BEFORE pixels) moved by NOW: up to two
+    rigid motions (2x3, BEFORE -> NOW) that ORB feature matches within
+    `radius` agree on, the biggest first."""
+    pts = [(kb[m.queryIdx].pt, kn[m.trainIdx].pt) for m in matches
+           if math.hypot(kb[m.queryIdx].pt[0] - centre[0],
+                         kb[m.queryIdx].pt[1] - centre[1]) <= radius]
+    out = []
+    for _ in range(2):
+        if len(pts) < KEEP_MIN_MATCHES:
+            break
+        src = np.float32([a for a, _ in pts])
+        dst = np.float32([b for _, b in pts])
+        t, inl = cv2.estimateAffinePartial2D(src, dst, method=cv2.RANSAC,
+                                             ransacReprojThreshold=4.0)
+        if t is None or inl is None or int(inl.sum()) < KEEP_MIN_MATCHES:
+            break
+        out.append(t)
+        pts = [p for p, keep in zip(pts, inl.ravel()) if not keep]
+    return out
+
+
+def kept_outlines(before, snap, known, order):
+    """[(contours in NOW pixels, how)] -- the task-start outline of each
+    known object that has no outline of its own in `snap` (none of the
+    numbered ones, `order`, is it), brought back where the photo still shows
+    it: in the same place ("same"), or moved with what was round it
+    ("moved"). `before` is (frame, grid, region) of the task's start."""
+    if before is None or not known:
+        return []
+    b_frame, b_grid = before[0], before[1]
+    n_frame = snap["frame"]
+    if b_frame is None or b_frame.shape != n_frame.shape:
+        return []
+    fh, fw = n_frame.shape[:2]
+    n_grid = Grid(fw, fh, list(snap["box"]), square_cells=False)
+    polys = [p for p in (outline_polygon(snap["objects"][i], n_grid)
+                         for i in order) if p]
+
+    def own(poly):
+        """An outline of about its size covers it: it has one of its own."""
+        a = abs(_poly_area(poly))
+        for q in polys:
+            iou, in_q, _ = _poly_overlaps(q, poly)
+            if iou >= KEEP_OWN_IOU or (in_q >= 0.8
+                                       and abs(_poly_area(q)) <= 2.0 * a):
+                return True
+        return False
+
+    orb, feats = None, None
+    out = []
+    for k in known:
+        p_old = k.get("polygon")
+        if not p_old or len(p_old) < 3 or own(p_old):
+            continue
+        b_px = _px_poly(p_old, b_grid)
+        size = math.sqrt(max(cv2.contourArea(b_px), 1.0))
+        ring = np.ones((2 * max(6, int(KEEP_RING * size)) + 1,) * 2, np.uint8)
+        motions = [np.float32([[1, 0, 0], [0, 1, 0]])]
+        if feats is None:
+            orb = cv2.ORB_create(4000)
+            gb = cv2.cvtColor(b_frame, cv2.COLOR_BGR2GRAY)
+            gn = cv2.cvtColor(n_frame, cv2.COLOR_BGR2GRAY)
+            kb, db = orb.detectAndCompute(gb, None)
+            kn, dn = orb.detectAndCompute(gn, None)
+            good = []
+            if db is not None and dn is not None and len(kn) >= 2:
+                for pair in cv2.BFMatcher(cv2.NORM_HAMMING).knnMatch(db, dn, k=2):
+                    if len(pair) == 2 and pair[0].distance < 0.75 * pair[1].distance:
+                        good.append(pair[0])
+            feats = (kb, kn, good)
+        c = b_px.mean(axis=0)
+        radius = max(KEEP_RADIUS * size, 2.0 * max(b_grid.cell_w, b_grid.cell_h))
+        motions += _local_motions(feats[0], feats[1], feats[2], c, radius)
+        for j, t in enumerate(motions):
+            n_px = cv2.transform(b_px.reshape(-1, 1, 2), t).reshape(-1, 2)
+            n_poly = [n_grid.pixel_to_grid(float(x), float(y)) for x, y in n_px]
+            if j and own(n_poly):
+                break               # it moved, and has an outline of its own
+            seen = cv2.warpAffine(b_frame, t, (fw, fh))
+            valid = cv2.warpAffine(np.full((fh, fw), 255, np.uint8), t, (fw, fh))
+            body = _fill(n_frame.shape, n_px)
+            spot = cv2.dilate(body, ring)
+            spot[valid < 255] = 0
+            body = cv2.erode(body, np.ones((3, 3), np.uint8))
+            body[valid < 255] = 0
+            if _looks_alike(seen, n_frame, spot, body):
+                out.append(([np.int32(np.round(n_px)).reshape(-1, 1, 2)],
+                            "same" if j == 0 else "moved"))
+                break
+    return out
+
+
+def with_kept(snap, kept):
+    """`snap` with the kept outlines added (IDs -1, -2, ...; never the live
+    tracker's) and its parents worked out again -- a new snapshot; the
+    vision system's own lists are left alone. Returns (snap, {index: how})."""
+    if not kept:
+        return snap, {}
+    objects = list(snap["objects"]) + [c for c, _ in kept]
+    ids = list(snap["ids"]) + [-(k + 1) for k in range(len(kept))]
+    n0 = len(snap["objects"])
+    return (dict(snap, objects=objects, ids=ids, parents=find_parents(objects)),
+            {n0 + k: how for k, (_, how) in enumerate(kept)})
+
+
+def outline_facts(snap, order=None, kept=None, colour=True) -> list:
+    """One line per numbered outline (`order`: the snapshot's indices, in
+    number order; all of them when None), as the vision system (FastSAM)
+    traced it: its measured size (a turned one as itself) and colour --
+    what gpt-6-luna labels it from, beside the photos. `kept` marks the
+    task-start outlines brought back ({index: "same" or "moved"}).
+    `colour` False leaves the colour out (naming: the camera tints dark
+    things blue, and the model reads colour from the photo itself)."""
+    kept = kept or {}
+    frame, objects = snap["frame"], snap["objects"]
+    fh, fw = frame.shape[:2]
+    grid = Grid(fw, fh, list(snap["box"]), square_cells=False)
+    lines = []
+    for n, k in enumerate(range(len(objects)) if order is None else order, 1):
+        contours = objects[k]
+        poly = outline_polygon(contours, grid)
+        bits = [size_words(poly, grid)] if poly else []
+        try:
+            if colour:
+                bits.append(colour_word(object_color(frame, contours)))
+        except Exception:
+            pass
+        if k in kept:
+            bits.append("traced at the task's start, " + (
+                "kept where it was - that spot still looks the same"
+                if kept[k] == "same" else "moved along with what was round "
+                "it - it looks the same there"))
+        lines.append(f"{n}: " + (", ".join(b for b in bits if b) or "?"))
+    return lines
+
+
+def decisions_prompt(n, known, target="", before=True, outlines=(),
+                     known_grid=None, kept=False) -> str:
+    """gpt-6-luna's question: the label of each numbered FastSAM outline --
+    whichever known object it most probably is, or none -- and how
+    probable that label is. It labels outlines; it never finds, draws or
+    places an object."""
+    look = ("BEFORE is the whole board when the task started, every known "
+            "object outlined and labelled with its name. " if before else "")
+    lines = "\n".join(decision_known_line(o, known_grid) for o in known)
+    facts = "\n".join(outlines)
+    target_note = (f'The robot has just tried to pick up the "{target}" and '
+                   "the operator says it did not work: it may have been "
+                   "pushed, dropped, turned or shifted, but it is still on "
+                   "the board. " if target else "")
+    return (
+        "You label objects for a robot that works on a gridded board, seen "
+        "from above by one fixed camera. " + look +
+        "NOW is the whole board at this moment. NOW NUMBERED is the same "
+        "photo with each object outline the vision system (FastSAM) traced "
+        f"drawn green and numbered 1 to {n}. Details inside an object (a "
+        "logo, printed text, a ribbon, a handle) have no number: they belong "
+        "to the object around them. A numbered outline lying on another "
+        "numbered one is a separate object resting on it - label it for "
+        "what it is, not for the one under it."
+        + (" A number marked \"traced at the task's start\" is the vision "
+           "system's own outline from the task's start, kept because the "
+           "photo still shows the same thing there: label it like any other."
+           if kept else "") + "\n\n"
+        + (f"OUTLINES (as the vision system measured them):\n{facts}\n\n"
+           if facts else "") +
+        f"KNOWN OBJECTS (the only labels you may use):\n{lines}\n\n"
+        + target_note +
+        "Label every numbered outline with the known object it most "
+        "probably is, or \"none\", and give that label's probability in "
+        "percent. You only label the outlines that are there: you never "
+        "find, draw or place an object yourself.\n"
+        "- Use the known names spelled exactly as listed, or \"none\". "
+        "Never make up a new name.\n"
+        "- \"none\" is bare board or table, a shadow, a gap, a reflection, a "
+        "person's hand or arm, the robot's own machinery (rails, rods, belts, "
+        "motors, cables, the gripper, the AprilTag) and anything that is not "
+        "one of the known objects.\n"
+        "- Things may have moved or turned since the task started: judge by "
+        "what each outline shows (colour, shape, size, texture, markings) "
+        "first, and by where the object was only to tell look-alikes apart.\n"
+        "- Sizes tell objects apart: an outline whose long side is under half "
+        "or over twice a known object's long side is not that object itself, "
+        "however alike its colour (2.4 in long is not an object 0.9 in long) "
+        "- though a piece of an object still takes its label (below).\n"
+        "- A known object may have no numbered outline of its own now: "
+        "merged into another object's outline, lying on, under or inside "
+        "another object, or covered by the gripper. Then its label goes on "
+        "no number - never on an outline that is something else just because "
+        "it has none.\n"
+        "- One known object the vision split into several numbered outlines "
+        "(pieces) gets its label on each of them.\n"
+        "- The camera sees one 2D view from above, and nobody removes objects "
+        "from the board: an object you cannot see is still there.\n"
+        'Reply with JSON only: {"objects": [{"n": 1, "label": "<known name '
+        'or none>", "p": 95}, ...]} - one entry for every number.')
+
+
+DECISIONS_NONE = ("none", "none of them", "unknown", "nothing", "null")
+
+
+def _decision_name(word, lookup):
+    """A reply's name as a known name, or "none": a name that is no known
+    one is none of them (never a new name), and a near miss ("the
+    notebook") counts only when exactly one known name fits it."""
+    low = str(word or "").strip().strip('"').lower()
+    if not low or low in DECISIONS_NONE:
+        return "none"
+    if low in lookup:
+        return lookup[low]
+    hits = {k for kl, k in lookup.items() if kl in low or low in kl}
+    return hits.pop() if len(hits) == 1 else "none"
+
+
+def _percent(v) -> float:
+    try:
+        return max(0.0, float(str(v).strip().rstrip("%")))
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def parse_decisions_probs(text, n, known_names) -> dict:
+    """{outline index (0-based): {label: percent}} from gpt-6-luna's reply:
+    each number's label with its probability ({"n", "label", "p"}; a "name"
+    reads as a label, a missing "p" as 100, a fraction as a share of 1). A
+    reply that gives a number chances over several names instead keeps
+    them all, made to add up to 100 (what it leaves short is "none").
+    Numbers out of range, and repeats, are left out."""
+    if "{" not in (text or ""):
+        raise ValueError(f"no JSON in the reply: {str(text)[:60]!r}")
+    data = json.loads(text[text.index("{"):text.rindex("}") + 1])
+    entries = data.get("objects", []) if isinstance(data, dict) else []
+    lookup = {str(k).strip().lower(): str(k) for k in known_names}
+    out = {}
+    for item in entries if isinstance(entries, list) else []:
+        if not isinstance(item, dict):
+            continue
+        try:
+            num = int(item.get("n", 0))
+        except (TypeError, ValueError):
+            continue
+        if not 1 <= num <= n or num - 1 in out:
+            continue
+        spread = next((item[k] for k in ("p", "probs", "probabilities",
+                                         "chances")
+                       if isinstance(item.get(k), dict)), None)
+        if spread is None:
+            word = item.get("label", item.get("name"))
+            if word is None:
+                continue
+            p = item.get("p", item.get("probability", item.get("confidence")))
+            p = 100.0 if p is None else _percent(p)
+            p = p * 100.0 if 0 < p <= 1.0 else min(p, 100.0)
+            out[num - 1] = {_decision_name(word, lookup): p}
+            continue
+        chances = {}
+        for word, v in spread.items():
+            name = _decision_name(word, lookup)
+            chances[name] = chances.get(name, 0.0) + _percent(v)
+        total = sum(chances.values())
+        if total <= 0:
+            continue
+        scale = 1.0 if total <= 1.0001 else 100.0    # fractions, or percents
+        if total < scale:
+            chances["none"] = chances.get("none", 0.0) + scale - total
+            total = scale
+        out[num - 1] = {k: v * 100.0 / total for k, v in chances.items()}
+    return out
+
+
+def decision_labels(probs) -> dict:
+    """{outline index: known name}: every outline as its label -- whichever
+    it most probably is; one labelled none of them is left out. Even
+    chances go to the name the reply gave first."""
+    out = {}
+    for i, chances in probs.items():
+        if chances:
+            name = max(chances, key=chances.get)
+            if name != "none":
+                out[i] = name
+    return out
+
+
+def one_outline_per_label(labels, snap, known, numbered):
+    """{outline index: name} with doubles inside one another undone: when a
+    numbered outline and a numbered one inside it carry the same label --
+    FastSAM traced two touching objects as one outline round both as well as
+    each on its own -- only the one nearer the object's own task-start size
+    keeps it (otherwise the outer one would swallow the inner as its part)."""
+    labels = dict(labels)
+    parents = snap.get("parents") or find_parents(snap["objects"])
+    fh, fw = snap["frame"].shape[:2]
+    grid = Grid(fw, fh, list(snap["box"]), square_cells=False)
+    area0 = {str(o.get("name")): abs(_poly_area(o.get("polygon") or []))
+             for o in known}
+    numbered = set(numbered)
+
+    def unlike(i, name):
+        poly = outline_polygon(snap["objects"][i], grid)
+        a, a0 = (abs(_poly_area(poly)) if poly else 0.0), area0.get(name, 0.0)
+        return abs(math.log(max(a, 1e-6) / a0)) if a0 > 0 else 0.0
+
+    for i in sorted(labels):
+        p = parents[i] if 0 <= i < len(parents) else None
+        name = labels.get(i)
+        if (name is None or p is None or labels.get(p) != name
+                or i not in numbered or p not in numbered):
+            continue
+        labels.pop(p if unlike(i, name) <= unlike(p, name) else i)
+    return labels
+
+
+def parse_decisions_reply(text, n, known_names) -> dict:
+    """{outline index: known name} -- each number's label
+    (decision_labels of parse_decisions_probs)."""
+    return decision_labels(parse_decisions_probs(text, n, known_names))
+
+
+def known_objects_image(frame, grid, known, region=None, max_side=None) -> bytes:
+    """BEFORE for gpt-6-luna: the task-start frame with each known
+    object's outline drawn and its name on it, cropped and sized like Vision
+    AI's own photos (`max_side` as naming_images). JPEG bytes."""
+    view = frame
+    if region is not None:
+        crop, _ = board_crop(frame, region)
+        view = crop if crop is not None else frame
+    scale = min(1.0, (max_side or NAMER_MAX_SIDE) / max(view.shape[:2]))
+    k = 1.0 / scale
+    line, fs, ft = max(3, round(3 * k)), 0.8 * k, max(2, round(2 * k))
+    img = frame.copy()
+    placed = []
+    for j, o in enumerate(known):
+        poly = o.get("polygon")
+        if not poly or len(poly) < 3:
+            continue
+        pts = np.int32([grid.grid_to_pixel(float(p[0]), float(p[1]))
+                        for p in poly])
+        cv2.polylines(img, [pts], True, OBJECT_COLOURS[j % len(OBJECT_COLOURS)],
+                      line, cv2.LINE_AA)
+        c = _centre_point(o) or _poly_centroid(poly)
+        placed.append((grid.grid_to_pixel(*c), str(o.get("name") or "object"),
+                       OBJECT_COLOURS[j % len(OBJECT_COLOURS)]))
+    for (cx, cy), name, colour in placed:   # names on top of every outline
+        (tw, th), base = cv2.getTextSize(name, cv2.FONT_HERSHEY_SIMPLEX, fs, ft)
+        x, y = int(cx - tw / 2), int(cy + th / 2)
+        cv2.rectangle(img, (x - round(6 * k), y - th - round(7 * k)),
+                      (x + tw + round(6 * k), y + base + round(5 * k)),
+                      (255, 255, 255), -1)
+        cv2.rectangle(img, (x - round(6 * k), y - th - round(7 * k)),
+                      (x + tw + round(6 * k), y + base + round(5 * k)),
+                      colour, ft)
+        cv2.putText(img, name, (x, y), cv2.FONT_HERSHEY_SIMPLEX, fs,
+                    (0, 0, 0), ft, cv2.LINE_AA)
+    if region is not None:
+        crop, _ = board_crop(img, region)
+        img = crop if crop is not None else img
+    if scale < 1:
+        img = cv2.resize(img, None, fx=scale, fy=scale,
+                         interpolation=cv2.INTER_AREA)
+    return cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 90])[1].tobytes()
+
+
+class _DecisionNames:
+    """The namer's shape (names, info, asked), filled from gpt-6-luna's
+    answer, for planner_objects."""
+
+    def __init__(self, names, info, asked):
+        self.names, self.info, self.asked = names, info, set(asked)
+        self.left_out = {}
+
+
+def reclassify_objects(snap, labels, known, info_of=None, out=None,
+                       probs=None):
+    """The snapshot's outlines as a planner object list named ONLY from
+    `known` (the task's own objects). `labels` is {outline index: known
+    name}, `probs` gpt-6-luna's chances ({outline index: {name: percent}}).
+    Returns (objects, out_of_reach, unmatched): the objects in reach -- one
+    per known name: of separate outlines given one name, the most probable
+    -- the ones out of reach, and how many outlines were not any known
+    object (left out: no new names)."""
+    frame = snap["frame"]
+    fh, fw = frame.shape[:2]
+    grid = Grid(fw, fh, list(snap["box"]), square_cells=False)
+    ids = snap["ids"]
+    parents = snap.get("parents") or find_parents(snap["objects"])
+    by_name = {str(o.get("name")): o for o in known}
+    info_of = info_of or {}
+    names, info = {}, {}
+    for i, name in labels.items():
+        o = by_name.get(name)
+        if o is None or not 0 <= i < len(ids):
+            continue
+        if parents[i] is not None and labels.get(parents[i]) == name:
+            continue        # a part of that same object: it stays its part
+        tid = ids[i]
+        names[tid] = name
+        meta = {k: v for k, v in dict(info_of.get(name) or {}).items()
+                if k in ("color", "desc")}
+        meta.setdefault("color", str(o.get("color") or ""))
+        meta.setdefault("desc", "")
+        p = parents[i]
+        # under a different known object (or under nothing named) it is a
+        # thing of its own lying there; under its own name, a part of it
+        meta.update({"robot": False, "thing": "",
+                     "loose": p is not None and labels.get(p) != name})
+        info[tid] = meta
+    # one known object FastSAM traced as several separate outlines: its
+    # touching pieces join into one (planner_objects' thing_groups)
+    tops = {}
+    for i, name in labels.items():
+        if 0 <= i < len(ids) and ids[i] in names and (
+                parents[i] is None or labels.get(parents[i]) != name):
+            tops.setdefault(name, []).append(i)
+    for name, idx in tops.items():
+        if len(idx) > 1:
+            for i in idx:
+                info[ids[i]]["thing"] = name
+    namer = _DecisionNames(names, info, ids)
+    if out is not None:
+        out["names"], out["info"] = names, info
+    objects = planner_objects(dict(snap, parents=parents), namer, grid)
+    named = [o for o in objects if o.get("track_id") in names]
+    unmatched = len(objects) - len(named)
+
+    probs = probs or {}
+
+    def chance(o):
+        """gpt-6-luna's chance (percent) that this outline is its name."""
+        tid = o.get("track_id")
+        i = ids.index(tid) if tid in ids else None
+        return (probs.get(i) or {}).get(o["name"], 0.0) if i is not None else 0.0
+
+    def unlike(o):
+        """How unlike the task's own object an outline given its name is:
+        its size first (turned or not), then how far it is from where the
+        object was -- between outlines about as probable, the one that IS
+        the object (the model once called a notebook's ribbon its "tab" as
+        well as the tab), and of one object in pieces, its body."""
+        k = by_name.get(o["name"]) or {}
+        area = abs(_poly_area(o.get("polygon") or [])) or 1e-6
+        area0 = abs(_poly_area(k.get("polygon") or [])) or None
+        c, c0 = _centre_point(o), _centre_point(k)
+        size = abs(math.log(area / area0)) if area0 else -math.log(area)
+        far = (math.hypot(c[0] - c0[0], c[1] - c0[1])
+               if c is not None and c0 is not None else 0.0)
+        return size + 0.1 * far
+
+    # one name on separate outlines: the most probable one -- chances within
+    # DECISIONS_TIE of it are even, and the one more like the object wins
+    groups = {}
+    for o in named:
+        groups.setdefault(o["name"], []).append(o)
+    keep = set()
+    for group in groups.values():
+        top = max(chance(o) for o in group)
+        keep.add(id(min((o for o in group if chance(o) >= top - DECISIONS_TIE),
+                        key=unlike)))
+    named = [o for o in named if id(o) in keep]
+    out_of_reach = []
+    named = restrict_to_reachable(named, out_of_reach)
+    return named, out_of_reach, unmatched
+
+
+class DecisionsJob:
+    """gpt-6-luna on a worker thread: every outline FastSAM traced on the
+    board now gets a label -- whichever of the task's own objects it most
+    probably is, or none -- with that label's probability. Same shape as the
+    other jobs: the thread writes only its own fields."""
+
+    def __init__(self, snap, known, before=None, target="", info_of=None):
+        self.snap = snap
+        self.known = list(known or [])
+        # (frame, grid, region) of the task's start, for BEFORE
+        self.before = before
+        self.target = target or ""
+        self.info_of = info_of or {}
+        self._lock = threading.Lock()
+        self.stage = (f"{DECISIONS_MODEL} - labelling the outlines as the "
+                      f"task's objects...")
+        self.order = []             # the numbered outlines' snapshot indices
+        self.kept = {}              # {index: "same"/"moved"}: task-start outlines
+        self._prepared = False
+        self.labels = {}
+        self.probs = {}             # {outline index: {label: percent}}
+        self.chance = {}            # {name: percent} for each object it lists
+        self.named = ({}, {})       # ({track id: name}, {track id: info})
+        self.objects = []
+        self.out_of_reach = []
+        self.unmatched = 0
+        self.raw = ""
+        self.error = ""
+        self.done = False
+        self._thread = threading.Thread(target=self._run, daemon=True)
+
+    def start(self):
+        self._thread.start()
+        return self
+
+    def snapshot(self):
+        with self._lock:
+            return self.stage, self.done
+
+    def _prepare(self):
+        """Once: the outlines to number -- the top-level ones, any whole task
+        object lying on another, and the task-start outlines kept where FastSAM
+        traced a known object into its neighbour (kept_outlines)."""
+        if self._prepared:
+            return
+        self._prepared = True
+        known_grid = self.before[1] if self.before is not None else None
+        try:
+            kept = kept_outlines(self.before, self.snap, self.known,
+                                 labelled_outlines(self.snap, self.known,
+                                                   known_grid))
+        except Exception as e:
+            print(f"[decisions] the task-start outlines were not checked: {e}")
+            kept = []
+        self.snap, self.kept = with_kept(self.snap, kept)
+        order = labelled_outlines(self.snap, self.known, known_grid)
+        self.order = order + [i for i in sorted(self.kept) if i not in order]
+        if self.kept:
+            print(f"[decisions] {len(self.kept)} task-start outline(s) kept: "
+                  + ", ".join(f"#{self.order.index(i) + 1} ({h})"
+                              for i, h in sorted(self.kept.items())))
+
+    def messages(self):
+        """The request: BEFORE (named, when there is one), NOW, NOW
+        NUMBERED, each after its label, and the question."""
+        self._prepare()
+        frame, objects = self.snap["frame"], self.snap["objects"]
+        known_grid = self.before[1] if self.before is not None else None
+        shown = [objects[i] for i in self.order]
+        # the whole board (not only the gripper's reach), green outlines
+        # only; a number keeps off an object numbered on top of it
+        parents = self.snap.get("parents") or find_parents(objects)
+        nest = [self.order.index(parents[i]) if parents[i] in self.order
+                else None for i in self.order]
+        plain, marked = naming_images(frame, shown, nest, self.snap["box"],
+                                      is_part=[False] * len(shown),
+                                      max_side=DECISIONS_MAX_SIDE)
+
+        def picture(jpeg):
+            return {"type": "image_url", "image_url": {
+                "url": "data:image/jpeg;base64,"
+                       + base64.b64encode(jpeg).decode(), "detail": "high"}}
+
+        content = [{"type": "text", "text": decisions_prompt(
+            len(shown), self.known, self.target,
+            before=self.before is not None,
+            outlines=outline_facts(self.snap, self.order, self.kept),
+            known_grid=known_grid, kept=bool(self.kept))}]
+        if self.before is not None:
+            b_frame, b_grid, _ = self.before
+            content += [{"type": "text", "text": "BEFORE (the task's start, "
+                                                 "named):"},
+                        picture(known_objects_image(b_frame, b_grid,
+                                                    self.known, b_grid.box,
+                                                    DECISIONS_MAX_SIDE))]
+        content += [{"type": "text", "text": "NOW:"}, picture(plain),
+                    {"type": "text", "text": "NOW NUMBERED:"}, picture(marked)]
+        return [{"role": "user", "content": content}]
+
+    def _run(self):
+        try:
+            objects = self.snap.get("objects") or []
+            if not objects:
+                raise ModelError("Vision AI found no outlines on the board.")
+            if not self.known:
+                raise ModelError("No objects from the task's start to match "
+                                 "the outlines against.")
+            messages = self.messages()
+            if not self.order:
+                raise ModelError("Vision AI found no object outlines.")
+            client = make_client()
+            self.raw = call_model(
+                client, model=DECISIONS_MODEL,
+                max_tokens=DECISIONS_MAX_TOKENS,
+                reasoning=DECISIONS_REASONING, stage="Classify",
+                messages=messages)
+            print(f"\n=== {DECISIONS_MODEL.upper()} (classify) ===")
+            print(self.raw)
+            numbered = parse_decisions_probs(
+                self.raw, len(self.order), [o.get("name") for o in self.known])
+            self.probs = {self.order[k]: v for k, v in numbered.items()}
+            self.labels = one_outline_per_label(decision_labels(self.probs),
+                                                self.snap, self.known,
+                                                self.order)
+            out = {}
+            (self.objects, self.out_of_reach,
+             self.unmatched) = reclassify_objects(self.snap, self.labels,
+                                                  self.known, self.info_of,
+                                                  out=out, probs=self.probs)
+            self.named = (out.get("names") or {}, out.get("info") or {})
+            ids = list(self.snap.get("ids") or [])
+            for o in list(self.objects) + list(self.out_of_reach):
+                tid = o.get("track_id")
+                if tid in ids:
+                    self.chance[str(o.get("name"))] = round(
+                        (self.probs.get(ids.index(tid)) or {}).get(
+                            o.get("name"), 0.0))
+            print(f"\n=== OBJECT LIST ({DECISIONS_MODEL}) ===")
+            print(object_list_text(self.objects) or "(none)")
+        except Exception as e:
+            self.error = str(e)
+        finally:
+            with self._lock:
+                self.done = True
+
+
+def decisions_report(job, known=()) -> str:
+    """gpt-6-luna's answer for the transcript: each of the task's objects
+    where it is now (and where it was) and how probable that is, what is
+    not on the board, and how many outlines were none of them."""
+    was = {str(o.get("name")): str(o.get("center") or "") for o in known}
+    chance = getattr(job, "chance", None) or {}
+    lines = [f"{DECISIONS_MODEL} labelled Vision AI's outlines - the task's "
+             f"objects on the board now:"]
+    found = set()
+    for o in job.objects:
+        name, now = str(o.get("name")), str(o.get("center") or "")
+        found.add(name)
+        before = was.get(name, "")
+        lines.append(f"- {name} @ {now}" + (
+            "" if not before else " (same cell)" if before == now
+            else f" (was {before})")
+            + (f" - {chance[name]}%" if name in chance else ""))
+    for d in job.out_of_reach:
+        found.add(str(d.get("name")))
+        lines.append(f"- {d.get('name')}: out of the gripper's reach")
+    if not found:
+        lines.append("- none of them")
+    missing = [n for n in was if n not in found]
+    if missing:
+        lines.append("Not seen now (nothing leaves the board - lying on, "
+                     "under or inside another object?): "
+                     + ", ".join(missing) + ".")
+    if job.unmatched:
+        lines.append(f"{job.unmatched} outline(s) are none of the task's "
+                     f"objects - left out (no new names).")
+    return "\n".join(lines)
+
+
+def plan_pickup_object(cmds, index, objects, slips=None):
+    """(object, moved) for the pickup at cmds[index]: the object it is after,
+    found the way enforce_gripper_targets finds one -- at the cell of the
+    goto in front of it, every object followed through the plan's earlier
+    pickups and keeps (and bare presses and releases) -- and how many cells
+    the plan has carried it since `objects` was seen.
+
+    `slips` is {pickup index: (name, (dcol, drow))}: where an earlier
+    gpt-6-luna sequence found that object off the place the plan had it.
+    (None, (0, 0)) when no object is there."""
+    objs = list(objects or [])
+    slips = slips or {}
+    moved = [(0, 0)] * len(objs)
+
+    def slip(k):
+        if k not in slips:
+            return
+        name, (dc, dr) = slips[k]
+        for i, o in enumerate(objs):
+            if str(o.get("name")) == str(name):
+                moved[i] = (moved[i][0] + dc, moved[i][1] + dr)
+                return
+
+    last = held = slid = None
+    held_from = slid_from = None
+    for k in range(min(index, len(cmds))):
+        line = str(cmds[k]).strip()
+        m = GOTO_RE.match(line)
+        if m:
+            last = parse_coordinate(f"{m.group(1)}{m.group(2)}")
+            continue
+        bare = _bare_step(line)
+        if bare == "pickup":
+            slip(k)
+            held = (object_at_cell(objs, moved, last, GRIP_CELL_SLACK)
+                    if last is not None else None)
+            held_from = last
+        elif bare == "keep":
+            if held is not None and None not in (held_from, last):
+                moved[held] = (moved[held][0] + last[0] - held_from[0],
+                               moved[held][1] + last[1] - held_from[1])
+            held = None
+        elif bare == "press" and held is None:
+            slid = object_at_cell(objs, moved, last) if last is not None else None
+            slid_from = last
+        elif bare == "release":
+            if slid is not None and None not in (slid_from, last):
+                moved[slid] = (moved[slid][0] + last[0] - slid_from[0],
+                               moved[slid][1] + last[1] - slid_from[1])
+            slid = None
+    slip(index)
+    cell = parse_coordinate(_cell_before(cmds, index) or "")
+    if cell is None:
+        return None, (0, 0)
+    i = object_at_cell(objs, moved, cell, GRIP_CELL_SLACK)
+    return (objs[i], moved[i]) if i is not None else (None, (0, 0))
+
+
+def repickup_plan(cmds, index, old, new, moved=(0, 0), fold=False):
+    """The plan with the pickup at `index` sent to `new` -- the object as the
+    gpt-6-luna sees it now. Returns (commands, pickup index, info) or
+    (None, index, info) with info["why"] when it cannot be done.
+
+    The goto into the pickup becomes `new`'s top-right grip cell. `old` is
+    the object as S1 last had it (`moved` cells on from its listed place).
+    Every goto while it is held, up to its keep, moves by (grip change) -
+    (centre change), so it still lands where the plan put it: a slipped
+    object comes back to the same keep cell. All of them move, or -- if one
+    would leave the board -- none. A fold's pickup is a point ON the cloth:
+    it and its landing follow the cloth instead."""
+    cmds = list(cmds)
+    info = {"why": ""}
+    c_new = _centre_point(new)
+    c_old = _centre_point(old)
+    if c_old is not None:
+        c_old = (c_old[0] + moved[0], c_old[1] + moved[1])
+    gm = (GOTO_RE.match(str(cmds[index - 1]).strip())
+          if 0 < index <= len(cmds) else None)
+    gi = index - 1 if gm else None
+    was = parse_coordinate(f"{gm.group(1)}{gm.group(2)}") if gm else None
+    if fold and was is not None and c_new is not None and c_old is not None:
+        d = (_round_cells(c_new[0] - c_old[0]), _round_cells(c_new[1] - c_old[1]))
+        grip = (was[0] + d[0], was[1] + d[1])
+        shift = d
+    else:
+        grip = parse_coordinate(top_right_grip_cell(new) or "")
+        shift = (0, 0)
+        if (grip is not None and was is not None
+                and c_new is not None and c_old is not None):
+            shift = (_round_cells(grip[0] - was[0] - (c_new[0] - c_old[0])),
+                     _round_cells(grip[1] - was[1] - (c_new[1] - c_old[1])))
+    if grip is None or not (0 <= grip[0] < CONFIG.n_cols
+                            and 0 <= grip[1] < CONFIG.n_rows):
+        info["why"] = "it has no cell on the board"
+        return None, index, info
+    reach = reachable_cells()
+    if reach is not None and not (reach[0] <= grip[0] < reach[2]
+                                  and reach[1] <= grip[1] < reach[3]):
+        info["why"] = f"{coordinate_name(*grip)} is out of the gripper's reach"
+        return None, index, info
+    line = f"goto_coordinate = {CONFIG.columns[grip[0]]}, {CONFIG.rows[grip[1]]}"
+    if gi is None:
+        cmds.insert(index, line)
+        gi, index = index, index + 1
+    else:
+        cmds[gi] = _set_goto_cell(cmds[gi], *grip)
+    route = []
+    for j in range(index + 1, len(cmds)):
+        m = GOTO_RE.match(str(cmds[j]).strip())
+        if m:
+            c = parse_coordinate(f"{m.group(1)}{m.group(2)}")
+            if c is not None:
+                route.append((j, c))
+        elif _bare_step(cmds[j]) == "keep":
+            break
+    moved_ok = all(0 <= c[0] + shift[0] < CONFIG.n_cols
+                   and 0 <= c[1] + shift[1] < CONFIG.n_rows for _, c in route)
+    if shift != (0, 0) and moved_ok:
+        for j, c in route:
+            cmds[j] = _set_goto_cell(cmds[j], c[0] + shift[0], c[1] + shift[1])
+    info.update({"was": coordinate_name(*was) if was is not None else "",
+                 "now": coordinate_name(*grip),
+                 "shift": shift if moved_ok else (0, 0),
+                 "route": [coordinate_name(c[0] + shift[0], c[1] + shift[1])
+                           if moved_ok else coordinate_name(*c)
+                           for _, c in route],
+                 "kept_route": shift != (0, 0) and not moved_ok})
+    return cmds, index, info
+
+
+def task_reference(job):
+    """What gpt-6-luna names a later look at the board from: the
+    task's own object list, the board it was read off (BEFORE: frame, grid,
+    region) and the namer's word on each object, by name. None without
+    objects."""
+    objects = copy.deepcopy(list(getattr(job, "objects", None) or []))
+    if not objects:
+        return None
+    snap = getattr(job, "snap", None)
+    info = getattr(job, "known_info", None) or {}
+    before = None
+    if snap is not None and snap.get("frame") is not None:
+        fh, fw = snap["frame"].shape[:2]
+        before = (snap["frame"],
+                  Grid(fw, fh, list(snap["box"]), square_cells=False),
+                  snap.get("region") or snap["box"])
+    return {"objects": objects, "before": before,
+            "info": {str(o.get("name")): dict(info.get(o.get("track_id")) or {})
+                     for o in objects}}
+
+
+# ERR's measured moves (user, 2026-10-10: "fix final error rebounce AI, make
+# it consistent"): S1 compares each task object's FastSAM outline before and
+# after -- the labels from Vision AI and gpt-6-luna -- so the verdict call
+# is handed what moved instead of having to notice it, the same every time.
+MOVE_SHIFT_CELLS = 1.0        # a centre this far off its start: MOVED
+MOVE_TURN_DEG = 15.0          # an elongated outline turned this much: MOVED
+MOVE_ELONGATED = 1.3          # (long side over short side, both outlines)
+MOVE_OVERLAP = 0.5            # an outline overlapping its start less: MOVED
+MOVE_MIN_CELLS = 2.0          # (overlap judged only on outlines this big)
+MOVE_CONTAINED = 0.85         # one outline this much inside the other: STAYED
+MOVE_RASTER = 10              # raster points per grid cell, for the overlaps
+MOVE_ALONG_GAP = 0.75         # an object this close to one the plan moves...
+MOVE_ALONG_CELLS = 1.2        # ...that ends up this close to where that one's
+                              # move carries it moved WITH it (a notebook's tab)
+MOVE_PLANNED_CELLS = 0.4      # an object the plan moves, moved this far: MOVED
+                              # (a deliberate one-cell nudge is not "stayed")
+
+
+def _poly_overlaps(before, after):
+    """(intersection over union, share of `after` inside `before`, share of
+    `before` inside `after`) of two grid-unit polygons, on a raster."""
+    pts = list(before) + list(after)
+    x0 = math.floor(min(float(q[0]) for q in pts)) - 1
+    y0 = math.floor(min(float(q[1]) for q in pts)) - 1
+    w = int((math.ceil(max(float(q[0]) for q in pts)) + 1 - x0) * MOVE_RASTER)
+    h = int((math.ceil(max(float(q[1]) for q in pts)) + 1 - y0) * MOVE_RASTER)
+
+    def mask(poly):
+        m = np.zeros((max(h, 1), max(w, 1)), np.uint8)
+        cv2.fillPoly(m, [np.int32([((float(q[0]) - x0) * MOVE_RASTER,
+                                    (float(q[1]) - y0) * MOVE_RASTER)
+                                   for q in poly])], 1)
+        return m.astype(bool)
+
+    mb, ma = mask(before), mask(after)
+    inter = float(np.logical_and(mb, ma).sum())
+    union = float(np.logical_or(mb, ma).sum())
+    return (inter / union if union else 0.0,
+            inter / float(ma.sum()) if ma.any() else 0.0,
+            inter / float(mb.sum()) if mb.any() else 0.0)
+
+
+def visible_cells(snap):
+    """What Vision AI looks at in `snap` -- its region, else its box -- in
+    grid units: (col0, row0, col1, row1)."""
+    fh, fw = snap["frame"].shape[:2]
+    g = Grid(fw, fh, list(snap["box"]), square_cells=False)
+    x0, y0, x1, y1 = snap.get("region") or snap["box"]
+    return g.pixel_to_grid(x0, y0) + g.pixel_to_grid(x1, y1)
+
+
+def _uncut_shift(p0, p1, c0, c1, visible):
+    """(dx, dy), the centre's move -- but on an axis where either outline
+    runs into the edge of what Vision AI sees (`visible`, grid units), the
+    move of its other, uncut edge: an object pushed half out of view keeps
+    its true move instead of its outline's shrunken centre."""
+    dx, dy = c1[0] - c0[0], c1[1] - c0[1]
+    if visible is None:
+        return dx, dy
+    vx0, vy0, vx1, vy1 = visible
+    xs0, ys0 = [float(q[0]) for q in p0], [float(q[1]) for q in p0]
+    xs1, ys1 = [float(q[0]) for q in p1], [float(q[1]) for q in p1]
+    near = 0.3
+    out = []
+    for d, a0, a1, lo, hi in ((dx, xs0, xs1, vx0, vx1), (dy, ys0, ys1, vy0, vy1)):
+        cut_hi = max(a0) >= hi - near or max(a1) >= hi - near
+        cut_lo = min(a0) <= lo + near or min(a1) <= lo + near
+        if cut_hi and not cut_lo:
+            d = min(a1) - min(a0)
+        elif cut_lo and not cut_hi:
+            d = max(a1) - max(a0)
+        out.append(d)
+    return out[0], out[1]
+
+
+def object_moves(known, after, out_of_reach=(), visible=None):
+    """Each task object's move, from its outline at the task's start
+    (`known`) to the outline labelled with its name now (`after`): [{"name",
+    "was", "now", "shift" (cells), "turned" (degrees), "overlap" (0-1),
+    "call"}], the call MOVED, STAYED, NOT SEEN or OUT OF REACH. One outline
+    lying inside the other is STAYED (an object partly covered, or one
+    FastSAM traced together with what lies on it); a turn counts only for
+    an elongated outline. `visible` (visible_cells) lets an outline the edge
+    of the view cuts short be measured by its uncut edge (_uncut_shift)."""
+    by_name = {str(o.get("name")): o for o in after or ()}
+    far = {str(d.get("name")) for d in out_of_reach or ()}
+    out = []
+    for k in known or ():
+        name = str(k.get("name"))
+        row = {"name": name, "was": str(k.get("center") or ""), "now": "",
+               "shift": None, "turned": None, "overlap": None,
+               "_c0": _centre_point(k), "_c1": None, "_p0": k.get("polygon"),
+               "_p1": None}
+        a = by_name.get(name)
+        if a is None:
+            row["call"] = "OUT OF REACH" if name in far else "NOT SEEN"
+            out.append(row)
+            continue
+        row["now"] = str(a.get("center") or "")
+        c0, c1 = _centre_point(k), _centre_point(a)
+        p0, p1 = k.get("polygon"), a.get("polygon")
+        row["_p1"] = p1
+        if (c0 is not None and c1 is not None and visible is not None and p0
+                and p1 and len(p0) >= 3 and len(p1) >= 3):
+            dx, dy = _uncut_shift(p0, p1, c0, c1, visible)
+            if (dx, dy) != (c1[0] - c0[0], c1[1] - c0[1]):
+                c1 = (c0[0] + dx, c0[1] + dy)      # where the whole object is
+                row["now"] = coordinate_name(
+                    max(0, min(CONFIG.n_cols - 1, int(math.floor(c1[0])))),
+                    max(0, min(CONFIG.n_rows - 1, int(math.floor(c1[1])))))
+        row["_c1"] = c1
+        shift = (math.hypot(c1[0] - c0[0], c1[1] - c0[1])
+                 if c0 is not None and c1 is not None else 0.0)
+        turned, iou, contained, area0 = 0.0, 1.0, 0.0, 0.0
+        if p0 and p1 and len(p0) >= 3 and len(p1) >= 3:
+            iou, after_in, before_in = _poly_overlaps(p0, p1)
+            contained = max(after_in, before_in)
+            area0 = abs(_poly_area(p0))
+            s0, s1 = poly_size_in(p0), poly_size_in(p1)
+            if (s0 and s1 and s0[0] >= MOVE_ELONGATED * s0[1]
+                    and s1[0] >= MOVE_ELONGATED * s1[1]):
+                d = abs(s0[2] - s1[2]) % 180.0
+                turned = min(d, 180.0 - d)
+        moved = (shift >= MOVE_SHIFT_CELLS or turned >= MOVE_TURN_DEG
+                 or (iou < MOVE_OVERLAP and area0 >= MOVE_MIN_CELLS))
+        stays = contained >= MOVE_CONTAINED and turned < MOVE_TURN_DEG
+        row.update(shift=shift, turned=turned, overlap=iou,
+                   call="MOVED" if moved and not stays else "STAYED")
+        out.append(row)
+    return out
+
+
+def _polys_touch(p, q, gap=MOVE_ALONG_GAP):
+    """Whether two grid-unit polygons touch, or lie within `gap` cells."""
+    pts = list(p) + list(q)
+    x0 = math.floor(min(float(v[0]) for v in pts)) - 2
+    y0 = math.floor(min(float(v[1]) for v in pts)) - 2
+    w = int((math.ceil(max(float(v[0]) for v in pts)) + 2 - x0) * MOVE_RASTER)
+    h = int((math.ceil(max(float(v[1]) for v in pts)) + 2 - y0) * MOVE_RASTER)
+
+    def mask(poly):
+        m = np.zeros((max(h, 1), max(w, 1)), np.uint8)
+        cv2.fillPoly(m, [np.int32([((float(v[0]) - x0) * MOVE_RASTER,
+                                    (float(v[1]) - y0) * MOVE_RASTER)
+                                   for v in poly])], 1)
+        return m
+
+    r = max(1, int(round(gap * MOVE_RASTER)))
+    grown = cv2.dilate(mask(p), np.ones((2 * r + 1, 2 * r + 1), np.uint8))
+    return bool(np.logical_and(grown, mask(q)).any())
+
+
+def moved_along(moves, plan_names) -> dict:
+    """{name: carrier} for each object the plan does not move itself that
+    touched one it does move at the start and went with it: MOVED just where
+    the carrier's move -- its shift, and its turn either way -- carries it
+    (a tab sticking out of a notebook, a cloth lying on it), or NOT SEEN on
+    its own with that spot inside the carrier's outline now (FastSAM traced
+    the two as one)."""
+    out = {}
+    for m in moves:
+        if (m["call"] not in ("MOVED", "NOT SEEN") or m["name"] in plan_names
+                or not m.get("_p0") or m.get("_c0") is None
+                or (m["call"] == "MOVED" and m.get("_c1") is None)):
+            continue
+        for n in moves:
+            if (n is m or n["call"] != "MOVED" or n["name"] not in plan_names
+                    or not n.get("_p0") or n.get("_c0") is None
+                    or n.get("_c1") is None
+                    or not _polys_touch(m["_p0"], n["_p0"])):
+                continue
+            rx, ry = m["_c0"][0] - n["_c0"][0], m["_c0"][1] - n["_c0"][1]
+            turn = math.radians(n.get("turned") or 0.0)
+            spots = [(n["_c1"][0] + rx * math.cos(a) - ry * math.sin(a),
+                      n["_c1"][1] + rx * math.sin(a) + ry * math.cos(a))
+                     for a in (0.0, turn, -turn)]
+            if m["call"] == "MOVED":
+                went = min(math.hypot(m["_c1"][0] - x, m["_c1"][1] - y)
+                           for x, y in spots) <= MOVE_ALONG_CELLS
+            else:
+                p1 = n.get("_p1")
+                went = bool(p1) and len(p1) >= 3 and any(
+                    cv2.pointPolygonTest(np.float32(p1).reshape(-1, 1, 2),
+                                         (float(x), float(y)), True)
+                    >= -MOVE_ALONG_GAP for x, y in spots)
+            if went:
+                out[m["name"]] = n["name"]
+                break
+    return out
+
+
+def plan_moved_names(cmds, objects, slips=None) -> set:
+    """The names of the task objects a plan picks up, or slides (a press
+    with a move before its release), each pickup's object found the way
+    plan_pickup_object finds it."""
+    cmds, objs = list(cmds or []), list(objects or [])
+    names = set()
+    for k, line in enumerate(cmds):
+        bare = _bare_step(str(line))
+        if bare == "pickup":
+            o, _ = plan_pickup_object(cmds, k, objs, slips)
+            if o is not None:
+                names.add(str(o.get("name")))
+        elif bare == "press":
+            rest = cmds[k + 1:]
+            end = next((j for j, c in enumerate(rest) if _bare_step(str(c))
+                        in ("release", "pickup", "keep")), len(rest))
+            cell = parse_coordinate(_cell_before(cmds, k) or "")
+            if cell is not None and any(GOTO_RE.match(str(c).strip())
+                                        for c in rest[:end]):
+                i = object_at_cell(objs, [(0, 0)] * len(objs), cell)
+                if i is not None:
+                    names.add(str(objs[i].get("name")))
+    return names
+
+
+def _move_words(m) -> str:
+    """" (0.3 left, 2.9 down)": a measured move's two parts, for ERR to check
+    a direction against the task's words; "" when it barely moved."""
+    c0, c1 = m.get("_c0"), m.get("_c1")
+    if c0 is None or c1 is None or (m.get("shift") or 0.0) < 0.1:
+        return ""
+    dx, dy = c1[0] - c0[0], c1[1] - c0[1]
+    parts = [f"{abs(d):.1f} {word}" for d, word in
+             ((dx, "right" if dx > 0 else "left"), (dy, "down" if dy > 0 else "up"))
+             if abs(d) >= 0.05]
+    return f" ({', '.join(parts)})" if parts else ""
+
+
+def err_moves_text(moves, plan_names=()) -> str:
+    """ERR's MEASURED BY S1 input: one line per task object. One that moved
+    just as a neighbour the plan moves did (moved_along) is MOVED WITH it."""
+    lines = []
+    along = moved_along(moves, plan_names)
+    for m in moves:
+        plan = ("the plan picks it up or slides it" if m["name"] in plan_names
+                else "the plan does not move it")
+        if m["name"] in along:
+            carrier = along[m["name"]]
+            plan = (f"attached to the {carrier} or lying on it, it went just "
+                    f"where the {carrier}'s move carried it; the plan moves "
+                    f"the {carrier}")
+        call = m["call"]
+        if (call == "STAYED" and m["name"] in plan_names
+                and (m.get("shift") or 0.0) >= MOVE_PLANNED_CELLS):
+            call = "MOVED"
+        if m["call"] in ("NOT SEEN", "OUT OF REACH"):
+            where = ("no numbered outline of its own now (lying on, under, "
+                     "inside or part of another object, or hidden)"
+                     if m["call"] == "NOT SEEN"
+                     else "now out of the gripper's reach")
+            if m["name"] in along:
+                where = (f"no outline of its own now - where the "
+                         f"{along[m['name']]}'s move carried it lies inside "
+                         f"the {along[m['name']]}'s outline: traced as one "
+                         f"with it")
+                call = f"MOVED WITH the {along[m['name']]}"
+            lines.append(f"- {m['name']}: was at {m['was']}; {where} -- "
+                         f"{call}; {plan}")
+            continue
+        bits = [f"centre moved {m['shift']:.1f} cells" + _move_words(m)]
+        if m["turned"] and m["turned"] >= 1.0:
+            bits.append(f"turned {m['turned']:.0f} degrees")
+        bits.append(f"outline overlaps its start {m['overlap'] * 100:.0f}%")
+        if m["name"] in along:
+            call = f"MOVED WITH the {along[m['name']]}"
+        lines.append(f"- {m['name']}: {m['was']} -> {m['now']}, "
+                     + ", ".join(bits) + f" -- {call}; {plan}")
+    return "\n".join(lines)
+
+
+ERR_SEVERITY = {"unknown": 0, "done correctly": 1, "cannot verify": 2,
+                "done wrongly": 3}
+
+
+def err_verdict_from_objects(verdict, objects):
+    """ERR's verdict, kept to its own precedence (rule 12) over its OBJECTS
+    line: any object wrong -> done wrongly; otherwise any unverified ->
+    cannot verify; otherwise done correctly. A stricter verdict the reply
+    gave itself stands (it may have seen a collision); with no OBJECTS, the
+    reply's verdict."""
+    if not objects:
+        return verdict
+    marks = [str(st).strip().lower() for _, st in objects]
+    if any(m.startswith("wrong") for m in marks):
+        derived = "done wrongly"
+    elif any(not m.startswith("ok") for m in marks):
+        derived = "cannot verify"
+    else:
+        derived = "done correctly"
+    return max((verdict, derived), key=lambda v: ERR_SEVERITY.get(v, 0))
+
+
+class DecisionSequence:
+    """The gpt-6-luna Vision AI Sequence, one step per frame: tick() from
+    the frame loop, after update_guidance. The park drives the tag with the
+    ordinary guidance (state.target); everything else is timed letters.
+
+    `retry` -- {"index", "name"} -- is the pickup the operator said NO to;
+    None is the main window's button, which ends by putting the gantry back
+    where it was. `finished` is set at the end, with `error` (or
+    `cancelled`) when it did not get there."""
+
+    def __init__(self, state, vision, known, before=None, info_of=None,
+                 retry=None, now=None):
+        self.state = state
+        self.vision = vision
+        self.known = list(known or [])
+        self.before = before
+        self.info_of = info_of or {}
+        self.retry = retry
+        self.phase = "start"
+        self.note = "starting..."
+        self.until = time.monotonic() if now is None else now
+        self.job = None
+        self.search = None
+        self.jogs = []
+        self.jog_then = ""
+        self.jog_moving = None
+        self.target = None          # the guidance target this owns, if any
+        self.park = None            # the park cell, (col, row)
+        self.lost_at = None         # the tag out of view since (a park leg)
+        self.origin = None          # the button: the tag's cell to go back to
+        # ERR's final check: it looks from the park cell itself and stays
+        # there -- no jogs out of view, none back, no going home (user,
+        # 2026-10-11: "come back to C18 ... don't go lq, rq ... just check
+        # with the final ERR"). Set by the caller after construction.
+        self.final = False
+        self.photo_after = 0.0
+        self.error = ""
+        self.cancelled = False
+        self.finished = False
+        self.trace = []             # (phase, note) as they happen
+
+    # -- the guidance target this sequence drives with
+    def _drive(self, cell):
+        st = self.state
+        st.target_col, st.target_row = cell
+        st.arrived = False
+        st.action_label = None
+        self.target = cell
+
+    def _undrive(self):
+        if self.target is not None:
+            st = self.state
+            if (st.target_col, st.target_row) == self.target:
+                st.target_col = st.target_row = None
+                st.arrived = False
+            self.target = None
+            ARDUINO.halt()
+
+    def _to(self, phase, until, note):
+        self.phase, self.until, self.note = phase, until, note
+        self.trace.append((phase, note))
+        print(f"[decisions] {phase}: {note}")
+
+    def _finish(self, error=""):
+        self._undrive()
+        if self.search is not None:
+            self.search.stop()
+            self.search = None
+        if self.jog_moving is not None:
+            ARDUINO.halt()
+            self.jog_moving = None
+        self.error = self.error or error
+        self.finished = True
+        self._to("done", 0.0, error or "done")
+
+    def cancel(self, why="Cancelled."):
+        if self.finished:
+            return
+        self.cancelled = True
+        self._finish(why)
+
+    def _lost_for(self, now):
+        """How long the tag has been out of view, during a park leg."""
+        if self.state.tag_visible:
+            self.lost_at = None
+            return 0.0
+        if self.lost_at is None:
+            self.lost_at = now
+        return now - self.lost_at
+
+    @staticmethod
+    def _on_board(cell):
+        return (cell is not None and None not in cell
+                and 0 <= cell[0] < CONFIG.n_cols and 0 <= cell[1] < CONFIG.n_rows)
+
+    def _clear_view(self, now):
+        """Parked: dq/lq out of the camera's way, then the photo -- or,
+        for ERR's final check, the photo straight from the park cell."""
+        if self.final:
+            self._enter("settle", now)
+        else:
+            self._start_jogs(DSEQ_JOGS, "settle", now,
+                             "moving out of the camera's way...")
+
+    def _start_jogs(self, jogs, then, now, note):
+        self.jogs, self.jog_then, self.jog_moving = list(jogs), then, None
+        quiet = (ARDUINO.connected
+                 and getattr(ARDUINO, "_last_sent", None) != "s")
+        if quiet:
+            ARDUINO.halt()
+        self._to("jog", now + (DSEQ_GAP_S if quiet else 0.0), note)
+
+    def _jog_tick(self, now):
+        if now < self.until:
+            return
+        if self.jog_moving is not None:
+            ARDUINO.halt()
+            self.jog_moving = None
+            self.until = now + DSEQ_GAP_S
+            return
+        if not self.jogs:
+            self._enter(self.jog_then, now)
+            return
+        letter, secs = self.jogs[0]
+        if ARDUINO.send_command(letter) or not ARDUINO.connected:
+            self.jogs.pop(0)
+            self.jog_moving = letter
+            self.until = now + secs
+            self.note = f"{letter} for {secs:g}s..."
+            self.trace.append(("jog", letter))
+            print(f"[decisions] {letter} for {secs:g}s")
+
+    def _search(self, now, give_up):
+        """No tag in view: climb (TagUpSearch). True once the tag is seen."""
+        if self.state.tag_visible:
+            if self.search is not None:
+                self.search.stop()
+                self.search = None
+            return True
+        if self.search is None:
+            self.search = TagUpSearch(now, legs=search_legs(
+                self.state.last_tag_col, self.state.last_tag_row))
+            self.note = "AprilTag not seen - moving up until it is..."
+        if self.search.tick(now) == "gave_up":
+            give_up()
+        return False
+
+    def _enter(self, phase, now):
+        st = self.state
+        if phase == "find":
+            self._to("find", now, "looking for the AprilTag...")
+        elif phase == "park":
+            # Across to the park column first, on the row the tag is on, and
+            # only then down: the tag stands above the board, so near the
+            # camera's edge it shows further out than it is, and on the last
+            # rows it can be out of view -- a descent first would lose it
+            # before it ever turned for the park column.
+            if self.retry is None and st.last_tag_col is not None:
+                self.origin = (st.last_tag_col, st.last_tag_row)
+            pc = parse_coordinate(DSEQ_PARK_CELL)
+            self.park = pc
+            cell = (gripper_cell(pc[0], st.last_tag_row)
+                    if pc is not None and st.last_tag_row is not None
+                    else (None, None))
+            if (pc is not None and st.last_tag_col != pc[0]
+                    and self._on_board(cell)):
+                self._drive(cell)
+                self._to("park_x", now + DSEQ_PARK_MAX_S,
+                         f"parking - AprilTag across to column "
+                         f"{CONFIG.columns[pc[0]]}...")
+                return
+            self._enter("park_y", now)
+        elif phase == "park_y":
+            pc = self.park
+            cell = gripper_cell(*pc) if pc is not None else (None, None)
+            if not self._on_board(cell):
+                print(f"[decisions] the tag cannot be driven to "
+                      f"{DSEQ_PARK_CELL} with this gripper offset - moving "
+                      f"out of the way from here")
+                self._clear_view(now)
+                return
+            self._drive(cell)
+            self._to("park_y", now + DSEQ_PARK_MAX_S,
+                     f"parking - AprilTag down to {DSEQ_PARK_CELL}...")
+        elif phase == "settle":
+            self._to("settle", now + DSEQ_SETTLE_S,
+                     "holding still for the photo...")
+        elif phase == "refind":
+            self._to("refind", now, "back in view - looking for the AprilTag...")
+        elif phase == "home":
+            cell = gripper_cell(*self.origin)
+            if (None in cell or not (0 <= cell[0] < CONFIG.n_cols
+                                     and 0 <= cell[1] < CONFIG.n_rows)):
+                self._finish()
+                return
+            self._drive(cell)
+            self._to("home", now + DSEQ_HOME_MAX_S,
+                     "putting the gantry back where it was...")
+        else:
+            self._to(phase, now, phase)
+
+    def tick(self, now=None):
+        if self.finished:
+            return
+        now = time.monotonic() if now is None else now
+        st = self.state
+        ph = self.phase
+        if ph == "start":
+            if self.retry is not None:
+                # whatever the jaws half-hold drops where it was, in reach,
+                # and the next pickup comes down with them open
+                ARDUINO.send_command(grip_command(GRIP_MIN_DEG))
+                self._to("release", now + DSEQ_RELEASE_S,
+                         "opening the jaws (g0)...")
+            else:
+                self._enter("find", now)
+        elif ph == "release":
+            if now >= self.until:
+                self._enter("find", now)
+        elif ph == "find":
+            if self._search(now, lambda: self._finish(
+                    "The AprilTag is not in view, so the gantry cannot be "
+                    "parked at " + DSEQ_PARK_CELL + ". Show it to the camera "
+                    "and try again.")):
+                self._enter("park", now)
+        elif ph == "park_x":
+            here = (st.target_col, st.target_row) == self.target
+            if self._lost_for(now) >= TAG_LOST_S:
+                # out of view on the way across (near a side edge it shows
+                # further out than it is): never steer blind -- move out of
+                # the camera's way from here
+                print(f"[decisions] the AprilTag went out of view at "
+                      f"{cell_label(st.last_tag_col, st.last_tag_row)} on its "
+                      f"way to column {CONFIG.columns[self.park[0]]} - moving "
+                      f"out of the way from here")
+                self._undrive()
+                self._clear_view(now)
+            elif (here and st.arrived) or now >= self.until:
+                if not (here and st.arrived):
+                    print(f"[decisions] column {CONFIG.columns[self.park[0]]} "
+                          f"not reached in {DSEQ_PARK_MAX_S:g}s - going down "
+                          f"from here")
+                self._undrive()
+                self._enter("park_y", now)
+            elif st.action_label is not None:
+                st.action_label = None     # the guidance drives with no label
+        elif ph == "park_y":
+            here = (st.target_col, st.target_row) == self.target
+            # out of view on the way down (the last rows can be past the
+            # camera's edge): as parked as the camera can follow -- never
+            # steer blind on the cell it was last seen in
+            lost = self._lost_for(now) >= TAG_LOST_S
+            if (here and st.arrived) or lost or now >= self.until:
+                if lost and not (here and st.arrived):
+                    print(f"[decisions] the AprilTag went out of view at "
+                          f"{cell_label(st.last_tag_col, st.last_tag_row)} on "
+                          f"its way to {DSEQ_PARK_CELL} - parked")
+                elif not (here and st.arrived):
+                    print(f"[decisions] {DSEQ_PARK_CELL} not reached in "
+                          f"{DSEQ_PARK_MAX_S:g}s - moving on from here")
+                self._undrive()
+                self._clear_view(now)
+            elif st.action_label is not None:
+                st.action_label = None
+        elif ph == "jog":
+            self._jog_tick(now)
+        elif ph == "settle":
+            if now >= self.until:
+                self.photo_after = time.time() + DSEQ_VIEW_MARGIN_S
+                self._to("photo", now + DSEQ_VIEW_MAX_S,
+                         "Vision AI - outlining the board...")
+        elif ph == "photo":
+            view = self.vision.view() if self.vision is not None else None
+            fresh = view is not None and view.get("time", 0.0) >= self.photo_after
+            if view is not None and (fresh or now >= self.until):
+                if not fresh:
+                    print("[decisions] no fresh outlines in time - using the "
+                          "newest there are")
+                self.job = DecisionsJob(
+                    dict(view), self.known, before=self.before,
+                    target=(self.retry or {}).get("name", ""),
+                    info_of=self.info_of).start()
+                if self.final:
+                    self._to("await", now, f"{DECISIONS_MODEL} - labelling "
+                                           f"the outlines...")
+                else:
+                    self._start_jogs(DSEQ_RETURN_JOGS, "refind", now,
+                                     f"{DECISIONS_MODEL} - labelling the "
+                                     f"outlines; coming back meanwhile...")
+            elif now >= self.until:
+                why = (getattr(self.vision, "failed", "") or
+                       "Vision AI has no outlines of the board.")
+                self._finish(why)
+        elif ph == "refind":
+            def lost():
+                print("[decisions] the AprilTag is still not in view")
+                self.note = "AprilTag not seen - show it to the camera."
+                self._to("await", now, self.note)
+            if self._search(now, lost):
+                self._to("await", now,
+                         f"{DECISIONS_MODEL} - labelling the outlines...")
+        elif ph == "await":
+            if self.job is not None and self.job.done:
+                if (self.retry is None and not self.final
+                        and self.origin is not None
+                        and st.tag_visible and not self.job.error):
+                    self._enter("home", now)
+                else:
+                    self._finish()
+        elif ph == "home":
+            here = (st.target_col, st.target_row) == self.target
+            if (here and st.arrived) or now >= self.until:
+                self._finish()
+            elif st.action_label is not None:
+                st.action_label = None
+
+
 @dataclass
 class AppState:
     typed_col: Optional[str] = None
@@ -16186,6 +18782,15 @@ class AppState:
     tag_raw_px: Optional[tuple] = None
     tag_raw_pts: Optional[object] = None
     target_cell_center_px: Optional[tuple] = None
+    stop_cell_rect: Optional[tuple] = None   # the tag's stop cell, in pixels
+    centring_key: Optional[tuple] = None     # the target being centred on
+    centring_tries: dict = field(default_factory=dict)
+    centring_nudge: Optional[tuple] = None   # (turn, until): a timed slow jog
+    centring_stop_at: float = 0.0            # when it last stopped
+    tag_seen_t: float = 0.0                  # when the frame behind tag_px was taken
+    slow_speed: float = 0.0                  # the slow jog, cells/s, measured
+    slow_since: Optional[float] = None       # when the slow jog now running began
+    tag_track: list = field(default_factory=list)   # [(t, col_f, row_f)]
     _tag_hold_px: Optional[tuple] = None
     _tag_hold_pts: Optional[object] = None
     _tag_hold_until: float = 0.0
@@ -16230,12 +18835,24 @@ class AppState:
     exec_cancel_rect: Optional[tuple] = None
     popup_close_rect: Optional[tuple] = None
 
-    prep_active: bool = False           # the "adjust the gripper" pop-up before a task
+    prep_active: bool = False           # the pop-up before a task
     prep_started: float = 0.0
-    prep_search: Optional[dict] = None
-    prep_searched: bool = False
+    prep_search: Optional[object] = None    # a TagUpSearch while the tag is not seen
+    prep_go_at: Optional[float] = None      # tag seen: the task starts then (monotonic)
     prep_start_rect: Optional[tuple] = None
     prep_cancel_rect: Optional[tuple] = None
+
+    # The gpt-6-luna Vision AI Sequence while it runs, its card's Cancel,
+    # the task's start (objects, snapshot, grid, namer info) it names from,
+    # and {pickup index: (name, (dcol, drow))} where it found objects slipped.
+    dseq: Optional[object] = None
+    dseq_cancel_rect: Optional[tuple] = None
+    err_redos: int = 0          # ERR redos this task has had
+    # A run's tag lost on the way to a cell: when, and the climb back up
+    tag_lost_at: Optional[float] = None
+    tag_search: Optional[object] = None
+    dseq_ref: Optional[dict] = None
+    dseq_slips: dict = field(default_factory=dict)
 
     missing_popup: Optional[dict] = None
     missing_popup_done_rect: Optional[tuple] = None
@@ -17107,9 +19724,17 @@ class AISidebar:
         cw = round(button_width("Check"))
         self.examples_btn = Button("Examples", right - ew, y0 + 4, right,
                                    y0 + 48, "ai_examples", scale=0.56)
-        self.check_btn = Button("Check", right - ew - 8 - cw, y0 + 4,
-                                right - ew - 8, y0 + 48, "ai_check",
-                                style="primary", scale=0.56)
+        # Outside-settings toggle for ERR on the Go (synced with Settings).
+        # Header order (right → left): Examples | ERR on/off | Check
+        # so Check and ERR never share the same hit box.
+        err_w = 92
+        self.err_btn = Button(
+            "ERR on", right - ew - 8 - err_w, y0 + 4, right - ew - 8,
+            y0 + 48, "ai_err_toggle", scale=0.52)
+        self.check_btn = Button(
+            "Check", right - ew - 8 - err_w - 8 - cw, y0 + 4,
+            right - ew - 8 - err_w - 8, y0 + 48, "ai_check",
+            style="primary", scale=0.56)
         self._check_shown = False
         self._example_rects = []
         self._example_popup_rect = None
@@ -17185,6 +19810,8 @@ class AISidebar:
             return "ai_mic"
         if self.effort_btn.contains(x, y):
             return "ai_effort"
+        if getattr(self, "err_btn", None) is not None and self.err_btn.contains(x, y):
+            return "ai_err_toggle"
         if self._action_mode == "exec":
             if self.exec_btn.contains(x, y):
                 return "ai_execute"
@@ -17695,6 +20322,12 @@ class AISidebar:
                              and not sim.active and state.err_ready)
         if self._check_shown:
             self.check_btn.draw(canvas, hover=self.check_btn.contains(mx, my))
+        if getattr(self, "err_btn", None) is not None:
+            # Label tracks the live settings so sidebar and Settings stay in
+            # sync: on while either error check is.
+            self.err_btn.label = "ERR on" if err_any_on() else "ERR off"
+            self.err_btn.draw(canvas, hover=self.err_btn.contains(mx, my),
+                              active=err_any_on())
         self.examples_btn.draw(canvas, hover=self.examples_btn.contains(mx, my),
                                active=state.examples_open)
 
@@ -19149,12 +21782,19 @@ def main():
                 chat_say(state, "assistant",
                         "Note: " + ", ".join(far) + " is out of the "
                         "gripper's reach -- that part was skipped.")
+            if getattr(job, "placed", None):
+                lines = placement_change_lines(job.placed)
+                chat_say(state, "assistant",
+                        "Placement:\n" + "\n".join(f"- {ln}" for ln in lines))
             if job.grips_applied:
                 lines = gripper_target_lines(job.grips_applied)
                 chat_say(state, "assistant",
                         "Gripper:\n" + "\n".join(f"- {ln}" for ln in lines))
             chat_plan(state, runner.commands)
             state.plan_text = job.plan
+            # what a gpt-6-luna sequence during this plan names from
+            state.dseq_ref = task_reference(job)
+            state.dseq_slips = {}
             if job.resume:
                 # The rest of a task, re-planned after a failed step. The
                 # task's own before photo and object list stay as they were,
@@ -19165,14 +21805,18 @@ def main():
                 state.exec_pending = True
                 state.exec_cancelled = False
                 state.exec_auto_at = time.monotonic() + AUTO_EXECUTE_DELAY
+                model_note = (f" ({ERR_RESIDUAL_MODEL})"
+                              if getattr(job, "residual", False) else "")
                 chat_say(state, "assistant",
-                         f"Re-planned the rest of the task. Carrying on "
-                         f"physically in {AUTO_EXECUTE_DELAY:g}s -- press "
-                         f"Cancel if you need more time.")
+                         f"ERR on the Go residual{model_note}: rest of the "
+                         f"task is ready. Carrying on physically in "
+                         f"{AUTO_EXECUTE_DELAY:g}s -- press Cancel if you "
+                         f"need more time.")
                 return
             state.replans = 0
             state.replan_notes = []
             state.resume_run = False
+            state.err_redos = 0
             state.err_before = job.frame
             state.err_task = job.task
             state.err_objects = object_list_text(job.objects)
@@ -19221,6 +21865,8 @@ def main():
 
     def start_execution():
         """EXECUTE: hand the rehearsed plan to the real, tag-guided runner."""
+        if state.dseq is not None:
+            cancel_decision_sequence("a task is starting")
         state.exec_pending = False
         state.exec_cancelled = True
         state.exec_cancel_rect = None
@@ -19229,18 +21875,26 @@ def main():
             return
         sim.stop(state, "Simulation stopped.")
         # Every task starts with the jaws open, whatever they were left at,
-        # and a pop-up for the operator to line the gripper up and show the tag.
+        # and a pop-up that starts the task on its own once the tag is seen.
         ARDUINO.send_command("g0")
         gripper_panel.grip = 0.0
         gripper_panel._grip_sent = "g0"
         state.prep_active = True
         state.prep_started = time.monotonic()
         state.prep_search = None
-        state.prep_searched = False
-        state.status_message = "Adjust the gripper with the joystick, then press Start."
+        state.prep_go_at = None
+        state.status_message = "Starting the task as soon as the AprilTag is seen."
+
+    def stop_prep_search():
+        if state.prep_search is not None:
+            state.prep_search.stop()
+            state.prep_search = None
+        state.prep_go_at = None
 
     def begin_run():
-        """START on the pre-task pop-up: hand the plan to the tag-guided runner."""
+        """The pre-task pop-up's end (its countdown, START or Enter): hand
+        the plan to the tag-guided runner."""
+        stop_prep_search()
         state.prep_active = False
         state.prep_start_rect = state.prep_cancel_rect = None
         ARDUINO.halt()
@@ -19252,95 +21906,110 @@ def main():
         runner.start(state)
 
     def cancel_prep():
+        stop_prep_search()
         state.prep_active = False
         state.prep_start_rect = state.prep_cancel_rect = None
         ARDUINO.halt()
         state.status_message = "Task not started. Press Execute physically whenever you're ready."
 
     def prep_tick():
-        """While the pre-task pop-up is up and the tag is not seen: try moving
-        up, then right, then left in short slow pulses until it shows. Once."""
+        """The pre-task pop-up (user, 2026-10-10): the AprilTag in view ->
+        the task starts on its own PREP_START_S later, nothing to press. Not
+        in view -> keep going up, slowly, until it is (TagUpSearch: up only,
+        never right or left), then the same countdown."""
         if not state.prep_active:
             return
         now = time.monotonic()
-        if state.tag_visible and state.tag_on_grid:
-            sr = state.prep_search
-            if sr and sr.get("moving"):
-                ARDUINO.halt()
-                sr["moving"] = None
-            state.prep_searched = True       # found: no more searching
+        if state.tag_visible:
+            if state.prep_search is not None:
+                state.prep_search.stop()
+            if state.prep_go_at is None:
+                state.prep_go_at = now + PREP_START_S
+                state.status_message = (f"AprilTag seen -- starting in "
+                                        f"{PREP_START_S:g}s.")
+            elif now >= state.prep_go_at:
+                begin_run()
             return
-        if state.prep_searched:
-            return
-        sr = state.prep_search
-        if sr is None:
-            if now - state.prep_started < 1.5:
+        state.prep_go_at = None
+        if state.prep_search is None:
+            if now - state.prep_started < PREP_LOOK_S:
                 return                       # give the camera a moment first
-            sr = state.prep_search = {"step": 0, "until": now, "moving": None}
-        if sr["moving"]:
-            if now >= sr["until"]:
-                ARDUINO.halt()
-                sr["moving"] = None
-                sr["until"] = now + 1.0      # settle so the camera can see it
-            return
-        if now < sr["until"]:
-            return
-        steps = (("uq", 0.5), ("rq", 0.5), ("lq", 1.0))
-        if sr["step"] >= len(steps):
-            sr["gave_up"] = True
-            state.prep_searched = True
-            return
-        letter, seconds = steps[sr["step"]]
-        sr["step"] += 1
-        if ARDUINO.send_command(letter):
-            sr["moving"] = letter
-            sr["until"] = now + seconds
+            state.prep_search = TagUpSearch(now)
+            print("[prep] no AprilTag in view - moving up until it is")
+        if state.prep_search.tick(now) == "gave_up" and not getattr(
+                state.prep_search, "said", False):
+            state.prep_search.said = True
+            state.status_message = (f"AprilTag still not seen after "
+                                    f"{TAG_SEARCH_MAX_S:g}s of moving up -- "
+                                    f"show it to the camera.")
+
+    def prep_tag_line():
+        """(text, seen) for the pre-task pop-up's tag line."""
+        now = time.monotonic()
+        sr = state.prep_search
+        if state.tag_visible and state.prep_go_at is not None:
+            left = max(0, math.ceil(state.prep_go_at - now))
+            return f"AprilTag seen -- starting in {left}s...", True
+        if state.tag_visible:
+            return "AprilTag seen -- starting...", True
+        if sr is None:
+            return "Looking for the AprilTag...", False
+        if sr.state == "gave_up":
+            return (f"AprilTag still not seen after {TAG_SEARCH_MAX_S:g}s of "
+                    f"moving up -- show it to the camera; the task starts "
+                    f"once it is seen."), False
+        if sr.state == "stopped":
+            return ("AprilTag lost -- the task starts once it is seen "
+                    "again."), False
+        return "AprilTag not seen -- moving up until it is...", False
+
+    def pickup_target(index):
+        """(object, moved) the pickup at plan step `index` is after, from
+        the task's own object list (see plan_pickup_object)."""
+        ref = state.dseq_ref or {}
+        return plan_pickup_object(runner.commands, index,
+                                  ref.get("objects") or [], state.dseq_slips)
 
     def step_check_start(index, cmd):
-        """The runner finished a step. With "Check every step" on, photograph
-        the board and compare it with how it was before this step. True
-        holds the plan until the verdict is in."""
-        if (ERR_AUTO != "step" or not step_is_checked(cmd)
-                or state.err_before is None):
+        """ERR on the Go: after a PICKUP (only -- step_is_checked), hold the
+        run and ask the operator YES / NO for STEP_FAIL_WAIT_S seconds. YES
+        (or silence) continues; NO runs the gpt-6-luna Vision AI sequence
+        and picks the object up again at its top-right corner. True holds
+        the plan until the popup is resolved."""
+        if ERR_AUTO != "step" or not step_is_checked(cmd):
             return False
-        source, grid_now = vision_source(state, grid)
-        if source is None:
-            return False
-        after = render_vision_board(source, grid_now)
-        if after is None:
-            after = source
-        before = state.step_err_prev
-        if before is None and state.run_start is not None:
-            src0, grid0 = state.run_start
-            before = render_vision_board(src0, grid0)
-            if before is None:
-                before = src0
-        if before is None:
-            before = state.err_before
         cmds = runner.commands
         n = len(cmds)
-        task = (f"{state.err_task}\n\nSTEP CHECK: judge ONLY step "
-                f"{index + 1} of {n}, {cmd}: {step_expectation(cmds, index)}. "
-                f"The initial image is the board just before this step and "
-                f"the final image just after it. Later steps have not run "
-                f"yet, so do not fail it for work still to come.")
+        label = display_label(action_label(cmd))
+        step = f"Step {index + 1}/{n} ({label})"
         state.step_err_note = f"Step {index + 1}/{n}: {cmd}"
         state.step_err_index = index
-        state.step_err_job = ErrorReboundJob(
-            task, before, after, state.err_objects,
-            events=step_events(runner, index)).start()
-        state.step_err_prev = after
-        state.status_message = (f"Error Rebounds {ERR_NAME}: checking "
-                                f"{state.step_err_note}...")
+        # Keep the last board frame for the operator popup / history.
+        source, grid_now = vision_source(state, grid)
+        if source is not None:
+            after = render_vision_board(source, grid_now)
+            state.step_err_prev = after if after is not None else source
+        target, _ = pickup_target(index)
+        what = f"the {target.get('name')}" if target else "the object"
+        state.step_fail = {
+            "index": index,
+            "cmd": cmd,
+            "title": f"{step} — done properly?",
+            "word": "CONFIRM",
+            "reason": (f"Was {what} picked up properly? YES continues · NO "
+                       f"looks at the board again ({DECISIONS_NAME}) and "
+                       f"picks it up again at its top-right corner."),
+            "fix": "",
+            "default": "continue",  # silence / timeout = YES
+            "kind": "operator",
+            "deadline": time.monotonic() + STEP_FAIL_WAIT_S,
+        }
+        state.status_message = state.step_fail["title"]
         return True
 
     def collect_step_err_result():
-        """The per-step verdict. Right: carry on. Wrong: the popup offers
-        CONTINUE ANYWAY or REPLAN and replans on its own after
-        STEP_FAIL_WAIT_S. Not verifiable (the gripper over the object, an
-        unreadable reply): the same popup, but it carries on by itself --
-        replanning a pickup nobody saw fail would pick up twice. A failed
-        call never stops the run; the whole-task CHECK is still there."""
+        """Legacy AI step-checker completion (whole-task CHECK still uses
+        ErrorReboundJob). Operator YES/NO no longer waits on this."""
         job = state.step_err_job
         if job is None or not job.done:
             return
@@ -19348,7 +22017,7 @@ def main():
         if not runner.active:
             return
         index = state.step_err_index
-        name = f"Error Rebounds {job.version} - {state.step_err_note}"
+        name = f"{ERR_NAME} - {state.step_err_note}"
         append_err_history({
             "task": job.task, "version": job.version, "step": state.step_err_note,
             "verdict": job.verdict,
@@ -19373,22 +22042,29 @@ def main():
                 f"({display_label(action_label(cmd))})")
         default = "replan" if wrong else "continue"
         auto = not wrong or state.replans < REPLAN_AUTO_LIMIT
-        state.step_fail = {
-            "index": index, "cmd": cmd, "word": word,
-            "title": f"{step} went wrong" if wrong
-                     else f"{step} could not be checked",
-            "reason": job.reason, "fix": (job.next or "").strip(),
-            "default": default,
-            "deadline": time.monotonic() + STEP_FAIL_WAIT_S if auto else None,
-        }
+        if state.step_fail is None:
+            state.step_fail = {
+                "index": index, "cmd": cmd, "word": word,
+                "title": f"{step} went wrong" if wrong
+                         else f"{step} could not be checked",
+                "reason": job.reason, "fix": (job.next or "").strip(),
+                "default": default, "kind": "ai",
+                "deadline": time.monotonic() + STEP_FAIL_WAIT_S if auto else None,
+            }
+            state.status_message = state.step_fail["title"]
         chat_say(state, "error", f"{name}: {word}.\n{job.reason}".strip())
-        state.status_message = state.step_fail["title"]
 
     def step_fail_wait():
-        """The runner's step gate: hold while a check runs or its popup is
-        up; the popup's title is what the status line shows meanwhile."""
+        """The runner's step gate: hold while a check runs, its popup is up
+        or the gpt-6-luna sequence a NO started is still going; what the
+        status line shows meanwhile."""
+        if state.dseq is not None:
+            return f"{DECISIONS_NAME}: {state.dseq.note}"
         if state.step_fail is not None:
-            return f"{state.step_fail['title']} - continue or replan?"
+            kind = state.step_fail.get("kind") or "ai"
+            if kind == "operator":
+                return f"{state.step_fail['title']} — YES or NO?"
+            return f"{state.step_fail['title']} - continue or retry?"
         return state.step_err_job is not None
 
     def tick_step_fail():
@@ -19407,52 +22083,380 @@ def main():
                 step_fail_continue()
 
     def step_fail_continue():
-        """CONTINUE ANYWAY: the runner goes on to the next step as planned."""
+        """YES / CONTINUE: the runner goes on to the next step as planned."""
         fail, state.step_fail = state.step_fail, None
         if fail is None:
             return
+        index = fail.get("index", -1)
+        if isinstance(index, int) and index >= 0:
+            state.step_results[index] = "ok"
         chat_say(state, "assistant",
-                 f"Carrying on with the plan after step {fail['index'] + 1}.")
+                 f"YES — carrying on after step {fail['index'] + 1}.")
         state.status_message = "Carrying on with the plan."
 
+    def retry_same_cell(index):
+        """Re-run step `index` (and the goto in front of it) as planned."""
+        cmds = list(runner.commands)
+        cmd = cmds[index] if 0 <= index < len(cmds) else ""
+        bare = _bare_step(cmd) if cmd else "step"
+        cell = _cell_before(cmds, index)
+        where = f" at {cell}" if cell else ""
+        if not runner.retry_action(state, index):
+            chat_say(state, "error",
+                     f"Could not retry step {index + 1} ({bare}).")
+            state.status_message = "ERR on the Go: retry failed to start."
+            return False
+        chat_say(state, "assistant",
+                 f"Retrying step {index + 1}: {bare}{where}.")
+        state.status_message = (
+            f"ERR on the Go: retry step {index + 1} ({bare}{where})...")
+        return True
+
     def step_fail_replan():
-        """REPLAN: stop here and have the planner write only what is left
-        of the task -- its own plan, how far it got and what the check
-        found go with it -- then carry on from there."""
+        """NO: the pickup did not work. The gpt-6-luna Vision AI sequence
+        runs, and ends by sending the runner back to the object's top-right
+        corner for the same pickup (finish_decision_sequence). Any other
+        step -- none is asked about now -- is retried as planned."""
         fail, state.step_fail = state.step_fail, None
         if fail is None:
             return
-        cmds = list(runner.commands)
         index = fail["index"]
-        runner.stop(state, f"Re-planning from step {index + 1}...")
-        if state.ai_job is not None and not state.ai_job.done:
+        if isinstance(index, int) and index >= 0:
+            state.step_results[index] = "wrong"
+        cmds = list(runner.commands)
+        cmd = fail.get("cmd") or (cmds[index] if isinstance(index, int)
+                                  and 0 <= index < len(cmds) else "")
+        if not runner.commands:
+            chat_say(state, "error",
+                     "NO — nothing to retry (no plan on the runner).")
+            state.status_message = "ERR on the Go: no plan to retry."
             return
-        source, grid_now = vision_source(state, grid)
-        if source is None or vision.failed:
-            chat_say(state, "error", vision.failed or
-                     "No frame from the camera to re-plan from.")
-            return
-        note = replan_note(cmds, state.plan_text, index, fail["word"],
-                           fail["reason"], fail["fix"], state.step_results)
-        state.replans += 1
-        state.replan_notes.append(
-            f"Step {index + 1} of the plan then running ({fail['cmd']}) "
-            f"failed its check ({fail['word']}: {fail['reason'] or 'no reason'}); "
-            f"the rest of the task was re-planned from there.")
-        sim.stop(state, "Re-planning after a failed step")
-        state.exec_pending = False
-        state.exec_cancelled = True
+        if _bare_step(cmd or "step") == "pickup":
+            if start_decision_sequence(index):
+                return
+        retry_same_cell(index)
+
+    def decision_reference():
+        """(known objects, BEFORE, namer info by name) for a sequence: the
+        task's own list -- or, before any task, what Vision AI has named
+        on the board so far."""
+        ref = state.dseq_ref or {}
+        known = list(ref.get("objects") or [])
+        if known:
+            return known, ref.get("before"), dict(ref.get("info") or {})
+        view = vision.view()
+        if view is None or not vision.namer.names:
+            return [], None, {}
+        fh, fw = view["frame"].shape[:2]
+        g = Grid(fw, fh, list(view["box"]), square_cells=False)
+        try:
+            known = [o for o in planner_objects(dict(view), vision.namer, g)
+                     if not o.get("name_uncertain")]
+        except Exception as e:
+            print(f"[decisions] could not list the named objects: {e}")
+            known = []
+        if not known:
+            return [], None, {}
+        info = {str(o.get("name")): dict(vision.namer.info.get(
+            o.get("track_id")) or {}) for o in known}
+        return known, (view["frame"], g, view.get("region") or view["box"]), info
+
+    def start_decision_sequence(index=None, final=False):
+        """The gpt-6-luna Vision AI Sequence: after the pickup at plan
+        step `index` went wrong, for ERR's final check (`final`), or --
+        neither -- from the main window's button. True when it started."""
+        if state.dseq is not None:
+            state.status_message = f"{DECISIONS_NAME} is already running."
+            return False
+        known, before, info = decision_reference()
+        why = vision.failed or (
+            "" if known else "no named objects to match against yet -- send "
+                             "a task first so Vision AI names the board")
+        if why:
+            msg = f"{DECISIONS_NAME}: {why}."
+            chat_say(state, "error", msg + (" Picking up again at the same "
+                                            "cell instead." if index is not None
+                                            else ""))
+            state.status_message = msg
+            return False
+        retry = None
+        if index is not None:
+            target, moved = pickup_target(index)
+            retry = {"index": index, "name": (target or {}).get("name", ""),
+                     "object": target, "moved": moved}
+            gripper_panel.grip = 0.0          # the sequence opens the jaws
+            gripper_panel._grip_sent = "g0"
+        # an outline the namer never named ("unidentified object 2") has no
+        # name to give -- unless it is the very thing being picked up again
+        known = [o for o in known if not o.get("name_uncertain")
+                 or (retry and o.get("name") == retry["name"])] or known
+        state.dseq = DecisionSequence(state, vision, known, before=before,
+                                      info_of=info, retry=retry)
+        state.dseq.final = bool(final) and retry is None
+        jogs = " and ".join(f"{l} for {t:g}s" for l, t in DSEQ_JOGS)
+        if state.dseq.final:
+            chat_say(state, "assistant",
+                     f"{ERR_FINAL_NAME} (final check): the AprilTag goes to "
+                     f"{DSEQ_PARK_CELL} and stays there; Vision AI (FastSAM) "
+                     f"outlines the board, {DECISIONS_MODEL} labels each "
+                     f"outline with the task object it most probably is, "
+                     f"and {ERR_FINAL_NAME} says whether the task was done "
+                     f"properly.")
+            state.status_message = f"{ERR_FINAL_NAME}: checking the task..."
+            return True
+        if retry is not None:
+            what = (f"the {retry['name']} was not picked up properly"
+                    if retry["name"] else "the pickup did not work")
+            head = f"NO — {what}. "
+            tail = (" Then the gantry comes back and picks it up again at its "
+                    "top-right corner.")
+        else:
+            head, tail = "", " Then the gantry goes back where it was."
         chat_say(state, "assistant",
-                 f"Re-planning from step {index + 1} -- only what is left of "
-                 f"the task, not the whole task.")
-        state.ai_job = AIJob(None, state.err_task,
-                             build_chat_history_text(state.ai_chat),
-                             vision=vision, board_source=(source, grid_now),
-                             resume=note).start()
+                 f"{head}{DECISIONS_NAME}: the AprilTag goes to "
+                 f"{DSEQ_PARK_CELL}, then {jogs}, out of the camera's way. "
+                 f"Vision AI (FastSAM) outlines the board and "
+                 f"{DECISIONS_MODEL} labels each outline with the task object "
+                 f"it most probably is - no new names.{tail}")
+        state.status_message = f"{DECISIONS_NAME}: starting..."
+        return True
+
+    def tick_decision_sequence():
+        """Once a frame, after the guidance: the sequence's next step, and
+        its result the moment it ends."""
+        seq = state.dseq
+        if seq is None:
+            return
+        if seq.retry is not None and not runner.active:
+            seq.cancel("the run was stopped")
+        else:
+            seq.tick()
+        if seq.finished:
+            state.dseq = None
+            state.dseq_cancel_rect = None
+            finish_decision_sequence(seq)
+
+    def cancel_decision_sequence(why="cancelled"):
+        seq = state.dseq
+        if seq is None:
+            return
+        seq.cancel(why)
+        tick_decision_sequence()
+
+    def adopt_decisions(job):
+        """gpt-6-luna's names are the namer's now (the live overlay
+        shows them, and the next task does not name these again), and its
+        object list is the one drawn on the board."""
+        namer = vision.namer
+        names, meta = job.named
+        for tid, name in names.items():
+            if tid < 0:
+                continue            # a kept task-start outline, not a live one
+            namer.names[tid] = name
+            namer.info[tid] = dict(meta.get(tid) or {})
+            namer.asked.add(tid)
+        snap = job.snap
+        live = [i for i, tid in enumerate(snap.get("ids") or []) if tid >= 0]
+        if len(live) != len(snap.get("ids") or []):
+            objects = [snap["objects"][i] for i in live]
+            snap = dict(snap, objects=objects,
+                        ids=[snap["ids"][i] for i in live],
+                        parents=find_parents(objects))
+        try:
+            namer.remember(snap)
+        except Exception as e:
+            print(f"[decisions] could not remember the outlines: {e}")
+        if job.objects:
+            state.ai_objects = list(job.objects)
+
+    def finish_decision_sequence(seq):
+        job = seq.job
+        ok = (job is not None and job.done and not job.error)
+        if ok:
+            adopt_decisions(job)
+        if getattr(seq, "final", False):
+            # ERR, the final check: judge the task from gpt-6-luna's
+            # look at the finished board (or, failing that, the live photo)
+            if seq.cancelled:
+                msg = f"{ERR_FINAL_NAME} stopped: {seq.error}."
+                chat_say(state, "assistant", msg)
+                state.status_message = msg
+                return
+            if ok:
+                chat_say(state, "assistant", decisions_report(job, seq.known))
+                launch_err_verdict(job, seq.known)
+            else:
+                why = seq.error or (job.error if job else "no result")
+                chat_say(state, "error", f"{DECISIONS_NAME}: {why} -- "
+                                         f"{ERR_FINAL_NAME} judges the live "
+                                         f"photo instead.")
+                launch_err_verdict()
+            return
+        if seq.cancelled:
+            msg = f"{DECISIONS_NAME} stopped: {seq.error}."
+            chat_say(state, "assistant", msg)
+            state.status_message = msg
+            if seq.retry is not None and runner.active:
+                runner.stop(state, msg)
+                state.exec_pending = bool(runner.commands)
+                state.exec_cancelled = True
+            return
+        if ok:
+            chat_say(state, "assistant", decisions_report(job, seq.known))
+        if seq.retry is None:
+            if not ok:
+                why = seq.error or (job.error if job else "no result")
+                chat_say(state, "error", f"{DECISIONS_NAME}: {why}")
+                state.status_message = f"{DECISIONS_NAME} failed."
+            else:
+                state.status_message = f"{DECISIONS_NAME}: done."
+            return
+        if not runner.active:
+            return
+        index, name = seq.retry["index"], seq.retry["name"]
+        if not ok:
+            why = seq.error or (job.error if job else "no result")
+            chat_say(state, "error", f"{DECISIONS_NAME}: {why} -- picking up "
+                                     f"again at the same cell.")
+            retry_same_cell(index)
+            return
+        new = next((o for o in job.objects if o.get("name") == name), None)
+        far = next((d for d in job.out_of_reach if d.get("name") == name), None)
+        if new is None and far is not None:
+            msg = (f"The {name} is now out of the gripper's reach (near "
+                   f"{far.get('center') or 'the board edge'}) -- move it back "
+                   f"into reach and execute again.")
+            chat_say(state, "error", msg)
+            runner.stop(state, msg)
+            state.exec_pending = bool(runner.commands)
+            state.exec_cancelled = True
+            return
+        if new is None or seq.retry["object"] is None:
+            chat_say(state, "error",
+                     (f"{DECISIONS_MODEL} labelled no outline as the {name} "
+                      f"(under or inside another object?)"
+                      if name else "No object was found at the pickup's cell")
+                     + " -- picking up again at the same cell.")
+            retry_same_cell(index)
+            return
+        fold = False
+        if is_fold_task(state.err_task):
+            cell = parse_coordinate(_cell_before(runner.commands, index) or "")
+            fold = cell is not None and any(
+                parse_coordinate(m.get("pick_cell") or "") == cell
+                for o in (state.dseq_ref or {}).get("objects") or []
+                for m in fold_recipe(o).get("moves") or ())
+        moved = seq.retry["moved"]
+        cmds, new_index, info = repickup_plan(
+            runner.commands, index, seq.retry["object"], new, moved, fold=fold)
+        if cmds is None:
+            msg = f"Cannot pick up the {name} again: {info['why']}."
+            chat_say(state, "error", msg)
+            runner.stop(state, msg)
+            state.exec_pending = bool(runner.commands)
+            state.exec_cancelled = True
+            return
+        c_old, c_new = _centre_point(seq.retry["object"]), _centre_point(new)
+        if c_old is not None and c_new is not None:
+            inc = (_round_cells(c_new[0] - c_old[0] - moved[0]),
+                   _round_cells(c_new[1] - c_old[1] - moved[1]))
+            prev = state.dseq_slips.get(index, (name, (0, 0)))[1]
+            state.dseq_slips[new_index] = (name, (prev[0] + inc[0],
+                                                  prev[1] + inc[1]))
+        runner.commands[:] = cmds     # in place: the chat's checklist follows
+        if not runner.retry_action(state, new_index):
+            chat_say(state, "error", f"Could not pick up the {name} again.")
+            return
+        where = ("its top-right corner" if not fold
+                 else "the same point on it")
+        note = (f"Picking up the {name} again at {where}, {info['now']}"
+                + (f" (was {info['was']})" if info.get("was")
+                   and info["was"] != info["now"] else "") + ".")
+        if info.get("shift") and info["shift"] != (0, 0):
+            note += (" Its later moves follow, so it still lands where the "
+                     "plan put it: " + ", ".join(info["route"]) + ".")
+        elif info.get("kept_route"):
+            note += (" Its later moves could not follow (they would leave "
+                     "the board) and stay as planned.")
+        chat_say(state, "assistant", note)
+        state.status_message = f"Picking up the {name} again at {info['now']}..."
+
+    def steering():
+        """Whether S1 is steering the gantry to a cell by the tag right now:
+        a run's goto, a target picked by hand, or the Decisions sequence's
+        guided legs -- across to the park column, and back where it was.
+        (Its descent to the park cell counts the tag going out of view as
+        parked.)"""
+        if state.target_col is None or sim.active or state.prep_active:
+            return False
+        seq = state.dseq
+        if seq is not None:
+            # its park legs stop on a lost tag themselves; its way home climbs
+            return seq.target is not None and seq.phase == "home"
+        if runner.active:
+            return runner.mode == "move"
+        return True                     # a target picked by hand
+
+    def lost_tag_tick():
+        """Whenever S1 is steering by the tag and the tag is out of view:
+        stop, and go up (slowly) until it is seen, then the guidance carries
+        on (user, 2026-10-10: "whenever it loses the tag, it needs to keep
+        going up until it finds it"). Out of view is almost always past the
+        board's bottom edge -- a tag stands above the board, so near the
+        camera's edge it shows further out than it is, and an overshoot on
+        the last rows loses it. The guidance on its own kept driving on the
+        last cell it saw, for good."""
+        sr = state.tag_search
+        driving = steering()
+        if not driving or state.tag_visible:
+            if sr is not None:
+                sr.stop()
+                state.tag_search = None
+                if driving:
+                    print("[guide] AprilTag back in view - carrying on")
+            state.tag_lost_at = None
+            return
+        now = time.monotonic()
+        if state.tag_lost_at is None:
+            state.tag_lost_at = now
+        if sr is None and now - state.tag_lost_at >= TAG_LOST_S:
+            sr = state.tag_search = TagUpSearch(now, legs=search_legs(
+                state.last_tag_col, state.last_tag_row))
+            print("[guide] AprilTag lost on the way - stopping, then moving "
+                  "up until it is seen")
+            state.status_message = ("AprilTag lost -- moving up until it is "
+                                    "seen again.")
+        if sr is not None and sr.tick(now) == "gave_up" and not getattr(
+                sr, "said", False):
+            sr.said = True
+            state.status_message = (f"AprilTag still not seen after "
+                                    f"{TAG_SEARCH_MAX_S:g}s of moving up -- "
+                                    f"show it to the camera.")
+
+    def on_decisions_button():
+        """The main window's gpt-6-luna Vision AI Sequence button."""
+        if state.dseq is not None:
+            state.status_message = (f"{DECISIONS_NAME} is already running -- "
+                                    f"Esc or Cancel stops it.")
+            return
+        fail = state.step_fail
+        if (fail is not None and runner.active
+                and _bare_step(fail.get("cmd") or "") == "pickup"):
+            step_fail_replan()          # the same as answering NO
+            return
+        if runner.active or sim.active or state.prep_active:
+            state.status_message = (f"{DECISIONS_NAME}: stop the run first "
+                                    f"(the gantry is busy).")
+            return
+        if automatic_gripper_busy():
+            state.status_message = (f"{DECISIONS_NAME}: wait for the gripper "
+                                    f"to finish.")
+            return
+        start_decision_sequence(None)
 
     def mark_execution_start():
         """Keep the board as it is right now, the instant a physical run
-        starts: ERR-3's execution-start image. Only a reference to a camera
+        starts: ERR's execution-start image. Only a reference to a camera
         frame nothing draws on -- it is rendered on the checker's thread."""
         source, grid_now = vision_source(state, grid)
         start = (source, grid_now) if source is not None else None
@@ -19466,64 +22470,112 @@ def main():
         state.step_fail = None
         state.step_results = {}
         state.auto_check_done = False
+        if not state.resume_run:
+            state.dseq_slips = {}
 
     def launch_err_check():
-        """CHECK: photograph the board as it is now and compare the pair.
-
-        The after shot is taken here, at the moment of the click, from the
-        live camera -- there is nothing to upload, unlike S1-SRC, because
-        this app is looking at the real board the whole time.
-        """
+        """ERR, the final check (its Check button, or the end of a run):
+        the AprilTag parks on C18 and stays, gpt-6-luna names
+        the board from the task's own objects, and ERR judges the pair
+        (finish_decision_sequence -> launch_err_verdict). With no task
+        objects to name from, or Vision AI off, ERR judges the live photo."""
         if state.err_job is not None and not state.err_job.done:
+            return
+        if state.dseq is not None:
             return
         if state.err_before is None:
             chat_say(state, "error",
                      "Nothing to check yet -- run a task first.")
             return
-        source, grid_now = vision_source(state, grid)
-        if source is None:
-            chat_say(state, "error",
-                     "No frame from the camera for the after photo.")
-            return
-        after = render_vision_board(source, grid_now)
+        if ((state.dseq_ref or {}).get("objects") and not vision.failed
+                and not runner.active and not sim.active):
+            if start_decision_sequence(None, final=True):
+                return
+        launch_err_verdict()
+
+    def launch_err_verdict(dec_job=None, known=()):
+        """ERR's verdict call: the task, the board before and after,
+        gpt-6-luna's object list of the finished board and what it could
+        not see (`dec_job`), or -- without one -- the live camera."""
+        after, after_list, unseen, moves = None, "", [], ""
+        before_list = state.err_objects
+        if dec_job is not None and dec_job.snap is not None:
+            frame = dec_job.snap["frame"]
+            fh, fw = frame.shape[:2]
+            after = render_err_board(
+                frame, Grid(fw, fh, list(dec_job.snap["box"]),
+                            square_cells=False))
+            if after is None:
+                after = frame
+            after_list = object_list_text(dec_job.objects)
+            seen = ({str(o.get("name")) for o in dec_job.objects}
+                    | {str(d.get("name")) for d in dec_job.out_of_reach})
+            unseen = [str(o.get("name")) for o in known
+                      if str(o.get("name")) not in seen]
+            if known:
+                # the same objects before and after: the ones gpt-6-luna
+                # labelled (an outline the namer never named is in neither)
+                before_list = object_list_text(known)
+                moves = err_moves_text(
+                    object_moves(known, dec_job.objects, dec_job.out_of_reach,
+                                 visible=visible_cells(dec_job.snap)),
+                    plan_moved_names(runner.commands, known,
+                                     state.dseq_slips))
         if after is None:
-            after = source
+            source, grid_now = vision_source(state, grid)
+            if source is None:
+                chat_say(state, "error",
+                         "No frame from the camera for the after photo.")
+                return
+            after = render_err_board(source, grid_now)
+            if after is None:
+                after = source
         events = execution_events(runner)
         if state.replan_notes:
             events = "\n".join([events] + state.replan_notes).strip()
         state.err_job = ErrorReboundJob(
-            state.err_task, state.err_before, after, state.err_objects,
-            start_source=state.err_start, events=events).start()
-        state.status_message = (f"Error Rebounds {ERR_NAME}: checking the "
-                                f"finished task...")
+            state.err_task, state.err_before, after, before_list,
+            start_source=state.err_start, events=events,
+            after_list=after_list, unseen=unseen, moves=moves).start()
+        state.status_message = (f"{ERR_FINAL_NAME}: checking the finished "
+                                f"task...")
 
     def collect_err_result():
-        """Print the checker's own verdict. Never touches the plan or board."""
+        """ERR's verdict, in words: done properly, not done properly (and
+        why), or could not tell. With ERR redo on, a task not done properly
+        is planned again from the board as it is now (at most
+        ERR_REDO_LIMIT times); with it off -- the default -- ERR only says
+        so. Never touches the plan or board itself."""
         job = state.err_job
         if job is None or not job.done:
             return
         state.err_job = None
-        name = f"Error Rebounds {job.version}"
+        name = ERR_FINAL_NAME
         if job.error:
-            chat_say(state, "error", f"{name} failed: {job.error}")
+            chat_say(state, "error", f"{name} could not check the task: "
+                                     f"{job.error}")
             state.status_message = f"{name} failed."
             return
         if job.verdict == "done correctly":
-            head, role = f"{name}  -  DONE CORRECTLY", "assistant"
+            head, role = f"{name}: the task was done properly.", "assistant"
         elif job.verdict == "done wrongly":
-            head, role = f"{name}  -  DONE WRONG, REDO", "error"
+            head, role = f"{name}: the task was NOT done properly.", "error"
         elif job.verdict == "cannot verify":
-            head, role = f"{name}  -  CANNOT VERIFY", "error"
+            head, role = (f"{name}: could not tell whether the task was done "
+                          f"properly."), "error"
         else:
-            head, role = f"{name}  -  no clear verdict", "error"
+            head, role = f"{name}: no clear verdict.", "error"
         lines = [head]
         if job.objects:
             lines.append("Objects: " + "; ".join(
                 f"{obj} = {status}" for obj, status in job.objects))
         if job.reason:
-            lines.append(f"Reason: {job.reason}")
-        if job.next:
+            lines.append(f"Why: {job.reason}")
+        if job.next and job.verdict != "done correctly":
             lines.append(f"Next: {job.next}")
+        redo = job.verdict == "done wrongly" and ERR_REDO
+        if job.verdict == "done wrongly" and not ERR_REDO:
+            lines.append("(ERR redo is off, so nothing is redone.)")
         chat_say(state, role, "\n".join(lines))
         state.status_message = head
         append_err_history({
@@ -19536,6 +22588,34 @@ def main():
             "model": ERR_MODEL,
             "timestamp": datetime.datetime.now().isoformat(timespec="seconds"),
         })
+        if redo:
+            start_err_redo(job)
+
+    def start_err_redo(job):
+        """ERR redo (on in Settings): plan what is still needed to finish
+        the task, from the board as it is now; it runs on its own after the
+        usual countdown, and ERR checks it again when it ends."""
+        if state.err_redos >= ERR_REDO_LIMIT:
+            chat_say(state, "error", f"{ERR_FINAL_NAME} redo: tried "
+                                     f"{ERR_REDO_LIMIT} times already -- "
+                                     f"stopping here.")
+            return
+        if state.ai_job is not None and not state.ai_job.done:
+            return
+        source, grid_now = vision_source(state, grid)
+        if source is None or vision.failed:
+            chat_say(state, "error", f"{ERR_FINAL_NAME} redo: "
+                                     f"{vision.failed or 'no camera frame'}.")
+            return
+        state.err_redos += 1
+        note = err_redo_note(state.plan_text, job.reason, job.next)
+        history = build_chat_history_text(state.ai_chat)
+        state.ai_job = AIJob(None, state.err_task, history, vision=vision,
+                             board_source=(source, grid_now), resume=note,
+                             residual=True).start()
+        chat_say(state, "assistant", f"{ERR_FINAL_NAME} redo "
+                                     f"({state.err_redos}/{ERR_REDO_LIMIT}): "
+                                     f"planning what is still needed...")
 
     def launch_ai():
         """Snapshot the board and hand it to vision, then the planner."""
@@ -19577,7 +22657,7 @@ def main():
         sim.stop(state, f"Planning: {task}")
         state.exec_pending = False
         runner.stop(state, f"Planning: {task}")
-        # The "before" photo for Error Rebounds is rendered on the job's own
+        # The "before" photo for ERR is rendered on the job's own
         # thread: ~12 ms of drawing used to sit between the click and the
         # window showing the task was sent.
         state.ai_job = AIJob(None, task, history, vision=vision,
@@ -19648,6 +22728,8 @@ def main():
         state.ai_caret_reset_at = time.time()
         state.status_message = "Transcribed."
 
+    dseq_button = None      # the main window's sequence button, as drawn
+
     def on_mouse(event, x, y, flags, userdata):
         state.mouse = (x, y)
         if DEBUG_INPUT and event == cv2.EVENT_LBUTTONDOWN:
@@ -19666,6 +22748,11 @@ def main():
         if event == cv2.EVENT_LBUTTONDOWN:
             if state.effort_menu_open and not sidebar.contains(x, y):
                 state.effort_menu_open = False
+            rect = state.dseq_cancel_rect
+            if (state.dseq is not None and rect is not None
+                    and rect[0] <= vx <= rect[2] and rect[1] <= vy <= rect[3]):
+                cancel_decision_sequence("cancelled")
+                return
             if state.step_fail is not None:
                 for rect, act in ((state.step_fail_continue_rect,
                                    step_fail_continue),
@@ -19735,6 +22822,9 @@ def main():
                 state.status_message = ("Settings open." if settings_panel.visible
                                         else "Settings closed.")
                 return
+            if dseq_button is not None and dseq_button.contains(x, y):
+                on_decisions_button()
+                return
 
             if sidebar.contains(x, y):
                 hit = sidebar.hit_test(x, y, history_open=state.history_open,
@@ -19744,7 +22834,19 @@ def main():
                 if hit != "ai_effort" and not (
                         isinstance(hit, tuple) and hit[0] == "ai_effort_pick"):
                     state.effort_menu_open = False
-                if hit == "ai_check":
+                if hit == "ai_err_toggle":
+                    # both error checks together: ERR on the Go and ERR
+                    global ERR_AUTO, ERR_FINAL
+                    on = not err_any_on()
+                    ERR_AUTO, ERR_FINAL = ("step" if on else "off"), on
+                    save_settings(cam_settings, grid)
+                    state.status_message = f"ERR: {'on' if on else 'off'}"
+                    chat_say(state, "assistant",
+                             f"ERR is now {'ON' if on else 'OFF'} - ERR on "
+                             f"the Go (after pickups) and the final ERR check."
+                             + (" ERR redo stays off; Settings has it."
+                                if on and not ERR_REDO else ""))
+                elif hit == "ai_check":
                     state.history_open = False
                     state.examples_open = False
                     launch_err_check()
@@ -19941,6 +23043,9 @@ def main():
             # the caret is.
             settings_panel.toggle()
             state.status_message = "Settings closed."
+            return None
+        if key == 27 and state.dseq is not None:
+            cancel_decision_sequence("cancelled (Esc)")
             return None
         was_focused = state.ai_focus
         if sidebar.handle_edit_key(state, key, mods) == "send":
@@ -20191,10 +23296,13 @@ def main():
                 wash_have = None
             tracker.submit(fitted, eager=(state.target_col is not None
                                           or runner.active
-                                          or state.manual_move_active))
+                                          or state.manual_move_active
+                                          or state.prep_active
+                                          or state.dseq is not None))
         h, w = state.board_raw.shape[:2]
 
         found, ids = tracker.latest((h, w))
+        state.tag_seen_t = tracker.result_time()
         tag_col_idx = tag_row_idx = None
         tag_mark = None
         seen = ids is not None and len(ids) > 0
@@ -20233,9 +23341,13 @@ def main():
                 if pts is not None:
                     state.tag_centered = tag_cell_centering(
                         pts, grid, clamped_col, clamped_row)
+        state.stop_cell_rect = None
         if state.target_col is not None:
             tcx0, tcy0, tcx1, tcy1 = grid.cell_rect(state.target_col, state.target_row)
             state.target_cell_center_px = ((tcx0 + tcx1) / 2.0, (tcy0 + tcy1) / 2.0)
+            sc, sr = tag_cell_for(state.target_col, state.target_row)
+            if 0 <= sc < CONFIG.n_cols and 0 <= sr < CONFIG.n_rows:
+                state.stop_cell_rect = grid.cell_rect(sc, sr)
         else:
             state.target_cell_center_px = None
         update_guidance(state)
@@ -20306,9 +23418,10 @@ def main():
         collect_err_result()
         collect_step_err_result()
         tick_step_fail()
-        if (ERR_AUTO == "task" and runner.finished and state.err_ready
-                and not state.auto_check_done and state.err_job is None):
-            # "After the task": the plan just ran to its end -- check it once.
+        if (ERR_FINAL and runner.finished and state.err_ready
+                and not state.auto_check_done and state.err_job is None
+                and state.dseq is None and state.ai_job is None):
+            # ERR, the final check: the plan just ran to its end -- once.
             state.auto_check_done = True
             launch_err_check()
         collect_transcript()
@@ -20320,6 +23433,8 @@ def main():
         sim.tick(state)
         finish_simulation()
         runner.tick(state)
+        tick_decision_sequence()
+        lost_tag_tick()
         gripper_panel.tick()
         simple_gripper.tick()
 
@@ -20328,10 +23443,13 @@ def main():
                                 sim.colour)
         draw_sim_overlay(frame, grid, sim)
         draw_guidance_banner(frame, state)
+        # The pop-ups are worked out here and drawn once the window is
+        # composed: above the camera display, never over it.
+        popups = []
         state.popup_close_rect = None
+        state.exec_cancel_rect = None
         if sim.active and sim.popup:
             state.popup_close_rect = draw_sim_popup(frame, sim.popup)
-            state.exec_cancel_rect = None
         elif (state.exec_pending and not state.exec_cancelled
               and not sim.active and not runner.active):
             # Monotonic: the wall clock can step by seconds and start the
@@ -20339,45 +23457,26 @@ def main():
             remaining = state.exec_auto_at - time.monotonic()
             if remaining <= 0:
                 start_execution()
-                state.exec_cancel_rect = None
             else:
-                state.exec_cancel_rect = draw_exec_countdown_popup(
-                    frame, remaining)
-                state.popup_close_rect = countdown_cross_rect(frame, remaining)
-        else:
-            state.exec_cancel_rect = None
+                popups.append(("countdown", remaining))
 
         if state.prep_active:
             prep_tick()
-            seen = state.tag_visible and state.tag_on_grid
-            sr = state.prep_search or {}
-            if seen:
-                tag_line = "AprilTag: seen"
-            elif sr.get("gave_up"):
-                tag_line = "AprilTag NOT seen -- move it into view by hand or with the joystick."
-            elif sr:
-                tag_line = "AprilTag not seen -- trying to find it (moving up, right, left)..."
-            else:
-                tag_line = "Make the AprilTag visible to the camera."
-            state.prep_start_rect, state.prep_cancel_rect = draw_prep_popup(
-                frame, tag_line, seen)
-        else:
-            state.prep_start_rect = state.prep_cancel_rect = None
-
+        state.prep_start_rect = state.prep_cancel_rect = None
+        if state.prep_active:
+            popups.append(("prep",) + tuple(prep_tag_line()))
+        state.dseq_cancel_rect = None
+        if state.dseq is not None:
+            popups.append(("dseq", state.dseq.note))
         state.missing_popup_done_rect = None
         state.missing_popup_cancel_rect = None
         if state.missing_popup is not None:
-            (state.missing_popup_done_rect,
-             state.missing_popup_cancel_rect) = draw_missing_popup(
-                frame, state.missing_popup["names"])
-
+            popups.append(("missing", state.missing_popup["names"]))
         state.step_fail_continue_rect = state.step_fail_replan_rect = None
         if state.step_fail is not None and runner.active:
             fail = state.step_fail
-            left = (None if fail["deadline"] is None
-                    else fail["deadline"] - time.monotonic())
-            (state.step_fail_continue_rect,
-             state.step_fail_replan_rect) = draw_step_fail_popup(frame, fail, left)
+            popups.append(("step_fail", fail, None if fail["deadline"] is None
+                           else fail["deadline"] - time.monotonic()))
 
         mx, my = state.mouse
         settings_panel.draw(frame, (mx - video_x, my - video_y))
@@ -20428,12 +23527,49 @@ def main():
         chip_w = max(104, text_size(typed, 0.56, 1, weight=600)[0] + 86)
         chip = (total_w - 116 - chip_w, 6, total_w - 116, 50)
         css_rect(canvas, chip, (chip[3] - chip[1]) / 2.0, C_CARD_SOFT)
+        bw = round(button_width(DECISIONS_NAME, outlined=True))
+        dseq_button = Button(DECISIONS_NAME, chip[0] - 12 - bw, 6,
+                             chip[0] - 12, 50, "dseq", scale=0.56)
+        dseq_button.draw(canvas, hover=dseq_button.contains(mx, my),
+                         active=state.dseq is not None)
         draw_text(canvas, "Target", (chip[0] + 16, 33), 0.56, C_TEXT_DIM, 1)
         draw_text(canvas, typed, (chip[0] + 72, 33), 0.56, C_TEXT, 1,
                   weight=600)
 
         sidebar.draw(canvas, state, runner, sim, (mx, my), shadow=False,
                      card=False)
+
+        # each pop-up above the camera display (a second one above the
+        # first); their buttons are hit-tested in the video's own pixels
+        def in_video(r):
+            return (r[0] - video_x, r[1] - video_y, r[2] - video_x, r[3] - video_y)
+
+        taken = []
+        for kind, *args in popups:
+            if kind == "countdown":
+                card, cancel = draw_exec_countdown_popup(canvas, video_rect, args[0],
+                                                         taken=taken)
+                state.exec_cancel_rect = in_video(cancel)
+            elif kind == "prep":
+                card, start, cancel = draw_prep_popup(canvas, video_rect, *args,
+                                                      taken=taken)
+                state.prep_start_rect = in_video(start)
+                state.prep_cancel_rect = in_video(cancel)
+            elif kind == "dseq":
+                card, cancel = draw_dseq_card(canvas, video_rect, DECISIONS_NAME,
+                                              args[0], taken=taken)
+                state.dseq_cancel_rect = in_video(cancel)
+            elif kind == "missing":
+                card, done, cancel = draw_missing_popup(canvas, video_rect, args[0],
+                                                        taken=taken)
+                state.missing_popup_done_rect = in_video(done)
+                state.missing_popup_cancel_rect = in_video(cancel)
+            else:
+                card, cont, repl = draw_step_fail_popup(canvas, video_rect, *args,
+                                                        taken=taken)
+                state.step_fail_continue_rect = in_video(cont)
+                state.step_fail_replan_rect = in_video(repl)
+            taken.append(card)
 
         if DEBUG_INPUT and state.status_message != last_status:
             last_status = state.status_message
@@ -20480,7 +23616,7 @@ def board_full(state: AppState):
 
 
 def vision_source(state: AppState, grid: Grid):
-    """(frame, grid) for the Error Rebounds photos -- the sharpest frame
+    """(frame, grid) for ERR's photos -- the sharpest frame
     available.
 
     The camera shoots well above what the window shows, and the display frame
@@ -20530,6 +23666,68 @@ def handle_go(state: AppState):
     update_guidance(state)
 
 
+def track_slow_speed(state: AppState):
+    """Keeps the tag's last positions (grid units) by when their frames were
+    taken -- not when they arrived: the view runs behind -- and, from frames
+    taken while a slow jog ran, the slow jog's speed: what a centring nudge
+    is timed by."""
+    rect, px, t = state.stop_cell_rect, state.tag_px, state.tag_seen_t
+    if rect is None or px is None or not state.tag_visible:
+        return
+    if state.tag_track and t <= state.tag_track[-1][0]:
+        return
+    x0, y0, x1, y1 = rect
+    pos = (px[0] / max(1.0, x1 - x0), px[1] / max(1.0, y1 - y0))
+    state.tag_track = (state.tag_track + [(t,) + pos])[-6:]
+    if state.slow_since is not None and len(state.tag_track) >= 2:
+        (t0, a0, b0), (t1, a1, b1) = state.tag_track[-2], state.tag_track[-1]
+        if t0 >= state.slow_since + 0.05 and 0.03 <= t1 - t0 <= 0.5:
+            v = math.hypot(a1 - a0, b1 - b0) / (t1 - t0)
+            if 0.1 <= v <= 5.0:
+                state.slow_speed = (v if state.slow_speed <= 0
+                                    else 0.7 * state.slow_speed + 0.3 * v)
+
+
+def centring_step(state: AppState, now: float):
+    """Centring the tag on its stop cell once it is in that cell: ("wait",
+    None) while it stops and the view catches up, ("move", turn) during a
+    slow nudge timed to cover the settled offset (up/down first, then
+    left/right, as every path runs), and ("done", None) once it is within
+    CENTRE_TOL of a cell each way -- or an axis has had CENTRE_MAX_TRIES
+    nudges. Timed, not watched: the view runs behind the gantry, so a
+    watched stop always overshoots -- and each offset is read from a frame
+    taken after the gantry stopped (tag_seen_t)."""
+    rect, px = state.stop_cell_rect, state.tag_px
+    if rect is None or px is None or not state.tag_visible:
+        return "done", None
+    key = (state.target_col, state.target_row)
+    if state.centring_key != key:
+        state.centring_key, state.centring_tries = key, {}
+        state.centring_nudge, state.centring_stop_at = None, now   # stop first
+        return "wait", None
+    if state.centring_nudge is not None:
+        turn, until = state.centring_nudge
+        if now < until:
+            return "move", turn
+        state.centring_nudge, state.centring_stop_at = None, now
+    if (state.tag_seen_t < state.centring_stop_at + CENTRE_SETTLE_S
+            and now < state.centring_stop_at + CENTRE_SETTLE_MAX_S):
+        return "wait", None
+    x0, y0, x1, y1 = rect
+    for axis, off, toward_low, toward_high in (
+            ("y", (px[1] - (y0 + y1) / 2.0) / max(1.0, y1 - y0), "down", "up"),
+            ("x", (px[0] - (x0 + x1) / 2.0) / max(1.0, x1 - x0), "right", "left")):
+        tries = state.centring_tries.get(axis, 0)
+        if abs(off) <= CENTRE_TOL or tries >= CENTRE_MAX_TRIES:
+            continue
+        state.centring_tries[axis] = tries + 1
+        speed = state.slow_speed if state.slow_speed > 0 else CENTRE_SPEED
+        turn = toward_low if off < 0 else toward_high
+        state.centring_nudge = (turn, now + min(1.5, max(0.04, abs(off) / speed)))
+        return "move", turn
+    return "done", None
+
+
 def update_guidance(state: AppState):
     """Re-derive the directions from where the tag is *now*.
 
@@ -20541,6 +23739,8 @@ def update_guidance(state: AppState):
     state.out_of_reach = False
     if automatic_gripper_busy():
         return
+    if state.tag_search is not None:
+        return        # a lost tag is being found (going up): no stale steering
     if state.target_col is None:
         ARDUINO.send_direction(None)
         return
@@ -20579,7 +23779,17 @@ def update_guidance(state: AppState):
     stale = "" if state.tag_visible else "  (tag lost -- last seen here)"
     off_grid = state.tag_visible and not state.tag_on_grid
 
-    if not moves:
+    now = time.monotonic()
+    track_slow_speed(state)
+    step, turn = ("done", None) if moves else centring_step(state, now)
+    if step != "done":
+        state.arrived = False
+        state.guide_dir, state.guide_steps = turn, 1 if turn else 0
+        state.guide_line, state.guide_slow = (f"{turn} (centring)" if turn
+                                              else "settling"), turn is not None
+        state.status_message = (f"{here} -> {target_name}: centring on the "
+                                f"cell{off_note}")
+    elif not moves:
         state.guide_dir, state.guide_steps, state.guide_line = None, 0, ""
         state.guide_slow = False
         in_cell = bool(state.tag_visible) and state.tag_on_grid
@@ -20604,6 +23814,10 @@ def update_guidance(state: AppState):
                                 f"{off_note}")
 
     ARDUINO.send_direction(state.guide_dir, slow=state.guide_slow)
+    if not (state.guide_dir and state.guide_slow):
+        state.slow_since = None
+    elif state.slow_since is None:
+        state.slow_since = now
 
     if state.status_message != _LAST_SPOKEN.get("msg"):
         _LAST_SPOKEN["msg"] = state.status_message
@@ -20896,44 +24110,6 @@ def dialog_rect(frame, width, height):
             (fw + width) // 2, (fh + height) // 2)
 
 
-def dialog_backdrop(frame):
-    """ChatGPT's modal backdrop: 10% black over what is behind."""
-    cv2.convertScaleAbs(frame, frame, 0.9, 0)
-
-
-DIALOG_INSET = 25        # its 1px border, then 24px of padding
-
-
-def dialog_title(frame, rect, title):
-    """A dialog's title: 20px semibold on a 30px line."""
-    draw_text(frame, title, (rect[0] + DIALOG_INSET,
-                             rect[1] + DIALOG_INSET + css_baseline(20, 30)),
-              0.8, C_TEXT, 1, weight=600)
-
-
-def dialog_body(frame, rect, lines, top=DIALOG_INSET + 38):
-    """A dialog's text: 15px grey on 22.5px lines, 8px under the title."""
-    for i, line in enumerate(lines):
-        draw_text(frame, line, (rect[0] + DIALOG_INSET, rect[1] + top + i * 22.5
-                                + css_baseline(15, 22.5)), 0.6, C_TEXT_DIM, 1)
-
-
-def dialog_buttons(frame, rect, specs):
-    """ChatGPT's dialog footer: pills sized to their labels, right-aligned
-    8px apart, 24px in from the card's bottom-right corner. `specs` lists
-    (label, kind, style) left to right; returns their rects in that order."""
-    x0, y0, x1, y1 = rect
-    right, rects = x1 - DIALOG_INSET, []
-    for label, kind, style in reversed(specs):
-        w = max(64, round(button_width(label, outlined=style != "primary")))
-        b = Button(label, right - w, y1 - DIALOG_INSET - 44, right,
-                   y1 - DIALOG_INSET, kind, style=style, scale=0.56)
-        b.draw(frame, shadow=False)
-        rects.append((b.x0, b.y0, b.x1, b.y1))
-        right -= w + 8
-    return rects[::-1]
-
-
 def popup_cross_rect(rect):
     """Where a card's close button goes: its top-right corner."""
     x0, y0, x1, y1 = rect
@@ -20945,18 +24121,6 @@ def popup_cross(frame, rect):
                     style="text", scale=0.46)
     button.draw(frame, shadow=False)
     return (button.x0, button.y0, button.x1, button.y1)
-
-
-def _countdown_dialog(frame, seconds_left):
-    """The hand-off dialog's title and rect, for drawing it and for
-    hit-testing its close button without drawing."""
-    title = f"Executing physically in {max(0, math.ceil(seconds_left))}s..."
-    width = max(380, text_size(title, 0.8, 1, weight=600)[0] + 50 + 48)
-    return title, dialog_rect(frame, width, 2 * DIALOG_INSET + 30 + 24 + 44)
-
-
-def countdown_cross_rect(frame, seconds_left):
-    return popup_cross_rect(_countdown_dialog(frame, seconds_left)[1])
 
 
 def draw_sim_popup(frame, text: str):
@@ -20972,109 +24136,147 @@ def draw_sim_popup(frame, text: str):
     return popup_cross(frame, rect)
 
 
-def draw_prep_popup(frame, tag_line, seen):
-    """The big pop-up before a task: jaws were just opened (g0); line the
-    gripper up with the joystick and make the AprilTag visible. -> (Start rect,
-    Cancel rect)."""
-    rect = dialog_rect(frame, 760, 300)
-    glass_card(frame, rect, DIALOG_RADIUS)
-    dialog_title(frame, rect, "We are about to start the task.")
-    x = rect[0] + DIALOG_INSET
-    draw_text(frame, "Adjust the gripper with the joystick.", (x, rect[1] + 100),
-              0.78, C_TEXT, 1, weight=500)
-    draw_text(frame, "The gripper has been opened (g0).", (x, rect[1] + 136),
-              0.56, C_TEXT_DIM, 1)
-    draw_text(frame, tag_line, (x, rect[1] + 176), 0.62,
-              C_GREEN if seen else C_RED, 1, weight=500)
-    cancel, start = dialog_buttons(frame, rect, [("Cancel", "prep_cancel", "ghost"),
-                                                 ("Start", "prep_start", "primary")])
-    return start, cancel
+POPUP_GAP = 8          # a pop-up's bottom edge sits this far above the video
+POPUP_OUTLINE = 2      # and it has a black outline this thick
 
 
-def draw_exec_countdown_popup(frame, seconds_left: float) -> tuple:
-    """The hand-off dialog, with a live countdown and a way to stop it.
+def popup_rect_above(shape, video_rect, width, height, taken=()):
+    """Where a pop-up goes: off the camera display, centred on the video --
+    above it, rising over the top bar when the space between is short, the
+    next pop-up above the last (`taken`, the cards already placed); below
+    the video when there is no room left above; and only when neither has
+    room, at the window's top edge."""
+    fh, fw = shape[:2]
+    vx0, vy0, vx1, vy1 = video_rect
+    width, height = int(min(width, fw - 32)), int(height)
+    x0 = int(max(16, min(fw - 16 - width, (vx0 + vx1) // 2 - width // 2)))
+    top = min([vy0] + [r[1] for r in taken if r[3] <= vy0])
+    low = max([vy1] + [r[3] for r in taken if r[1] >= vy1])
+    if top - POPUP_GAP - height >= 4:
+        y0 = top - POPUP_GAP - height
+    elif low + POPUP_GAP + height <= fh - 4:
+        y0 = low + POPUP_GAP
+    else:
+        y0 = 4
+    return (x0, y0, x0 + width, y0 + height)
 
-    Physical execution starts on its own when the countdown reaches zero --
-    Cancel (or Esc) is the only thing standing in its way. Returns the
-    Cancel button's rect, in this frame's own pixels, for the caller to
-    hit-test in on_mouse the same way every other panel here does.
-    """
-    title, rect = _countdown_dialog(frame, seconds_left)
-    dialog_backdrop(frame)
-    glass_card(frame, rect, DIALOG_RADIUS)
-    dialog_title(frame, rect, title)
-    (cancel,) = dialog_buttons(frame, rect, [("Cancel", "cancel_exec", "ghost")])
-    popup_cross(frame, rect)
-    return cancel
+
+def draw_popup_above(img, video_rect, title, lines, buttons, colours=None,
+                     taken=()):
+    """One of S1's pop-ups, drawn above the camera display so the board stays
+    in full view: a white card with a black outline, the title and up to three
+    lines of text on the left, its buttons on the right. `buttons` are
+    (label, kind, style) left to right; `colours` gives each line's colour
+    (grey when None); `taken` are pop-ups already drawn, to stack this one
+    by (popup_rect_above). Returns (card rect, [button rects]) in `img`'s
+    pixels."""
+    pad = 18
+    widths = [max(64, round(button_width(label, outlined=style != "primary")))
+              for label, _, style in buttons]
+    buttons_w = sum(widths) + 8 * max(0, len(widths) - 1)
+    vx0, vy0, vx1, vy1 = video_rect
+    widest = max([text_size(title, 0.7, 1, weight=600)[0]]
+                 + [text_size(line, 0.56, 1)[0] for line in lines if line])
+    width = int(min(max(480, vx1 - vx0), img.shape[1] - 32,
+                    2 * pad + widest + 24 + buttons_w))
+    room = width - 2 * pad - 24 - buttons_w
+    shown = []
+    for k, line in enumerate(lines):
+        colour = (colours[k] if colours and k < len(colours)
+                  and colours[k] is not None else C_TEXT_DIM)
+        shown += [(piece, colour) for piece in wrap_text(line or "", room, 0.56)[:2]]
+    shown = shown[:3]
+    height = max(2 * pad + 44, 2 * pad + 28 + 22 * len(shown))
+    rect = popup_rect_above(img.shape, video_rect, width, height, taken)
+    x0, y0, x1, y1 = rect
+    # no drop shadow: it would fall on the video; the outline sets it apart
+    glass_card(img, rect, POPOVER_RADIUS, shadow=False)
+    rounded_rect(img, rect, POPOVER_RADIUS, C_TEXT, POPUP_OUTLINE)
+    draw_text(img, title, (x0 + pad, y0 + pad + 20), 0.7, C_TEXT, 1, weight=600)
+    for k, (piece, colour) in enumerate(shown):
+        draw_text(img, piece, (x0 + pad, y0 + pad + 44 + 22 * k), 0.56, colour, 1)
+    rects, right, by0 = [], x1 - pad, y0 + (height - 44) // 2
+    for (label, kind, style), w in reversed(list(zip(buttons, widths))):
+        b = Button(label, right - w, by0, right, by0 + 44, kind, style=style,
+                   scale=0.56)
+        b.draw(img, shadow=False)
+        rects.append((b.x0, b.y0, b.x1, b.y1))
+        right -= w + 8
+    return rect, rects[::-1]
 
 
-def draw_step_fail_popup(frame, fail, seconds_left) -> tuple:
-    """A step failed its check mid-run: Continue anyway or Replan, as a
-    ChatGPT dialog. The default one (the black button) happens on its own
-    when `seconds_left` runs out; None means no countdown -- wait for a
-    click. Returns (continue_rect, replan_rect) in this frame's pixels."""
+def draw_prep_popup(img, video_rect, tag_line, seen, taken=()):
+    """The pop-up before a task: the jaws were just opened (g0), and the task
+    starts on its own PREP_START_S after the AprilTag is seen -- the pop-up
+    then goes. With no tag in view the gantry moves up until it is. Start
+    skips the wait; Cancel stops it. -> (card, Start rect, Cancel rect)."""
+    card, (cancel, start) = draw_popup_above(
+        img, video_rect, "We are about to start the task.",
+        [tag_line, "It starts by itself once the AprilTag is seen; the "
+                   "gripper has been opened (g0)."],
+        [("Cancel", "prep_cancel", "ghost"), ("Start now", "prep_start", "primary")],
+        colours=[C_GREEN if seen else C_RED, None], taken=taken)
+    return card, start, cancel
+
+
+def draw_dseq_card(img, video_rect, title, note, taken=()) -> tuple:
+    """The gpt-6-luna Vision AI Sequence while it runs: what it is doing,
+    and a Cancel. -> (card, Cancel rect)."""
+    card, (cancel,) = draw_popup_above(
+        img, video_rect, title, [note or ""],
+        [("Cancel", "dseq_cancel", "ghost")], taken=taken)
+    return card, cancel
+
+
+def draw_exec_countdown_popup(img, video_rect, seconds_left: float,
+                              taken=()) -> tuple:
+    """The hand-off, with a live countdown and a way to stop it: physical
+    execution starts on its own when the countdown reaches zero, and Cancel
+    (or Esc) is the only thing standing in its way. -> (card, Cancel rect)."""
+    card, (cancel,) = draw_popup_above(
+        img, video_rect,
+        f"Executing physically in {max(0, math.ceil(seconds_left))}s...",
+        ["Cancel, or Esc, stops it."], [("Cancel", "cancel_exec", "ghost")],
+        taken=taken)
+    return card, cancel
+
+
+def draw_step_fail_popup(img, video_rect, fail, seconds_left,
+                         taken=()) -> tuple:
+    """ERR on the Go mid-run popup: YES (continue) or NO (retry same step).
+    Silence defaults to YES after STEP_FAIL_WAIT_S. The board stays in view
+    to answer it by. -> (card, YES rect, NO rect)."""
     replan_first = fail.get("default") == "replan"
-    title = fail.get("title") or "A step went wrong"
-    width = max(460, text_size(title, 0.8, 1, weight=600)[0] + 50 + 48)
-    width = min(width, frame.shape[1] - 32)
-    lines = wrap_text(fail.get("reason") or "No reason given.", width - 48,
-                      0.6)[:3]
     if seconds_left is None:
-        foot = "Choose how to go on."
+        foot = "YES continues · NO retries the same step."
     else:
         secs = max(0, math.ceil(seconds_left))
-        foot = (f"Replanning from this step in {secs}s..." if replan_first
-                else f"Carrying on in {secs}s...")
-    # border + padding, a 30px title, 8px, the reason, 8px, the countdown,
-    # 24px, 44px buttons, padding + border
-    rect = dialog_rect(frame, width, int(2 * DIALOG_INSET + 30 + 8
-                                         + 22.5 * (len(lines) + 1) + 8
-                                         + 24 + 44 + 0.5))
-    x0, y0, x1, y1 = rect
-    dialog_backdrop(frame)
-    glass_card(frame, rect, DIALOG_RADIUS)
-    dialog_title(frame, rect, title)
-    dialog_body(frame, rect, lines)
-    draw_text(frame, foot, (x0 + DIALOG_INSET,
-                            y0 + DIALOG_INSET + 38 + 22.5 * len(lines) + 8
-                            + css_baseline(15, 22.5)), 0.6, C_TEXT, 1,
-              weight=600)
-    cont, repl = dialog_buttons(frame, rect, [
-        ("Continue anyway", "step_fail_continue",
-         "ghost" if replan_first else "primary"),
-        ("Replan", "step_fail_replan", "primary" if replan_first else "ghost")])
-    return cont, repl
+        foot = (f"NO / retry same step in {secs}s..." if replan_first
+                else f"YES / continue in {secs}s...")
+    card, (cont, repl) = draw_popup_above(
+        img, video_rect, fail.get("title") or "A step went wrong",
+        [fail.get("reason") or "No reason given.", foot],
+        [("YES", "step_fail_continue", "ghost" if replan_first else "primary"),
+         ("NO", "step_fail_replan", "primary" if replan_first else "ghost")],
+        colours=[None, C_TEXT], taken=taken)
+    return card, cont, repl
 
 
-def draw_missing_popup(frame, names) -> tuple:
+def draw_missing_popup(img, video_rect, names, taken=()) -> tuple:
     """The whole task was blocked for want of an object -- offer to add it
-    and try again, rather than just erroring out. Returns
-    (done_rect, cancel_rect) in this frame's own pixels, for on_mouse to
-    hit-test the same way every other panel here does.
-
-    Done is the dialog's one button, the primary action (add the object,
-    then restart the same task from scratch); cancelling is the close
-    button, so it is never mistaken for the expected next step.
-    """
+    and try again, rather than just erroring out. Done (add the object, then
+    restart the same task from scratch) is the primary action; Cancel gives
+    up. -> (card, Done rect, Cancel rect)."""
     what = ", ".join(names) if names else "the missing object"
-    title = "Add this object"
-    width = max(420, text_size(title, 0.8, 1, weight=600)[0] + 50 + 48)
-    width = min(width, frame.shape[1] - 32)
-    lines = wrap_text(f"Needed: {what}. Put it on the board, then press "
-                      f"Done to try again.", width - 48, 0.6)[:3]
-    rect = dialog_rect(frame, width, int(2 * DIALOG_INSET + 30 + 8
-                                         + 22.5 * len(lines) + 24 + 44 + 0.5))
-    dialog_backdrop(frame)
-    glass_card(frame, rect, DIALOG_RADIUS)
-    dialog_title(frame, rect, title)
-    dialog_body(frame, rect, lines)
-    (done,) = dialog_buttons(frame, rect,
-                             [("Done", "missing_popup_done", "primary")])
-    cancel_rect = popup_cross(frame, rect)
-    return (done, cancel_rect)
+    card, (cancel, done) = draw_popup_above(
+        img, video_rect, "Add this object",
+        [f"Needed: {what}. Put it on the board, then press Done to try again."],
+        [("Cancel", "missing_popup_cancel", "ghost"),
+         ("Done", "missing_popup_done", "primary")], taken=taken)
+    return card, done, cancel
 
 
-def run_single_file_self_test():
+def _run_single_file_self_test_impl():
     """Exercise the critical gripper/state paths without any sidecar files."""
     checks_top = 0
 
@@ -21142,6 +24344,49 @@ def run_single_file_self_test():
     for word in ('"robot"', '"loose"', '"color"', '"desc"', "gantry robot",
                  "from 1 to 3"):
         check_top(word in prompt, f"the naming prompt lost {word}")
+    check_top("orientation" in prompt and "complete board-cell footprint" in prompt
+              and "approximate size relative to nearby objects" in prompt
+              and "small, round, red plastic lid" in prompt
+              and "at most 8 words" not in prompt,
+              "the naming prompt still limits visual detail or loses measured geometry")
+    # naming v3 (2026-10-11): measured sizes, the whole object under its
+    # parts, the robot's fixed-on pieces, a general word over a guess
+    _np2 = naming_prompt(2, [None, "1"], VISION_SCENE_HINT,
+                         ["1: about 6.1 x 7.2 in", "2: about 0.5 x 0.8 in"])
+    check_top("MEASURED BY S1" in _np2 and "2: about 0.5 x 0.8 in" in _np2
+              and "WHOLE" in _np2 and "fixed to the carriage" in _np2
+              and "Only when the board really holds a dustpan" in _np2
+              and "general word" in _np2,
+              "the naming prompt lost its measured sizes, whole-object, robot "
+              "or general-word rule")
+    check_top("MEASURED BY S1" not in naming_prompt(2, [None, None], VISION_SCENE_HINT),
+              "the naming prompt shows an empty MEASURED block")
+    _nf = np.full((400, 600, 3), 200, np.uint8)
+    cv2.rectangle(_nf, (100, 100), (300, 250), (20, 20, 20), -1)
+    _nc = [np.array([[[100, 100]], [[300, 100]], [[300, 250]], [[100, 250]]], np.int32)]
+    _ff = outline_facts({"frame": _nf, "objects": [_nc], "box": (0, 0, 600, 400)},
+                        colour=False)
+    check_top(_ff and " in" in _ff[0] and not any(
+        w in _ff[0] for w in ("black", "gray", "white", "blue")),
+              f"naming's measured sizes carry a colour: {_ff}")
+    _ns = naming_images(_nf, [_nc], [None], (0, 0, 600, 400), max_side=300)
+    _nb = naming_images(_nf, [_nc], [None], (0, 0, 600, 400))
+    check_top(max(cv2.imdecode(np.frombuffer(_ns[1], np.uint8),
+                               cv2.IMREAD_COLOR).shape[:2]) == 300
+              and max(cv2.imdecode(np.frombuffer(_nb[1], np.uint8),
+                                   cv2.IMREAD_COLOR).shape[:2]) == 600,
+              "the labelling photo cap is off, or naming's photo changed size")
+    _eg = Grid(600, 600, [0, 0, 600, 600], square_cells=False)
+    _ef = np.full((600, 600, 3), 180, np.uint8)
+    _eside = ERR_CELL_PX * max(CONFIG.n_cols, CONFIG.n_rows)
+    _eb = render_err_board(_ef, _eg)
+    _ebig = render_err_board(np.full((2000, 2000, 3), 180, np.uint8),
+                             Grid(2000, 2000, [0, 0, 2000, 2000], square_cells=False))
+    check_top(_eb is not None and _ebig is not None
+              and max(_eb.shape[:2]) == _eside + 2 * max(46, int(VISION_PAD_FRAC * _eside))
+              and max(_ebig.shape[:2]) == max(_eb.shape[:2])
+              and max(_eb.shape[:2]) < max(render_vision_board(_ef, _eg).shape[:2]),
+              "ERR's board photo is not drawn at ERR_CELL_PX a cell")
     got = parse_naming_reply(
         'Here: {"objects": [{"n": 1, "name": "Bowl", "color": "Green", '
         '"desc": "round ceramic bowl"}, {"n": 2, "name": "sock", "loose": true}, '
@@ -21248,6 +24493,14 @@ def run_single_file_self_test():
               and PRIORITY_NAMING == _was[2],
               "an out-of-range or wrong-typed vision setting was accepted")
     load_vision_settings({"conf_thres": _was[0], "namer_model": _was[1]})
+    load_vision_settings({"namer_model": "gpt-5.4-mini"})
+    check_top(NAMER_MODELS == ("gpt-6-luna",) and NAMER_MODEL == "gpt-6-luna"
+              and DEXTERITY_MODEL == "gpt-6-luna"
+              and DEXTERITY_REASONING == "low"
+              and DECISIONS_MODEL == "gpt-6-luna"
+              and STT_MODEL == "gpt-4o-transcribe",
+              f"model choices: namer {NAMER_MODELS}/{NAMER_MODEL}, dexterity "
+              f"{DEXTERITY_MODEL}, decisions {DECISIONS_MODEL}, stt {STT_MODEL}")
 
     # -- responsiveness: caches and stamps must draw what direct drawing did
     _texts = ["", "short", "a much longer line of words that has to wrap " * 3,
@@ -21531,6 +24784,19 @@ def run_single_file_self_test():
                   and "nothing new" not in vision_report_text(
                       [{"name": "cup", "center": "C3"}]),
                   "the transcript does not say when nothing new was named")
+        _vr = vision_report_text([{
+            "name": "board", "center": "B1", "touches": "A1-C1,A2",
+            "size": "large", "desc": "rectangular wood board, worn edges",
+            "components": [{"name": "mark", "center": "B1", "touches": "B1",
+                            "color": "blue", "size": "small", "desc": "painted blue dot"}]}])
+        check_top("every touched cell: A1, B1, C1, A2" in _vr
+                  and "appearance: rectangular wood board, worn edges" in _vr
+                  and "part mark @ B1: B1" in _vr
+                  and "appearance: painted blue dot" in _vr
+                  and "appearance: painted blue dot" in _format_component({
+                      "name": "mark", "center": "B1", "touches": "B1",
+                      "desc": "painted blue dot"}),
+                  f"the Vision report omitted exact cells or visual details: {_vr}")
     finally:
         _gr["ask_for_names"], _gr["resolve_api_key"] = _rwas
 
@@ -21641,7 +24907,9 @@ def run_single_file_self_test():
     _sn = ObjectNamer()
     _sn.names = {1: "handle", 2: "bristles", 3: "neck", 4: "dustpan",
                  5: "wall", 6: "front lip"}
-    _sn.info = {1: {"thing": "brush"}, 2: {"thing": "brush"}, 3: {"thing": "brush"},
+    _sn.info = {1: {"thing": "brush"}, 2: {"thing": "brush", "color": "black",
+                                            "desc": "dense short bristles"},
+                3: {"thing": "brush"},
                 4: {"thing": ""}, 5: {"thing": "dustpan"}, 6: {"thing": "dustpan"}}
     _ss = {"frame": _sf, "box": _board, "objects": _so, "ids": [1, 2, 3, 4, 5, 6],
            "parents": find_parents(_so)}
@@ -21653,8 +24921,12 @@ def run_single_file_self_test():
     check_top(sorted(c["name"] for c in (_sl.get("brush") or {}).get("components", []))
               == ["bristles", "handle"] and "neck" in _sl
               and _sl["neck"].get("name_uncertain") is True
+              and next(c for c in _sl["brush"]["components"]
+                       if c["name"] == "bristles")["desc"].startswith(
+                           "dense short bristles")
               and "only touches the brush" in _sl["neck"]["desc"],
-              f"a floor line crossing under the brush was joined: {sorted(_sl)}")
+              f"a floor line crossing under the brush was joined or its metadata was lost: "
+              f"{sorted(_sl)} {_sl.get('brush', {}).get('components')}")
     _dp = _sl.get("dustpan") or {}
     check_top(sorted(c["name"] for c in _dp.get("components", []))
               == ["body", "front lip", "wall"],
@@ -21670,6 +24942,16 @@ def run_single_file_self_test():
     try:
         _g["GRIPPER_OFFSET_UP_DOWN"] = _g["GRIPPER_OFFSET_RIGHT_LEFT"] = 0
         CONFIG.n_rows = CONFIG.n_cols = 20
+        _thin_poly = [(1.1, 1.301), (5.1, 1.301),
+                      (5.1, 1.309), (1.1, 1.309)]
+        _thin_center, _thin_cells, _thin_pt = polygon_to_cells(_thin_poly)
+        check_top(_thin_center is not None and _thin_pt is not None
+                  and _thin_cells == [(1, 1), (2, 1), (3, 1), (4, 1), (5, 1)],
+                  f"thin polygon missed cells without a sampling hit: {_thin_cells}")
+        _thin_poly = [(0.5, 0.5), (18.5, 18.5), (18.65, 18.35), (0.65, 0.35)]
+        _, _thin_cells, _ = polygon_to_cells(_thin_poly)
+        check_top(len(_thin_cells) > 15,
+                  f"a narrow outline lost board cells from a coverage cap: {_thin_cells}")
         _pan = {"name": "dustpan", "center": "J5", "aka": [],
                 "mouth_geo": {"a": (7.0, 8.0), "b": (12.0, 8.0), "n": (0.0, 1.0)}}
         _br = {"name": "hand brush", "center": "C3", "aka": [],
@@ -21710,6 +24992,13 @@ def run_single_file_self_test():
                        for a, b in rec["lanes"][-rec["strokes"]:])
         check_top(_rec["axis"] == "up" and _straight(_rec, "up"),
                   f"the strokes are not straight up into the mouth: {_rec['lanes']}")
+        _wide_pan = dict(_pan, mouth_geo={
+            "a": (5.0, 8.0), "b": (14.0, 8.0), "n": (0.0, 1.0)})
+        _wide_rec = sweep_recipe([_wide_pan, _br])
+        _wide_main = _wide_rec["lanes"][-_wide_rec["strokes"]:]
+        check_top(_wide_rec["strokes"] >= SWEEP_MIN_STROKES
+                  and len({a[0] for a, _ in _wide_main}) == _wide_rec["strokes"],
+                  f"a wide mouth did not get four distinct broom lanes: {_wide_rec}")
         # a diagonal mouth, and a reach limit that shortens the lanes
         _pan2 = dict(_pan, mouth_geo={"a": (8.0, 10.0), "b": (12.0, 6.0),
                                       "n": (0.7071, 0.7071)})
@@ -22018,10 +25307,72 @@ def run_single_file_self_test():
               and _sent.get("model") == ERR_MODEL == "gpt-6-luna"
               and _sent.get("reasoning_effort") == ERR_REASONING == "low"
               and _sent.get("max_completion_tokens") == ERR_MAX_TOKENS
-              and _run3.version == "ERR-3"
+              and _run3.version == "ERR"
               and sum(c["type"] == "image_url"
                       for c in _sent["messages"][1]["content"]) == 3,
               f"an ERR-3 check did not run end to end: {_run3.error or _run3.verdict}")
+
+    check_top("ONE 2D VIEW FROM ABOVE - NOTHING LEAVES THE BOARD" in ERR3_PROMPT
+              and "Never call an object\nmissing, lost or removed" in ERR3_PROMPT
+              and "You are ERR" in ERR3_PROMPT
+              and "nobody removes objects" in decisions_prompt(
+                  1, [{"name": "cup", "center": "C3"}])
+              and "Error Rebound" not in ERR3_PROMPT,
+              "ERR's prompt lacks the 2D / nothing-leaves-the-board rule")
+    _ej = ErrorReboundJob("stack the cups", _img, _img, "OBJECT: red cup",
+                          after_list="OBJECT: blue cup", unseen=["red cup"])
+    _et = _ej._messages("b", "a")[1]["content"][0]["text"]
+    check_top("BEFORE OBJECT LIST" in _et and "AFTER OBJECT LIST" in _et
+              and "OBJECT: blue cup" in _et and "NOT SEEN AFTER" in _et
+              and "red cup" in _et.split("NOT SEEN AFTER")[1]
+              and _ej.version == "ERR",
+              f"ERR's request lacks the AFTER lists: {_et[:300]}")
+    # consistent ERR (user, 2026-10-10): every object judged, S1's measured
+    # moves handed in, and the verdict held to ERR's own precedence
+    check_top("one entry for EVERY object in the BEFORE OBJECT LIST" in ERR3_PROMPT
+              and "For single-object tasks" not in ERR3_PROMPT
+              and "When MEASURED BY S1 is given, use it for every object"
+              in ERR3_PROMPT and "S1 holds your\nVERDICT" in ERR3_PROMPT,
+              "ERR's prompt does not make it judge every object the same way")
+    _em = ErrorReboundJob("stack the cups", _img, _img, "OBJECT: red cup",
+                          moves="- red cup: C3 -> D5, centre moved 2.2 cells "
+                                "-- MOVED; the plan picks it up or slides it")
+    _emt = _em._messages("b", "a")[1]["content"][0]["text"]
+    check_top("MEASURED BY S1" in _emt and "red cup: C3 -> D5" in _emt
+              and "MEASURED BY S1" not in _et,
+              f"ERR's request lacks S1's measured moves: {_emt[-300:]}")
+    check_top(err_verdict_from_objects(
+                  "done correctly", [("cloth", "ok"), ("notebook", "wrong")])
+              == "done wrongly"
+              and err_verdict_from_objects(
+                  "done correctly", [("cloth", "ok"), ("tab", "unverified")])
+              == "cannot verify"
+              and err_verdict_from_objects(
+                  "done wrongly", [("cloth", "ok")]) == "done wrongly"
+              and err_verdict_from_objects(
+                  "unknown", [("cloth", "ok")]) == "done correctly"
+              and err_verdict_from_objects("cannot verify", [])
+              == "cannot verify",
+              "ERR's verdict is not held to its OBJECTS line")
+    _mc_err = globals()["make_client"]
+    globals()["make_client"] = lambda: _Bag(chat=_Bag(completions=_Bag(
+        create=lambda **kw: _fake_resp(
+            "VERDICT: Done_correctly\nOBJECTS: cloth=ok; notebook=wrong\n"
+            "REASON: the cloth is on K12"))))
+    try:
+        _ev = ErrorReboundJob("put the cloth on K12", _img, _img, "OBJECT: cloth")
+        _ev._run()
+    finally:
+        globals()["make_client"] = _mc_err
+    check_top(not _ev.error and _ev.model_verdict == "done correctly"
+              and _ev.verdict == "done wrongly",
+              f"ERR passed a board with a displaced object: {_ev.error!r} "
+              f"{_ev.model_verdict} -> {_ev.verdict}")
+    _rn = err_redo_note("# stack\n1. pickup", "the red cup is beside the blue",
+                        "FIX: put the red cup on the blue cup")
+    check_top("REDO AFTER THE FINAL CHECK" in _rn and "do NOT plan it" in _rn
+              and "FIX: put the red cup" in _rn and "nothing leaves the board" in _rn,
+              f"ERR's redo brief: {_rn[:200]}")
 
     # -- a model that refuses the reasoning effort is asked at its default
     _eff = []
@@ -22057,6 +25408,19 @@ def run_single_file_self_test():
     check_top(_ck_bar.hit_test((_cb.x0 + _cb.x1) // 2, (_cb.y0 + _cb.y1) // 2,
                                state=_ck_state) == "ai_check",
               "CHECK no longer answers a click")
+    _eb = getattr(_ck_bar, "err_btn", None)
+    check_top(_eb is not None and _ck_bar.hit_test(
+        (_eb.x0 + _eb.x1) // 2, (_eb.y0 + _eb.y1) // 2,
+        state=_ck_state) == "ai_err_toggle",
+              "ERR on the Go sidebar toggle no longer answers a click")
+    check_top(ERR_AUTO == "step" and dict(ERR_AUTO_MODES)["step"] == "On"
+              and ERR_FINAL is True and ERR_REDO is False
+              and ERR_FINAL_NAME == "ERR" and ERR_NAME == "ERR on the Go"
+              and ERR_MODEL == DECISIONS_MODEL == "gpt-6-luna",
+              "ERR on the Go and ERR are not on by default (redo off), or ERR "
+              "is not on the sequence's model (gpt-6-luna)")
+    check_top(ERR_RESIDUAL_MODEL and ERR_HOME_COL,
+              "ERR residual model / home cell missing")
     check_top(_cb.x1 < _ck_bar.examples_btn.x0 and _cb.label == "Check",
               "the Check pill overlaps Examples")
 
@@ -22137,11 +25501,11 @@ def run_single_file_self_test():
               and _mic.take_wave_level() == 0.0,
               "the waveform level is off A3-Terra's scale")
 
-    # -- per-step checks: every action step, never a move
-    for _c, _want in (("pickup", True), ("keep", True), ("press", True),
-                      ("release", True), ("open_door", True),
-                      ("close_door", True), ("pour(0.5)", True),
-                      ("slice(sock, 3)", True),
+    # -- per-step checks: pickups only (user, 2026-10-10), never a move
+    for _c, _want in (("pickup", True), ("Pickup", True), ("keep", False),
+                      ("press", False), ("release", False),
+                      ("open_door", False), ("close_door", False),
+                      ("pour(0.5)", False), ("slice(sock, 3)", False),
                       ("goto_coordinate = M, 7", False),
                       ("goto_coordinate C4", False), ("wait_X(5)", False),
                       ("Task_Completed", False)):
@@ -22170,13 +25534,954 @@ def run_single_file_self_test():
     _sr.mode, _sr.index, _sr.hold_until, _sr._step_offered = "hold", 1, 0.0, False
     _sr.tick(_sst)
     check_top(_sr.index == 2, "a step with no check was held up")
-    _hold[0] = "Step 2/3 (PICK UP) went wrong - continue or replan?"
+    _hold[0] = "Step 2/3 (PICK UP) went wrong - continue or retry?"
     _sr.on_step_done = lambda i, c: True
     _sr.mode, _sr.index, _sr.hold_until, _sr._step_offered = "hold", 1, 0.0, False
     _sr.step_wait = lambda: _hold[0]
     _sr.tick(_sst)
     check_top(_sr.index == 1 and _sst.status_message == _hold[0],
               "the runner did not hold on the failed step's popup")
+
+    # ERR on the Go NO: same-step retry (goto + auto action), no residual AIJob.
+    _rst = AppState()
+    _rrt = PlanRunner()
+    _rrt.load("1. goto_coordinate = C, 5\n2. pickup\n"
+              "3. goto_coordinate = A, 1\n4. keep")
+    _rrt.active = True
+    _rrt.index = 1
+    _rrt.await_step = True
+    _rrt.mode = "hold"
+    check_top(_rrt.retry_action(_rst, 1) is True,
+              "retry_action should rewind pickup to its goto")
+    check_top(_rrt.index == 0 and _rrt.active and not _rrt.await_step,
+              f"retry pickup expected index 0 (goto), got index={_rrt.index} "
+              f"active={_rrt.active} await_step={_rrt.await_step}")
+    check_top(list(_rrt.commands) == ["goto_coordinate = C, 5", "pickup",
+                                      "goto_coordinate = A, 1", "keep"],
+              "retry must not rewrite the plan")
+    _rrt.index = 3
+    _rrt.await_step = True
+    check_top(_rrt.retry_action(_rst, 3) is True and _rrt.index == 2,
+              f"retry keep should land on goto before keep, got {_rrt.index}")
+
+    # -- a retried pickup still waits for the gripper: retry_action keeps
+    #    the runner's wiring to the gripper card
+    _rw = PlanRunner()
+    _rw.load("1. goto_coordinate = C, 5\n2. pickup\n3. keep")
+    _rw.auto_wait, _rw.auto_failed = (lambda: True), (lambda: "")
+    _rw.active, _rw.index, _rw.mode = True, 1, "hold"
+    _rw.retry_action(AppState(), 1)
+    check_top(_rw.auto_wait is not None and _rw.auto_failed is not None,
+              "retry_action dropped the runner's gripper wiring")
+
+    # -- the gpt-6-luna Vision AI Sequence (user, 2026-10-10): gpt-6-luna
+    # labels every outline FastSAM traced -- the task object it most probably
+    # is, or none -- and never finds, draws or places an object itself
+    check_top(DECISIONS_NAME == "gpt-6-luna Vision AI Sequence",
+              f"the sequence is not named for its model: {DECISIONS_NAME!r}")
+    _kn = [{"name": "black sock", "color": "black", "size": "medium",
+            "desc": "crumpled cotton sock, about 3.0 x 2.0 in",
+            "center": "F7", "touches": "E6,F6,E7,F7",
+            "polygon": [(4.0, 5.0), (6.0, 5.0), (6.0, 7.0), (4.0, 7.0)]},
+           {"name": "notebook", "color": "black", "center": "M7",
+            "touches": "L5,M5,L6,M6,L7,M7"}]
+    _pr = decisions_prompt(3, _kn, "black sock",
+                           outlines=["1: about 2.4 x 2.4 in, black",
+                                     "2: about 4.8 x 7.2 in, black",
+                                     "3: about 1.0 x 1.0 in, gray"])
+    check_top('"black sock"' in _pr and '"notebook"' in _pr
+              and "was at F7" in _pr and "Never make up a new name" in _pr
+              and 'pick up the "black sock"' in _pr and "BEFORE is the whole "
+              "board" in _pr and "drawn green and numbered 1 to 3" in _pr
+              and "have no number: they belong" in _pr
+              and "lie inside a bigger outline" not in _pr
+              and "Label every numbered outline" in _pr
+              and "never find, draw or place an object" in _pr
+              and "its label goes on\nno number" not in _pr
+              and "its label goes on no number" in _pr
+              and '"label": "<known name or none>", "p": 95' in _pr
+              and "OUTLINES (as the vision system measured them):\n1: about "
+                  "2.4 x 2.4 in, black" in _pr
+              and "3.0 x 2.0 in" not in _pr
+              and (f"about {2 * cell_size_in(None)[1]:.1f} x "
+                   f"{2 * cell_size_in(None)[0]:.1f} in;") in _pr
+              and "a chance on every number" not in _pr,
+              "the gpt-6-luna prompt lacks a part")
+    check_top("BEFORE" not in decisions_prompt(1, _kn, before=False)
+              and "OUTLINES (" not in decisions_prompt(1, _kn),
+              "a prompt with no BEFORE photo (or no outlines) mentions one")
+    # a turned object measures as itself; long and thin says so
+    _sz = poly_size_in([(0, 0), (4, 4), (3, 5), (-1, 1)])
+    _cw0 = cell_size_in(None)[0]
+    check_top(_sz is not None
+              and abs(_sz[0] - 5.657 * _cw0) < 0.05 * _cw0
+              and abs(_sz[1] - 1.414 * _cw0) < 0.05 * _cw0
+              and abs(_sz[2] - 45.0) < 1.0
+              and "long and thin" in size_words([(0, 0), (6, 0), (6, 1), (0, 1)])
+              and "long and thin" not in size_words([(0, 0), (2, 0), (2, 1),
+                                                     (0, 1)]),
+              f"turned sizes: {_sz}")
+    # each number's label (and its probability); "name" and the older
+    # spread of chances still read; a made-up name or an ambiguous near
+    # miss is none of them
+    _lab = parse_decisions_reply(
+        'ok {"objects": [{"n": 1, "name": "Black Sock"}, {"n": 2, "name": '
+        '"the notebook"}, {"n": 3, "name": "none"}, {"n": 4, "name": "cup"}, '
+        '{"n": 9, "name": "notebook"}]}', 4, ["black sock", "notebook"])
+    check_top(_lab == {0: "black sock", 1: "notebook"},
+              f"a name-per-number reply parsed wrongly: {_lab}")
+    try:
+        parse_decisions_reply("no json here", 2, ["x"])
+        check_top(False, "a reply with no JSON parsed")
+    except ValueError:
+        pass
+    _pl = parse_decisions_probs(
+        '{"objects": [{"n": 1, "label": "black sock", "p": 92}, '
+        '{"n": 2, "label": "notebook", "p": 0.97}, {"n": 3, "label": "none", '
+        '"p": 88}, {"n": 4, "label": "mug", "p": 80}, {"n": 5, "label": '
+        '"black", "p": 90}, {"n": 6, "label": "notebook", "p": 40}, '
+        '{"n": 7, "label": "black sock"}, {"n": 1, "label": "notebook"}]}',
+        7, ["black sock", "notebook", "black cup"])
+    check_top(round(_pl[0]["black sock"]) == 92
+              and round(_pl[1]["notebook"]) == 97 and "none" in _pl[2]
+              and "none" in _pl[3] and "none" in _pl[4]
+              and round(_pl[5]["notebook"]) == 40 and _pl[6] == {"black sock": 100.0}
+              and decision_labels(_pl) == {0: "black sock", 1: "notebook",
+                                           5: "notebook", 6: "black sock"},
+              f"labels parsed wrongly: {_pl} -> {decision_labels(_pl)}")
+    _pp = parse_decisions_probs(
+        '{"objects": [{"n": 1, "p": {"Black Sock": 70, "notebook": 10, '
+        '"none": 20}}, {"n": 2, "p": {"black sock": 0.6}}, '
+        '{"n": 3, "p": {"notebook": 30}}]}', 3, ["black sock", "notebook"])
+    check_top(decision_labels(_pp) == {0: "black sock", 1: "black sock"}
+              and round(_pp[2]["none"]) == 70,
+              f"a spread of chances parsed wrongly: {_pp}")
+
+    # the outlines named only from the task's own list: a part named for
+    # its object stays its part, an outline that is nothing known is left
+    # out, never named
+    _dfr = np.full((400, 400, 3), 225, np.uint8)
+    _rects = [(80, 100, 139, 159), (220, 80, 299, 199), (240, 120, 259, 139),
+              (20, 220, 39, 239)]
+    for _k, (_x0, _y0, _x1, _y1) in enumerate(_rects):
+        cv2.rectangle(_dfr, (_x0, _y0), (_x1, _y1),
+                      (30, 30, 30) if _k != 2 else (60, 60, 200), -1)
+    _dobjs = [[np.array([[[a, b]], [[c, b]], [[c, d]], [[a, d]]], np.int32)]
+              for a, b, c, d in _rects]
+    _dsnap = {"frame": _dfr, "box": (0.0, 0.0, 400.0, 400.0),
+              "objects": _dobjs, "ids": [11, 12, 13, 14],
+              "parents": find_parents(_dobjs), "region": None}
+    _rout = {}
+    _robj, _rfar, _rnone = reclassify_objects(
+        _dsnap, {0: "black sock", 1: "notebook", 2: "notebook"}, _kn,
+        {"black sock": {"color": "black", "desc": "a sock"}}, out=_rout)
+    _rby = {o["name"]: o for o in _robj}
+    check_top(set(_rby) == {"black sock", "notebook"} and _rnone == 1
+              and not _rfar and 13 not in _rout["names"]
+              and _rout["names"].get(11) == "black sock"
+              and len(_rby["notebook"].get("components") or []) == 1
+              and _rby["black sock"]["center"] == "F7",
+              f"reclassified: {[(o['name'], o['center']) for o in _robj]} "
+              f"unmatched={_rnone} names={_rout.get('names')}")
+
+    # what each outline measures, for gpt-6-luna to label it from
+    # (only the top-level outlines are numbered: the red one inside the
+    # notebook stays its part)
+    _of = outline_facts(_dsnap, labelled_outlines(_dsnap))
+    check_top(labelled_outlines(_dsnap) == [0, 1, 3] and len(_of) == 3
+              and _of[0].startswith("1: about ") and _of[2].startswith("3: ")
+              and not any("inside" in f for f in _of)
+              and len(outline_facts(_dsnap)) == 4,
+              f"the outline facts: {_of}")
+
+    # a whole task object lying on another (red, but sized like it) is
+    # numbered; a small detail inside an object is not
+    _sfr = np.full((400, 400, 3), 225, np.uint8)
+    _srects = [(100, 60, 379, 379), (150, 120, 249, 219), (300, 300, 319, 319)]
+    for _k, (_x0, _y0, _x1, _y1) in enumerate(_srects):
+        cv2.rectangle(_sfr, (_x0, _y0), (_x1, _y1),
+                      ((40, 40, 40), (90, 60, 200), (200, 200, 200))[_k], -1)
+    _sobjs = [[np.array([[[a, b]], [[c, b]], [[c, d]], [[a, d]]], np.int32)]
+              for a, b, c, d in _srects]
+    _ssnap = {"frame": _sfr, "box": (0.0, 0.0, 400.0, 400.0),
+              "objects": _sobjs, "ids": [21, 22, 23],
+              "parents": find_parents(_sobjs), "region": None}
+    _skn = [{"name": "sock", "center": "J9",
+             "polygon": [(2.0, 2.0), (7.0, 2.0), (7.0, 7.0), (2.0, 7.0)]},
+            {"name": "notebook", "center": "L12",
+             "polygon": [(5.0, 3.0), (19.0, 3.0), (19.0, 19.0), (5.0, 19.0)]}]
+    check_top(_ssnap["parents"][1] == 0 and _ssnap["parents"][2] == 0
+              and labelled_outlines(_ssnap) == [0]
+              and labelled_outlines(_ssnap, _skn) == [0, 1],
+              f"objects lying on another: {_ssnap['parents']} "
+              f"{labelled_outlines(_ssnap, _skn)}")
+
+    # a known object FastSAM traced into its neighbour now: its task-start
+    # outline comes back where the photo still shows it -- in place, or moved
+    # with what was round it -- and never when it has its own or is gone
+    _kfb = np.full((400, 400, 3), 225, np.uint8)
+    cv2.rectangle(_kfb, (100, 100), (259, 299), (45, 40, 35), -1)
+    _rng = np.random.default_rng(7)
+    for _x, _y in _rng.integers(0, 140, size=(90, 2)):
+        cv2.circle(_kfb, (110 + int(_x), 115 + int(_y * 1.2)), 2,
+                   (230, 230, 230), -1)
+    cv2.putText(_kfb, "INDIA FTC", (112, 160), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
+                (240, 240, 240), 2)
+    cv2.rectangle(_kfb, (260, 190), (271, 213), (60, 170, 60), -1)
+    _kg = Grid(400, 400, [0.0, 0.0, 400.0, 400.0], square_cells=False)
+    _kbig = [(5.0, 5.0), (13.0, 5.0), (13.0, 15.0), (5.0, 15.0)]
+    _ktab = [(13.0, 9.5), (13.6, 9.5), (13.6, 10.7), (13.0, 10.7)]
+    _kkn = [{"name": "book", "center": "J11", "polygon": _kbig},
+            {"name": "tab", "center": "N11", "polygon": _ktab}]
+    for _o in _kkn:
+        set_center_pt(_o, _poly_centroid(_o["polygon"]))
+
+    def _ksnap(frame, polys):
+        objs = [[np.int32(np.round(_px_poly(q, _kg))).reshape(-1, 1, 2)]
+                for q in polys]
+        return {"frame": frame, "box": (0.0, 0.0, 400.0, 400.0),
+                "objects": objs, "ids": list(range(1, len(objs) + 1)),
+                "parents": find_parents(objs), "region": None}
+
+    _merged = [(5.0, 5.0), (13.0, 5.0), (13.0, 9.5), (13.6, 9.5), (13.6, 10.7),
+               (13.0, 10.7), (13.0, 15.0), (5.0, 15.0)]
+    _kbef = (_kfb, _kg, None)
+    _k1 = kept_outlines(_kbef, _ksnap(_kfb, [_merged]), _kkn, [0])
+    _k2 = kept_outlines(_kbef, _ksnap(_kfb, [_kbig, _ktab]), _kkn, [0, 1])
+    _kgone = _kfb.copy()
+    cv2.rectangle(_kgone, (258, 188), (273, 215), (225, 225, 225), -1)
+    _k3 = kept_outlines(_kbef, _ksnap(_kgone, [_kbig]), _kkn, [0])
+    _kt = cv2.getRotationMatrix2D((180.0, 200.0), 15.0, 1.0)
+    _kt[:, 2] += (40.0, 30.0)
+    _kmask = np.zeros((400, 400), np.uint8)
+    cv2.rectangle(_kmask, (100, 100), (271, 299), 255, -1)
+    _kmv = np.full((400, 400, 3), 225, np.uint8)
+    _kwarp = cv2.warpAffine(_kfb, _kt, (400, 400))
+    _kwm = cv2.warpAffine(_kmask, _kt, (400, 400)) > 0
+    _kmv[_kwm] = _kwarp[_kwm]
+
+    def _kmove(poly):
+        pts = cv2.transform(_px_poly(poly, _kg).reshape(-1, 1, 2), _kt)
+        return [_kg.pixel_to_grid(float(x), float(y)) for x, y in pts.reshape(-1, 2)]
+
+    _k4 = kept_outlines(_kbef, _ksnap(_kmv, [_kmove(_merged)]), _kkn, [0])
+    _kc4 = (np.mean(_k4[0][0][0].reshape(-1, 2), axis=0) if _k4 else None)
+    _kexp = cv2.transform(np.float32([[[266.0, 202.0]]]), _kt).reshape(2)
+    check_top(len(_k1) == 1 and _k1[0][1] == "same" and not _k2 and not _k3
+              and len(_k4) == 1 and _k4[0][1] == "moved"
+              and _kc4 is not None
+              and math.hypot(_kc4[0] - _kexp[0], _kc4[1] - _kexp[1]) < 8.0,
+              f"task-start outlines kept: same {len(_k1)}, own {len(_k2)}, "
+              f"gone {len(_k3)}, moved {[h for _, h in _k4]} at {_kc4} "
+              f"(expected {_kexp})")
+    # the job numbers the kept one, says so, and labels it like any other
+    _mck = globals()["make_client"]
+    globals()["make_client"] = lambda: _Bag(chat=_Bag(completions=_Bag(
+        create=lambda **kw: _fake_resp(
+            '{"objects": [{"n": 1, "label": "book", "p": 99}, '
+            '{"n": 2, "label": "tab", "p": 97}]}'))))
+    try:
+        _kj = DecisionsJob(_ksnap(_kfb, [_merged]), _kkn, before=_kbef)
+        _kj._run()
+    finally:
+        globals()["make_client"] = _mck
+    _ktext = _kj.messages()[0]["content"][0]["text"]
+    check_top(not _kj.error and len(_kj.order) == 2 and _kj.snap["ids"][-1] == -1
+              and "traced at the task's start, kept where it was" in _ktext
+              and "A number marked \"traced at the task's start\"" in _ktext
+              and {o["name"]: o["center"] for o in _kj.objects}.get("tab")
+              == "N11",
+              f"a kept outline through the job: {_kj.error!r} {_kj.order} "
+              f"{[(o['name'], o['center']) for o in _kj.objects]}")
+
+    # one outline round two touching objects, labelled as one of them: the
+    # tighter outline (the object's own size) keeps the label
+    _ufr = np.full((400, 400, 3), 225, np.uint8)
+    _urects = [(40, 60, 379, 339), (60, 80, 179, 199), (200, 80, 359, 319)]
+    for _k, (_x0, _y0, _x1, _y1) in enumerate(_urects):
+        cv2.rectangle(_ufr, (_x0, _y0), (_x1, _y1),
+                      ((200, 200, 200), (40, 40, 40), (80, 50, 40))[_k], -1)
+    _uobjs = [[np.array([[[a, b]], [[c, b]], [[c, d]], [[a, d]]], np.int32)]
+              for a, b, c, d in _urects]
+    _usnap = {"frame": _ufr, "box": (0.0, 0.0, 400.0, 400.0), "objects": _uobjs,
+              "ids": [31, 32, 33], "parents": find_parents(_uobjs), "region": None}
+    _ukn = [{"name": "cloth", "polygon": [(3, 4), (9, 4), (9, 10), (3, 10)]},
+            {"name": "booklet", "polygon": [(10, 4), (18, 4), (18, 16), (10, 16)]}]
+    check_top(one_outline_per_label({0: "booklet", 1: "cloth", 2: "booklet"},
+                                    _usnap, _ukn, [0, 1, 2])
+              == {1: "cloth", 2: "booklet"}
+              and one_outline_per_label({0: "booklet", 1: "cloth", 2: "booklet"},
+                                        _usnap, _ukn, [0, 1])
+              == {0: "booklet", 1: "cloth", 2: "booklet"},
+              "a union outline kept a label its inner object should have")
+
+    # one label on two separate outlines: the more probable one -- and when
+    # they are within DECISIONS_TIE, the one more like the object
+    _two_socks = {0: "black sock", 1: "notebook", 3: "black sock"}
+    _rp1, _, _ = reclassify_objects(_dsnap, _two_socks, _kn, probs={
+        0: {"black sock": 40.0}, 1: {"notebook": 90.0},
+        3: {"black sock": 90.0}})
+    _rp2, _, _ = reclassify_objects(_dsnap, _two_socks, _kn, probs={
+        0: {"black sock": 85.0}, 1: {"notebook": 90.0},
+        3: {"black sock": 90.0}})
+    _s1 = next(o for o in _rp1 if o["name"] == "black sock")
+    _s2 = next(o for o in _rp2 if o["name"] == "black sock")
+    check_top(_s1["track_id"] == 14 and _s2["track_id"] == 11
+              and [o["name"] for o in _rp1].count("black sock") == 1,
+              f"one label on two outlines: {_s1['track_id']} / "
+              f"{_s2['track_id']}")
+
+    # the object being picked up again labelled on no outline: not found
+    # (S1 places nothing itself; the caller picks up at the same cell); a
+    # dead API: an error
+    _mcf = globals()["make_client"]
+    _answer = ['{"objects": [{"n": 1, "label": "black sock", "p": 35}, '
+               '{"n": 2, "label": "notebook", "p": 95}, '
+               '{"n": 3, "label": "none", "p": 80}, '
+               '{"n": 4, "label": "notebook", "p": 99}]}']
+
+    def _canned(**kw):
+        return _fake_resp(_answer[0])
+
+    def _dead(**kw):
+        raise ModelError("the API is down")
+
+    try:
+        globals()["make_client"] = lambda: _Bag(chat=_Bag(completions=_Bag(
+            create=_canned)))
+        _jf = DecisionsJob(_dsnap, _kn, target="black sock")
+        _jf._run()
+        _answer[0] = ('{"objects": [{"n": 1, "label": "none", "p": 70}, '
+                      '{"n": 2, "label": "notebook", "p": 90}]}')
+        _jz = DecisionsJob(_dsnap, _kn, target="black sock")
+        _jz._run()
+        globals()["make_client"] = lambda: _Bag(chat=_Bag(completions=_Bag(
+            create=_dead)))
+        _jg = DecisionsJob(_dsnap, _kn, target="black sock")
+        _jg._run()
+    finally:
+        globals()["make_client"] = _mcf
+    _rf = decisions_report(_jf, _kn)
+    check_top(not _jf.error
+              and _jf.labels == {0: "black sock", 1: "notebook"}
+              and _jf.order == [0, 1, 3]
+              and len(next(o for o in _jf.objects if o["name"] == "notebook")
+                      .get("components") or []) == 1
+              and "drawn green and numbered 1 to 3" in
+              _jf.messages()[0]["content"][0]["text"]
+              and _jf.chance.get("black sock") == 35
+              and "- black sock @ F7 (same cell) - 35%" in _rf
+              and "labelled Vision AI's outlines" in _rf
+              and "notebook @ M7" in _rf and "found by S1" not in _rf,
+              f"a labelled target: {_jf.error!r} {_jf.labels} {_rf}")
+    check_top(not _jz.error and _jz.labels == {1: "notebook"}
+              and "black sock" not in {o["name"] for o in _jz.objects}
+              and "Not seen now" in decisions_report(_jz, _kn),
+              f"an object labelled on no outline was placed: {_jz.labels}")
+    check_top("down" in _jg.error and not _jg.objects and not _jg.labels,
+              f"a dead API: {_jg.error!r} {_jg.labels}")
+
+    # ERR's measured moves: stayed, moved, turned, covered (one outline
+    # inside the other), not seen, out of reach -- and what the plan moves
+    _box = [(2.0, 2.0), (8.0, 2.0), (8.0, 6.0), (2.0, 6.0)]
+    _k0 = [{"name": "book", "center": "F5", "polygon": _box},
+           {"name": "cup", "center": "K3",
+            "polygon": [(10.0, 2.0), (11.0, 2.0), (11.0, 3.0), (10.0, 3.0)]},
+           {"name": "pen", "center": "P9",
+            "polygon": [(15.0, 8.0), (16.0, 8.0), (16.0, 9.0), (15.0, 9.0)]},
+           {"name": "lid", "center": "C9",
+            "polygon": [(2.0, 8.0), (3.0, 8.0), (3.0, 9.0), (2.0, 9.0)]}]
+    for _o in _k0:
+        set_center_pt(_o, _poly_centroid(_o["polygon"]))
+
+    def _after(name, poly):
+        o = {"name": name, "polygon": poly,
+             "center": coordinate_name(*polygon_to_cells(poly)[0])}
+        set_center_pt(o, _poly_centroid(poly))
+        return o
+
+    def _turn(poly, deg):
+        cx, cy = _poly_centroid(poly)
+        r = math.radians(deg)
+        return [(cx + (x - cx) * math.cos(r) - (y - cy) * math.sin(r),
+                 cy + (x - cx) * math.sin(r) + (y - cy) * math.cos(r))
+                for x, y in poly]
+
+    def _calls(after, far=()):
+        return {m["name"]: m["call"] for m in object_moves(_k0, after, far)}
+
+    _still = [_after("book", [(2.1, 2.0), (8.1, 2.0), (8.1, 6.1), (2.1, 6.1)]),
+              _after("cup", [(10.0, 2.0), (11.1, 2.0), (11.1, 3.0),
+                             (10.0, 3.0)])]
+    check_top(_calls(_still, [{"name": "pen"}])
+              == {"book": "STAYED", "cup": "STAYED", "pen": "OUT OF REACH",
+                  "lid": "NOT SEEN"},
+              f"objects that stayed: {_calls(_still, [{'name': 'pen'}])}")
+    check_top(_calls([_after("book", [(x + 2.0, y) for x, y in _box])])["book"]
+              == "MOVED"
+              and _calls([_after("book", _turn(_box, 35))])["book"] == "MOVED"
+              and _calls([_after("book", [(2.0, 2.0), (8.0, 2.0), (8.0, 4.0),
+                                          (2.0, 4.0)])])["book"] == "STAYED"
+              and _calls([_after("book", [(2.0, 2.0), (12.0, 2.0),
+                                          (12.0, 6.0), (2.0, 6.0)])])["book"]
+              == "STAYED"
+              and _calls([_after("cup", [(10.7, 2.0), (11.7, 2.0),
+                                         (11.7, 3.0), (10.7, 3.0)])])["cup"]
+              == "STAYED"
+              and _calls([_after("cup", [(11.2, 2.0), (12.2, 2.0),
+                                         (12.2, 3.0), (11.2, 3.0)])])["cup"]
+              == "MOVED",
+              "moved / turned / covered / joined outlines measured wrongly")
+    _mt = err_moves_text(object_moves(
+        _k0, [_after("book", [(x + 2.0, y) for x, y in _box])]), {"book"})
+    check_top("- book: F5 -> " in _mt and "centre moved 2.0 cells" in _mt
+              and "MOVED; the plan picks it up or slides it" in _mt
+              and "- lid: was at C9; no numbered outline of its own now" in _mt
+              and "NOT SEEN; the plan does not move it" in _mt,
+              f"the measured-moves text: {_mt}")
+    _pm = plan_moved_names(
+        ["goto_coordinate = F, 5", "pickup", "goto_coordinate = K, 9", "keep",
+         "goto_coordinate = P, 9", "press", "goto_coordinate = Q, 9",
+         "release", "goto_coordinate = K, 3", "press", "release"], _k0)
+    check_top(_pm == {"book", "pen"},
+              f"what the plan moves: {_pm}")
+    # a tab sticking out of a notebook goes where the notebook went: MOVED
+    # WITH it; a cup beside it knocked another way is still displaced
+    def _rk(name, c0, r0, c1, r1):
+        poly = [(c0, r0), (c1, r0), (c1, r1), (c0, r1)]
+        cx, cy = (c0 + c1) / 2.0, (r0 + r1) / 2.0
+        return {"name": name, "polygon": poly, "center_pt": (cx, cy),
+                "center": coordinate_name(int(cx), int(cy))}
+    _wk = [_rk("notebook", 10, 2, 17, 11), _rk("tab", 17, 6, 17.6, 7),
+           _rk("cloth", 2, 2, 8, 9), _rk("cup", 17.2, 9, 19, 11)]
+    _wa = [_rk("notebook", 2, 1, 9, 10), _rk("tab", 9, 5, 9.6, 6),
+           _rk("cloth", 10, 2, 16, 9), _rk("cup", 17.2, 12, 19, 14)]
+    _wm = object_moves(_wk, _wa)
+    check_top(moved_along(_wm, {"notebook", "cloth"}) == {"tab": "notebook"},
+              f"what moved with what the plan moves: {moved_along(_wm, {'notebook', 'cloth'})}")
+    _wt = err_moves_text(_wm, {"notebook", "cloth"})
+    check_top("MOVED WITH the notebook; attached to the notebook" in _wt
+              and "- cup: S11 -> S14" in _wt and "MOVED; the plan does not move it" in _wt,
+              f"the moved-with text: {_wt}")
+    _tq = [_rk("notebook", 4, 4, 10, 8), _rk("tab", 10, 5.5, 10.5, 6.5)]
+    _ta = [_rk("notebook", 6, 3, 10, 9), _rk("tab", 7.5, 9, 8.5, 9.5)]
+    check_top(moved_along(object_moves(_tq, _ta), {"notebook"}) == {"tab": "notebook"},
+              "a tab on a notebook turned a quarter turn did not move with it")
+    check_top(moved_along(_wm, {"cloth"}) == {},
+              "an object moved with one the plan does not move")
+    # the tab traced as one with the moved notebook (no outline of its own):
+    # where the notebook's move carried it is at the notebook's outline now
+    _hm = object_moves(_wk, [_rk("notebook", 2, 1, 9, 10), _rk("cloth", 10, 2, 16, 9),
+                             _rk("cup", 17.2, 9, 19, 11)])
+    _ht = err_moves_text(_hm, {"notebook", "cloth"})
+    check_top(moved_along(_hm, {"notebook", "cloth"}) == {"tab": "notebook"}
+              and "- tab: was at R7; no outline of its own now - where the notebook's "
+                  "move carried it lies inside the notebook's outline" in _ht
+              and "-- MOVED WITH the notebook;" in _ht,
+              f"a tab traced as one with its notebook: {_ht}")
+    _hl = object_moves([_rk("notebook", 10, 2, 17, 11), _rk("lid", 2, 14, 3, 15)],
+                       [_rk("notebook", 2, 1, 9, 10)])
+    check_top(moved_along(_hl, {"notebook"}) == {},
+              "a hidden object that never touched the notebook moved with it")
+    # the planner reads each object's exact edges, and how to touch with them
+    _el = obj_to_line(_rk("cloth", 2.9, 2.5, 8.1, 8.8))
+    check_top("EDGES: left 2.9 right 8.1 top 2.5 bottom 8.8  COLOR:" in _el,
+              f"the OBJECT line lost its EDGES: {_el}")
+    check_top("brings the facing edges closest together" in A3_TERRA_SYSTEM
+              and "within a quarter cell of meeting counts as touching" in A3_TERRA_SYSTEM,
+              "the planner lost its rule for touching")
+    # PLACEMENTS (user, 2026-10-11: "keep the cloth to it's right" went to
+    # the bottom left): S1 measures where each move puts the WHOLE object,
+    # and no put-down leaves the reachable board. The user's own board:
+    # the cloth traced from their screenshot, a small block at A13.
+    check_top("PLACEMENTS: when the input has a PLACEMENTS block" in A3_TERRA_SYSTEM
+              and "Whose side it is" in A3_TERRA_SYSTEM
+              and "never a copy of the earlier plan's cells" in A3_TERRA_SYSTEM
+              and "never on top of" in A3_TERRA_SYSTEM,
+              "the planner lost its PLACEMENTS rules")
+    _pl_off = (globals()["GRIPPER_OFFSET_UP_DOWN"],
+               globals()["GRIPPER_OFFSET_RIGHT_LEFT"])
+    globals()["GRIPPER_OFFSET_UP_DOWN"] = -7
+    globals()["GRIPPER_OFFSET_RIGHT_LEFT"] = 0
+    try:
+        def _po(name, poly):
+            cell, cells, pt = polygon_to_cells(poly)
+            e = {"name": name, "center": coordinate_name(*cell),
+                 "touches": ",".join(coordinate_name(*c) for c in cells),
+                 "polygon": poly, "aka": [], "components": []}
+            set_center_pt(e, pt)
+            return e
+        _uc = [(9.06, 3.99), (8.13, 3.66), (6.64, 4.09), (5.23, 4.58), (4.22, 5.28),
+               (3.89, 5.92), (4.07, 7.67), (4.76, 8.11), (5.77, 9.34), (6.0, 9.47),
+               (8.19, 9.4), (8.6, 8.62), (8.62, 7.7), (9.11, 7.41), (9.01, 6.18),
+               (9.37, 5.53), (9.24, 4.4)]
+        _ub = [_po("cloth", _uc),
+               _po("wood block", [(0.02, 12.05), (0.55, 12.05), (0.55, 12.95), (0.02, 12.95)])]
+        check_top(_ub[0]["center"] == "G7" and place_room(_object_box(_ub[0])) == (-4, 10, -3, 3),
+                  f"the cloth's room: {_ub[0]['center']} {place_room(_object_box(_ub[0]))}")
+        _ut = placement_recipe_text(_ub, "keep the cloth to it's right")
+        check_top("right: clear of where it is now M7; against the board's right edge Q7" in _ut
+                  and "rows 1-13" in _ut and "wood block" not in _ut
+                  and "left: only 4 columns of room - against the board's left edge: C7" in _ut,
+                  f"the cloth's PLACEMENTS: {_ut}")
+        check_top(placement_recipe_text(_ub, "Keep the black sock in the bowl.") == ""
+                  and placement_recipe_text(_ub, "swap all the objects on the board") == "",
+                  "a task with no side or neighbour got a PLACEMENTS block")
+        check_top(not PLACE_PRONOUN_RE.search("keep the cloth to it's right")
+                  and PLACE_PRONOUN_RE.search("put it next to the cup"),
+                  "\"it's\" read as an object standing in for another")
+        _hist = ("User: keep the cloth to it's right\nPlanner: goto_coordinate = I, 5; "
+                 "pickup; goto_coordinate = D, 11; keep; Task_Completed\nResult: done")
+        check_top(placement_task_text("redo", _hist).startswith("keep the cloth to it's right")
+                  and "M7" in placement_recipe_text(_ub, placement_task_text("redo", _hist))
+                  and placement_task_text("redo", "") == "redo",
+                  f"a redo did not read the last task: {placement_task_text('redo', _hist)!r}")
+        # the user's own plan (the cloth's CENTER beside the block, B13):
+        # still put down wholly on the board -- moved, never off it
+        _bad = ("1. goto_coordinate = G, 7\n2. pickup\n3. goto_coordinate = B, 13\n"
+                "4. keep\nTask_Completed")
+        _kt, _kc = keep_moves_on_board(_bad, _ub, "keep the cloth to it's right")
+        check_top("goto_coordinate = C, 10" in _kt and len(_kc) == 1
+                  and _kc[0]["dx"] == 1 and _kc[0]["dy"] == -3
+                  and "1 column further right and 3 rows higher than the plan said (B13)"
+                      in placement_change_lines(_kc)[0],
+                  f"an off-board put-down: {_kt} {placement_change_lines(_kc)}")
+        _good = ("1. goto_coordinate = G, 7\n2. pickup\n3. goto_coordinate = M, 7\n"
+                 "4. keep\nTask_Completed")
+        check_top(keep_moves_on_board(_good, _ub, "keep the cloth to it's right") == (_good, [])
+                  and keep_moves_on_board(_bad, _ub, "fold the cloth")[1] == [],
+                  "a put-down on the board was moved, or a fold was touched")
+        # a side already taken: the line says what it lands on, and the
+        # nearest free spot along that edge; touching sides say which way
+        _sb = [_po("plate", [(6, 4), (10, 4), (10, 8), (6, 8)]),
+               _po("book", [(15, 2), (18, 2), (18, 6.5), (15, 6.5)]),
+               _po("phone", [(10.4, 9.3), (11.6, 9.3), (11.6, 11.7), (10.4, 11.7)])]
+        _st = placement_recipe_text(_sb, "keep the plate on the right side of the board")
+        check_top("against the board's right edge S7 (lands on the book; nearest free "
+                  "spot against that edge: S10)" in _st,
+                  f"a taken edge: {_st}")
+        _pt = placement_recipe_text(_sb, "put the phone above the plate")
+        check_top("touching the plate: left of it" in _pt
+                  and "above it (toward row 1) I3" in _pt and "next to the plate" in _pt
+                  and _pt.index("phone - CENTER") < _pt.index("plate - CENTER"),
+                  f"the phone's sides of the plate: {_pt}")
+        check_top(mentioned_objects("put the book to the left of the plate", _sb) == [1, 0],
+                  "the objects a task names, in its order")
+    finally:
+        globals()["GRIPPER_OFFSET_UP_DOWN"], globals()["GRIPPER_OFFSET_RIGHT_LEFT"] = _pl_off
+    # a deliberate nudge: the plan moves the cloth 0.7 cells right -- MOVED,
+    # with its direction; the same shift on an object it does not move stays
+    _nk = [_rk("cloth", 2, 2, 8, 9)]
+    _nm = err_moves_text(object_moves(_nk, [_rk("cloth", 2.7, 2, 8.7, 9)]), {"cloth"})
+    _ns = err_moves_text(object_moves(_nk, [_rk("cloth", 2.7, 2, 8.7, 9)]), set())
+    check_top("centre moved 0.7 cells (0.7 right)" in _nm and "-- MOVED; the plan picks" in _nm
+              and "-- STAYED; the plan does not move it" in _ns,
+              f"a planned nudge: {_nm} | unplanned: {_ns}")
+    # a notebook moved 3 rows down, its outline cut by the edge of the view
+    # (row 13): measured by its uncut top edge, 3 cells -- not its centre's 2.5
+    _ck = [_rk("notebook", 10, 3, 17, 11)]
+    _ca = [_rk("notebook", 10, 6, 17, 13)]           # really rows 6-14
+    _cm = object_moves(_ck, _ca, visible=(0.0, 0.0, 20.0, 13.0))[0]
+    check_top(abs(_cm["shift"] - 3.0) < 0.01 and _cm["now"] == "N11"
+              and abs(object_moves(_ck, _ca)[0]["shift"] - 2.5) < 0.01,
+              f"an outline cut by the view's edge measured {_cm['shift']:.2f} cells, now {_cm['now']}")
+    _cf = object_moves(_ck, [_rk("notebook", 10, 4, 17, 12)],
+                       visible=(0.0, 0.0, 20.0, 13.0))[0]
+    check_top(abs(_cf["shift"] - 1.0) < 0.01,
+              "an outline clear of the view's edge was not measured by its centre")
+    # arrived means centred: it stops, waits for a frame taken after the stop,
+    # then nudges -- up/down first, then left/right -- timed to the offset
+    _cs = AppState()
+    _cs.target_col, _cs.target_row = 5, 3
+    _cs.stop_cell_rect, _cs.tag_visible = (100, 100, 140, 140), True
+    _cs.tag_px = (105.0, 104.0)                  # 0.375 left, 0.4 high
+    check_top(centring_step(_cs, 10.0) == ("wait", None), "centring did not stop first")
+    _cs.tag_seen_t = 10.05                       # a frame from before it stopped
+    check_top(centring_step(_cs, 10.3) == ("wait", None),
+              "centring believed a frame from before the stop")
+    _cs.tag_seen_t = 10.2
+    check_top(centring_step(_cs, 10.3) == ("move", "down"),
+              "centring did not nudge down first")
+    check_top(centring_step(_cs, 10.6) == ("move", "down")      # 0.4 s at 1 cell/s
+              and centring_step(_cs, 10.75) == ("wait", None),
+              "the nudge was not timed by the offset")
+    _cs.tag_px, _cs.tag_seen_t = (105.0, 121.0), 10.95          # rows centred
+    check_top(centring_step(_cs, 11.0) == ("move", "right"),
+              "centring did not then nudge right")
+    check_top(centring_step(_cs, 11.4) == ("wait", None), "the right nudge did not stop")
+    _cs.tag_px, _cs.tag_seen_t = (122.0, 121.0), 11.6
+    check_top(centring_step(_cs, 11.7) == ("done", None),
+              "a centred tag was not taken as arrived")
+    _cs.target_row = 4                           # a new target, and no frame
+    _cs.tag_px = (105.0, 121.0)                  # comes after the stop
+    check_top(centring_step(_cs, 20.0) == ("wait", None)
+              and centring_step(_cs, 21.0) == ("wait", None)
+              and centring_step(_cs, 22.1) == ("move", "right"),
+              "with no fresh frame, centring did not go on after its cap")
+    _seen = []                                   # an axis it never gets right
+    for _k in range(120):
+        _cs.tag_seen_t = 30.0 + 0.1 * _k
+        _seen.append(centring_step(_cs, 30.0 + 0.1 * _k)[0])
+    check_top(_seen.count("move") > 0 and _seen[-1] == "done"
+              and _cs.centring_tries.get("x") == CENTRE_MAX_TRIES,
+              f"centring did not give up after {CENTRE_MAX_TRIES} nudges: {_cs.centring_tries}")
+    _cs.target_row, _cs.slow_speed = 5, 2.0      # a measured slow jog
+    centring_step(_cs, 50.0)
+    _cs.tag_seen_t = 50.3
+    check_top(centring_step(_cs, 50.4) == ("move", "right")
+              and abs(_cs.centring_nudge[1] - (50.4 + 0.375 / 2.0)) < 1e-6,
+              "the nudge did not use the measured slow speed")
+    _cs.tag_visible = False
+    check_top(centring_step(_cs, 51.0) == ("done", None),
+              "centring steered on a lost tag")
+
+    # the plan sent back to the object: a slipped sock is picked up at its
+    # new top-right corner and still lands where planned; a turned one
+    # moves its landing to match; out of reach, or a landing off the board
+    _was_off = (globals()["GRIPPER_OFFSET_UP_DOWN"],
+                globals()["GRIPPER_OFFSET_RIGHT_LEFT"])
+    globals()["GRIPPER_OFFSET_UP_DOWN"] = -7
+    globals()["GRIPPER_OFFSET_RIGHT_LEFT"] = 0
+    try:
+        _sock = {"name": "sock", "center": "C3", "touches": "B2,C2,B3,C3",
+                 "center_pt": [2.0, 2.0]}
+        _plan2 = ["goto_coordinate = C, 2", "pickup", "goto_coordinate = K, 9",
+                  "keep", "Task_Completed"]
+        _slid = {"name": "sock", "center": "F3", "touches": "E2,F2,E3,F3",
+                 "center_pt": [5.0, 2.0]}
+        _c2, _i2, _inf2 = repickup_plan(_plan2, 1, _sock, _slid)
+        check_top(_c2 == ["goto_coordinate = F, 2", "pickup",
+                          "goto_coordinate = K, 9", "keep", "Task_Completed"]
+                  and _i2 == 1 and _inf2["was"] == "C2"
+                  and _inf2["now"] == "F2" and _inf2["shift"] == (0, 0),
+                  f"a slipped sock's re-pickup: {_c2} {_inf2}")
+        _turned = {"name": "sock", "center": "F2", "touches": "E2,F2,G2,E3",
+                   "center_pt": [5.2, 1.8]}
+        _c3, _, _inf3 = repickup_plan(_plan2, 1, _sock, _turned)
+        check_top(_c3[0] == "goto_coordinate = G, 2"
+                  and _c3[2] == "goto_coordinate = L, 9"
+                  and _inf3["shift"] == (1, 0),
+                  f"a turned sock's landing did not follow: {_c3} {_inf3}")
+        _c4, _, _inf4 = repickup_plan(
+            _plan2, 1, _sock, {"name": "sock", "center": "F16",
+                               "touches": "E16,F16", "center_pt": [5.0, 15.5]})
+        check_top(_c4 is None and "reach" in _inf4["why"],
+                  f"an out-of-reach sock was sent for: {_inf4}")
+        _c5, _, _inf5 = repickup_plan(
+            ["goto_coordinate = C, 2", "pickup", "goto_coordinate = T, 9",
+             "keep"], 1, _sock, _turned)
+        check_top(_c5[2] == "goto_coordinate = T, 9" and _inf5["kept_route"],
+                  f"a landing pushed off the board moved anyway: {_c5}")
+        _c6, _i6, _ = repickup_plan(["pickup", "keep"], 0, _sock, _slid)
+        check_top(_c6 == ["goto_coordinate = F, 2", "pickup", "keep"]
+                  and _i6 == 1, f"a pickup with no goto: {_c6} {_i6}")
+
+        # which object a pickup is after, followed through the plan
+        _pl = ["goto_coordinate = C, 2", "pickup", "goto_coordinate = H, 8",
+               "keep", "goto_coordinate = H, 8", "pickup",
+               "goto_coordinate = J, 2", "keep"]
+        _two = [dict(_sock), {"name": "cup", "center": "P10", "touches": "P10"}]
+        _o1, _m1 = plan_pickup_object(_pl, 1, _two)
+        _o2, _m2 = plan_pickup_object(_pl, 5, _two)
+        check_top(_o1 and _o1["name"] == "sock" and _m1 == (0, 0)
+                  and _o2 and _o2["name"] == "sock" and _m2 == (5, 6),
+                  f"pickup objects: {_o1 and _o1['name']} {_m1} / "
+                  f"{_o2 and _o2['name']} {_m2}")
+        _pl2 = list(_pl)
+        _pl2[0] = "goto_coordinate = D, 2"     # its first pickup was re-aimed
+        _o3, _m3 = plan_pickup_object(_pl2, 5, _two,
+                                      {1: ("sock", (1, 0))})
+        check_top(_o3 and _o3["name"] == "sock" and _m3 == (5, 6),
+                  f"a slipped pickup lost the object: {_o3} {_m3}")
+    finally:
+        globals()["GRIPPER_OFFSET_UP_DOWN"] = _was_off[0]
+        globals()["GRIPPER_OFFSET_RIGHT_LEFT"] = _was_off[1]
+
+    class _Board:
+        """A serial link that records what it is sent, with its time."""
+        connected = True
+
+        def __init__(self):
+            self.sent, self._last_sent, self.t = [], None, 0.0
+
+        def send_command(self, text):
+            self.sent.append((self.t, text))
+            return True
+
+        def halt(self):
+            self.sent.append((self.t, "s"))
+            self._last_sent = "s"
+            return True
+
+        def send_direction(self, direction, slow=False):
+            pass
+
+        def letters(self):
+            return [c for _, c in self.sent]
+
+    # up only, until the tag is seen: a stop the guidance still owed goes
+    # out first, then uq; the climb gives up after TAG_SEARCH_MAX_S
+    _was_ard = globals()["ARDUINO"]
+    _bd = _Board()
+    _bd._last_sent = "u"
+    globals()["ARDUINO"] = _bd
+    try:
+        _ts = TagUpSearch(now=0.0)
+        _ts.tick(0.0)
+        _ts.tick(0.5)
+        _ts.tick(DSEQ_GAP_S)
+        _ts.tick(5.0)
+        check_top(_ts.state == "moving" and _bd.letters() == ["s", "uq"],
+                  f"the tag search did not climb: {_ts.state} {_bd.letters()}")
+        _ts.stop()
+        check_top(_ts.state == "stopped" and _bd.letters() == ["s", "uq", "s"],
+                  f"the tag search did not stop on sight: {_bd.letters()}")
+        _bd.sent = []
+        _ts2 = TagUpSearch(now=0.0)
+        _ts2.tick(0.0)
+        _ts2.tick(TAG_SEARCH_MAX_S + 0.1)
+        check_top(_ts2.state == "gave_up" and _bd.letters() == ["uq", "s"],
+                  f"the tag search did not give up: {_ts2.state} {_bd.letters()}")
+        # after the climb, toward the board's middle (a tag lost off a side)
+        _bd.sent = []
+        _ts3 = TagUpSearch(now=0.0, legs=search_legs(1, 17))
+        _ts3.tick(0.0)
+        _ts3.tick(TAG_SEARCH_MAX_S + 0.1)
+        _ts3.tick(TAG_SEARCH_MAX_S + 0.1 + DSEQ_GAP_S)
+        check_top(_ts3.state == "moving"
+                  and _bd.letters() == ["uq", "s", "rq"],
+                  f"the search did not turn toward the middle: {_bd.letters()}")
+        _ts3.tick(TAG_SEARCH_MAX_S + 0.2 + DSEQ_GAP_S + TAG_SEARCH_SIDE_S)
+        check_top(_ts3.state == "gave_up"
+                  and _bd.letters() == ["uq", "s", "rq", "s"]
+                  and side_toward_centre(None) == "rq"
+                  and side_toward_centre(17) == "lq",
+                  f"the two-leg search: {_ts3.state} {_bd.letters()}")
+        # where the tag was last seen picks the first move: low -> up (the
+        # usual case), by a side edge higher up -> sideways, near the top ->
+        # down; never seen -> up only
+        check_top(search_legs(None, None) == [("uq", TAG_SEARCH_MAX_S)]
+                  and [l for l, _ in search_legs(1, 17)] == ["uq", "rq"]
+                  and [l for l, _ in search_legs(18, 16)] == ["uq", "lq"]
+                  and [l for l, _ in search_legs(2, 10)] == ["rq", "uq"]
+                  and [l for l, _ in search_legs(9, 10)] == ["uq", "rq"]
+                  and [l for l, _ in search_legs(9, 2)] == ["dq", "rq"]
+                  and [l for l, _ in search_legs(1, 3)] == ["rq", "dq"],
+                  f"search legs: {search_legs(2, 10)} {search_legs(9, 2)}")
+    finally:
+        globals()["ARDUINO"] = _was_ard
+
+    # the whole sequence, against the board above and a model that answers
+    _calls = []
+    _reply = ('{"objects": [{"n": 1, "label": "black sock", "p": 92}, '
+              '{"n": 2, "label": "notebook", "p": 97}, {"n": 3, "label": '
+              '"none", "p": 90}]}')
+
+    def _dec_create(**kw):
+        _calls.append(kw)
+        return _fake_resp(_reply)
+
+    class _DV:
+        failed = ""
+
+        def __init__(self, view):
+            self._v = view
+
+        def view(self):
+            return self._v
+
+    def _run_seq(seq, st, bd, arrive=True, until=180.0, see_at=None):
+        phases, t, parked = [], 0.0, []
+        while not seq.finished and t < until:
+            bd.t = t
+            if see_at is not None and t >= see_at:
+                st.tag_visible = True
+            if (arrive and seq.phase in ("park_x", "park_y", "home")
+                    and (st.target_col, st.target_row) == seq.target):
+                parked.append(seq.target)
+                st.arrived = True
+            if seq.job is not None:
+                seq.job._thread.join(10.0)
+            seq.tick(t)
+            if not phases or phases[-1] != seq.phase:
+                phases.append(seq.phase)
+            t += 0.25
+        return phases, parked
+
+    _mc3 = globals()["make_client"]
+    globals()["make_client"] = lambda: _Bag(chat=_Bag(completions=_Bag(
+        create=_dec_create)))
+    globals()["GRIPPER_OFFSET_UP_DOWN"] = -7
+    globals()["GRIPPER_OFFSET_RIGHT_LEFT"] = 0
+    try:
+        # NO on a pickup: g0, park the tag on C18, dq 3 s, lq 3 s, photo,
+        # gpt-6-luna, rq 3 s, uq 3 s
+        _bd = _Board()
+        globals()["ARDUINO"] = _bd
+        _ost = AppState()
+        _ost.tag_visible, _ost.last_tag_col, _ost.last_tag_row = True, 6, 13
+        _ost.action_label = ("PICK UP", C_OVERLAY)
+        _sq = DecisionSequence(_ost, _DV(dict(_dsnap, time=time.time() + 60)),
+                               _kn, retry={"index": 1, "name": "black sock",
+                                           "object": _kn[0], "moved": (0, 0)},
+                               now=0.0)
+        _ph, _pk = _run_seq(_sq, _ost, _bd)
+        check_top(_sq.finished and not _sq.error and not _sq.cancelled,
+                  f"the sequence did not finish: {_sq.error} {_ph}")
+        # across to column C on its own row first, then down to C18
+        check_top(_pk[:2] == [gripper_cell(2, 13), gripper_cell(
+                      *parse_coordinate("C18"))] == [(2, 6), (2, 10)],
+                  f"the tag was not parked on C18: {_pk}")
+        check_top(_bd.letters() == ["g0", "s", "s", "dq", "s", "lq", "s",
+                                    "rq", "s", "uq", "s"],
+                  f"the sequence's letters: {_bd.letters()}")
+        _tm = {c: t for t, c in _bd.sent if c in ("dq", "lq", "rq", "uq")}
+        _stops = [t for t, c in _bd.sent if c == "s"]
+        check_top(abs(_stops[2] - _tm["dq"] - 3.0) <= 0.26
+                  and abs(_stops[3] - _tm["lq"] - 3.0) <= 0.26
+                  and _tm["lq"] - _stops[2] >= DSEQ_GAP_S - 0.01
+                  and abs(_stops[5] - _tm["uq"] - 3.0) <= 0.26,
+                  f"the jog timings: {_bd.sent}")
+        check_top(_ph[:5] == ["release", "find", "park_x", "park_y", "jog"]
+                  and "settle" in _ph and "photo" in _ph and _ph[-1] == "done",
+                  f"the sequence's phases: {_ph}")
+        check_top(len(_calls) == 1 and _calls[0]["model"] == "gpt-6-luna"
+                  and _calls[0]["reasoning_effort"] == "low"
+                  and sum(c.get("type") == "image_url"
+                          for c in _calls[0]["messages"][0]["content"]) == 2,
+                  f"the gpt-6-luna call: {len(_calls)} call(s)")
+        check_top(_sq.job.labels == {0: "black sock", 1: "notebook"}
+                  and {o["name"] for o in _sq.job.objects}
+                  == {"black sock", "notebook"}
+                  and _ost.target_col is None,
+                  f"the sequence's result: {_sq.job.labels} "
+                  f"{[o['name'] for o in _sq.job.objects]}")
+        _rep = decisions_report(_sq.job, _kn)
+        check_top("- black sock @ F7 (same cell) - 92%" in _rep
+                  and "- notebook @ M7 (same cell) - 97%" in _rep
+                  and "1 outline(s) are none of the task's objects" in _rep
+                  and "Decisions API" not in _rep,
+                  f"the gpt-6-luna report: {_rep}")
+
+        # the button: no g0, and back where it was at the end
+        _calls.clear()
+        _bd = _Board()
+        globals()["ARDUINO"] = _bd
+        _ost = AppState()
+        _ost.tag_visible, _ost.last_tag_col, _ost.last_tag_row = True, 6, 13
+        _sq2 = DecisionSequence(_ost, _DV(dict(_dsnap, time=time.time() + 60)),
+                                _kn, now=0.0)
+        _ph2, _pk2 = _run_seq(_sq2, _ost, _bd)
+        check_top(_sq2.finished and not _sq2.error and "home" in _ph2
+                  and _pk2[-1] == gripper_cell(6, 13)
+                  and _bd.letters() == ["s", "s", "dq", "s", "lq", "s", "rq",
+                                        "s", "uq", "s", "s"],
+                  f"the button's sequence: {_ph2} {_pk2} {_bd.letters()}")
+
+        # ERR's final check: park on C18, photo from there, stay -- no
+        # dq/lq out of view, no rq/uq back, no going home (user, 2026-10-11)
+        _calls.clear()
+        _bd = _Board()
+        globals()["ARDUINO"] = _bd
+        _ost = AppState()
+        _ost.tag_visible, _ost.last_tag_col, _ost.last_tag_row = True, 6, 13
+        _sqf = DecisionSequence(_ost, _DV(dict(_dsnap, time=time.time() + 60)),
+                                _kn, now=0.0)
+        _sqf.final = True
+        _phf, _pkf = _run_seq(_sqf, _ost, _bd)
+        check_top(_sqf.finished and not _sqf.error
+                  and not any(c in ("dq", "lq", "rq", "uq")
+                              for c in _bd.letters())
+                  and "jog" not in _phf and "refind" not in _phf
+                  and "home" not in _phf
+                  and _pkf[-1] == gripper_cell(*parse_coordinate("C18"))
+                  and _phf[-3:] == ["photo", "await", "done"]
+                  and len(_calls) == 1,
+                  f"ERR's final check did not stay on C18: {_phf} {_pkf} "
+                  f"{_bd.letters()}")
+
+        # the tag goes out of view near the bottom of column C on its way
+        # down (it stands above the board): that is parked
+        _bd = _Board()
+        globals()["ARDUINO"] = _bd
+        _ost = AppState()
+        _ost.tag_visible, _ost.last_tag_col, _ost.last_tag_row = True, 2, 10
+        _sq6 = DecisionSequence(_ost, _DV(dict(_dsnap, time=time.time() + 60)),
+                                _kn, now=0.0)
+        _sq6.tick(0.0)
+        _sq6.tick(0.25)
+        check_top(_sq6.phase == "park_y" and _sq6.target == (2, 10),
+                  f"already in column C, the park did not go straight down: "
+                  f"{_sq6.phase} {_sq6.target}")
+        _ost.last_tag_row, _ost.tag_visible = 16, False
+        _sq6.tick(0.5)
+        check_top(_sq6.phase == "park_y",
+                  f"a tag lost for a moment ended the park: {_sq6.phase}")
+        _sq6.tick(0.5 + TAG_LOST_S)
+        check_top(_sq6.phase == "jog" and _ost.target_col is None,
+                  f"a tag lost near C18 did not count as parked: {_sq6.phase}")
+        _sq6.cancel("test")
+
+        # lost on the way across (a side edge): no blind steering -- it
+        # moves out of the way from there
+        _bd = _Board()
+        globals()["ARDUINO"] = _bd
+        _ost = AppState()
+        _ost.tag_visible, _ost.last_tag_col, _ost.last_tag_row = True, 8, 12
+        _sq7 = DecisionSequence(_ost, _DV(dict(_dsnap, time=time.time() + 60)),
+                                _kn, now=0.0)
+        _sq7.tick(0.0)
+        _sq7.tick(0.25)
+        check_top(_sq7.phase == "park_x" and _sq7.target == (2, 5),
+                  f"the park did not go across first: {_sq7.phase} {_sq7.target}")
+        _ost.last_tag_col, _ost.tag_visible = 4, False
+        _sq7.tick(0.5)
+        _sq7.tick(0.5 + TAG_LOST_S)
+        check_top(_sq7.phase == "jog" and _ost.target_col is None,
+                  f"a tag lost on the way across was steered on: {_sq7.phase}")
+        _sq7.cancel("test")
+
+        # no tag in view: up until it is, then the park
+        _bd = _Board()
+        globals()["ARDUINO"] = _bd
+        _ost = AppState()
+        _ost.last_tag_col, _ost.last_tag_row = 6, 13
+        _sq3 = DecisionSequence(_ost, _DV(dict(_dsnap, time=time.time() + 60)),
+                                _kn, now=0.0)
+        _ph3, _ = _run_seq(_sq3, _ost, _bd, see_at=2.0)
+        check_top(_sq3.finished and not _sq3.error
+                  and _bd.letters()[:3] == ["s", "uq", "s"],
+                  f"the sequence's tag search: {_ph3} {_bd.letters()}")
+
+        # stopped part-way: everything halts, nothing is left driving
+        _bd = _Board()
+        globals()["ARDUINO"] = _bd
+        _ost = AppState()
+        _ost.tag_visible, _ost.last_tag_col, _ost.last_tag_row = True, 6, 13
+        _sq4 = DecisionSequence(_ost, _DV(dict(_dsnap, time=time.time() + 60)),
+                                _kn, now=0.0)
+        _run_seq(_sq4, _ost, _bd, until=3.0)
+        _sq4.cancel("test")
+        check_top(_sq4.finished and _sq4.cancelled and _bd.letters()[-1] == "s"
+                  and _ost.target_col is None,
+                  f"a cancelled sequence: {_sq4.phase} {_bd.letters()}")
+
+        # Vision AI with nothing to show: it fails, and says why
+        _bd = _Board()
+        globals()["ARDUINO"] = _bd
+        _ost = AppState()
+        _ost.tag_visible, _ost.last_tag_col, _ost.last_tag_row = True, 6, 13
+        _nv = _DV(None)
+        _nv.failed = "Vision AI is off"
+        _sq5 = DecisionSequence(_ost, _nv, _kn, now=0.0)
+        _run_seq(_sq5, _ost, _bd)
+        check_top(_sq5.finished and _sq5.error == "Vision AI is off",
+                  f"a sequence with no outlines: {_sq5.error!r}")
+    finally:
+        globals()["make_client"] = _mc3
+        globals()["ARDUINO"] = _was_ard
+        globals()["GRIPPER_OFFSET_UP_DOWN"] = _was_off[0]
+        globals()["GRIPPER_OFFSET_RIGHT_LEFT"] = _was_off[1]
 
     # -- a failed step: what it should have done, and the planner's brief
     _plan = ["goto_coordinate = C, 5", "pickup", "goto_coordinate = A, 1",
@@ -22206,15 +26511,34 @@ def run_single_file_self_test():
                                                  "", "", {}),
               "a replan from step 1 told the planner steps were done")
     _pf = np.full((700, 1100, 3), 200, np.uint8)
-    _cr, _rr = draw_step_fail_popup(
-        _pf, {"title": "Step 4/8 (PLACE) went wrong", "default": "replan",
-              "reason": "the sock is at B1, not A1 " * 6}, 2.4)
+    _vr = (40, 300, 1060, 690)            # the camera display in the window
+    _card, _cr, _rr = draw_step_fail_popup(
+        _pf, _vr, {"title": "Step 4/8 (PLACE) went wrong", "default": "replan",
+                   "reason": "the sock is at B1, not A1 " * 6}, 2.4)
     check_top(_cr[2] < _rr[0] and 0 <= _cr[0] and _rr[2] <= 1100
               and 0 <= _cr[1] < _cr[3] <= 700,
               f"the failed-step popup's buttons: {_cr} {_rr}")
-    _cr2, _ = draw_step_fail_popup(_pf, {"title": "t", "default": "continue",
-                                         "reason": ""}, None)
-    check_top(_cr2[2] > _cr2[0], "the popup without a countdown did not draw")
+    check_top(_card[3] <= _vr[1] - POPUP_GAP and _card[0] >= 0 and _card[2] <= 1100
+              and _card[1] < _cr[1] and _rr[3] <= _card[3],
+              f"the failed-step popup is not above the camera display: {_card}")
+    check_top(np.array_equal(_pf[_vr[1]:_vr[3], _vr[0]:_vr[2]],
+                             np.full((_vr[3] - _vr[1], _vr[2] - _vr[0], 3), 200, np.uint8)),
+              "a popup drew over the camera display")
+    check_top(tuple(int(v) for v in _pf[_card[1] + 30, _card[0] + 1]) != (200, 200, 200)
+              or tuple(int(v) for v in _pf[_card[1] + 30, _card[0]]) != (200, 200, 200),
+              "the popup lost its black outline")
+    _card2, _cr2, _ = draw_step_fail_popup(_pf, _vr, {"title": "t", "default": "continue",
+                                                    "reason": ""}, None,
+                                           taken=[_card])
+    check_top(_cr2[2] > _cr2[0] and _card2[3] <= _card[1],
+              "the popup without a countdown did not draw, or did not stack")
+    _card3, _ = draw_dseq_card(np.full((700, 1100, 3), 200, np.uint8),
+                               (40, 56, 1060, 500), "t", "a note")
+    check_top(_card3[1] >= 500 + POPUP_GAP,
+              f"a popup with no room above the video did not go below it: {_card3}")
+    _card4, _ = draw_dseq_card(np.full((700, 1100, 3), 200, np.uint8),
+                               (40, 56, 1060, 690), "t", "a note")
+    check_top(_card4[1] == 4, f"a popup with no room anywhere: {_card4}")
 
     # -- a replan job: the planner hears the brief, the dexterity gate is skipped
     _planner_in, _dex = [], []
@@ -22249,19 +26573,39 @@ def run_single_file_self_test():
     _saved_settings = copy.deepcopy(S1_EMBEDDED_STATE.get("settings") or {})
     _saved_auto = globals()["ERR_AUTO"]
     try:
+        # Settings from before 2026-10-10 (no "rev") carry no ERR mode:
+        # ERR on the Go asked after every step then, and an "off" saved
+        # against that is not kept now that it asks after pickups only.
+        _old = copy.deepcopy(_saved_settings)
+        _old.pop("rev", None)
+        _old.setdefault("behaviour", {})["err_auto"] = "off"
+        S1_EMBEDDED_STATE["settings"] = _old
+        globals()["ERR_AUTO"] = "step"
+        load_settings()
+        check_top(globals()["ERR_AUTO"] == "step",
+                  "an old saved ERR 'off' was carried over")
         _ss = copy.deepcopy(_saved_settings)
+        _ss["rev"] = SETTINGS_REV
         # Settings saved while ERR-2 existed still load.
         _ss.setdefault("behaviour", {}).update(
             {"err_auto": "task", "err_version": "ERR-2",
              "err_step_version": "ERR-2"})
         S1_EMBEDDED_STATE["settings"] = _ss
         load_settings()
-        check_top(globals()["ERR_AUTO"] == "task",
-                  "automatic ERR settings not restored at launch")
+        check_top(globals()["ERR_AUTO"] == "off" and globals()["ERR_FINAL"],
+                  "the old 'After the task' mode did not become ERR only")
         _ss["behaviour"].update({"err_auto": "always"})
         load_settings()
-        check_top(globals()["ERR_AUTO"] == "task",
+        check_top(globals()["ERR_AUTO"] == "off",
                   "an unknown automatic ERR setting was accepted")
+        _ss["behaviour"].update({"err_auto": "step", "err_final": False,
+                                 "err_redo": True})
+        load_settings()
+        check_top(globals()["ERR_AUTO"] == "step"
+                  and globals()["ERR_FINAL"] is False
+                  and globals()["ERR_REDO"] is True,
+                  "saved ERR on the Go / ERR / redo settings did not load")
+        globals()["ERR_FINAL"], globals()["ERR_REDO"] = True, False
         _ss["behaviour"].pop("err_auto")
         globals()["ERR_AUTO"] = "step"
         _orig_persist = globals()["persist_embedded_state"]
@@ -22271,6 +26615,9 @@ def run_single_file_self_test():
         finally:
             globals()["persist_embedded_state"] = _orig_persist
         _b = S1_EMBEDDED_STATE["settings"]["behaviour"]
+        check_top(S1_EMBEDDED_STATE["settings"].get("rev") == SETTINGS_REV
+                  and _b.get("err_final") is True and _b.get("err_redo") is False,
+                  f"saved settings carry no revision or ERR settings: {_b}")
         check_top(_b["err_auto"] == "step" and "err_version" not in _b
                   and "err_step_version" not in _b,
                   f"the automatic ERR mode was not saved cleanly: {_b}")
@@ -22278,6 +26625,7 @@ def run_single_file_self_test():
         S1_EMBEDDED_STATE["settings"] = _saved_settings
         load_settings()
         globals()["ERR_AUTO"] = _saved_auto
+        globals()["ERR_FINAL"], globals()["ERR_REDO"] = True, False
 
     print(f"[blur_band] {checks_top} checks passed")
 
@@ -22322,8 +26670,64 @@ def run_single_file_self_test():
         if not condition:
             raise AssertionError(message)
 
-    global ARDUINO
+    global ARDUINO, AUTO_GRIPPER_SETTINGS_PATH
     old = (ARDUINO, time.monotonic)
+    original_auto_timing_values = {
+        name: globals()[name]
+        for name, _lo, _hi, _step in AUTO_GRIPPER_TIMING_SETTINGS.values()
+    }
+    original_auto_gripper_path = AUTO_GRIPPER_SETTINGS_PATH
+    try:
+        with tempfile.TemporaryDirectory(
+                prefix="s1-auto-gripper-settings-") as temp_dir:
+            AUTO_GRIPPER_SETTINGS_PATH = os.path.join(temp_dir, "settings.json")
+            defaults = dict(AUTO_GRIPPER_DEFAULTS)
+            load_auto_gripper_timing_settings(AUTO_GRIPPER_SETTINGS_PATH)
+            check(
+                not os.path.exists(AUTO_GRIPPER_SETTINGS_PATH),
+                "loading defaults unexpectedly wrote settings.json",
+            )
+            check(
+                auto_gripper_timing_settings() == defaults,
+                "automatic gripper defaults were not restored",
+            )
+
+            unrelated_settings = {"unrelated": {"preserved": True}}
+            with open(AUTO_GRIPPER_SETTINGS_PATH, "w", encoding="utf-8") as settings_file:
+                json.dump(unrelated_settings, settings_file)
+            changed_key = "pickup_hu_scale"
+            changed_name = AUTO_GRIPPER_TIMING_SETTINGS[changed_key][0]
+            adjusted_value = defaults[changed_key] + 0.25
+            globals()[changed_name] = adjusted_value
+            check(save_auto_gripper_timing_settings(),
+                  "automatic gripper settings were not saved")
+            with open(AUTO_GRIPPER_SETTINGS_PATH, encoding="utf-8") as settings_file:
+                saved_settings = json.load(settings_file)
+            check(
+                saved_settings["unrelated"] == unrelated_settings["unrelated"],
+                "saving gripper settings discarded unrelated settings.json keys",
+            )
+            check(
+                saved_settings["automatic_gripper"][changed_key] == adjusted_value,
+                "adjusted automatic gripper value was not persisted",
+            )
+
+            load_auto_gripper_timing_settings(AUTO_GRIPPER_SETTINGS_PATH)
+            check(
+                globals()[changed_name] == adjusted_value,
+                "saved automatic gripper value was not restored",
+            )
+            with open(AUTO_GRIPPER_SETTINGS_PATH, "w", encoding="utf-8") as settings_file:
+                json.dump({"automatic_gripper": {changed_key: "invalid"}}, settings_file)
+            load_auto_gripper_timing_settings(AUTO_GRIPPER_SETTINGS_PATH)
+            check(
+                globals()[changed_name] == defaults[changed_key],
+                "invalid automatic gripper value did not fall back to its default",
+            )
+    finally:
+        AUTO_GRIPPER_SETTINGS_PATH = original_auto_gripper_path
+        for name, value in original_auto_timing_values.items():
+            globals()[name] = value
     global GRIPPER_NUDGE_S, GRIPPER_NUDGE_ACTIONS
     old_nudge = (GRIPPER_NUDGE_S, dict(GRIPPER_NUDGE_ACTIONS))
     GRIPPER_NUDGE_S = 0.0
@@ -22763,17 +27167,20 @@ def run_single_file_self_test():
               f"send_direction blocked the caller for {elapsed:.2f}s -- "
               f"the write is not actually off the main thread")
 
-        grips = [{"object": "box", "part": "body", "cell": "D4",
-                  "approach": "top", "why": "flat lid"}]
-        resolved = resolve_grip_cells(grips, [box])
-        check(len(resolved) == 1 and resolved[0]["cell"] == "E3",
-              f"the model's cell was not moved to the corner: {resolved}")
-        check(resolved[0]["source"] == "camera-top-right",
-              f"wrong grip source: {resolved}")
-        silent = resolve_grip_cells([], [box])
-        check(len(silent) == 1 and silent[0]["cell"] == "E3"
-              and silent[0]["part"] == "top-right corner",
-              f"a skipped object did not get a corner grip: {silent}")
+        # no model picks the grip: a pickup the planner wrote one cell off
+        # the box still closes on the box's own top-right corner, and one
+        # two cells off is no pickup of the box at all
+        _off, _ = enforce_gripper_targets(
+            "goto_coordinate = F, 4\npickup\ngoto_coordinate = J, 9\nkeep",
+            [box])
+        _offc = [f"{m.group(1).upper()}{m.group(2)}" for m in GOTO_RE.finditer(_off)]
+        check(_offc[0] == "E3",
+              f"a pickup one cell off did not snap to the corner: {_offc}")
+        _far, _ = enforce_gripper_targets(
+            "goto_coordinate = G, 4\npickup\ngoto_coordinate = J, 9\nkeep",
+            [box])
+        check([f"{m.group(1).upper()}{m.group(2)}" for m in GOTO_RE.finditer(_far)]
+              == ["G4", "J9"], f"a pickup two cells off was moved: {_far}")
 
         def wire():
             gp = GripperPanel()
@@ -23240,15 +27647,14 @@ def run_single_file_self_test():
         install_examples_menu(test_bar, lambda index: None)
         check(test_bar.numberOfItems() == 5, "native menu installation duplicated Examples")
 
-    for center, head, grip, target, planned, final in (
-            ("E7", "E6", "E4", "I5", "I6", "I3"),
-            ("M6", "N6", "K6", "G8", "F8", "D8"),
-            ("H8", "G7", "J9", "L5", "M6", "O7")):
+    for center, head, grip, target, planned, final, cells in (
+            ("E7", "E6", "E4", "I5", "I6", "I3", "E4,E5,E6,E7"),
+            ("H8", "G8", "J7", "K5", "L5", "N4", "G7,H7,I7,J7,G8,I8,J8")):
         path = (f"goto_coordinate = {center[:-1]}, {center[-1]}\npickup\n"
                 f"goto_coordinate = {planned[:-1]}, {planned[-1]}\npress\n"
                 f"goto_coordinate = {planned[:-1]}, {planned[-1]}\nrelease\nkeep")
-        rewritten, _ = apply_grip_substitution(path, [
-            {"override": True, "center": center, "cell": grip}])
+        rewritten, _ = enforce_gripper_targets(path, [
+            {"name": "brush", "center": center, "touches": cells}])
         check(rewritten.count(f"goto_coordinate = {final[:-1]}, {final[-1]}") == 2,
               "grip correction did not preserve sweep head positions")
         fc, fr = parse_coordinate(final)
@@ -23288,6 +27694,21 @@ def run_single_file_self_test():
     check(sim_test.load(runner_test.commands) == 9
           and sim_test.commands is runner_test.commands,
           "valid simulation lost the runner command list")
+    wait_runner = PlanRunner()
+    wait_runner.commands, wait_runner.index = ["wait_X(30)", "Task_Completed"], 0
+    wait_runner._pressed = True
+    wait_state = AppState()
+    wait_started = time.time()
+    wait_runner._dispatch(wait_state, wait_runner.commands[0])
+    check_top(wait_runner.mode == "hold"
+              and abs((wait_runner.hold_until - wait_started) - 30.0) < 0.01
+              and wait_runner._pressed
+              and wait_runner.label == "WAIT 30s",
+              "the live runner did not honor a timed wait or preserve a held press")
+    wait_beat = SimRunner()._dispatch("wait_X(30)")[0]
+    check_top(wait_beat["delay"] == int(min(30.0, WAIT_MAX_PLAYBACK) * 1000)
+              and "simulated as" in wait_beat["label"],
+              "simulation did not preserve its configured wait playback cap")
 
     def fold_part(name, x, y):
         return {"name": name, "polygon": [[x, y], [x + .6, y],
@@ -23358,6 +27779,35 @@ def run_single_file_self_test():
           "planner_prompt_kind chose the wrong prompt")
     _pfull, _psw, _pfo = (build_planner_system(), build_planner_system("sweep"),
                           build_planner_system("fold"))
+    check_top("Never stride, sample, or omit cells" in _pfull
+              and "No margin or guessed inner ring may remove measured cells." in _pfull
+              and "cleaning/contact passes use every exact TOUCHES cell" in _pfull
+              and "at least four strokes on distinct lanes" in _pfull
+              and "TOUCHES: B2-C2,B3" in _pfull
+              and "BROOM EXAMPLE - if the measured recipe has four lanes" in _pfull
+              and "never copy these sample coordinates" in _pfull
+              and "60-command convenience target" in _pfull,
+              "the planner instructions do not consistently require full cleaning coverage")
+    check_top("There are exactly 10 command forms." in _pfull
+              and "ONLY the listed command forms" in _pfull
+              and "wait_X` when a playbook explicitly requires the actuator to remain engaged"
+              in _pfull
+              and "split that duration into consecutive `wait_X` commands" in _pfull
+              and "15 minutes is `wait_X(600)` followed by `wait_X(300)`" in _pfull
+              and "explicitly asked the robot to wait (including when waiting is the entire task)"
+              in _pfull
+              and "An explicitly requested wait may be the final action before `Task_Completed`."
+              in _pfull
+              and "Opening / closing a door, lid or drawer -> `open_door` / `close_door`."
+              in _pfull
+              and "press/release -> wait_X -> press/release" in _pfull
+              and "A tap held open while a container fills instead uses press -> wait_X -> release."
+              in _pfull
+              and "Tidying or organizing alone does NOT imply wiping." in _pfull
+              and "Solid pod, tablet or bar:" in _pfull
+              and "Never use\n`pour` for a solid item." in _pfull
+              and "Pourable liquid or powder:" in _pfull,
+              "task playbooks contradict command, timing, scope or material rules")
     check(len(_psw) < 0.7 * len(_pfull) and len(_pfo) < 0.6 * len(_pfull)
           and "## 1 / 1b. Sweep" in _psw and "## 5. Fold Laundry" not in _psw
           and "## 2. Mop a Floor" not in _psw and "USE THE SWEEP RECIPE" in _psw
@@ -23380,9 +27830,13 @@ def run_single_file_self_test():
           and recipe_is_the_plan(None, "sweep the board") is None
           and recipe_is_the_plan({"lines": []}, "sweep the board") is None,
           "recipe_is_the_plan skipped (or kept) the planner wrongly")
-    check(all(is_surface_name(n) for n in ("surface", "wooden table", "wood grain", "floor mat", "the floor", "shadow"))
+    check(all(is_surface_name(n) for n in ("surface", "wooden table", "wood grain", "floor mat", "the floor",
+                                           "shadow", "board", "blue grid", "grid mat", "cutting mat",
+                                           "gridded board", "work surface", "grid lines"))
           and not any(is_surface_name(n) for n in ("hand brush", "table lamp", "wooden spoon", "rice grain",
-                                                   "dustpan", "t-shirt", "mat knife", "unknown", "")),
+                                                   "dustpan", "t-shirt", "mat knife", "unknown", "",
+                                                   "circuit board", "chopping board", "notebook",
+                                                   "grid paper notebook")),
           "is_surface_name misjudged a name")
     check(all(is_hand_name(n) for n in ("hand", "left hand", "fingers", "human hand"))
           and not any(is_hand_name(n) for n in ("hand brush", "hand towel", "hand mixer", "handle", "")),
@@ -23450,6 +27904,18 @@ def run_single_file_self_test():
     extras = sorted(name for name in os.listdir(folder) if name not in allowed)
     check(not extras, f"S1-SRCfolder contains extra files: {extras}")
     print(f"S1-SRCsingle-file self-test passed ({checks} checks).")
+
+
+def run_single_file_self_test():
+    """Run tests with settings writes isolated from the application folder."""
+    global AUTO_GRIPPER_SETTINGS_PATH
+    original_path = AUTO_GRIPPER_SETTINGS_PATH
+    with tempfile.TemporaryDirectory(prefix="s1-self-test-settings-") as temp_dir:
+        AUTO_GRIPPER_SETTINGS_PATH = os.path.join(temp_dir, "settings.json")
+        try:
+            _run_single_file_self_test_impl()
+        finally:
+            AUTO_GRIPPER_SETTINGS_PATH = original_path
 
 
 def remove_local_bytecode_cache():

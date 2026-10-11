@@ -49,6 +49,12 @@ The A-series physical simulators concentrate first on the arm-and-workspace laye
 
 **Latest development (11 October 2026):** S1.5-SRC source now lives at [Software/S1.5-SRC.py](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Software/S1.5-SRC.py) (renamed from the earlier preview file and expanded). [Shell 1.5 firmware](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Shell_1.5.ino) adds P3 continuous height following: the Z axis tracks a saved VL53L0X distance target, pauses Z and XY on missing or stale sensor readings, and rejects targets below 35 mm. Z travel is now calculated from the confirmed 8 mm lead screw. The [Hardware](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware) folder now includes HOS-Trigonometry-1.5 hardware documentation (PDF) and [3D Models](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware/3D%20Models) with printable STL parts for the gantry, gripper, and AprilTag connector. These parts make up the HOS 1.5 release (11 October 2026). The release does not by itself prove hardware reliability. A later S1.5-SRC update on the same day moved every AI stage (vision naming, dexterity, planner, and ERR) to OpenAI `gpt-6-luna` at low reasoning effort and turned on ERR on the Go and the final ERR check by default.
 
+HOS 1.5 is also a lot cheaper than HOS-1!
+
+
+- Vision AI is 1000x cheaper!
+- Task planner is 8x cheaper
+- ERR is 3x cheaper
 ---
 
 ## Recent Updates

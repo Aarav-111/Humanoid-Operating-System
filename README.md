@@ -15,6 +15,7 @@ Instead of training isolated models per task (the approach used by most VLA mode
 ## Table of contents
 
 - [Why HOS](#why-hos)
+- [Recent Updates](#recent-updates)
 - [System architecture](#system-architecture)
 - [A3-Terra at a glance](#a3-terra-at-a-glance)
 - [How the planning loop works](#how-the-planning-loop-works)
@@ -44,7 +45,17 @@ HOS is organized around two physical roles:
 
 The A-series physical simulators concentrate first on the arm-and-workspace layer: a bounded, camera-visible scene where perception and action can be measured, rehearsed, and improved before deployment to a broader robot platform.
 
-**Latest development — 4 October 2026:** [S1.5-SRC preview](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Software/S1.5-SRC-Preview.py) adds live-camera ERR-3 verification, an explicit cannot-verify verdict, and optional step or task checks; automatic checking is off by default, and failed-step replanning is bounded to two automatic attempts. [Shell 1.5 firmware](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Shell_1.5.ino) adds VL53L0X distance sensing, saved distance targets, and distance telemetry. S1-SRC also improves recognition of multiple similar objects and outline-based folding fallbacks. These source-level advances strengthen the connection between scene understanding, execution feedback, and operator review; the preview is not a completed release or proof of hardware reliability.
+**Latest development (11 October 2026):** S1.5-SRC source now lives at [Software/S1.5-SRC.py](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Software/S1.5-SRC.py) (renamed from the earlier preview file and expanded). [Shell 1.5 firmware](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Shell_1.5.ino) adds P3 continuous height following: the Z axis tracks a saved VL53L0X distance target, pauses Z and XY on missing or stale sensor readings, and rejects targets below 35 mm. Z travel is now calculated from the confirmed 8 mm lead screw. The [Hardware](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware) folder now includes HOS-Trigonometry-1.5 hardware documentation (PDF) and [3D Models](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware/3D%20Models) with printable STL parts for the gantry, gripper, and AprilTag connector. These are source-level advances; they are not a completed release or proof of hardware reliability.
+
+---
+
+## Recent Updates
+
+- **9 October 2026:** Added [3D Models](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware/3D%20Models) with STL files: AprilTag connector, basic robot, gripper parts (including a sponge gripper part), hub, L-bracket, legs, pulley mount, XY inter-axis connector, Y-axis holder, and Z-axis mounter. ([639e62a](https://github.com/Aarav-111/Humanoid-Operating-System/commit/639e62aad5e9a11a8b92fb78df90f71074acb815))
+- **8 to 9 October 2026:** Added HOS-Trigonometry-1.5 hardware documentation to the [Hardware](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware) folder, including an updated v2 file. ([ed2d997](https://github.com/Aarav-111/Humanoid-Operating-System/commit/ed2d997), [3b786a4](https://github.com/Aarav-111/Humanoid-Operating-System/commit/3b786a4))
+- **7 to 8 October 2026:** Renamed `S1.5-SRC-Preview.py` to [`S1.5-SRC.py`](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Software/S1.5-SRC.py) and expanded the source. ([d3a7a41](https://github.com/Aarav-111/Humanoid-Operating-System/commit/d3a7a41), [bfbd408](https://github.com/Aarav-111/Humanoid-Operating-System/commit/bfbd408))
+- **5 October 2026:** Shell 1.5 firmware gained P3 continuous height following with sensor-based pause and recovery, plus Z steps per mm based on the 8 mm lead screw. ([2929d86](https://github.com/Aarav-111/Humanoid-Operating-System/commit/2929d86))
+- **4 October 2026:** Added the S1.5-SRC preview (live-camera ERR-3 verification, a cannot-verify verdict, optional step or task checks, and failed-step replanning limited to two automatic attempts) and Shell 1.5 firmware (VL53L0X distance sensing, saved distance targets, distance telemetry). Older A-series and Shell files were removed from the current tree.
 
 ---
 
@@ -81,7 +92,7 @@ Each stage has a distinct job:
 4. **Dexterity and gripper reasoning** evaluate whether the interaction is plausible and help select a safer contact or grip location.
 5. **Planning** turns the operator's requested outcome into an ordered sequence of board-aware actions. If an object is missing from the visible scene, the system should report that limitation instead of inventing a location.
 6. **Simulation and hardware output** use the same parsed command sequence. The simulator is the default rehearsal surface; USB output is a separately armed action.
-7. 
+
 ---
 
 ## How the planning loop works
@@ -137,8 +148,8 @@ This repository captures a research journey across multiple simulator and hardwa
 | [README.md](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/README.md) | Project purpose, system architecture, roadmap, simulator history, benchmarks, and team context. | Begin here if you are new to HOS. |
 | [Simulation](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Simulation) | Virtual-simulator work and the evolution of planning experiments. | Use this track to understand the Pro, K-series, and simulation-first research direction. |
 | [Physical Simulators](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Physical%20Simulators) | Physical-simulator implementations and iterations across the A-series. | Start here for camera-to-grid operation and real-world arm experimentation. |
-| [Software](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Software) | S1-SRC and the S1.5-SRC preview, including camera-grounded planning and execution verification. | Use this track for the SRC software-control workflow and its current preview. |
-| [Hardware](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware) | Hardware-related material for robot and simulator integration. | Use this when working on controllers, mechanical systems, connections, or physical setup. |
+| [Software](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Software) | S1-SRC and S1.5-SRC, including camera-grounded planning and execution verification. | Use this track for the SRC software-control workflow. |
+| [Hardware](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware) | Shell firmware (Shell 1 and Shell 1.5), HOS-Trigonometry-1.5 hardware documentation, and 3D-printable STL models. | Use this when working on controllers, mechanical systems, connections, or physical setup. |
 | [Benchmarks](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Benchmarks) | Benchmark assets and supporting material. | Use this to understand evaluation inputs and reported results. |
 | [Benchmarking tasks](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Benchmarking%20tasks) | Task definitions used in benchmarking. | Use this when reproducing, extending, or reviewing task-level evaluation. |
 | [Other](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Other) | Supporting experiments, notes, and material that does not belong to the main tracks. | Check here when a referenced asset is not in a simulator, hardware, or benchmark folder. |
@@ -201,7 +212,7 @@ Roadmap items are research goals, not shipping commitments.
 - [x] A3-Terra launch
 - [x] S1-SRC (Software Robot Control)
 - [ ] HOS 1
-- [ ] S1.5-SRC (preview source available; full release pending)
+- [ ] S1.5-SRC (source in `Software/S1.5-SRC.py`; full release pending)
 - [ ] HOS 1.5
 - [ ] HOS-2.0
 

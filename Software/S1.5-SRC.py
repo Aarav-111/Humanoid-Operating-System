@@ -106,7 +106,7 @@ ALPHABET = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 DEBUG_INPUT = bool(os.environ.get("S1_DEBUG_INPUT"))
 
 SCRIPT_PATH = os.path.abspath(__file__)
-S1_EMBEDDED_STATE_B64 = "eyJzZXR0aW5ncyI6eyJjYW1lcmEiOnsiem9vbSI6MS4xLCJicmlnaHRuZXNzIjowLCJjb250cmFzdCI6MS4wLCJzYXR1cmF0aW9uIjoxLjAsInNoYXJwbmVzcyI6MC4wLCJyb3RhdGlvbiI6MCwibWlycm9yIjpmYWxzZX0sImdyaWQiOnsibl9jb2xzIjoyMCwibl9yb3dzIjoyMCwiYm94IjpbMjEzLjAsNy43NTk5OTk5OTk5OTk5OTEsOTkwLjI0LDc4NS4wXSwic3F1YXJlX2NlbGxzIjp0cnVlLCJmcmFtZV9zaXplIjpbMTQwOSw3OTJdLCJib3hfcmVsIjpbMC4xNTExNzEwNDMyOTMxMTU2OCwwLjAwOTc5Nzk3OTc5Nzk3OTc4NiwwLjcwMjc5NjMwOTQzOTMxODcsMC45OTExNjE2MTYxNjE2MTYxXX0sInRyaWdfb2Zmc2V0Ijp7ImNhbWVyYV9oZWlnaHRfaW4iOjM1LjAsInRhZ19oZWlnaHRfaW4iOjUuNSwiYm9hcmRfaGVpZ2h0X2luIjowLjAsInBpdm90X3giOjAuMCwicGl2b3RfeSI6MC4wLCJncmlwcGVyX3VwX2Rvd24iOi03LCJncmlwcGVyX3JpZ2h0X2xlZnQiOjAsImdyaXBwZXJfdmVydGljYWxfZGlyZWN0aW9uIjoidXAiLCJncmlwcGVyX2hvcml6b250YWxfZGlyZWN0aW9uIjoibGVmdCIsIm51ZGdlX3MiOjAuMiwibnVkZ2VfZGlyZWN0aW9uIjoicmlnaHQiLCJudWRnZV9hY3Rpb25zIjp7InBpY2t1cCI6dHJ1ZSwia2VlcCI6ZmFsc2UsInByZXNzIjpmYWxzZSwicmVsZWFzZSI6dHJ1ZX19LCJ2aXNpb24iOnsiYm9hcmRfd2lkdGhfaW4iOjI0LjAsImNvbmZfdGhyZXMiOjAuMjUsImlvdV90aHJlcyI6MC43LCJtYXhfYXJlYSI6MC41LCJvdXRsaW5lX3B4IjoyLCJtYXJrX3BhcnRzIjp0cnVlLCJzaG93X25hbWVzIjp0cnVlLCJuYW1lcl9tb2RlbCI6ImdwdC01LjQtbWluaSIsInByaW9yaXR5X25hbWluZyI6ZmFsc2UsIm1heF9mcHMiOjEwLjAsInNjZW5lX2hpbnQiOiJUaGUgcGhvdG8gc2hvd3MgdGhlIHdvcmsgYXJlYSBvZiBhIHNtYWxsIGdhbnRyeSByb2JvdCwgc28gaXQgbWF5IGhvbGQgcGFydHMgb2YgdGhlIHJvYm90IGl0c2VsZiAoYWx1bWluaXVtIGZyYW1lIHJhaWxzLCBsZWFkIHNjcmV3cywgc21vb3RoIHJvZHMsIHN0ZXBwZXIgbW90b3JzLCBiZWx0cywgcHVsbGV5cywgYSBncmlwcGVyLCBjYWJsZXMpIGFzIHdlbGwgYXMgZXZlcnlkYXkgb2JqZWN0cy4ifSwiYmVoYXZpb3VyIjp7Im1hbnVhbF9ncmlwcGVyX3N0ZXBzIjpmYWxzZSwiZ3JpcHBlcl9haSI6dHJ1ZSwiZXJyX2F1dG8iOiJvZmYiLCJwbGFubmVyX2VmZm9ydCI6ImxvdyJ9fSwiY3VzdG9tX3RyYWluaW5nIjpbXSwiZXJyb3JfcmVib3VuZHMiOlt7InRhc2siOiJzd2FwIGFsbCB0aGUgb2JqZWN0cyBvbiB0aGUgYm9hcmQiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiT2JqZWN0cyBkaWQgbm90IHN3YXAgcG9zaXRpb25zOyBzY3Jld2RyaXZlciByZW1haW5zIGF0IEgxNCBhbmQgdXRpbGl0eSBrbmlmZSByZW1haW5zIGF0IFAxMS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA4LTMxVDIwOjQ1OjA2In0seyJ0YXNrIjoid2F0ZXIgbXkgcGxhbnRzIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6Ik5vIHZpc2libGUgZXZpZGVuY2UgdGhlIHBsYW50IHdhcyB3YXRlcmVkOyBjdXAgYW5kIHBsYW50IHJlbWFpbiBlc3NlbnRpYWxseSB1bmNoYW5nZWQuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0wMVQxNTo0NjoxMyJ9LHsidGFzayI6IndhdGVyIG15IHBsYW50cyIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJObyB2aXNpYmxlIGV2aWRlbmNlIHRoZSBwbGFudCB3YXMgd2F0ZXJlZDsgcGxhbnQgYW5kIG11ZyBvbmx5IHNoaWZ0ZWQgc2xpZ2h0bHkuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0wMlQxNDozMTo1MCJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNwb3QgaW4gdGhlIGJvZHkuIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5IiwicmVhc29uIjoiYmxhY2sgc29jayB3YXMgbW92ZWQgaW50byB0aGUgYm93bCwgd2l0aCB0aGUgYm93bCBzdGlsbCBjb250YWluaW5nIGl0IGluIHRoZSBmaW5hbCBpbWFnZSIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTE6NTE6MjIifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzcG90IGluIHRoZSBib2R5LiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJibGFjayBzb2NrIHdhcyBtb3ZlZCBuZWFyIEs0IGluc3RlYWQgb2YgYmVpbmcga2VwdCBpbiB0aGUgYm93bC9ib2R5IGF0IFEzIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMTo1MTozNiJ9LHsidGFzayI6InNvcnQgdGhlIHNvY2tlcyBhbmQga2VlcCB0aGUgd2hpdGVzIGluIHRlIGJvd2wiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiV2hpdGUgc29ja3MgYXJlIG5vdCB2aXNpYmxlIGluIHRoZSBib3dsIGluIHRoZSBmaW5hbCBpbWFnZTsgb25seSB0aGUgYmxhY2sgc29ja3MgcmVtYWluIG9uIHRoZSBib2FyZC4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDEyOjAzOjAwIn0seyJ0YXNrIjoiS2VlcCB0aGUgYmxhY2sgc29ja3Mgc3RhY2tlZCB0b2dldGhlci4iLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiT25seSBvbmUgYmxhY2sgc29jayBpcyB2aXNpYmxlIGluIHRoZSBmaW5hbCBpbWFnZTsgdGhlIHR3byBzb2NrcyBhcmUgbm90IGNvbmZpcm1lZCBzdGFja2VkIHRvZ2V0aGVyLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTI6MDU6MTMifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzb2NrcyBzdGFja2VkIHRvZ2V0aGVyLiIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsInJlYXNvbiI6IlRoZSB0d28gYmxhY2sgc29ja3MgYXJlIHN0YWNrZWQgdG9nZXRoZXIgaW4gdGhlIGZpbmFsIGltYWdlLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTI6MDU6MjMifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzb2NrIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsInJlYXNvbiI6ImJsYWNrIHNvY2sgaXMgcGxhY2VkIGluIHRoZSBncmVlbiBib3dsIGluIHRoZSBmaW5hbCBpbWFnZS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDEzOjAxOjM0In0seyJ0YXNrIjoiU29ydCB0aGUgYmxhY2sgYW5kIHdoaXRlIHNvY2tzLCBhbmQgcHV0IGFsbCB0aGUgd2hpdGVzIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJXaGl0ZSBzb2NrIGlzIGluIHRoZSBib3dsLCBidXQgb25lIHdoaXRlIHNvY2sgcmVtYWlucyBvdXRzaWRlIHRoZSBib3dsLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTY6Mjc6NDgifSx7InRhc2siOiJTb3J0IG15IGNsb3RoZXMgb3Igc29ja3MgaW50byBibGFjayBhbmQgd2hpdGUuIEtlZXAgYWxsIHRoZSBibGFja3MgaW4gdGhlIGJvd2wuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6Ik9ubHkgb25lIGJsYWNrIHNvY2sgaXMgaW4gdGhlIGJvd2w7IHRoZSBvdGhlciBibGFjayBzb2NrIGlzIG5vdCB2ZXJpZmllZCBpbiB0aGUgYm93bC4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDE2OjM5OjQyIn0seyJ0YXNrIjoiS2VlcCB0aGUgbGVhdmVzIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJMZWF2ZXMgYXJlIG5vdCBmdWxseSBpbiB0aGUgYm93bDsgcGFydCBvZiB0aGUgc3ByaWcgcmVtYWlucyBvdXRzaWRlIG9uIHRoZSByaW0vdGFibGUuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxNjo0Nzo1MiJ9LHsidGFzayI6Im1vZSB0aGUgYmtvb2sgdG8gaXQncyBsZWZ0IiwidmVyc2lvbiI6IkVSUi0zIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsIm9iamVjdHMiOlsibm90ZWJvb2s9d3JvbmciXSwicmVhc29uIjoiVGhlIG5vdGVib29rIHJlbWFpbnMgaW4gdGhlIHNhbWUgcG9zaXRpb24gYXMgaW4gdGhlIHN0YXJ0IGltYWdlcyBhbmQgd2FzIG5vdCBtb3ZlZCBsZWZ0LiIsIm5leHQiOiJGSVg6IG1vdmUgdGhlIG5vdGVib29rIGxlZnQgZnJvbSBpdHMgY3VycmVudCBwb3NpdGlvbiBhbmQgcmVsZWFzZSBpdCB0aGVyZSIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMDJUMTg6MDQ6MDAifSx7InRhc2siOiJtb2UgdGhlIGJrb29rIHRvIGl0J3MgbGVmdCIsInZlcnNpb24iOiJFUlItMyIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsIm9iamVjdHMiOlsibm90ZWJvb2s9b2siXSwicmVhc29uIjoiVGhlIGJsYWNrIG5vdGVib29rIGlzIHZpc2libHkgc2hpZnRlZCBsZWZ0IGZyb20gaXRzIHN0YXJ0IHBvc2l0aW9uIChmcm9tIGFib3V0IEctTCBjb2x1bW5zIHRvIGFib3V0IEQtSiBjb2x1bW5zKSBhbmQgaXMgcmVzdGluZyBvbiB0aGUgYm9hcmQgd2l0aCBubyBncmlwcGVyIGhvbGRpbmcgaXQ7IG5vIG90aGVyIHRhc2sgY29uc3RyYWludHMgYXJlIHZpc2libHkgdmlvbGF0ZWQuIiwibmV4dCI6IiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMDJUMTg6MDQ6MjIifSx7InRhc2siOiJyZWRvIiwidmVyc2lvbiI6IkVSUiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJvYmplY3RzIjpbImNsb3RoPXdyb25nIiwid29vZCBibG9jaz13cm9uZyJdLCJyZWFzb24iOiJUaGUgY2xvdGggc3RheWVkIGF0IEc3IGluc3RlYWQgb2YgYmVpbmcgbW92ZWQsIGFuZCB0aGUgd29vZCBibG9jayB3YXMgZGlzcGxhY2VkIGZyb20gQTEzIHRvIEExMS4iLCJuZXh0IjoiRklYOiBNb3ZlIHRoZSBjbG90aCBmcm9tIEc3IHRvIEQxMTsgcmV0dXJuIHRoZSB3b29kIGJsb2NrIGZyb20gQTExIHRvIEExMy4iLCJtb2RlbCI6ImdwdC02LWx1bmEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTExVDE2OjM4OjQxIn0seyJ0YXNrIjoia2VlcCB0aGUgY2xvdGggdG8gaXQncyByaWdodCIsInZlcnNpb24iOiJFUlIiLCJ2ZXJkaWN0IjoiZG9uZSBjb3JyZWN0bHkiLCJvYmplY3RzIjpbImNsb3RoPW9rIl0sInJlYXNvbiI6IlRoZSBjbG90aCBtb3ZlZCByaWdodCBmcm9tIEs1IHRvIFAzIGFuZCBpcyB2aXNpYmxlIG9uIHRoZSBib2FyZC4iLCJuZXh0IjoiIiwibW9kZWwiOiJncHQtNi1sdW5hIiwidGltZXN0YW1wIjoiMjAyNi0xMC0xMVQxNzoyNToyMCJ9XX0="  # S1_EMBEDDED_STATE
+S1_EMBEDDED_STATE_B64 = "eyJzZXR0aW5ncyI6eyJjYW1lcmEiOnsiem9vbSI6MS4xLCJicmlnaHRuZXNzIjowLCJjb250cmFzdCI6MS4wLCJzYXR1cmF0aW9uIjoxLjAsInNoYXJwbmVzcyI6MC4wLCJyb3RhdGlvbiI6MCwibWlycm9yIjpmYWxzZX0sImdyaWQiOnsibl9jb2xzIjoyMCwibl9yb3dzIjoyMCwiYm94IjpbMjEzLjAsNy43NTk5OTk5OTk5OTk5OTEsOTkwLjI0LDc4NS4wXSwic3F1YXJlX2NlbGxzIjp0cnVlLCJmcmFtZV9zaXplIjpbMTQwOSw3OTJdLCJib3hfcmVsIjpbMC4xNTExNzEwNDMyOTMxMTU2OCwwLjAwOTc5Nzk3OTc5Nzk3OTc4NiwwLjcwMjc5NjMwOTQzOTMxODcsMC45OTExNjE2MTYxNjE2MTYxXX0sInRyaWdfb2Zmc2V0Ijp7ImNhbWVyYV9oZWlnaHRfaW4iOjM1LjAsInRhZ19oZWlnaHRfaW4iOjUuNSwiYm9hcmRfaGVpZ2h0X2luIjowLjAsInBpdm90X3giOjAuMCwicGl2b3RfeSI6MC4wLCJncmlwcGVyX3VwX2Rvd24iOi03LCJncmlwcGVyX3JpZ2h0X2xlZnQiOjAsImdyaXBwZXJfdmVydGljYWxfZGlyZWN0aW9uIjoidXAiLCJncmlwcGVyX2hvcml6b250YWxfZGlyZWN0aW9uIjoibGVmdCIsIm51ZGdlX3MiOjAuMiwibnVkZ2VfZGlyZWN0aW9uIjoicmlnaHQiLCJudWRnZV9hY3Rpb25zIjp7InBpY2t1cCI6dHJ1ZSwia2VlcCI6ZmFsc2UsInByZXNzIjpmYWxzZSwicmVsZWFzZSI6dHJ1ZX19LCJ2aXNpb24iOnsiYm9hcmRfd2lkdGhfaW4iOjI0LjAsImNvbmZfdGhyZXMiOjAuMjUsImlvdV90aHJlcyI6MC43LCJtYXhfYXJlYSI6MC41LCJvdXRsaW5lX3B4IjoyLCJtYXJrX3BhcnRzIjp0cnVlLCJzaG93X25hbWVzIjp0cnVlLCJuYW1lcl9tb2RlbCI6ImdwdC01LjQtbWluaSIsInByaW9yaXR5X25hbWluZyI6ZmFsc2UsIm1heF9mcHMiOjEwLjAsInNjZW5lX2hpbnQiOiJUaGUgcGhvdG8gc2hvd3MgdGhlIHdvcmsgYXJlYSBvZiBhIHNtYWxsIGdhbnRyeSByb2JvdCwgc28gaXQgbWF5IGhvbGQgcGFydHMgb2YgdGhlIHJvYm90IGl0c2VsZiAoYWx1bWluaXVtIGZyYW1lIHJhaWxzLCBsZWFkIHNjcmV3cywgc21vb3RoIHJvZHMsIHN0ZXBwZXIgbW90b3JzLCBiZWx0cywgcHVsbGV5cywgYSBncmlwcGVyLCBjYWJsZXMpIGFzIHdlbGwgYXMgZXZlcnlkYXkgb2JqZWN0cy4ifSwiYmVoYXZpb3VyIjp7Im1hbnVhbF9ncmlwcGVyX3N0ZXBzIjpmYWxzZSwiZ3JpcHBlcl9haSI6dHJ1ZSwiZXJyX2F1dG8iOiJvZmYiLCJwbGFubmVyX2VmZm9ydCI6ImxvdyJ9fSwiY3VzdG9tX3RyYWluaW5nIjpbXSwiZXJyb3JfcmVib3VuZHMiOlt7InRhc2siOiJzd2FwIGFsbCB0aGUgb2JqZWN0cyBvbiB0aGUgYm9hcmQiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiT2JqZWN0cyBkaWQgbm90IHN3YXAgcG9zaXRpb25zOyBzY3Jld2RyaXZlciByZW1haW5zIGF0IEgxNCBhbmQgdXRpbGl0eSBrbmlmZSByZW1haW5zIGF0IFAxMS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA4LTMxVDIwOjQ1OjA2In0seyJ0YXNrIjoid2F0ZXIgbXkgcGxhbnRzIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6Ik5vIHZpc2libGUgZXZpZGVuY2UgdGhlIHBsYW50IHdhcyB3YXRlcmVkOyBjdXAgYW5kIHBsYW50IHJlbWFpbiBlc3NlbnRpYWxseSB1bmNoYW5nZWQuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0wMVQxNTo0NjoxMyJ9LHsidGFzayI6IndhdGVyIG15IHBsYW50cyIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJObyB2aXNpYmxlIGV2aWRlbmNlIHRoZSBwbGFudCB3YXMgd2F0ZXJlZDsgcGxhbnQgYW5kIG11ZyBvbmx5IHNoaWZ0ZWQgc2xpZ2h0bHkuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0wMlQxNDozMTo1MCJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNwb3QgaW4gdGhlIGJvZHkuIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5IiwicmVhc29uIjoiYmxhY2sgc29jayB3YXMgbW92ZWQgaW50byB0aGUgYm93bCwgd2l0aCB0aGUgYm93bCBzdGlsbCBjb250YWluaW5nIGl0IGluIHRoZSBmaW5hbCBpbWFnZSIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTE6NTE6MjIifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzcG90IGluIHRoZSBib2R5LiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJibGFjayBzb2NrIHdhcyBtb3ZlZCBuZWFyIEs0IGluc3RlYWQgb2YgYmVpbmcga2VwdCBpbiB0aGUgYm93bC9ib2R5IGF0IFEzIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMTo1MTozNiJ9LHsidGFzayI6InNvcnQgdGhlIHNvY2tlcyBhbmQga2VlcCB0aGUgd2hpdGVzIGluIHRlIGJvd2wiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiV2hpdGUgc29ja3MgYXJlIG5vdCB2aXNpYmxlIGluIHRoZSBib3dsIGluIHRoZSBmaW5hbCBpbWFnZTsgb25seSB0aGUgYmxhY2sgc29ja3MgcmVtYWluIG9uIHRoZSBib2FyZC4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDEyOjAzOjAwIn0seyJ0YXNrIjoiS2VlcCB0aGUgYmxhY2sgc29ja3Mgc3RhY2tlZCB0b2dldGhlci4iLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiT25seSBvbmUgYmxhY2sgc29jayBpcyB2aXNpYmxlIGluIHRoZSBmaW5hbCBpbWFnZTsgdGhlIHR3byBzb2NrcyBhcmUgbm90IGNvbmZpcm1lZCBzdGFja2VkIHRvZ2V0aGVyLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTI6MDU6MTMifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzb2NrcyBzdGFja2VkIHRvZ2V0aGVyLiIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsInJlYXNvbiI6IlRoZSB0d28gYmxhY2sgc29ja3MgYXJlIHN0YWNrZWQgdG9nZXRoZXIgaW4gdGhlIGZpbmFsIGltYWdlLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTI6MDU6MjMifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzb2NrIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsInJlYXNvbiI6ImJsYWNrIHNvY2sgaXMgcGxhY2VkIGluIHRoZSBncmVlbiBib3dsIGluIHRoZSBmaW5hbCBpbWFnZS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDEzOjAxOjM0In0seyJ0YXNrIjoiU29ydCB0aGUgYmxhY2sgYW5kIHdoaXRlIHNvY2tzLCBhbmQgcHV0IGFsbCB0aGUgd2hpdGVzIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJXaGl0ZSBzb2NrIGlzIGluIHRoZSBib3dsLCBidXQgb25lIHdoaXRlIHNvY2sgcmVtYWlucyBvdXRzaWRlIHRoZSBib3dsLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTY6Mjc6NDgifSx7InRhc2siOiJTb3J0IG15IGNsb3RoZXMgb3Igc29ja3MgaW50byBibGFjayBhbmQgd2hpdGUuIEtlZXAgYWxsIHRoZSBibGFja3MgaW4gdGhlIGJvd2wuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6Ik9ubHkgb25lIGJsYWNrIHNvY2sgaXMgaW4gdGhlIGJvd2w7IHRoZSBvdGhlciBibGFjayBzb2NrIGlzIG5vdCB2ZXJpZmllZCBpbiB0aGUgYm93bC4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDE2OjM5OjQyIn0seyJ0YXNrIjoiS2VlcCB0aGUgbGVhdmVzIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJMZWF2ZXMgYXJlIG5vdCBmdWxseSBpbiB0aGUgYm93bDsgcGFydCBvZiB0aGUgc3ByaWcgcmVtYWlucyBvdXRzaWRlIG9uIHRoZSByaW0vdGFibGUuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxNjo0Nzo1MiJ9LHsidGFzayI6Im1vZSB0aGUgYmtvb2sgdG8gaXQncyBsZWZ0IiwidmVyc2lvbiI6IkVSUi0zIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsIm9iamVjdHMiOlsibm90ZWJvb2s9d3JvbmciXSwicmVhc29uIjoiVGhlIG5vdGVib29rIHJlbWFpbnMgaW4gdGhlIHNhbWUgcG9zaXRpb24gYXMgaW4gdGhlIHN0YXJ0IGltYWdlcyBhbmQgd2FzIG5vdCBtb3ZlZCBsZWZ0LiIsIm5leHQiOiJGSVg6IG1vdmUgdGhlIG5vdGVib29rIGxlZnQgZnJvbSBpdHMgY3VycmVudCBwb3NpdGlvbiBhbmQgcmVsZWFzZSBpdCB0aGVyZSIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMDJUMTg6MDQ6MDAifSx7InRhc2siOiJtb2UgdGhlIGJrb29rIHRvIGl0J3MgbGVmdCIsInZlcnNpb24iOiJFUlItMyIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsIm9iamVjdHMiOlsibm90ZWJvb2s9b2siXSwicmVhc29uIjoiVGhlIGJsYWNrIG5vdGVib29rIGlzIHZpc2libHkgc2hpZnRlZCBsZWZ0IGZyb20gaXRzIHN0YXJ0IHBvc2l0aW9uIChmcm9tIGFib3V0IEctTCBjb2x1bW5zIHRvIGFib3V0IEQtSiBjb2x1bW5zKSBhbmQgaXMgcmVzdGluZyBvbiB0aGUgYm9hcmQgd2l0aCBubyBncmlwcGVyIGhvbGRpbmcgaXQ7IG5vIG90aGVyIHRhc2sgY29uc3RyYWludHMgYXJlIHZpc2libHkgdmlvbGF0ZWQuIiwibmV4dCI6IiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMDJUMTg6MDQ6MjIifSx7InRhc2siOiJyZWRvIiwidmVyc2lvbiI6IkVSUiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJvYmplY3RzIjpbImNsb3RoPXdyb25nIiwid29vZCBibG9jaz13cm9uZyJdLCJyZWFzb24iOiJUaGUgY2xvdGggc3RheWVkIGF0IEc3IGluc3RlYWQgb2YgYmVpbmcgbW92ZWQsIGFuZCB0aGUgd29vZCBibG9jayB3YXMgZGlzcGxhY2VkIGZyb20gQTEzIHRvIEExMS4iLCJuZXh0IjoiRklYOiBNb3ZlIHRoZSBjbG90aCBmcm9tIEc3IHRvIEQxMTsgcmV0dXJuIHRoZSB3b29kIGJsb2NrIGZyb20gQTExIHRvIEExMy4iLCJtb2RlbCI6ImdwdC02LWx1bmEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTExVDE2OjM4OjQxIn0seyJ0YXNrIjoia2VlcCB0aGUgY2xvdGggdG8gaXQncyByaWdodCIsInZlcnNpb24iOiJFUlIiLCJ2ZXJkaWN0IjoiZG9uZSBjb3JyZWN0bHkiLCJvYmplY3RzIjpbImNsb3RoPW9rIl0sInJlYXNvbiI6IlRoZSBjbG90aCBtb3ZlZCByaWdodCBmcm9tIEs1IHRvIFAzIGFuZCBpcyB2aXNpYmxlIG9uIHRoZSBib2FyZC4iLCJuZXh0IjoiIiwibW9kZWwiOiJncHQtNi1sdW5hIiwidGltZXN0YW1wIjoiMjAyNi0xMC0xMVQxNzoyNToyMCJ9LHsidGFzayI6ImtlZXAgdGhlIGNsb3RoIHRvIGl0J3MgcmlnaHQiLCJ2ZXJzaW9uIjoiRVJSIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5Iiwib2JqZWN0cyI6WyJjbG90aD1vayJdLCJyZWFzb24iOiJUaGUgY2xvdGggbW92ZWQgZnJvbSB0aGUgbGVmdC1jZW50ZXIgdG8gdGhlIHJpZ2h0IHNpZGUgb2YgdGhlIGJvYXJkIGFuZCBpcyB2aXNpYmxlIHRoZXJlLiIsIm5leHQiOiIiLCJtb2RlbCI6ImdwdC02LWx1bmEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTEyVDEwOjA5OjIxIn0seyJ0YXNrIjoicGlja3VwIHRoZSBzY3Jld2RyaXZlciIsInZlcnNpb24iOiJFUlIiLCJ2ZXJkaWN0IjoiY2Fubm90IHZlcmlmeSIsIm9iamVjdHMiOlsic2NyZXdkcml2ZXI9dW52ZXJpZmllZCJdLCJyZWFzb24iOiJUaGUgc2NyZXdkcml2ZXIgaXMgbm8gbG9uZ2VyIHZpc2libGUgYXQgaXRzIHN0YXJ0aW5nIHBvc2l0aW9uLCBhbmQgbm8gZXZpZGVuY2UgY29uZmlybXMgaXQgaXMgaGVsZCBieSB0aGUgZ3JpcHBlci4iLCJuZXh0IjoiUkVUQUtFOiBjbGVhciB0aGUgZ3JpcHBlciBhbmQgb2J0YWluIGEgdmlldyBjb25maXJtaW5nIHRoZSBzY3Jld2RyaXZlciBpcyBoZWxkLCBvciBwcm92aWRlIGdyYXNwL2NvbnRhY3Qgc2Vuc29yIGV2aWRlbmNlLiIsIm1vZGVsIjoiZ3B0LTYtbHVuYSIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMTJUMTA6MTI6MzAifV19"  # S1_EMBEDDED_STATE
 try:
     S1_EMBEDDED_STATE = json.loads(
         base64.b64decode(S1_EMBEDDED_STATE_B64).decode("utf-8"))
@@ -17110,7 +17110,8 @@ DECISIONS_TIE = 10.0          # one label on two outlines this close in
 DSEQ_PARK_CELL = "C18"        # where the AprilTag parks: near the board's bottom left
 DSEQ_JOGS = (("dq", 3.0), ("lq", 3.0))          # then on, slowly, out of view
 DSEQ_RETURN_JOGS = (("rq", 3.0), ("uq", 3.0))   # the same way back
-DSEQ_GAP_S = 1.0              # between one move's stop and the next letter
+DSEQ_SEEN_JOGS = (("uq", 1.0),)  # tag seen again on the way back: this much more
+DSEQ_GAP_S = 1.0             # between one move's stop and the next letter
 DSEQ_RELEASE_S = 1.0          # the jaws open this long before anything moves
 DSEQ_SETTLE_S = 1.0           # the board holds still this long before the photo
 DSEQ_VIEW_MARGIN_S = 0.4      # ...and the outlines used are this much newer
@@ -18746,9 +18747,15 @@ class DecisionSequence:
                 print("[decisions] the AprilTag is still not in view")
                 self.note = "AprilTag not seen - show it to the camera."
                 self._to("await", now, self.note)
+            climbing = self.search is not None
             if self._search(now, lost):
-                self._to("await", now,
-                         f"{DECISIONS_MODEL} - labelling the outlines...")
+                if climbing:
+                    # the tag is back in view: uq for one more second (user)
+                    self._start_jogs(DSEQ_SEEN_JOGS, "await", now,
+                                     "AprilTag seen - uq for one more second...")
+                else:
+                    self._to("await", now,
+                             f"{DECISIONS_MODEL} - labelling the outlines...")
         elif ph == "await":
             if self.job is not None and self.job.done:
                 if (self.retry is None and not self.final
@@ -22433,26 +22440,25 @@ def main():
                                     f"{TAG_SEARCH_MAX_S:g}s of moving up -- "
                                     f"show it to the camera.")
 
-    def on_decisions_button():
-        """The main window's gpt-6-luna Vision AI Sequence button."""
-        if state.dseq is not None:
-            state.status_message = (f"{DECISIONS_NAME} is already running -- "
-                                    f"Esc or Cancel stops it.")
+    def reexecute_ready():
+        """The main window's Re-execute button is live once a plan waits to
+        be executed, while it runs, and after it finished."""
+        if sim.active or state.prep_active or not runner.commands:
+            return False
+        return bool(runner.active or state.exec_pending or runner.finished)
+
+    def on_reexecute_button():
+        """Re-execute the plan from the top; mid-run it stops and restarts."""
+        if not reexecute_ready():
             return
-        fail = state.step_fail
-        if (fail is not None and runner.active
-                and _bare_step(fail.get("cmd") or "") == "pickup"):
-            step_fail_replan()          # the same as answering NO
-            return
-        if runner.active or sim.active or state.prep_active:
-            state.status_message = (f"{DECISIONS_NAME}: stop the run first "
-                                    f"(the gantry is busy).")
-            return
-        if automatic_gripper_busy():
-            state.status_message = (f"{DECISIONS_NAME}: wait for the gripper "
-                                    f"to finish.")
-            return
-        start_decision_sequence(None)
+        state.history_open = False
+        if runner.active:
+            runner.stop(state, "Execution stopped.")
+        mark_execution_start()
+        chat_say(state, "assistant",
+                 "Re-executing physically from the top. Move the tag as the "
+                 "banner says.")
+        runner.start(state)
 
     def mark_execution_start():
         """Keep the board as it is right now, the instant a physical run
@@ -22822,8 +22828,9 @@ def main():
                 state.status_message = ("Settings open." if settings_panel.visible
                                         else "Settings closed.")
                 return
-            if dseq_button is not None and dseq_button.contains(x, y):
-                on_decisions_button()
+            if (dseq_button is not None and dseq_button.contains(x, y)
+                    and reexecute_ready()):
+                on_reexecute_button()
                 return
 
             if sidebar.contains(x, y):
@@ -23527,11 +23534,20 @@ def main():
         chip_w = max(104, text_size(typed, 0.56, 1, weight=600)[0] + 86)
         chip = (total_w - 116 - chip_w, 6, total_w - 116, 50)
         css_rect(canvas, chip, (chip[3] - chip[1]) / 2.0, C_CARD_SOFT)
-        bw = round(button_width(DECISIONS_NAME, outlined=True))
-        dseq_button = Button(DECISIONS_NAME, chip[0] - 12 - bw, 6,
-                             chip[0] - 12, 50, "dseq", scale=0.56)
-        dseq_button.draw(canvas, hover=dseq_button.contains(mx, my),
-                         active=state.dseq is not None)
+        bw = round(button_width("Re-execute"))
+        dseq_button = Button("Re-execute", chip[0] - 12 - bw, 6,
+                             chip[0] - 12, 50, "reexecute", style="primary",
+                             scale=0.56)
+        if reexecute_ready():
+            dseq_button.draw(canvas, hover=dseq_button.contains(mx, my))
+        else:
+            # blurred until it is time to execute
+            bx0, by0 = dseq_button.x0 - 6, dseq_button.y0 - 6
+            bx1, by1 = dseq_button.x1 + 6, dseq_button.y1 + 6
+            roi = canvas[by0:by1, bx0:bx1]
+            dseq_button.draw(canvas, shadow=False)
+            roi[:] = cv2.addWeighted(cv2.GaussianBlur(roi, (0, 0), 2.5), 0.45,
+                                     wash[by0:by1, bx0:bx1], 0.55, 0)
         draw_text(canvas, "Target", (chip[0] + 16, 33), 0.56, C_TEXT_DIM, 1)
         draw_text(canvas, typed, (chip[0] + 72, 33), 0.56, C_TEXT, 1,
                   weight=600)
@@ -24137,7 +24153,7 @@ def draw_sim_popup(frame, text: str):
 
 
 POPUP_GAP = 8          # a pop-up's bottom edge sits this far above the video
-POPUP_OUTLINE = 2      # and it has a black outline this thick
+POPUP_OUTLINE = 1      # and it has a black outline this thick
 
 
 def popup_rect_above(shape, video_rect, width, height, taken=()):

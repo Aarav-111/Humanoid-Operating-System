@@ -321,10 +321,10 @@ Developed by **Prolabs Robotics**.
 
 | Role | Name |
 | --- | --- |
-| Project Lead | Aarav Jaisingh |
 | Project Manager | Mathew Tony |
+| Project Lead | Aarav Jaisingh |
 | Project Co-lead | Siyona Chicker |
-| Collaborators | Job San Jose, Sai Sachin
+| Collaborators | Job San Jose, Sai Sachin, Aarush Wagh|
 
 For collaboration, research, or project questions: **prolabsrobotics@gmail.com**
 

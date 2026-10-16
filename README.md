@@ -322,6 +322,7 @@ Developed by **Prolabs Robotics**.
 | Role | Name |
 | --- | --- |
 | Project Lead | Aarav Jaisingh |
+| Project Manager | Mathew Tony |
 | Project Co-lead | Siyona Chicker |
 | Collaborators | Job San Jose, Sai Sachin
 

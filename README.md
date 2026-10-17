@@ -9,7 +9,6 @@
   <img src="https://img.shields.io/badge/Python-3-3776AB?logo=python&logoColor=white" alt="Python">
   <img src="https://img.shields.io/badge/Arduino-Shell%201.5-00979D?logo=arduino&logoColor=white" alt="Arduino">
   <img src="https://img.shields.io/badge/License-Non--Commercial%20MIT-blue" alt="License">
-  <img src="https://img.shields.io/github/last-commit/Aarav-111/Humanoid-Operating-System" alt="Last commit">
 </p>
 
 <p align="center">

@@ -1,4 +1,8 @@
 <p align="center">
+  <img src="assets/hos-logo.png" alt="HOS logo" width="180">
+</p>
+
+<p align="center">
   <img src="assets/hos-banner.svg" alt="Humanoid Operating System banner" width="100%">
 </p>
 
@@ -63,7 +67,7 @@ Instead of training isolated models per task (the approach used by most VLA mode
     </td>
     <td align="center" width="50%">
       <a href="https://youtu.be/9Af5JZoZxco">
-        <img src="https://img.youtube.com/vi/9Af5JZoZxco/hqdefault.jpg" alt="HOS 0.9 launch video" width="100%">
+        <img src="assets/hos-0.9-thumb.svg" alt="HOS 0.9 launch video" width="100%">
       </a>
       <br><b>HOS 0.9 launch</b><br>21 September 2026
     </td>
@@ -445,11 +449,14 @@ Developed by **Prolabs Robotics**.
 | Collaborators | Job San Jose, Sai Sachin, Atharva Roongta, Aarush Wagh |
 
 <p align="center">
+  <a href="https://HOS.prolabsrobotics.chatgpt.site"><img src="https://img.shields.io/badge/Website-HOS.prolabsrobotics-6366f1?style=for-the-badge" alt="HOS website"></a>
   <a href="mailto:prolabsrobotics@gmail.com"><img src="https://img.shields.io/badge/Email-prolabsrobotics%40gmail.com-EA4335?style=for-the-badge&logo=gmail&logoColor=white" alt="Email Prolabs Robotics"></a>
   <a href="https://www.youtube.com/watch?v=wpmh6HE-oz8"><img src="https://img.shields.io/badge/YouTube-Watch%20HOS-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch on YouTube"></a>
 </p>
 
 For collaboration, research, or project questions: **prolabsrobotics@gmail.com**
+
+🌐 **Website:** [HOS.prolabsrobotics.chatgpt.site](https://HOS.prolabsrobotics.chatgpt.site)
 
 ---
 

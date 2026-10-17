@@ -6,7 +6,7 @@
       <stop offset="1" stop-color="#0e7490"/>
     </linearGradient>
   </defs>
-  <rect width="1280" height="720" fill="url(#bg)"/>
+  <rect width="1280" height="720" rx="48" fill="url(#bg)"/>
   <circle cx="640" cy="330" r="110" fill="#ffffff" fill-opacity="0.12"/>
   <polygon points="612,280 612,380 700,330" fill="#ffffff"/>
   <text x="640" y="520" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="64" font-weight="800" fill="#ffffff">HOS 0.9 Launch</text>

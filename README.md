@@ -1,8 +1,4 @@
 <p align="center">
-  <img src="assets/hos-logo.png" alt="HOS logo" width="180">
-</p>
-
-<p align="center">
   <img src="assets/hos-banner.svg" alt="Humanoid Operating System banner" width="100%">
 </p>
 

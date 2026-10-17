@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="380" viewBox="0 0 1000 380">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f172a"/>
+      <stop offset="1" stop-color="#064e3b"/>
+    </linearGradient>
+  </defs>
+  <rect width="1000" height="380" rx="24" fill="url(#bg)"/>
+  <g transform="translate(90,40)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="70" y="0" width="120" height="40" rx="8" stroke="#94a3b8" stroke-width="5"/>
+    <path d="M130 40 V70" stroke="#94a3b8" stroke-width="5"/>
+    <rect x="40" y="70" width="180" height="70" rx="14" stroke="#34d399" stroke-width="5"/>
+    <circle cx="130" cy="105" r="22" stroke="#34d399" stroke-width="5"/>
+    <circle cx="130" cy="105" r="9" fill="#34d399"/>
+    <path d="M110 140 L70 150 L60 230 L85 260" stroke="#e2e8f0" stroke-width="6"/>
+    <path d="M150 140 L190 150 L200 230 L175 260" stroke="#e2e8f0" stroke-width="6"/>
+    <path d="M130 127 L95 280 M130 127 L165 280" stroke="#34d399" stroke-width="2" stroke-dasharray="6 6"/>
+    <rect x="100" y="262" width="60" height="36" rx="6" fill="#f59e0b" stroke="#f59e0b"/>
+    <path d="M20 310 H240" stroke="#475569" stroke-width="4"/>
+  </g>
+  <text x="400" y="90" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="40" font-weight="800" fill="#ffffff">Camera-Ready Gripper</text>
+  <text x="400" y="128" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="22" fill="#a7f3d0">New in HOS  |  Super precise automatic pickup</text>
+  <g font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="22" fill="#e2e8f0">
+    <circle cx="412" cy="183" r="7" fill="#34d399"/><text x="432" y="190">Camera-ready design</text>
+    <circle cx="412" cy="233" r="7" fill="#34d399"/><text x="432" y="240">Super precise grip</text>
+    <circle cx="412" cy="283" r="7" fill="#34d399"/><text x="432" y="290">Built for automatic pickup</text>
+  </g>
+</svg>

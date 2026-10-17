@@ -3,12 +3,12 @@
 </p>
 
 <p align="center">
-  <img src="assets/badges/hos-latest.svg" alt="Latest: HOS 1.5">
-  <img src="assets/badges/hos-mmro.svg" alt="MMRO (K5D): 99%">
-  <img src="assets/badges/hos-gripper.svg" alt="New: Camera-Ready Gripper">
-  <img src="assets/badges/hos-python.svg" alt="Python: 3">
-  <img src="assets/badges/hos-arduino.svg" alt="Arduino: Shell 1.5">
-  <img src="assets/badges/hos-license.svg" alt="License: Non-Commercial MIT">
+  <a href="https://github.com/Aarav-111/Humanoid-Operating-System#recent-updates"><img src="assets/badges/hos-latest.svg" alt="Latest: HOS 1.5"></a>
+  <a href="https://github.com/Aarav-111/Humanoid-Operating-System#benchmarking"><img src="assets/badges/hos-mmro.svg" alt="MMRO (K5D): 99%"></a>
+  <a href="https://github.com/Aarav-111/Humanoid-Operating-System#camera-ready-gripper"><img src="assets/badges/hos-gripper.svg" alt="New: Camera-Ready Gripper"></a>
+  <a href="https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Software"><img src="assets/badges/hos-python.svg" alt="Python: 3"></a>
+  <a href="https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware/Firmware"><img src="assets/badges/hos-arduino.svg" alt="Arduino: Shell 1.5"></a>
+  <a href="https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/LICENSE"><img src="assets/badges/hos-license.svg" alt="License: Non-Commercial MIT"></a>
 </p>
 
 <p align="center">

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#070b1f"/>
+      <stop offset="0.6" stop-color="#1e1b4b"/>
+      <stop offset="1" stop-color="#0e7490"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#bg)"/>
+  <circle cx="640" cy="330" r="110" fill="#ffffff" fill-opacity="0.12"/>
+  <polygon points="612,280 612,380 700,330" fill="#ffffff"/>
+  <text x="640" y="520" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="64" font-weight="800" fill="#ffffff">HOS 0.9 Launch</text>
+  <text x="640" y="580" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="30" fill="#c7d2fe">21 September 2026  |  Click to watch</text>
+</svg>

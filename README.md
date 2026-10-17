@@ -3,12 +3,12 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Latest-HOS%201.5-6366f1" alt="Latest HOS 1.5">
-  <img src="https://img.shields.io/badge/MMRO%20(K5D)-99%25-22c55e" alt="MMRO 99 percent">
-  <img src="https://img.shields.io/badge/New-Camera--Ready%20Gripper-10b981" alt="Camera-ready gripper">
-  <img src="https://img.shields.io/badge/Python-3-3776AB?logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/Arduino-Shell%201.5-00979D?logo=arduino&logoColor=white" alt="Arduino">
-  <img src="https://img.shields.io/badge/License-Non--Commercial%20MIT-blue" alt="License">
+  <img src="assets/badges/hos-latest.svg" alt="Latest: HOS 1.5">
+  <img src="assets/badges/hos-mmro.svg" alt="MMRO (K5D): 99%">
+  <img src="assets/badges/hos-gripper.svg" alt="New: Camera-Ready Gripper">
+  <img src="assets/badges/hos-python.svg" alt="Python: 3">
+  <img src="assets/badges/hos-arduino.svg" alt="Arduino: Shell 1.5">
+  <img src="assets/badges/hos-license.svg" alt="License: Non-Commercial MIT">
 </p>
 
 <p align="center">

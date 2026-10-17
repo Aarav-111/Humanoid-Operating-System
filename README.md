@@ -90,6 +90,12 @@ Robots in homes and workspaces need more than a fixed sequence of moves. They ne
 </p>
 
 
+### 17 October 2026: HOS X
+
+HOS X is about bringing the robot into real-world applications.
+
+Product Hunt: [HOS on Product Hunt](https://www.producthunt.com/products/humanoid-operating-system)
+
 Full commit history is on the [commits page](https://github.com/Aarav-111/Humanoid-Operating-System/commits/main).
 
 ---
@@ -291,9 +297,12 @@ Source: [Software/S1.5-SRC.py](https://github.com/Aarav-111/Humanoid-Operating-S
 
 ## Team and Contact
 
-<p align="center">
-  <img src="assets/hos-team.svg" alt="Team: Aarav Jaisingh (Project Lead), Siyona Chicker (Co-lead), Mathew Jose Tony (Project Manager), collaborators" width="90%">
-</p>
+| Role | Name |
+|---|---|
+| Project Lead | Aarav Jaisingh |
+| Project Co-lead | Siyona Chicker |
+| Project Manager | Mathew Jose Tony |
+| Collaborators | Job San Jose, Sai Sachin, Atharva Roongta, Aarush Wagh |
 
 
 <p align="center">
@@ -310,3 +319,12 @@ For collaboration, research, or project questions: **prolabsrobotics@gmail.com**
   <b>Humanoid Operating System</b><br>
   Building an inspectable path from scene understanding to supervised robot action.
 </p>
+
+---
+
+## Links
+
+| Link | Where |
+|---|---|
+| Product Hunt | [Humanoid Operating System](https://www.producthunt.com/products/humanoid-operating-system) |
+| Virtual License | [Virtual License](#) |

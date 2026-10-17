@@ -243,7 +243,7 @@ Download the STL files from [Hardware/3D Models](https://github.com/Aarav-111/Hu
 
 ---
 
-## Roadmap
+## Roadmap for 2026
 
 <p align="center">
   <img src="assets/hos-roadmap.svg" alt="Roadmap: 10 of 13 items done, with camera-ready gripper files, S(x)-SRC release and HOS 2.0 planned" width="80%">

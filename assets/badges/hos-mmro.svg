@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="144" height="28" viewBox="0 0 144 28" role="img" aria-label="MMRO (K5D): 99%">
+  <defs><clipPath id="c"><rect width="144" height="28" rx="14"/></clipPath></defs>
+  <g clip-path="url(#c)">
+    <rect width="98" height="28" fill="#374151"/>
+    <rect x="98" width="46" height="28" fill="#22c55e"/>
+  </g>
+  <g fill="#ffffff" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="600" text-anchor="middle">
+    <text x="49.0" y="18.5">MMRO (K5D)</text>
+    <text x="121.0" y="18.5">99%</text>
+  </g>
+</svg>

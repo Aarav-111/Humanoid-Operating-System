@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="144" height="28" viewBox="0 0 144 28" role="img" aria-label="Latest: HOS 1.5">
+  <defs><clipPath id="c"><rect width="144" height="28" rx="14"/></clipPath></defs>
+  <g clip-path="url(#c)">
+    <rect width="68" height="28" fill="#374151"/>
+    <rect x="68" width="76" height="28" fill="#6366f1"/>
+  </g>
+  <g fill="#ffffff" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="600" text-anchor="middle">
+    <text x="34.0" y="18.5">Latest</text>
+    <text x="106.0" y="18.5">HOS 1.5</text>
+  </g>
+</svg>

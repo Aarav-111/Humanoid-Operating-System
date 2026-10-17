@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="167" height="28" viewBox="0 0 167 28" role="img" aria-label="Arduino: Shell 1.5">
+  <defs><clipPath id="c"><rect width="167" height="28" rx="14"/></clipPath></defs>
+  <g clip-path="url(#c)">
+    <rect width="76" height="28" fill="#374151"/>
+    <rect x="76" width="91" height="28" fill="#00979d"/>
+  </g>
+  <g fill="#ffffff" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="600" text-anchor="middle">
+    <text x="38.0" y="18.5">Arduino</text>
+    <text x="121.5" y="18.5">Shell 1.5</text>
+  </g>
+</svg>

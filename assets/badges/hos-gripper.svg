@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="218" height="28" viewBox="0 0 218 28" role="img" aria-label="New: Camera-Ready Gripper">
+  <defs><clipPath id="c"><rect width="218" height="28" rx="14"/></clipPath></defs>
+  <g clip-path="url(#c)">
+    <rect width="46" height="28" fill="#374151"/>
+    <rect x="46" width="172" height="28" fill="#10b981"/>
+  </g>
+  <g fill="#ffffff" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="600" text-anchor="middle">
+    <text x="23.0" y="18.5">New</text>
+    <text x="132.0" y="18.5">Camera-Ready Gripper</text>
+  </g>
+</svg>

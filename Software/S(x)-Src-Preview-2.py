@@ -20,6 +20,7 @@ if FASTSAM_BUILD_FLAG not in sys.argv:
     sys.modules.setdefault("torch", None)
 
 import base64
+import collections
 import copy
 import datetime
 import io
@@ -106,7 +107,7 @@ ALPHABET = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 DEBUG_INPUT = bool(os.environ.get("HOSX_DEBUG_INPUT"))
 
 SCRIPT_PATH = os.path.abspath(__file__)
-HOSX_EMBEDDED_STATE_B64 = "eyJzZXR0aW5ncyI6eyJyZXYiOjIsImNhbWVyYSI6eyJ6b29tIjoxLjEsImJyaWdodG5lc3MiOjAsImNvbnRyYXN0IjoxLjAsInNhdHVyYXRpb24iOjEuMCwic2hhcnBuZXNzIjowLjAsInJvdGF0aW9uIjowLCJtaXJyb3IiOmZhbHNlfSwiZ3JpZCI6eyJuX2NvbHMiOjIwLCJuX3Jvd3MiOjIwLCJib3giOlsyMzkuNDU0OTMyNTc2Mjk1MjIsOC43Mjk5OTk5OTk5OTk5OSwxMTEzLjIyOTM1NDE1MTg4MSw4ODMuMTI1XSwic3F1YXJlX2NlbGxzIjp0cnVlLCJmcmFtZV9zaXplIjpbMTU4NCw4OTFdLCJib3hfcmVsIjpbMC4xNTExNzEwNDMyOTMxMTU2OCwwLjAwOTc5Nzk3OTc5Nzk3OTc4NiwwLjcwMjc5NjMwOTQzOTMxODcsMC45OTExNjE2MTYxNjE2MTYxXX0sInRyaWdfb2Zmc2V0Ijp7ImNhbWVyYV9oZWlnaHRfaW4iOjM1LjAsInRhZ19oZWlnaHRfaW4iOjUuNSwiYm9hcmRfaGVpZ2h0X2luIjowLjAsInBpdm90X3giOjAuMCwicGl2b3RfeSI6MC4wLCJncmlwcGVyX3VwX2Rvd24iOi03LCJncmlwcGVyX3JpZ2h0X2xlZnQiOjAsImdyaXBwZXJfdmVydGljYWxfZGlyZWN0aW9uIjoidXAiLCJncmlwcGVyX2hvcml6b250YWxfZGlyZWN0aW9uIjoibGVmdCIsIm51ZGdlX3MiOjAuMiwibnVkZ2VfZGlyZWN0aW9uIjoicmlnaHQiLCJudWRnZV9hY3Rpb25zIjp7InBpY2t1cCI6dHJ1ZSwia2VlcCI6ZmFsc2UsInByZXNzIjpmYWxzZSwicmVsZWFzZSI6dHJ1ZX19LCJ2aXNpb24iOnsiYm9hcmRfd2lkdGhfaW4iOjI0LjAsImNvbmZfdGhyZXMiOjAuMjUsImlvdV90aHJlcyI6MC43LCJtYXhfYXJlYSI6MC41LCJvdXRsaW5lX3B4IjoyLCJtYXJrX3BhcnRzIjp0cnVlLCJzaG93X25hbWVzIjp0cnVlLCJuYW1lcl9tb2RlbCI6ImdwdC02LWx1bmEiLCJwcmlvcml0eV9uYW1pbmciOmZhbHNlLCJtYXhfZnBzIjoxMC4wLCJzY2VuZV9oaW50IjoiVGhlIHBob3RvIHNob3dzIHRoZSB3b3JrIGFyZWEgb2YgYSBzbWFsbCBnYW50cnkgcm9ib3QsIHNvIGl0IG1heSBob2xkIHBhcnRzIG9mIHRoZSByb2JvdCBpdHNlbGYgKGFsdW1pbml1bSBmcmFtZSByYWlscywgbGVhZCBzY3Jld3MsIHNtb290aCByb2RzLCBzdGVwcGVyIG1vdG9ycywgYmVsdHMsIHB1bGxleXMsIGEgZ3JpcHBlciwgY2FibGVzKSBhcyB3ZWxsIGFzIGV2ZXJ5ZGF5IG9iamVjdHMuIn0sImJlaGF2aW91ciI6eyJtYW51YWxfZ3JpcHBlcl9zdGVwcyI6ZmFsc2UsImdyaXBwZXJfYWkiOnRydWUsImVycl9hdXRvIjoic3RlcCIsImVycl9maW5hbCI6dHJ1ZSwiZXJyX3JlZG8iOmZhbHNlLCJwbGFubmVyX2VmZm9ydCI6ImxvdyIsInJlcGVhdF90YXNrcyI6ZmFsc2V9fSwiY3VzdG9tX3RyYWluaW5nIjpbXSwiZXJyb3JfcmVib3VuZHMiOlt7InRhc2siOiJzd2FwIGFsbCB0aGUgb2JqZWN0cyBvbiB0aGUgYm9hcmQiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiT2JqZWN0cyBkaWQgbm90IHN3YXAgcG9zaXRpb25zOyBzY3Jld2RyaXZlciByZW1haW5zIGF0IEgxNCBhbmQgdXRpbGl0eSBrbmlmZSByZW1haW5zIGF0IFAxMS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA4LTMxVDIwOjQ1OjA2In0seyJ0YXNrIjoid2F0ZXIgbXkgcGxhbnRzIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6Ik5vIHZpc2libGUgZXZpZGVuY2UgdGhlIHBsYW50IHdhcyB3YXRlcmVkOyBjdXAgYW5kIHBsYW50IHJlbWFpbiBlc3NlbnRpYWxseSB1bmNoYW5nZWQuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0wMVQxNTo0NjoxMyJ9LHsidGFzayI6IndhdGVyIG15IHBsYW50cyIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJObyB2aXNpYmxlIGV2aWRlbmNlIHRoZSBwbGFudCB3YXMgd2F0ZXJlZDsgcGxhbnQgYW5kIG11ZyBvbmx5IHNoaWZ0ZWQgc2xpZ2h0bHkuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0wMlQxNDozMTo1MCJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNwb3QgaW4gdGhlIGJvZHkuIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5IiwicmVhc29uIjoiYmxhY2sgc29jayB3YXMgbW92ZWQgaW50byB0aGUgYm93bCwgd2l0aCB0aGUgYm93bCBzdGlsbCBjb250YWluaW5nIGl0IGluIHRoZSBmaW5hbCBpbWFnZSIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTE6NTE6MjIifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzcG90IGluIHRoZSBib2R5LiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJibGFjayBzb2NrIHdhcyBtb3ZlZCBuZWFyIEs0IGluc3RlYWQgb2YgYmVpbmcga2VwdCBpbiB0aGUgYm93bC9ib2R5IGF0IFEzIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMTo1MTozNiJ9LHsidGFzayI6InNvcnQgdGhlIHNvY2tlcyBhbmQga2VlcCB0aGUgd2hpdGVzIGluIHRlIGJvd2wiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiV2hpdGUgc29ja3MgYXJlIG5vdCB2aXNpYmxlIGluIHRoZSBib3dsIGluIHRoZSBmaW5hbCBpbWFnZTsgb25seSB0aGUgYmxhY2sgc29ja3MgcmVtYWluIG9uIHRoZSBib2FyZC4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDEyOjAzOjAwIn0seyJ0YXNrIjoiS2VlcCB0aGUgYmxhY2sgc29ja3Mgc3RhY2tlZCB0b2dldGhlci4iLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiT25seSBvbmUgYmxhY2sgc29jayBpcyB2aXNpYmxlIGluIHRoZSBmaW5hbCBpbWFnZTsgdGhlIHR3byBzb2NrcyBhcmUgbm90IGNvbmZpcm1lZCBzdGFja2VkIHRvZ2V0aGVyLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTI6MDU6MTMifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzb2NrcyBzdGFja2VkIHRvZ2V0aGVyLiIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsInJlYXNvbiI6IlRoZSB0d28gYmxhY2sgc29ja3MgYXJlIHN0YWNrZWQgdG9nZXRoZXIgaW4gdGhlIGZpbmFsIGltYWdlLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTI6MDU6MjMifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzb2NrIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsInJlYXNvbiI6ImJsYWNrIHNvY2sgaXMgcGxhY2VkIGluIHRoZSBncmVlbiBib3dsIGluIHRoZSBmaW5hbCBpbWFnZS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDEzOjAxOjM0In0seyJ0YXNrIjoiU29ydCB0aGUgYmxhY2sgYW5kIHdoaXRlIHNvY2tzLCBhbmQgcHV0IGFsbCB0aGUgd2hpdGVzIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJXaGl0ZSBzb2NrIGlzIGluIHRoZSBib3dsLCBidXQgb25lIHdoaXRlIHNvY2sgcmVtYWlucyBvdXRzaWRlIHRoZSBib3dsLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTY6Mjc6NDgifSx7InRhc2siOiJTb3J0IG15IGNsb3RoZXMgb3Igc29ja3MgaW50byBibGFjayBhbmQgd2hpdGUuIEtlZXAgYWxsIHRoZSBibGFja3MgaW4gdGhlIGJvd2wuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6Ik9ubHkgb25lIGJsYWNrIHNvY2sgaXMgaW4gdGhlIGJvd2w7IHRoZSBvdGhlciBibGFjayBzb2NrIGlzIG5vdCB2ZXJpZmllZCBpbiB0aGUgYm93bC4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDE2OjM5OjQyIn0seyJ0YXNrIjoiS2VlcCB0aGUgbGVhdmVzIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJMZWF2ZXMgYXJlIG5vdCBmdWxseSBpbiB0aGUgYm93bDsgcGFydCBvZiB0aGUgc3ByaWcgcmVtYWlucyBvdXRzaWRlIG9uIHRoZSByaW0vdGFibGUuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxNjo0Nzo1MiJ9LHsidGFzayI6Im1vZSB0aGUgYmtvb2sgdG8gaXQncyBsZWZ0IiwidmVyc2lvbiI6IkVSUi0zIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsIm9iamVjdHMiOlsibm90ZWJvb2s9d3JvbmciXSwicmVhc29uIjoiVGhlIG5vdGVib29rIHJlbWFpbnMgaW4gdGhlIHNhbWUgcG9zaXRpb24gYXMgaW4gdGhlIHN0YXJ0IGltYWdlcyBhbmQgd2FzIG5vdCBtb3ZlZCBsZWZ0LiIsIm5leHQiOiJGSVg6IG1vdmUgdGhlIG5vdGVib29rIGxlZnQgZnJvbSBpdHMgY3VycmVudCBwb3NpdGlvbiBhbmQgcmVsZWFzZSBpdCB0aGVyZSIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMDJUMTg6MDQ6MDAifSx7InRhc2siOiJtb2UgdGhlIGJrb29rIHRvIGl0J3MgbGVmdCIsInZlcnNpb24iOiJFUlItMyIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsIm9iamVjdHMiOlsibm90ZWJvb2s9b2siXSwicmVhc29uIjoiVGhlIGJsYWNrIG5vdGVib29rIGlzIHZpc2libHkgc2hpZnRlZCBsZWZ0IGZyb20gaXRzIHN0YXJ0IHBvc2l0aW9uIChmcm9tIGFib3V0IEctTCBjb2x1bW5zIHRvIGFib3V0IEQtSiBjb2x1bW5zKSBhbmQgaXMgcmVzdGluZyBvbiB0aGUgYm9hcmQgd2l0aCBubyBncmlwcGVyIGhvbGRpbmcgaXQ7IG5vIG90aGVyIHRhc2sgY29uc3RyYWludHMgYXJlIHZpc2libHkgdmlvbGF0ZWQuIiwibmV4dCI6IiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMDJUMTg6MDQ6MjIifSx7InRhc2siOiJyZWRvIiwidmVyc2lvbiI6IkVSUiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJvYmplY3RzIjpbImNsb3RoPXdyb25nIiwid29vZCBibG9jaz13cm9uZyJdLCJyZWFzb24iOiJUaGUgY2xvdGggc3RheWVkIGF0IEc3IGluc3RlYWQgb2YgYmVpbmcgbW92ZWQsIGFuZCB0aGUgd29vZCBibG9jayB3YXMgZGlzcGxhY2VkIGZyb20gQTEzIHRvIEExMS4iLCJuZXh0IjoiRklYOiBNb3ZlIHRoZSBjbG90aCBmcm9tIEc3IHRvIEQxMTsgcmV0dXJuIHRoZSB3b29kIGJsb2NrIGZyb20gQTExIHRvIEExMy4iLCJtb2RlbCI6ImdwdC02LWx1bmEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTExVDE2OjM4OjQxIn0seyJ0YXNrIjoia2VlcCB0aGUgY2xvdGggdG8gaXQncyByaWdodCIsInZlcnNpb24iOiJFUlIiLCJ2ZXJkaWN0IjoiZG9uZSBjb3JyZWN0bHkiLCJvYmplY3RzIjpbImNsb3RoPW9rIl0sInJlYXNvbiI6IlRoZSBjbG90aCBtb3ZlZCByaWdodCBmcm9tIEs1IHRvIFAzIGFuZCBpcyB2aXNpYmxlIG9uIHRoZSBib2FyZC4iLCJuZXh0IjoiIiwibW9kZWwiOiJncHQtNi1sdW5hIiwidGltZXN0YW1wIjoiMjAyNi0xMC0xMVQxNzoyNToyMCJ9LHsidGFzayI6ImtlZXAgdGhlIGNsb3RoIHRvIGl0J3MgcmlnaHQiLCJ2ZXJzaW9uIjoiRVJSIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5Iiwib2JqZWN0cyI6WyJjbG90aD1vayJdLCJyZWFzb24iOiJUaGUgY2xvdGggbW92ZWQgZnJvbSB0aGUgbGVmdC1jZW50ZXIgdG8gdGhlIHJpZ2h0IHNpZGUgb2YgdGhlIGJvYXJkIGFuZCBpcyB2aXNpYmxlIHRoZXJlLiIsIm5leHQiOiIiLCJtb2RlbCI6ImdwdC02LWx1bmEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTEyVDEwOjA5OjIxIn0seyJ0YXNrIjoicGlja3VwIHRoZSBzY3Jld2RyaXZlciIsInZlcnNpb24iOiJFUlIiLCJ2ZXJkaWN0IjoiY2Fubm90IHZlcmlmeSIsIm9iamVjdHMiOlsic2NyZXdkcml2ZXI9dW52ZXJpZmllZCJdLCJyZWFzb24iOiJUaGUgc2NyZXdkcml2ZXIgaXMgbm8gbG9uZ2VyIHZpc2libGUgYXQgaXRzIHN0YXJ0aW5nIHBvc2l0aW9uLCBhbmQgbm8gZXZpZGVuY2UgY29uZmlybXMgaXQgaXMgaGVsZCBieSB0aGUgZ3JpcHBlci4iLCJuZXh0IjoiUkVUQUtFOiBjbGVhciB0aGUgZ3JpcHBlciBhbmQgb2J0YWluIGEgdmlldyBjb25maXJtaW5nIHRoZSBzY3Jld2RyaXZlciBpcyBoZWxkLCBvciBwcm92aWRlIGdyYXNwL2NvbnRhY3Qgc2Vuc29yIGV2aWRlbmNlLiIsIm1vZGVsIjoiZ3B0LTYtbHVuYSIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMTJUMTA6MTI6MzAifSx7InRhc2siOiJ0cnkgYWdhaW4iLCJ2ZXJzaW9uIjoiRVJSIiwidmVyZGljdCI6ImNhbm5vdCB2ZXJpZnkiLCJvYmplY3RzIjpbInBsYXN0aWMgY29udGFpbmVyPXVudmVyaWZpZWQiLCJ3aGl0ZSB0YXBlPW9rIiwicmVkIHRhcGU9dW52ZXJpZmllZCIsInBsYXN0aWMgbGlkPW9rIiwiZGVicmlzPW9rIiwidGFwZSByb2xsPW9rIl0sInJlYXNvbiI6IuKAnFRyeSBhZ2FpbuKAnSBkb2VzIG5vdCBzcGVjaWZ5IGEgZ29hbDsgdGhlIHBsYXN0aWMgY29udGFpbmVyIGlzIG5vdCB2aXNpYmxlLCBhbmQgdGhlIHJlZCB0YXBlIG1vdmVkLiIsIm5leHQiOiJSRVRBS0U6IHByb3ZpZGUgdGhlIGludGVuZGVkIHRhc2sgYW5kIGEgdmlldyB0aGF0IHJldmVhbHMgd2hlcmUgdGhlIHBsYXN0aWMgY29udGFpbmVyIGlzLiIsIm1vZGVsIjoiZ3B0LTYtbHVuYSIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMTNUMTc6NDg6MDMifSx7InRhc2siOiJLZWVwIGFsbCB0aGUgZWxlY3RyaWNhbCB0YXBlcyBpbiB0aGUgcGxhc3RpYyBib3guIiwidmVyc2lvbiI6IkVSUiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJvYmplY3RzIjpbIm1hc2tpbmcgdGFwZT13cm9uZyIsInBsYXN0aWMgbGlkPW9rIiwicmVkIGluc3VsYXRpb24gdGFwZT11bnZlcmlmaWVkIiwic3BlY2s9b2siLCJncmVlbiBpbnN1bGF0aW9uIHRhcGU9dW52ZXJpZmllZCJdLCJyZWFzb24iOiJNYXNraW5nIHRhcGUgcmVtYWlucyBvdXRzaWRlIHRoZSBwbGFzdGljIGxpZOKAmXMgZm9vdHByaW50LiBUaGUgcmVkIGFuZCBncmVlbiB0YXBlcyBhcmUgd2l0aGluIGl0cyBmb290cHJpbnQsIGJ1dCB0aGUgaW1hZ2UgZG9lcyBub3QgY29uZmlybSB0aGV5IGFyZSBpbnNpZGUgdGhlIGJveC4iLCJuZXh0IjoiRklYOiBNb3ZlIG1hc2tpbmcgdGFwZSBpbnRvIHRoZSBwbGFzdGljIGJveDsgZG8gbm90IHRvdWNoIG9iamVjdHMgbWFya2VkIG9rLiBSRVRBS0U6IFByb3ZpZGUgYSB2aWV3IHRoYXQgY29uZmlybXMgd2hldGhlciB0aGUgcmVkIGFuZCBncmVlbiB0YXBlcyBhcmUgaW5zaWRlIHRoZSBib3guIiwibW9kZWwiOiJncHQtNi1sdW5hIiwidGltZXN0YW1wIjoiMjAyNi0xMC0xM1QxODowMzozNyJ9LHsidGFzayI6IlRoZSBiYW5hbmEgaW4gdGhlIGJhc2tldCIsInZlcnNpb24iOiJFUlIiLCJ2ZXJkaWN0IjoiZG9uZSBjb3JyZWN0bHkiLCJvYmplY3RzIjpbImJhc2tldD1vayIsImJhbmFuYT1vayJdLCJyZWFzb24iOiJUaGUgYmFuYW5hIGlzIHZpc2libGUgaW5zaWRlIHRoZSBiYXNrZXQgaW4gdGhlIGZpbmFsIGltYWdlLiIsIm5leHQiOiIiLCJtb2RlbCI6ImdwdC02LWx1bmEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTEzVDE4OjA3OjEyIn0seyJ0YXNrIjoiS2VlcCBhbGwgdGhlIGVsZWN0cmljIHRhcGVzIG9uIHRoZSBwYXBlciBiYWciLCJ2ZXJzaW9uIjoiRVJSIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsIm9iamVjdHMiOlsibWFza2luZyB0YXBlPXdyb25nIiwicGFwZXI9b2siLCJyZWQgdGFwZT13cm9uZyIsImdyZWVuIHRhcGU9dW52ZXJpZmllZCJdLCJyZWFzb24iOiJNYXNraW5nIGFuZCByZWQgdGFwZSByZW1haW4gb2ZmIHRoZSBwYXBlcjsgZ3JlZW4gdGFwZSBjYW5ub3QgYmUgaW5kaXZpZHVhbGx5IGNvbmZpcm1lZC4iLCJuZXh0IjoiRklYOiBNb3ZlIG1hc2tpbmcgdGFwZSBhbmQgcmVkIHRhcGUgb250byB0aGUgcGFwZXIuIFJFVEFLRTogc2hvdyBncmVlbiB0YXBlIGNsZWFybHkgb24gdGhlIHBhcGVyLCB3aXRoIHRoZSB2aWV3IHVub2JzdHJ1Y3RlZC4iLCJtb2RlbCI6ImdwdC02LWx1bmEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTE2VDEwOjA5OjAxIn0seyJ0YXNrIjoia2VlcCAxIHRhcGUgb24gdGhlIHBhcGVyIGJhZyIsInZlcnNpb24iOiJFUlIiLCJ2ZXJkaWN0IjoiZG9uZSBjb3JyZWN0bHkiLCJvYmplY3RzIjpbInBhcGVyIHN0cmlwPW9rIiwicGFwZXIgYmFnPW9rIiwicmVkIHRhcGUgcm9sbD1vayIsImdyZWVuIHRhcGUgcm9sbD1vayJdLCJyZWFzb24iOiJUaGUgcmVkIHRhcGUgcm9sbCBpcyBvbiB0aGUgcGFwZXIgYmFnOyB0aGUgb3RoZXIgb2JqZWN0cyBzdGF5ZWQgaW4gcGxhY2UuIiwibmV4dCI6IiIsIm1vZGVsIjoiZ3B0LTYtbHVuYSIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMTZUMTY6NDE6MDIifSx7InRhc2siOiJrZWVwIHRoZSByZWQgdGFwZSBvbiB0aGUgY2FyZGJvYXJkIiwidmVyc2lvbiI6IkVSUiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJvYmplY3RzIjpbInJlZCB0YXBlPXdyb25nIiwiY2FyZGJvYXJkPW9rIl0sInJlYXNvbiI6IlRoZSByZWQgdGFwZSByZW1haW5zIGJlc2lkZSB0aGUgY2FyZGJvYXJkLCBub3Qgb24gaXQuIiwibmV4dCI6IkZJWDogUGxhY2UgdGhlIHJlZCB0YXBlIG9uIHRoZSBjYXJkYm9hcmQ7IGRvIG5vdCBtb3ZlIHRoZSBjYXJkYm9hcmQuIiwibW9kZWwiOiJncHQtNi1sdW5hIiwidGltZXN0YW1wIjoiMjAyNi0xMC0xNlQxNzoxODoyOCJ9LHsidGFzayI6InRyeSBhZ2FpbiIsInZlcnNpb24iOiJFUlIiLCJ2ZXJkaWN0IjoiY2Fubm90IHZlcmlmeSIsIm9iamVjdHMiOlsidGFwZT11bnZlcmlmaWVkIiwiY2FyZGJvYXJkPW9rIl0sInJlYXNvbiI6IlRoZSB0YXBlIG1vdmVkIGZyb20gTjcgdG8gRDgsIGJ1dCDigJx0cnkgYWdhaW7igJ0gZG9lcyBub3Qgc3BlY2lmeSB0aGUgaW50ZW5kZWQgZ29hbC4iLCJuZXh0IjoiUkVUQUtFOiBwcm92aWRlIHRoZSBpbnRlbmRlZCBnb2FsIG9yIGRlc3RpbmF0aW9uIGZvciB0aGUgdGFwZS4iLCJtb2RlbCI6ImdwdC02LWx1bmEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTE2VDE3OjIwOjEwIn0seyJ0YXNrIjoiYXBwbHkgc29hcCBvbiB0aGUgcGxhdGUgdXNpbmcgdGUgYnJvd24gc3BvbmdlIGFmdGVyIGRpcHBpbmcgaW50byBpbiBib3dsIHNvYXAiLCJ2ZXJzaW9uIjoiRVJSIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsIm9iamVjdHMiOlsiYm93bD13cm9uZyIsInBsYXRlPXVudmVyaWZpZWQiLCJzcG9uZ2U9b2siLCJkZWJyaXM9b2siXSwicmVhc29uIjoiVGhlIGJvd2wgbW92ZWQgYWx0aG91Z2ggdGhlIHBsYW4gZGlkIG5vdCBtb3ZlIGl0LiBUaGUgc3BvbmdlIGlzIG9uIHRoZSBib2FyZCBhbmQgdGhlIHBsYXRlIGlzIGluIHRoZSB3b3JrZWQgYXJlYSwgYnV0IHNvYXAgYXBwbGljYXRpb24gY2Fubm90IGJlIGNvbmZpcm1lZCB2aXN1YWxseSBvciBmcm9tIGxvZ2dlZCBldmlkZW5jZS4iLCJuZXh0IjoiRklYOiBSZXR1cm4gdGhlIGJvd2wgdG8gaXRzIG9yaWdpbmFsIHBvc2l0aW9uIHdpdGhvdXQgZGlzdHVyYmluZyB0aGUgcGxhdGUgb3Igc3BvbmdlLiBSRVRBS0U6IHByb3ZpZGUgY2xvc2UgZXZpZGVuY2UgdGhhdCBzb2FwIHdhcyBhcHBsaWVkIHRvIHRoZSBwbGF0ZS4iLCJtb2RlbCI6ImdwdC02LWx1bmEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTE2VDE3OjI4OjUwIn1dfQ=="  # HOSX_EMBEDDED_STATE
+HOSX_EMBEDDED_STATE_B64 = "eyJzZXR0aW5ncyI6eyJyZXYiOjIsImNhbWVyYSI6eyJ6b29tIjoxLjEsImJyaWdodG5lc3MiOjAsImNvbnRyYXN0IjoxLjAsInNhdHVyYXRpb24iOjEuMCwic2hhcnBuZXNzIjowLjAsInJvdGF0aW9uIjowLCJtaXJyb3IiOmZhbHNlfSwiZ3JpZCI6eyJuX2NvbHMiOjIwLCJuX3Jvd3MiOjIwLCJib3giOlsxNjQuNzc2NDM3MTg5NDk2MDgsNi4wMDYxNjE2MTYxNjE2MDksNzY2LjA0Nzk3NzI4ODg1NzQsNjA3LjU4MjA3MDcwNzA3MDhdLCJzcXVhcmVfY2VsbHMiOnRydWUsImZyYW1lX3NpemUiOlsxMDkwLDYxM10sImJveF9yZWwiOlswLjE1MTE3MTA0MzI5MzExNTY4LDAuMDA5Nzk3OTc5Nzk3OTc5Nzg2LDAuNzAyNzk2MzA5NDM5MzE4NywwLjk5MTE2MTYxNjE2MTYxNjJdfSwidHJpZ19vZmZzZXQiOnsiY2FtZXJhX2hlaWdodF9pbiI6MzUuMCwidGFnX2hlaWdodF9pbiI6NS41LCJib2FyZF9oZWlnaHRfaW4iOjAuMCwicGl2b3RfeCI6MC4wLCJwaXZvdF95IjowLjAsImdyaXBwZXJfdXBfZG93biI6LTcsImdyaXBwZXJfcmlnaHRfbGVmdCI6MCwiZ3JpcHBlcl92ZXJ0aWNhbF9kaXJlY3Rpb24iOiJ1cCIsImdyaXBwZXJfaG9yaXpvbnRhbF9kaXJlY3Rpb24iOiJsZWZ0IiwibnVkZ2VfcyI6MC4yLCJudWRnZV9kaXJlY3Rpb24iOiJyaWdodCIsIm51ZGdlX2FjdGlvbnMiOnsicGlja3VwIjp0cnVlLCJrZWVwIjpmYWxzZSwicHJlc3MiOmZhbHNlLCJyZWxlYXNlIjp0cnVlfX0sInZpc2lvbiI6eyJib2FyZF93aWR0aF9pbiI6MjQuMCwiY29uZl90aHJlcyI6MC4yNSwiaW91X3RocmVzIjowLjcsIm1heF9hcmVhIjowLjUsIm91dGxpbmVfcHgiOjIsIm1hcmtfcGFydHMiOnRydWUsInNob3dfbmFtZXMiOnRydWUsIm5hbWVyX21vZGVsIjoiZ3B0LTYtbHVuYSIsInByaW9yaXR5X25hbWluZyI6ZmFsc2UsIm1heF9mcHMiOjEwLjAsInNjZW5lX2hpbnQiOiJUaGUgcGhvdG8gc2hvd3MgdGhlIHdvcmsgYXJlYSBvZiBhIHNtYWxsIGdhbnRyeSByb2JvdCwgc28gaXQgbWF5IGhvbGQgcGFydHMgb2YgdGhlIHJvYm90IGl0c2VsZiAoYWx1bWluaXVtIGZyYW1lIHJhaWxzLCBsZWFkIHNjcmV3cywgc21vb3RoIHJvZHMsIHN0ZXBwZXIgbW90b3JzLCBiZWx0cywgcHVsbGV5cywgYSBncmlwcGVyLCBjYWJsZXMpIGFzIHdlbGwgYXMgZXZlcnlkYXkgb2JqZWN0cy4ifSwiYmVoYXZpb3VyIjp7Im1hbnVhbF9ncmlwcGVyX3N0ZXBzIjpmYWxzZSwiZ3JpcHBlcl9haSI6dHJ1ZSwiZXJyX2F1dG8iOiJzdGVwIiwiZXJyX2ZpbmFsIjp0cnVlLCJlcnJfcmVkbyI6ZmFsc2UsInBsYW5uZXJfZWZmb3J0IjoibG93IiwicmVwZWF0X3Rhc2tzIjpmYWxzZX0sIm1hZ25pZmllciI6eyJ6b29tIjoxLjUsIndpZHRoIjozMTgsImhlaWdodCI6MTEwLCJ0aHJlc2hvbGQiOjB9fSwiY3VzdG9tX3RyYWluaW5nIjpbXSwiZXJyb3JfcmVib3VuZHMiOlt7InRhc2siOiJzd2FwIGFsbCB0aGUgb2JqZWN0cyBvbiB0aGUgYm9hcmQiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiT2JqZWN0cyBkaWQgbm90IHN3YXAgcG9zaXRpb25zOyBzY3Jld2RyaXZlciByZW1haW5zIGF0IEgxNCBhbmQgdXRpbGl0eSBrbmlmZSByZW1haW5zIGF0IFAxMS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA4LTMxVDIwOjQ1OjA2In0seyJ0YXNrIjoid2F0ZXIgbXkgcGxhbnRzIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6Ik5vIHZpc2libGUgZXZpZGVuY2UgdGhlIHBsYW50IHdhcyB3YXRlcmVkOyBjdXAgYW5kIHBsYW50IHJlbWFpbiBlc3NlbnRpYWxseSB1bmNoYW5nZWQuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0wMVQxNTo0NjoxMyJ9LHsidGFzayI6IndhdGVyIG15IHBsYW50cyIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJObyB2aXNpYmxlIGV2aWRlbmNlIHRoZSBwbGFudCB3YXMgd2F0ZXJlZDsgcGxhbnQgYW5kIG11ZyBvbmx5IHNoaWZ0ZWQgc2xpZ2h0bHkuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0wMlQxNDozMTo1MCJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNwb3QgaW4gdGhlIGJvZHkuIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5IiwicmVhc29uIjoiYmxhY2sgc29jayB3YXMgbW92ZWQgaW50byB0aGUgYm93bCwgd2l0aCB0aGUgYm93bCBzdGlsbCBjb250YWluaW5nIGl0IGluIHRoZSBmaW5hbCBpbWFnZSIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTE6NTE6MjIifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzcG90IGluIHRoZSBib2R5LiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJibGFjayBzb2NrIHdhcyBtb3ZlZCBuZWFyIEs0IGluc3RlYWQgb2YgYmVpbmcga2VwdCBpbiB0aGUgYm93bC9ib2R5IGF0IFEzIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMTo1MTozNiJ9LHsidGFzayI6InNvcnQgdGhlIHNvY2tlcyBhbmQga2VlcCB0aGUgd2hpdGVzIGluIHRlIGJvd2wiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiV2hpdGUgc29ja3MgYXJlIG5vdCB2aXNpYmxlIGluIHRoZSBib3dsIGluIHRoZSBmaW5hbCBpbWFnZTsgb25seSB0aGUgYmxhY2sgc29ja3MgcmVtYWluIG9uIHRoZSBib2FyZC4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDEyOjAzOjAwIn0seyJ0YXNrIjoiS2VlcCB0aGUgYmxhY2sgc29ja3Mgc3RhY2tlZCB0b2dldGhlci4iLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiT25seSBvbmUgYmxhY2sgc29jayBpcyB2aXNpYmxlIGluIHRoZSBmaW5hbCBpbWFnZTsgdGhlIHR3byBzb2NrcyBhcmUgbm90IGNvbmZpcm1lZCBzdGFja2VkIHRvZ2V0aGVyLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTI6MDU6MTMifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzb2NrcyBzdGFja2VkIHRvZ2V0aGVyLiIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsInJlYXNvbiI6IlRoZSB0d28gYmxhY2sgc29ja3MgYXJlIHN0YWNrZWQgdG9nZXRoZXIgaW4gdGhlIGZpbmFsIGltYWdlLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTI6MDU6MjMifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzb2NrIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsInJlYXNvbiI6ImJsYWNrIHNvY2sgaXMgcGxhY2VkIGluIHRoZSBncmVlbiBib3dsIGluIHRoZSBmaW5hbCBpbWFnZS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDEzOjAxOjM0In0seyJ0YXNrIjoiU29ydCB0aGUgYmxhY2sgYW5kIHdoaXRlIHNvY2tzLCBhbmQgcHV0IGFsbCB0aGUgd2hpdGVzIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJXaGl0ZSBzb2NrIGlzIGluIHRoZSBib3dsLCBidXQgb25lIHdoaXRlIHNvY2sgcmVtYWlucyBvdXRzaWRlIHRoZSBib3dsLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTY6Mjc6NDgifSx7InRhc2siOiJTb3J0IG15IGNsb3RoZXMgb3Igc29ja3MgaW50byBibGFjayBhbmQgd2hpdGUuIEtlZXAgYWxsIHRoZSBibGFja3MgaW4gdGhlIGJvd2wuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6Ik9ubHkgb25lIGJsYWNrIHNvY2sgaXMgaW4gdGhlIGJvd2w7IHRoZSBvdGhlciBibGFjayBzb2NrIGlzIG5vdCB2ZXJpZmllZCBpbiB0aGUgYm93bC4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDE2OjM5OjQyIn0seyJ0YXNrIjoiS2VlcCB0aGUgbGVhdmVzIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJMZWF2ZXMgYXJlIG5vdCBmdWxseSBpbiB0aGUgYm93bDsgcGFydCBvZiB0aGUgc3ByaWcgcmVtYWlucyBvdXRzaWRlIG9uIHRoZSByaW0vdGFibGUuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxNjo0Nzo1MiJ9LHsidGFzayI6Im1vZSB0aGUgYmtvb2sgdG8gaXQncyBsZWZ0IiwidmVyc2lvbiI6IkVSUi0zIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsIm9iamVjdHMiOlsibm90ZWJvb2s9d3JvbmciXSwicmVhc29uIjoiVGhlIG5vdGVib29rIHJlbWFpbnMgaW4gdGhlIHNhbWUgcG9zaXRpb24gYXMgaW4gdGhlIHN0YXJ0IGltYWdlcyBhbmQgd2FzIG5vdCBtb3ZlZCBsZWZ0LiIsIm5leHQiOiJGSVg6IG1vdmUgdGhlIG5vdGVib29rIGxlZnQgZnJvbSBpdHMgY3VycmVudCBwb3NpdGlvbiBhbmQgcmVsZWFzZSBpdCB0aGVyZSIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMDJUMTg6MDQ6MDAifSx7InRhc2siOiJtb2UgdGhlIGJrb29rIHRvIGl0J3MgbGVmdCIsInZlcnNpb24iOiJFUlItMyIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsIm9iamVjdHMiOlsibm90ZWJvb2s9b2siXSwicmVhc29uIjoiVGhlIGJsYWNrIG5vdGVib29rIGlzIHZpc2libHkgc2hpZnRlZCBsZWZ0IGZyb20gaXRzIHN0YXJ0IHBvc2l0aW9uIChmcm9tIGFib3V0IEctTCBjb2x1bW5zIHRvIGFib3V0IEQtSiBjb2x1bW5zKSBhbmQgaXMgcmVzdGluZyBvbiB0aGUgYm9hcmQgd2l0aCBubyBncmlwcGVyIGhvbGRpbmcgaXQ7IG5vIG90aGVyIHRhc2sgY29uc3RyYWludHMgYXJlIHZpc2libHkgdmlvbGF0ZWQuIiwibmV4dCI6IiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMDJUMTg6MDQ6MjIifSx7InRhc2siOiJyZWRvIiwidmVyc2lvbiI6IkVSUiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJvYmplY3RzIjpbImNsb3RoPXdyb25nIiwid29vZCBibG9jaz13cm9uZyJdLCJyZWFzb24iOiJUaGUgY2xvdGggc3RheWVkIGF0IEc3IGluc3RlYWQgb2YgYmVpbmcgbW92ZWQsIGFuZCB0aGUgd29vZCBibG9jayB3YXMgZGlzcGxhY2VkIGZyb20gQTEzIHRvIEExMS4iLCJuZXh0IjoiRklYOiBNb3ZlIHRoZSBjbG90aCBmcm9tIEc3IHRvIEQxMTsgcmV0dXJuIHRoZSB3b29kIGJsb2NrIGZyb20gQTExIHRvIEExMy4iLCJtb2RlbCI6ImdwdC02LWx1bmEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTExVDE2OjM4OjQxIn0seyJ0YXNrIjoia2VlcCB0aGUgY2xvdGggdG8gaXQncyByaWdodCIsInZlcnNpb24iOiJFUlIiLCJ2ZXJkaWN0IjoiZG9uZSBjb3JyZWN0bHkiLCJvYmplY3RzIjpbImNsb3RoPW9rIl0sInJlYXNvbiI6IlRoZSBjbG90aCBtb3ZlZCByaWdodCBmcm9tIEs1IHRvIFAzIGFuZCBpcyB2aXNpYmxlIG9uIHRoZSBib2FyZC4iLCJuZXh0IjoiIiwibW9kZWwiOiJncHQtNi1sdW5hIiwidGltZXN0YW1wIjoiMjAyNi0xMC0xMVQxNzoyNToyMCJ9LHsidGFzayI6ImtlZXAgdGhlIGNsb3RoIHRvIGl0J3MgcmlnaHQiLCJ2ZXJzaW9uIjoiRVJSIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5Iiwib2JqZWN0cyI6WyJjbG90aD1vayJdLCJyZWFzb24iOiJUaGUgY2xvdGggbW92ZWQgZnJvbSB0aGUgbGVmdC1jZW50ZXIgdG8gdGhlIHJpZ2h0IHNpZGUgb2YgdGhlIGJvYXJkIGFuZCBpcyB2aXNpYmxlIHRoZXJlLiIsIm5leHQiOiIiLCJtb2RlbCI6ImdwdC02LWx1bmEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTEyVDEwOjA5OjIxIn0seyJ0YXNrIjoicGlja3VwIHRoZSBzY3Jld2RyaXZlciIsInZlcnNpb24iOiJFUlIiLCJ2ZXJkaWN0IjoiY2Fubm90IHZlcmlmeSIsIm9iamVjdHMiOlsic2NyZXdkcml2ZXI9dW52ZXJpZmllZCJdLCJyZWFzb24iOiJUaGUgc2NyZXdkcml2ZXIgaXMgbm8gbG9uZ2VyIHZpc2libGUgYXQgaXRzIHN0YXJ0aW5nIHBvc2l0aW9uLCBhbmQgbm8gZXZpZGVuY2UgY29uZmlybXMgaXQgaXMgaGVsZCBieSB0aGUgZ3JpcHBlci4iLCJuZXh0IjoiUkVUQUtFOiBjbGVhciB0aGUgZ3JpcHBlciBhbmQgb2J0YWluIGEgdmlldyBjb25maXJtaW5nIHRoZSBzY3Jld2RyaXZlciBpcyBoZWxkLCBvciBwcm92aWRlIGdyYXNwL2NvbnRhY3Qgc2Vuc29yIGV2aWRlbmNlLiIsIm1vZGVsIjoiZ3B0LTYtbHVuYSIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMTJUMTA6MTI6MzAifSx7InRhc2siOiJ0cnkgYWdhaW4iLCJ2ZXJzaW9uIjoiRVJSIiwidmVyZGljdCI6ImNhbm5vdCB2ZXJpZnkiLCJvYmplY3RzIjpbInBsYXN0aWMgY29udGFpbmVyPXVudmVyaWZpZWQiLCJ3aGl0ZSB0YXBlPW9rIiwicmVkIHRhcGU9dW52ZXJpZmllZCIsInBsYXN0aWMgbGlkPW9rIiwiZGVicmlzPW9rIiwidGFwZSByb2xsPW9rIl0sInJlYXNvbiI6IuKAnFRyeSBhZ2FpbuKAnSBkb2VzIG5vdCBzcGVjaWZ5IGEgZ29hbDsgdGhlIHBsYXN0aWMgY29udGFpbmVyIGlzIG5vdCB2aXNpYmxlLCBhbmQgdGhlIHJlZCB0YXBlIG1vdmVkLiIsIm5leHQiOiJSRVRBS0U6IHByb3ZpZGUgdGhlIGludGVuZGVkIHRhc2sgYW5kIGEgdmlldyB0aGF0IHJldmVhbHMgd2hlcmUgdGhlIHBsYXN0aWMgY29udGFpbmVyIGlzLiIsIm1vZGVsIjoiZ3B0LTYtbHVuYSIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMTNUMTc6NDg6MDMifSx7InRhc2siOiJLZWVwIGFsbCB0aGUgZWxlY3RyaWNhbCB0YXBlcyBpbiB0aGUgcGxhc3RpYyBib3guIiwidmVyc2lvbiI6IkVSUiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJvYmplY3RzIjpbIm1hc2tpbmcgdGFwZT13cm9uZyIsInBsYXN0aWMgbGlkPW9rIiwicmVkIGluc3VsYXRpb24gdGFwZT11bnZlcmlmaWVkIiwic3BlY2s9b2siLCJncmVlbiBpbnN1bGF0aW9uIHRhcGU9dW52ZXJpZmllZCJdLCJyZWFzb24iOiJNYXNraW5nIHRhcGUgcmVtYWlucyBvdXRzaWRlIHRoZSBwbGFzdGljIGxpZOKAmXMgZm9vdHByaW50LiBUaGUgcmVkIGFuZCBncmVlbiB0YXBlcyBhcmUgd2l0aGluIGl0cyBmb290cHJpbnQsIGJ1dCB0aGUgaW1hZ2UgZG9lcyBub3QgY29uZmlybSB0aGV5IGFyZSBpbnNpZGUgdGhlIGJveC4iLCJuZXh0IjoiRklYOiBNb3ZlIG1hc2tpbmcgdGFwZSBpbnRvIHRoZSBwbGFzdGljIGJveDsgZG8gbm90IHRvdWNoIG9iamVjdHMgbWFya2VkIG9rLiBSRVRBS0U6IFByb3ZpZGUgYSB2aWV3IHRoYXQgY29uZmlybXMgd2hldGhlciB0aGUgcmVkIGFuZCBncmVlbiB0YXBlcyBhcmUgaW5zaWRlIHRoZSBib3guIiwibW9kZWwiOiJncHQtNi1sdW5hIiwidGltZXN0YW1wIjoiMjAyNi0xMC0xM1QxODowMzozNyJ9LHsidGFzayI6IlRoZSBiYW5hbmEgaW4gdGhlIGJhc2tldCIsInZlcnNpb24iOiJFUlIiLCJ2ZXJkaWN0IjoiZG9uZSBjb3JyZWN0bHkiLCJvYmplY3RzIjpbImJhc2tldD1vayIsImJhbmFuYT1vayJdLCJyZWFzb24iOiJUaGUgYmFuYW5hIGlzIHZpc2libGUgaW5zaWRlIHRoZSBiYXNrZXQgaW4gdGhlIGZpbmFsIGltYWdlLiIsIm5leHQiOiIiLCJtb2RlbCI6ImdwdC02LWx1bmEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTEzVDE4OjA3OjEyIn0seyJ0YXNrIjoiS2VlcCBhbGwgdGhlIGVsZWN0cmljIHRhcGVzIG9uIHRoZSBwYXBlciBiYWciLCJ2ZXJzaW9uIjoiRVJSIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsIm9iamVjdHMiOlsibWFza2luZyB0YXBlPXdyb25nIiwicGFwZXI9b2siLCJyZWQgdGFwZT13cm9uZyIsImdyZWVuIHRhcGU9dW52ZXJpZmllZCJdLCJyZWFzb24iOiJNYXNraW5nIGFuZCByZWQgdGFwZSByZW1haW4gb2ZmIHRoZSBwYXBlcjsgZ3JlZW4gdGFwZSBjYW5ub3QgYmUgaW5kaXZpZHVhbGx5IGNvbmZpcm1lZC4iLCJuZXh0IjoiRklYOiBNb3ZlIG1hc2tpbmcgdGFwZSBhbmQgcmVkIHRhcGUgb250byB0aGUgcGFwZXIuIFJFVEFLRTogc2hvdyBncmVlbiB0YXBlIGNsZWFybHkgb24gdGhlIHBhcGVyLCB3aXRoIHRoZSB2aWV3IHVub2JzdHJ1Y3RlZC4iLCJtb2RlbCI6ImdwdC02LWx1bmEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTE2VDEwOjA5OjAxIn0seyJ0YXNrIjoia2VlcCAxIHRhcGUgb24gdGhlIHBhcGVyIGJhZyIsInZlcnNpb24iOiJFUlIiLCJ2ZXJkaWN0IjoiZG9uZSBjb3JyZWN0bHkiLCJvYmplY3RzIjpbInBhcGVyIHN0cmlwPW9rIiwicGFwZXIgYmFnPW9rIiwicmVkIHRhcGUgcm9sbD1vayIsImdyZWVuIHRhcGUgcm9sbD1vayJdLCJyZWFzb24iOiJUaGUgcmVkIHRhcGUgcm9sbCBpcyBvbiB0aGUgcGFwZXIgYmFnOyB0aGUgb3RoZXIgb2JqZWN0cyBzdGF5ZWQgaW4gcGxhY2UuIiwibmV4dCI6IiIsIm1vZGVsIjoiZ3B0LTYtbHVuYSIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMTZUMTY6NDE6MDIifSx7InRhc2siOiJrZWVwIHRoZSByZWQgdGFwZSBvbiB0aGUgY2FyZGJvYXJkIiwidmVyc2lvbiI6IkVSUiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJvYmplY3RzIjpbInJlZCB0YXBlPXdyb25nIiwiY2FyZGJvYXJkPW9rIl0sInJlYXNvbiI6IlRoZSByZWQgdGFwZSByZW1haW5zIGJlc2lkZSB0aGUgY2FyZGJvYXJkLCBub3Qgb24gaXQuIiwibmV4dCI6IkZJWDogUGxhY2UgdGhlIHJlZCB0YXBlIG9uIHRoZSBjYXJkYm9hcmQ7IGRvIG5vdCBtb3ZlIHRoZSBjYXJkYm9hcmQuIiwibW9kZWwiOiJncHQtNi1sdW5hIiwidGltZXN0YW1wIjoiMjAyNi0xMC0xNlQxNzoxODoyOCJ9LHsidGFzayI6InRyeSBhZ2FpbiIsInZlcnNpb24iOiJFUlIiLCJ2ZXJkaWN0IjoiY2Fubm90IHZlcmlmeSIsIm9iamVjdHMiOlsidGFwZT11bnZlcmlmaWVkIiwiY2FyZGJvYXJkPW9rIl0sInJlYXNvbiI6IlRoZSB0YXBlIG1vdmVkIGZyb20gTjcgdG8gRDgsIGJ1dCDigJx0cnkgYWdhaW7igJ0gZG9lcyBub3Qgc3BlY2lmeSB0aGUgaW50ZW5kZWQgZ29hbC4iLCJuZXh0IjoiUkVUQUtFOiBwcm92aWRlIHRoZSBpbnRlbmRlZCBnb2FsIG9yIGRlc3RpbmF0aW9uIGZvciB0aGUgdGFwZS4iLCJtb2RlbCI6ImdwdC02LWx1bmEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTE2VDE3OjIwOjEwIn0seyJ0YXNrIjoiYXBwbHkgc29hcCBvbiB0aGUgcGxhdGUgdXNpbmcgdGUgYnJvd24gc3BvbmdlIGFmdGVyIGRpcHBpbmcgaW50byBpbiBib3dsIHNvYXAiLCJ2ZXJzaW9uIjoiRVJSIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsIm9iamVjdHMiOlsiYm93bD13cm9uZyIsInBsYXRlPXVudmVyaWZpZWQiLCJzcG9uZ2U9b2siLCJkZWJyaXM9b2siXSwicmVhc29uIjoiVGhlIGJvd2wgbW92ZWQgYWx0aG91Z2ggdGhlIHBsYW4gZGlkIG5vdCBtb3ZlIGl0LiBUaGUgc3BvbmdlIGlzIG9uIHRoZSBib2FyZCBhbmQgdGhlIHBsYXRlIGlzIGluIHRoZSB3b3JrZWQgYXJlYSwgYnV0IHNvYXAgYXBwbGljYXRpb24gY2Fubm90IGJlIGNvbmZpcm1lZCB2aXN1YWxseSBvciBmcm9tIGxvZ2dlZCBldmlkZW5jZS4iLCJuZXh0IjoiRklYOiBSZXR1cm4gdGhlIGJvd2wgdG8gaXRzIG9yaWdpbmFsIHBvc2l0aW9uIHdpdGhvdXQgZGlzdHVyYmluZyB0aGUgcGxhdGUgb3Igc3BvbmdlLiBSRVRBS0U6IHByb3ZpZGUgY2xvc2UgZXZpZGVuY2UgdGhhdCBzb2FwIHdhcyBhcHBsaWVkIHRvIHRoZSBwbGF0ZS4iLCJtb2RlbCI6ImdwdC02LWx1bmEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTE2VDE3OjI4OjUwIn1dfQ=="  # HOSX_EMBEDDED_STATE
 try:
     HOSX_EMBEDDED_STATE = json.loads(
         base64.b64decode(HOSX_EMBEDDED_STATE_B64).decode("utf-8"))
@@ -280,6 +281,253 @@ def cell_label(col_idx, row_idx) -> str:
     if 0 <= col_idx < CONFIG.n_cols and 0 <= row_idx < CONFIG.n_rows:
         return coordinate_name(col_idx, row_idx)
     return "off board"
+
+
+# Micro coordinates (user, 2026-10-17). The board's own cells -- "F8" -- are
+# the MACRO coordinates the planner, Vision AI and ERR all work in. Each
+# macro cell is split MICRO_PER_CELL x MICRO_PER_CELL again: micro columns
+# a-d left to right, micro rows 1-4 top to bottom, written after the macro
+# cell -- "F8.b3" is the second micro column and third micro row of F8.
+# Gripper AI chooses its grip in micro coordinates on a zoomed look at the
+# object; the move itself still goes to the macro cell that micro cell is in.
+MICRO_PER_CELL = 4
+MICRO_COLS = "abcd"
+MICRO_RE = re.compile(r"(?<![A-Za-z0-9])([A-Za-z])\s*(\d{1,2})\s*[.:,/\-]?\s*"
+                      r"([a-dA-D])\s*([1-4])(?![0-9])")
+
+
+def micro_name(col: float, row: float) -> str:
+    """Grid point (col, row) -> its micro coordinate, "F8.b3"."""
+    c = max(0, min(CONFIG.n_cols - 1, int(math.floor(col))))
+    r = max(0, min(CONFIG.n_rows - 1, int(math.floor(row))))
+    mc = max(0, min(MICRO_PER_CELL - 1, int(math.floor((col - c) * MICRO_PER_CELL))))
+    mr = max(0, min(MICRO_PER_CELL - 1, int(math.floor((row - r) * MICRO_PER_CELL))))
+    return f"{coordinate_name(c, r)}.{MICRO_COLS[mc]}{mr + 1}"
+
+
+def parse_micro(text):
+    """A micro coordinate ("F8.b3", "f8 b3", "F8:B3") -> the middle of that
+    micro cell as a grid point (col, row); None when there is none."""
+    for m in MICRO_RE.finditer(str(text or "")):
+        cell = parse_coordinate(f"{m.group(1)}{m.group(2)}")
+        if cell is None:
+            continue
+        mc = MICRO_COLS.index(m.group(3).lower())
+        mr = int(m.group(4)) - 1
+        return (cell[0] + (mc + 0.5) / MICRO_PER_CELL,
+                cell[1] + (mr + 0.5) / MICRO_PER_CELL)
+    return None
+
+
+# Micro Trigonometry (user, 2026-10-17: "custom, distinct trigonometric
+# offset settings for the micro coordinates ... very, super precise, where
+# an inner coordinate can also shift a little bit here and there"). Its own
+# settings, apart from the tag's on the Trigonometry card, all in
+# millimetres on the board (inches for heights) and stepped finely:
+#   - the parallax of the surface the gripper takes an object by: the camera
+#     sees it MICRO_TRIG_GRIP_IN above the board, pushed away from the
+#     camera's nadir, so it is pulled back toward the nadir by
+#     k = (H - h)/H -- the tag's trigonometry, for the object;
+#   - the nadir itself, from the board's middle;
+#   - a shift of every micro coordinate, and shifts at 3 x 3 points over the
+#     board blended between them -- here and there;
+#   - where in its macro cell the gripper really comes down.
+# A micro grip goes through micro_true_point, and micro_macro_cell picks the
+# macro cell for it; the macro move itself (the tag to that cell, centred)
+# is not changed.
+MICRO_TRIG_STEP_MM = 0.5            # the finest step of a shift, mm
+MICRO_TRIG_CAMERA_IN = 35.0         # the camera's height above the board
+MICRO_TRIG_GRIP_IN = 0.5            # the gripped surface's height above it
+MICRO_TRIG_NADIR_MM = [0.0, 0.0]    # below the camera, from the board's middle (right, down)
+MICRO_TRIG_SHIFT_MM = [0.0, 0.0]    # every micro coordinate (right, down)
+MICRO_TRIG_LAND_MM = [0.0, 0.0]     # the gripper's landing, from its macro cell's middle
+# the 3 x 3 points, row by row from the top-left: the board's corners, the
+# middles of its edges and its middle
+MICRO_TRIG_POINTS = ("top-left", "top", "top-right", "left", "middle", "right",
+                     "bottom-left", "bottom", "bottom-right")
+MICRO_TRIG_LOCAL_MM = [[0.0, 0.0] for _ in MICRO_TRIG_POINTS]
+MICRO_TRIG_LIMIT_MM = 40.0          # no shift or landing past this
+MICRO_TRIG_NADIR_LIMIT_MM = 400.0
+
+
+def micro_mm_per_cell() -> float:
+    """A macro cell's side on the board, mm (the board's width over its columns)."""
+    return max(1e-6, BOARD_WIDTH_IN * 25.4 / max(1, CONFIG.n_cols))
+
+
+def micro_trig_k(height_in=None) -> float:
+    """k = (H - h)/H for a surface `height_in` (the gripped one by default)
+    above the board; 1.0 (no correction) for impossible numbers."""
+    H = MICRO_TRIG_CAMERA_IN
+    h = MICRO_TRIG_GRIP_IN if height_in is None else height_in
+    if H <= 0 or h < 0 or h >= H:
+        return 1.0
+    return (H - h) / H
+
+
+def micro_nadir() -> tuple:
+    """The camera's nadir in grid units."""
+    mm = micro_mm_per_cell()
+    return (CONFIG.n_cols / 2.0 + MICRO_TRIG_NADIR_MM[0] / mm,
+            CONFIG.n_rows / 2.0 + MICRO_TRIG_NADIR_MM[1] / mm)
+
+
+def micro_trig_axis(n: int) -> tuple:
+    """The 3 x 3 points' cells along one side of n cells: first, middle,
+    last (A, K, T) -- the cells the card names them by."""
+    return (0, n // 2, max(0, n - 1))
+
+
+def _micro_bracket(v: float, n: int):
+    """(i, fraction) between the points' cell MIDDLES along a side: each
+    point's shift is exactly its setting at the middle of its cell, blended
+    in a straight line between points, flat beyond the outer ones."""
+    xs = [c + 0.5 for c in micro_trig_axis(n)]
+    if v <= xs[0]:
+        return 0, 0.0
+    if v >= xs[2]:
+        return 1, 1.0
+    i = 0 if v < xs[1] else 1
+    span = xs[i + 1] - xs[i]
+    return i, ((v - xs[i]) / span if span > 0 else 0.0)
+
+
+def micro_shift_at(col: float, row: float) -> tuple:
+    """The fine shift at grid point (col, row), in cells: the shift of every
+    micro coordinate plus the 3 x 3 local shifts, blended between the four
+    points round it."""
+    i, fu = _micro_bracket(col, CONFIG.n_cols)
+    j, fv = _micro_bracket(row, CONFIG.n_rows)
+
+    def at(a, b, axis):
+        return MICRO_TRIG_LOCAL_MM[b * 3 + a][axis]
+
+    mm = micro_mm_per_cell()
+    out = []
+    for axis in (0, 1):
+        local = ((1 - fu) * (1 - fv) * at(i, j, axis) + fu * (1 - fv) * at(i + 1, j, axis)
+                 + (1 - fu) * fv * at(i, j + 1, axis) + fu * fv * at(i + 1, j + 1, axis))
+        out.append((MICRO_TRIG_SHIFT_MM[axis] + local) / mm)
+    return out[0], out[1]
+
+
+def micro_true_point(col: float, row: float, height_in=None) -> tuple:
+    """A point of an object as the camera sees it (grid units, at the
+    gripped surface's height) -> the board point it stands over, by the
+    micro trigonometry: pulled toward the nadir by k, then shifted by the
+    fine shifts there."""
+    nx, ny = micro_nadir()
+    k = micro_trig_k(height_in)
+    x, y = nx + k * (col - nx), ny + k * (row - ny)
+    sx, sy = micro_shift_at(x, y)
+    return x + sx, y + sy
+
+
+def micro_seen_point(col: float, row: float) -> tuple:
+    """Where a point on the board itself shows in the camera's grid -- the
+    inverse of micro_true_point on the board (no height): for drawing the
+    micro grid and a grip where they are."""
+    x, y = col, row
+    for _ in range(80):             # until it settles (exact, even at the limits)
+        sx, sy = micro_shift_at(x, y)
+        nx, ny = col - sx, row - sy
+        if abs(nx - x) < 1e-12 and abs(ny - y) < 1e-12:
+            return nx, ny
+        x, y = nx, ny
+    return x, y
+
+
+_MICRO_SEEN_CACHE = {"key": None, "points": {}}
+
+
+def micro_seen_point_cached(col: float, row: float) -> tuple:
+    """micro_seen_point, remembered until a Micro Trigonometry setting
+    changes -- the Magnifier's micro grid asks for the same corners every
+    frame."""
+    key = micro_trig_key()
+    cache = _MICRO_SEEN_CACHE
+    if cache["key"] != key or len(cache["points"]) > 50000:
+        cache["key"], cache["points"] = key, {}
+    got = cache["points"].get((col, row))
+    if got is None:
+        got = cache["points"][(col, row)] = micro_seen_point(col, row)
+    return got
+
+
+def micro_trig_key() -> tuple:
+    """Every Micro Trigonometry setting as one value: a drawing that depends
+    on them is redrawn when this changes."""
+    return (MICRO_TRIG_CAMERA_IN, MICRO_TRIG_GRIP_IN, tuple(MICRO_TRIG_NADIR_MM),
+            tuple(MICRO_TRIG_SHIFT_MM), tuple(MICRO_TRIG_LAND_MM),
+            tuple(tuple(p) for p in MICRO_TRIG_LOCAL_MM), BOARD_WIDTH_IN)
+
+
+def micro_land_cells() -> tuple:
+    """The gripper's landing offset in its macro cell, in cells."""
+    mm = micro_mm_per_cell()
+    return MICRO_TRIG_LAND_MM[0] / mm, MICRO_TRIG_LAND_MM[1] / mm
+
+
+def micro_macro_cell(pt, reach=None) -> tuple:
+    """The macro cell to send the gripper to for a grip at board point `pt`:
+    the one whose landing point (its middle plus the landing offset) is
+    nearest it -- the macro cell the micro point is in, when the gripper
+    lands in the middle. With `reach` (c0, r0, c1, r1), the nearest one the
+    gripper can reach."""
+    lx, ly = micro_land_cells()
+    c0, r0, c1, r1 = reach if reach else (0, 0, CONFIG.n_cols, CONFIG.n_rows)
+    return (max(c0, min(c1 - 1, int(math.floor(pt[0] - lx)))),
+            max(r0, min(r1 - 1, int(math.floor(pt[1] - ly)))))
+
+
+def micro_landing(cell) -> tuple:
+    """Where the gripper comes down for macro cell `cell`, grid units."""
+    lx, ly = micro_land_cells()
+    return cell[0] + 0.5 + lx, cell[1] + 0.5 + ly
+
+
+def micro_trig_settings() -> dict:
+    """The Micro Trigonometry settings, as save_settings keeps them."""
+    return {"camera_in": MICRO_TRIG_CAMERA_IN, "grip_in": MICRO_TRIG_GRIP_IN,
+            "nadir_mm": list(MICRO_TRIG_NADIR_MM),
+            "shift_mm": list(MICRO_TRIG_SHIFT_MM),
+            "land_mm": list(MICRO_TRIG_LAND_MM),
+            "local_mm": [list(p) for p in MICRO_TRIG_LOCAL_MM]}
+
+
+def load_micro_trig_settings(m):
+    """The saved Micro Trigonometry settings; a value of the wrong kind or
+    out of range keeps the default."""
+    global MICRO_TRIG_CAMERA_IN, MICRO_TRIG_GRIP_IN
+    if not isinstance(m, dict):
+        return
+
+    def number(v, lo, hi):
+        return (isinstance(v, (int, float)) and not isinstance(v, bool)
+                and math.isfinite(v) and lo <= v <= hi)
+
+    def pair(v, limit):
+        return (isinstance(v, (list, tuple)) and len(v) == 2
+                and all(number(a, -limit, limit) for a in v))
+
+    # the gripped surface at most half way up to the camera: past that the
+    # parallax is nonsense
+    cam = (round(float(m["camera_in"]), 2) if number(m.get("camera_in"), 1.0, 240.0)
+           else MICRO_TRIG_CAMERA_IN)
+    grip = (round(float(m["grip_in"]), 2) if number(m.get("grip_in"), 0.0, 20.0)
+            else MICRO_TRIG_GRIP_IN)
+    if grip <= cam / 2.0:
+        MICRO_TRIG_CAMERA_IN, MICRO_TRIG_GRIP_IN = cam, grip
+    for key, target, limit in (("nadir_mm", MICRO_TRIG_NADIR_MM, MICRO_TRIG_NADIR_LIMIT_MM),
+                               ("shift_mm", MICRO_TRIG_SHIFT_MM, MICRO_TRIG_LIMIT_MM),
+                               ("land_mm", MICRO_TRIG_LAND_MM, MICRO_TRIG_LIMIT_MM)):
+        if pair(m.get(key), limit):
+            target[:] = [round(float(a), 2) for a in m[key]]
+    local = m.get("local_mm")
+    if (isinstance(local, (list, tuple)) and len(local) == len(MICRO_TRIG_POINTS)
+            and all(pair(p, MICRO_TRIG_LIMIT_MM) for p in local)):
+        for k, p in enumerate(local):
+            MICRO_TRIG_LOCAL_MM[k] = [round(float(a), 2) for a in p]
 
 
 def build_path_commands(start_col: int, start_row: int, end_col: int, end_row: int):
@@ -1358,6 +1606,295 @@ class CameraSettings:
         return frame
 
 
+# Camera names (user, 2026-10-18: "actual names for the cameras", not
+# cam0/cam1). macOS knows each camera's own name ("FaceTime HD Camera",
+# "Iriun Camera"); OpenCV numbers them by their unique ID, sorted, so the
+# same sort gives each index its name.
+_CAMERA_DEVICES = None
+
+
+def camera_devices(refresh=False) -> list:
+    """[(name, unique id)] in OpenCV's index order; [] when unknown."""
+    global _CAMERA_DEVICES
+    if _CAMERA_DEVICES is not None and not refresh:
+        return _CAMERA_DEVICES
+    found = []
+    try:
+        import AVFoundation as _av
+        for d in _av.AVCaptureDevice.devicesWithMediaType_(_av.AVMediaTypeVideo) or ():
+            found.append((str(d.localizedName()), str(d.uniqueID())))
+    except Exception:
+        found = []
+    if not found and sys.platform == "darwin":
+        try:
+            out = subprocess.run(["system_profiler", "SPCameraDataType"],
+                                 capture_output=True, text=True, timeout=8).stdout
+            name = None
+            for line in out.splitlines():
+                t = line.strip()
+                if t.endswith(":") and line.startswith("    ") and not line.startswith("      "):
+                    name = t[:-1]
+                elif t.startswith("Unique ID:") and name:
+                    found.append((name, t.split(":", 1)[1].strip()))
+                    name = None
+        except Exception:
+            found = []
+    found.sort(key=lambda d: d[1])
+    _CAMERA_DEVICES = found
+    return found
+
+
+def camera_name(index) -> str:
+    """A camera's own name by OpenCV index; "Camera N" when not known. Two
+    of the same name are told apart by their number."""
+    devs = camera_devices()
+    if isinstance(index, int) and 0 <= index < len(devs):
+        name = devs[index][0]
+        if sum(1 for n, _ in devs if n == name) > 1:
+            name = f"{name} ({index})"
+        return name
+    return f"Camera {index}"
+
+
+def camera_index_of(uid: str):
+    """OpenCV index of the camera with this unique ID, or None."""
+    for i, (_, u) in enumerate(camera_devices()):
+        if u == uid:
+            return i
+    return None
+
+
+MAIN_CAMERA_INDEX = None     # the main view camera's index, once open
+
+
+# The supporting view camera (user, 2026-10-18): a second camera beside the
+# main (top-down) view camera, looking at the gripper from the side. ERR on
+# the Go judges each pickup from it, ERR takes it in, and naming sees the
+# objects from the side too. Chosen in Settings by its unique ID; "" = none.
+SUPPORT_CAMERA_ID = ""
+# The coordinate grid (lines, letters, numbers) on the MAIN view camera's
+# picture: off by default (user, 2026-10-18), on in Settings. It is still
+# drawn while the board's corners are being set.
+SHOW_MAIN_GRID = False
+SUPPORT_MAX_SIDE = 1024      # the side view sent to a model, longest side px
+
+
+class SupportCamera:
+    """The supporting view camera on its own grabber thread."""
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self.index = None
+        self._cap = None
+        self._frame = None
+        self._at = 0.0
+        self._stop = None
+        self._thread = None
+        self.opened_at = 0.0
+
+    def open(self, index):
+        """Open camera `index` (None closes it). -> whether it is live."""
+        self.close()
+        if index is None:
+            return False
+        stop = threading.Event()
+        self._stop, self.index = stop, index
+        self.opened_at = time.monotonic()
+        self._thread = threading.Thread(target=self._loop, args=(index, stop),
+                                        daemon=True)
+        self._thread.start()
+        return True
+
+    def _loop(self, index, stop):
+        cap = cv2.VideoCapture(index)
+        with self._lock:
+            self._cap = cap
+        misses = 0
+        while not stop.is_set():
+            ok, frame = cap.read() if cap is not None else (False, None)
+            if stop.is_set():
+                break
+            if ok and frame is not None:
+                with self._lock:
+                    self._frame, self._at = frame, time.monotonic()
+                misses = 0
+            else:
+                misses += 1
+                if misses % 150 == 0:             # gone a while: reopen it
+                    cap.release()
+                    cap = cv2.VideoCapture(index)
+                    with self._lock:
+                        self._cap = cap
+            time.sleep(0.03)
+        cap.release()
+
+    def close(self):
+        if self._stop is not None:
+            self._stop.set()
+        if self._thread is not None:
+            self._thread.join(timeout=2.0)
+        self._stop = self._thread = None
+        with self._lock:
+            self._cap, self._frame, self.index = None, None, None
+
+    def frame(self, max_age=2.0):
+        """The newest side-view frame (not to be drawn on), or None when
+        there is no supporting camera or it has gone quiet."""
+        with self._lock:
+            if self._frame is None or time.monotonic() - self._at > max_age:
+                return None
+            return self._frame
+
+
+SUPPORT_CAM = SupportCamera()
+
+
+def support_frame():
+    """The supporting view camera's newest frame, or None."""
+    return SUPPORT_CAM.frame() if SUPPORT_CAMERA_ID else None
+
+
+def apply_support_camera():
+    """Open the camera SUPPORT_CAMERA_ID names (never the main one)."""
+    idx = camera_index_of(SUPPORT_CAMERA_ID) if SUPPORT_CAMERA_ID else None
+    if idx is not None and idx == MAIN_CAMERA_INDEX:
+        idx = None
+    if idx == SUPPORT_CAM.index and (idx is None or SUPPORT_CAM._thread):
+        return idx is not None
+    if idx is None:
+        SUPPORT_CAM.close()
+        return False
+    print(f"[camera] supporting view camera: {camera_name(idx)} (index {idx})")
+    return SUPPORT_CAM.open(idx)
+
+
+def support_name() -> str:
+    """The supporting view camera's name, or "Off"."""
+    idx = camera_index_of(SUPPORT_CAMERA_ID) if SUPPORT_CAMERA_ID else None
+    return camera_name(idx) if idx is not None else "Off"
+
+
+def support_status() -> str:
+    """For Settings: the supporting view camera's name and whether its
+    picture is coming in."""
+    if not SUPPORT_CAMERA_ID:
+        return "Off"
+    idx = camera_index_of(SUPPORT_CAMERA_ID)
+    if idx is None:
+        return "Not connected"
+    if idx == MAIN_CAMERA_INDEX:
+        return f"{camera_name(idx)} (the main view)"
+    if support_frame() is not None:
+        return camera_name(idx)
+    if SUPPORT_CAM.index == idx and time.monotonic() - SUPPORT_CAM.opened_at < 5.0:
+        return f"{camera_name(idx)} - starting..."
+    return f"{camera_name(idx)} - no picture"
+
+
+def support_image_part(max_side=SUPPORT_MAX_SIDE):
+    """The side view as a model's image part, or None."""
+    f = support_frame()
+    if f is None:
+        return None
+    h, w = f.shape[:2]
+    k = min(1.0, max_side / float(max(h, w)))
+    if k < 1.0:
+        f = cv2.resize(f, (int(w * k), int(h * k)), interpolation=cv2.INTER_AREA)
+    ok, jpg = cv2.imencode(".jpg", f, [cv2.IMWRITE_JPEG_QUALITY, 88])
+    if not ok:
+        return None
+    return {"type": "image_url", "image_url": {
+        "url": "data:image/jpeg;base64," + base64.b64encode(jpg.tobytes()).decode(),
+        "detail": "high"}}
+
+
+_SUPPORT_VIEW_CACHE = {"key": None, "pic": None}
+
+
+def draw_support_view(canvas, area, video):
+    """The supporting view camera's picture, small and live, with its name:
+    in `area` (a margin of the camera view beside the board) when it is wide
+    enough, else in the view's bottom-left corner -- over the band the
+    gripper cannot reach."""
+    f = support_frame()
+    if f is None:
+        return None
+    x0, y0, x1, y1 = (int(v) for v in area)
+    if x1 - x0 < 120:
+        vx0, vy0, vx1, vy1 = (int(v) for v in video)
+        bw = max(160, (vx1 - vx0) // 4)
+        x0, x1 = vx0 + 8, vx0 + 8 + bw
+        y1 = vy1 - 8
+        y0 = y1 - int(bw * f.shape[0] / f.shape[1]) - 24
+    bw = x1 - x0
+    bh = int(bw * f.shape[0] / float(f.shape[1]))
+    bh = min(bh, max(40, y1 - y0 - 24))
+    bw = int(bh * f.shape[1] / float(f.shape[0]))
+    if bw < 40 or bh < 30:
+        return None
+    key = (id(f), bw, bh)
+    if _SUPPORT_VIEW_CACHE["key"] != key:
+        _SUPPORT_VIEW_CACHE["key"] = key
+        _SUPPORT_VIEW_CACHE["pic"] = cv2.resize(f, (bw, bh), interpolation=cv2.INTER_AREA)
+    pic = _SUPPORT_VIEW_CACHE["pic"]
+    H, W = canvas.shape[:2]
+    if y0 < 0 or x0 < 0 or y0 + 24 + bh > H or x0 + bw > W:
+        return None
+    cv2.rectangle(canvas, (x0 - 1, y0 - 1), (x0 + bw, y0 + 24 + bh), (0, 0, 0), 1)
+    cv2.rectangle(canvas, (x0, y0), (x0 + bw - 1, y0 + 23), (255, 255, 255), -1)
+    label, font = f"Supporting view: {support_name()}", cv2.FONT_HERSHEY_SIMPLEX
+    if cv2.getTextSize(label, font, 0.42, 1)[0][0] > bw - 12:
+        while len(label) > 4 and cv2.getTextSize(label + "...", font, 0.42,
+                                                 1)[0][0] > bw - 12:
+            label = label[:-1]
+        label = label.rstrip() + "..."
+    cv2.putText(canvas, label, (x0 + 6, y0 + 16), font, 0.42, (20, 20, 20), 1,
+                cv2.LINE_AA)
+    canvas[y0 + 24:y0 + 24 + bh, x0:x0 + bw] = pic
+    return (x0, y0, x0 + bw, y0 + 24 + bh)
+
+
+def draw_support_popup(canvas, video, mouse):
+    """The supporting view camera in a pop-up over the main view, opened by
+    the Side view button beside the camera list (user, 2026-10-18). Returns
+    (card rect, close-button rect)."""
+    vx0, vy0, vx1, vy1 = (int(v) for v in video)
+    f = support_frame()
+    cw = max(320, int((vx1 - vx0) * 0.62))
+    cw = min(cw, vx1 - vx0 - 16)
+    if f is not None:
+        ph = int((cw - 24) * f.shape[0] / float(f.shape[1]))
+        ph = min(ph, vy1 - vy0 - 16 - 64)
+        pw = int(ph * f.shape[1] / float(f.shape[0]))
+        cw = max(320, pw + 24)
+    else:
+        pw, ph = cw - 24, 120
+    ch = 52 + ph + 12
+    x0 = vx0 + (vx1 - vx0 - cw) // 2
+    y0 = vy0 + (vy1 - vy0 - ch) // 2
+    card = (x0, y0, x0 + cw, y0 + ch)
+    css_rect(canvas, card, 14, C_CARD, (0, 0, 0))
+    title = "Supporting view"
+    name = support_name() if SUPPORT_CAMERA_ID else ""
+    draw_text(canvas, title, (x0 + 16, y0 + 32), 0.56, C_TEXT, 1, weight=600)
+    if name:
+        tw = text_size(title, 0.56, 1, weight=600)[0]
+        draw_text(canvas, name, (x0 + 26 + tw, y0 + 32), 0.5, C_TEXT_FAINT, 1)
+    close = Button("X", x0 + cw - 46, y0 + 10, x0 + cw - 14, y0 + 42, "close",
+                   style="text")
+    close.draw(canvas, hover=close.contains(*mouse), shadow=False)
+    px, py = x0 + 12, y0 + 52
+    if f is not None and pw > 0 and ph > 0:
+        canvas[py:py + ph, px:px + pw] = cv2.resize(f, (pw, ph),
+                                                    interpolation=cv2.INTER_AREA)
+        cv2.rectangle(canvas, (px - 1, py - 1), (px + pw, py + ph), (0, 0, 0), 1)
+    else:
+        msg = ("No supporting view camera is chosen - pick one in Settings > Cameras."
+               if not SUPPORT_CAMERA_ID else f"Supporting view: {support_status()}")
+        draw_text(canvas, msg, (px + 4, py + ph // 2), 0.5, C_TEXT_DIM, 1)
+    return card, (close.x0, close.y0, close.x1, close.y1)
+
+
 class CameraManager:
     """Finds connected cameras and lets you cycle through them."""
 
@@ -1453,6 +1990,12 @@ class CameraManager:
             if self.cap is not None:
                 self.cap.release()
             idx = self.available_indices[self.current_pos]
+            global MAIN_CAMERA_INDEX
+            MAIN_CAMERA_INDEX = idx
+            if SUPPORT_CAM.index == idx:
+                SUPPORT_CAM.close()          # one camera cannot be both views
+                global SUPPORT_CAMERA_ID
+                SUPPORT_CAMERA_ID = ""
             self.cap = cv2.VideoCapture(idx)
             ok = self.cap.isOpened()
             frame = None
@@ -1670,9 +2213,10 @@ DIRECTION_LETTERS = {"up": "u", "down": "d", "left": "l", "right": "r"}
 SLOW_SUFFIX = "q"
 HEIGHT_UP_CMD = "hu"
 HEIGHT_DOWN_CMD = "hd"
-HEIGHT_SAVE_CMD = "p4"      # only p4 stores the height the board is at...
-HEIGHT_RETURN_CMD = "p3"    # ...and p3 goes back down to it (user, 2026-10-16)
-PICKUP_P1_CMD = "p1"        # still sent after a pickup, once p4 has stored
+HEIGHT_SAVE_CMD = "p4"      # only p4 stores the height p3 returns to.
+                            # a release sends it, then hu (user, 2026-10-16)
+HEIGHT_RETURN_CMD = "p3"    # goes back down to the height p4 stored
+PICKUP_P1_CMD = "p1"        # after the second g90, before hu
 GRIP_CMD_LETTER = "g"
 GRIP_MIN_DEG = 0
 GRIP_MAX_DEG = 90
@@ -1706,8 +2250,11 @@ TAG_HOLD_SECONDS = 0.35
 AUTO_GRIP_COMMAND_DELAY_S = 1.0
 AUTO_PULSE_S = 0.1
 AUTO_PICKUP_HX_S = 1.0       # a pickup: hd first, then hx for this long
+# Gripper coil (user, 2026-10-18): after the pickup's hd and hx, lq for
+# this long, then s, before the jaws close (g90). 0 = no coil.
+AUTO_PICKUP_COIL_S = 0.5
 AUTO_PICKUP_HU_SCALE = 1.0    # pickup hu uses measured hd duration times this scale
-AUTO_GRIP_P1_SETTLE_S = 0.5   # second g90 settle before storing the height with p4
+AUTO_GRIP_P1_SETTLE_S = 0.5   # second g90 settle before p1
 AUTO_PRESS_RUN_S = 3.0       # the runner's own press (no card) runs this long
 AUTO_ACTION_GAP_S = 0.3
 AUTO_GRIP_DOWN_MAX_S = 25.0
@@ -1721,11 +2268,17 @@ AUTO_RETRY_DELAY_S = 1.0
 MOVE_RETRIES = 3        # a move the board refuses is tried again this many times
 AUTO_RELEASE_P3_MAX_S = 8.0     # no stop from the board this long after p3: lift anyway
 AUTO_ACTION_MAX_S = 90.0
+# The pickup a press comes after (user, 2026-10-17): the TOF sensor's MM
+# reading at the bottom, jaws shut, against its reading once the head is
+# back up. Within this many mm is "the same": the sensor is looking at the
+# object in the jaws, not at the board.
+TOF_SAME_MM = 5.0
 
 AUTO_GRIPPER_TIMING_SETTINGS = {
     "height_pulse_s": ("AUTO_PULSE_S", 0.05, 1.0, 0.05),
     "pickup_hd_timeout_s": ("AUTO_GRIP_DOWN_MAX_S", 1.0, 60.0, 1.0),
     "pickup_hx_duration_s": ("AUTO_PICKUP_HX_S", 0.1, 10.0, 0.1),
+    "pickup_coil_s": ("AUTO_PICKUP_COIL_S", 0.0, 5.0, 0.1),
     "pickup_hu_scale": ("AUTO_PICKUP_HU_SCALE", 0.25, 2.0, 0.05),
     "command_delay_s": ("AUTO_GRIP_COMMAND_DELAY_S", 0.1, 5.0, 0.1),
     "g90_settle_s": ("AUTO_GRIP_P1_SETTLE_S", 0.1, 3.0, 0.1),
@@ -1736,6 +2289,7 @@ AUTO_GRIPPER_TIMING_SETTINGS = {
     "p3_timeout_s": ("AUTO_RELEASE_P3_MAX_S", 1.0, 30.0, 0.5),
     "action_timeout_s": ("AUTO_ACTION_MAX_S", 10.0, 300.0, 5.0),
     "press_duration_s": ("AUTO_PRESS_RUN_S", 0.1, 10.0, 0.1),
+    "tof_same_mm": ("TOF_SAME_MM", 1.0, 50.0, 1.0),
 }
 AUTO_GRIPPER_DEFAULTS = {
     key: globals()[name] for key, (name, _lo, _hi, _step)
@@ -1789,7 +2343,122 @@ def caret_visible(state) -> bool:
     return (elapsed % CARET_BLINK_PERIOD) < CARET_BLINK_ON
 
 
-GRIPPER_WORD_RE = re.compile(r"hd|hx|hu|g\d{1,2}|p[13]")
+# The board streams its time-of-flight height sensor as text lines:
+#     TOF:MM=81 RAW=80 VALID=1 P1=-1 P3=HOLD
+# MM is the reading the board itself goes by (p3 included); RAW is the
+# sensor's own unfiltered number. HOS X decides on MM only (user,
+# 2026-10-17: "the actual readings streamed on the serial command, not the
+# raw readings").
+TOF_KEEP_S = 30.0           # readings older than this are dropped
+TOF_CHECK = True            # the TOF check after the pickup a press comes after
+TOF_UP_SETTLE_S = 0.3       # readings this soon after the lift stops still lag
+TOF_UP_READINGS = 3         # ...then this many fresh ones decide it,
+TOF_UP_WAIT_S = 2.0         # or whatever came within this long of the lift's end
+
+
+def parse_tof_line(text):
+    """One "TOF:MM=.. RAW=.. VALID=.." line -> {"mm", "raw", "valid"}, or
+    None when it is not a TOF line or has no MM reading. A reading the
+    board marks VALID=0, or a negative one, is not valid."""
+    text = str(text or "").strip()
+    if text[:4].upper() != "TOF:":
+        return None
+    fields = {}
+    for token in text[4:].replace(",", " ").split():
+        key, sep, value = token.partition("=")
+        if sep:
+            fields[key.strip().upper()] = value.strip()
+
+    def number(key):
+        try:
+            v = float(fields[key])
+        except (KeyError, ValueError):
+            return None
+        return v if math.isfinite(v) else None
+
+    mm = number("MM")
+    if mm is None:
+        return None
+    valid = fields.get("VALID", "1").lower() not in ("0", "false", "no", "n")
+    return {"mm": mm, "raw": number("RAW"), "valid": valid and mm >= 0}
+
+
+class TofMonitor:
+    """The TOF sensor's MM readings as the board streams them, with the
+    moment each arrived (monotonic) -- so a pickup can ask what the sensor
+    read while the head was down and what it read once back up."""
+
+    def __init__(self):
+        self.readings = collections.deque()     # (t, mm, valid)
+        self.last = None
+        self.count = 0
+        self._lock = threading.Lock()
+
+    def note_line(self, text, now=None) -> bool:
+        """One whole serial line. True when it was a TOF reading."""
+        r = parse_tof_line(text)
+        if r is None:
+            return False
+        now = time.monotonic() if now is None else now
+        with self._lock:
+            item = (now, r["mm"], r["valid"])
+            self.readings.append(item)
+            self.last = item
+            self.count += 1
+            while self.readings and now - self.readings[0][0] > TOF_KEEP_S:
+                self.readings.popleft()
+        return True
+
+    def values(self, t0, t1=None) -> list:
+        """The valid MM readings that arrived from t0 to t1 (or now)."""
+        with self._lock:
+            return [mm for t, mm, ok in self.readings
+                    if ok and t >= t0 and (t1 is None or t <= t1)]
+
+    def latest(self, max_age=2.0, now=None):
+        """The newest valid MM reading, if it is at most `max_age` s old."""
+        now = time.monotonic() if now is None else now
+        with self._lock:
+            for t, mm, ok in reversed(self.readings):
+                if now - t > max_age:
+                    return None
+                if ok:
+                    return mm
+        return None
+
+    def reset(self):
+        with self._lock:
+            self.readings.clear()
+            self.last = None
+
+
+TOF = TofMonitor()
+
+
+def tof_median(values):
+    v = sorted(float(x) for x in values)
+    if not v:
+        return None
+    n = len(v)
+    return v[n // 2] if n % 2 else (v[n // 2 - 1] + v[n // 2]) / 2.0
+
+
+def tof_same_reading(bottom, top, margin=None):
+    """The pickup's TOF readings at the bottom and after coming up ->
+    (same, bottom mm, top mm), each side's median; None when either side
+    has no reading. Same means within `margin` mm (TOF_SAME_MM): the sensor
+    did not see the board drop away as the head rose, because the object
+    hanging in the jaws is right below it."""
+    down, up = tof_median(bottom), tof_median(top)
+    if down is None or up is None:
+        return None
+    margin = TOF_SAME_MM if margin is None else margin
+    return abs(up - down) <= margin, down, up
+
+
+# The gripper's words, each sent on a line of its own -- p4 included (user,
+# 2026-10-17: "send p4 always in newline"; it used to go out bare).
+GRIPPER_WORD_RE = re.compile(r"hd|hx|hu|g\d{1,2}|p[134]")
 
 
 class SerialLink:
@@ -1961,6 +2630,8 @@ class SerialLink:
             return
         if self._write(letter):
             self._last_sent = letter
+            if letter == "s":
+                p3_hold_after_stop()
 
     def send_command(self, text: str) -> bool:
         """Write a token verbatim -- for one-shot commands like the height
@@ -1985,6 +2656,7 @@ class SerialLink:
         """
         if self._write("s"):
             self._last_sent = "s"
+            p3_hold_after_stop()   # a press's p3 survives the stop until release
             return True
         return False
 
@@ -2007,6 +2679,7 @@ class SerialLink:
                 text = raw.decode("utf-8", "replace").rstrip("\r")
                 if text:
                     self.last_received = text
+                    TOF.note_line(text)
                     if self.on_line:
                         self.on_line("rx", text)
             if self.on_bytes is not None:
@@ -2016,6 +2689,7 @@ class SerialLink:
             self._rx_buf = b""
             if text:
                 self.last_received = text
+                TOF.note_line(text)
                 if self.on_line:
                     self.on_line("rx", text)
 
@@ -2055,16 +2729,58 @@ class SerialLink:
 
 ARDUINO = SerialLink()
 
-# The serial connection whose board holds a height a pickup stored with p4,
-# if any. A press goes back down to it with p3. Only p4 stores that height.
+# The serial connection whose board holds a height stored with p4, if any.
+# A press goes back down to it with p3. Only p4 stores that height, and a
+# pickup never sends p4: its close is g90, g90, p1, hu.
 _SAVED_HEIGHT_ON = None
 
 
 def note_height_saved():
-    """A pickup sent p4: the board now holds the height its jaws closed at.
-    p3 returns to that height, and only p4 stores it."""
+    """p4 was sent: the board now holds the height. Only p4 stores it.
+    A release sends p4; a pickup does not."""
     global _SAVED_HEIGHT_ON
     _SAVED_HEIGHT_ON = getattr(ARDUINO, "connects", 0)
+
+
+# p3, once sent for a press, stays on through that press and anything done
+# while it is down (wiping soap along the surface) until the release.
+# An s stops every axis, so it would turn p3 off; the s still has to end an
+# XY move, and p3 is sent again after the gap. Release is what ends it.
+_P3_ON = False
+_P3_AGAIN_AT = 0.0
+
+
+def note_p3_holding():
+    """A press sent p3. It stays on until release."""
+    global _P3_ON, _P3_AGAIN_AT
+    _P3_ON = True
+    _P3_AGAIN_AT = 0.0
+
+
+def note_p3_released():
+    """Release, stop, or a failed press: do not put p3 back."""
+    global _P3_ON, _P3_AGAIN_AT
+    _P3_ON = False
+    _P3_AGAIN_AT = 0.0
+
+
+def p3_hold_after_stop():
+    """An s went out while a press is still on. p3 follows, after the gap
+    the board needs between two letters."""
+    global _P3_AGAIN_AT
+    if _P3_ON and not _P3_AGAIN_AT:
+        _P3_AGAIN_AT = time.monotonic() + AUTO_GRIP_COMMAND_DELAY_S
+
+
+def p3_hold_tick():
+    """Send the p3 a stop had to defer, if the press has not been released."""
+    global _P3_AGAIN_AT
+    if not (_P3_ON and _P3_AGAIN_AT):
+        return
+    if time.monotonic() < _P3_AGAIN_AT:
+        return
+    _P3_AGAIN_AT = 0.0
+    ARDUINO.send_command(HEIGHT_RETURN_CMD)
 
 
 _PRESS_MOVED = False
@@ -2072,7 +2788,7 @@ _PRESS_MOVED = False
 
 def note_press_moved(moved: bool):
     """The press now ending was followed by gotos (the tool slid along the
-    surface): its release goes back down to the saved height first (p3)."""
+    surface). p3 stays on through that; the release is still p4, then hu."""
     global _PRESS_MOVED
     _PRESS_MOVED = bool(moved)
 
@@ -2084,8 +2800,8 @@ def forget_saved_height():
 
 
 def press_command():
-    """What a press sends first: p3, back down to the height the last pickup
-    stored with p4."""
+    """What a press sends first: p3, back down to the height p4 stored.
+    A pickup does not send p4."""
     return HEIGHT_RETURN_CMD     # a press never goes down with hx
 
 
@@ -2815,6 +3531,33 @@ class Grid:
                 cv2.circle(frame, (int(cx), int(cy)), CORNER_RADIUS,
                            _bgr("#ffffff"), 2, cv2.LINE_AA)
 
+    def draw_unreachable(self, frame):
+        """Shade the cells the gripper cannot reach red. Drawn with the grid,
+        and on its own when the grid is off (user, 2026-10-18)."""
+        x0, y0, x1, y1 = self.box
+        h, w = frame.shape[:2]
+        ix0, iy0 = max(0, int(x0)), max(0, int(y0))
+        ix1, iy1 = min(w, int(x1)), min(h, int(y1))
+        if ix1 <= ix0 or iy1 <= iy0:
+            return
+        bad_rows = unreachable_rows() | fixed_unreachable_rows()
+        bad_cols = unreachable_cols()
+        if bad_rows or bad_cols:
+            red = _bgr("#ef4444")
+            overlay = frame[iy0:iy1, ix0:ix1].copy()
+            for r in bad_rows:
+                ry0 = int(y0 + r * self.cell_h) - iy0
+                ry1 = int(y0 + (r + 1) * self.cell_h) - iy0
+                cv2.rectangle(overlay, (0, max(0, ry0)),
+                              (ix1 - ix0, min(iy1 - iy0, ry1)), red, -1)
+            for c in bad_cols:
+                cx0 = int(x0 + c * self.cell_w) - ix0
+                cx1 = int(x0 + (c + 1) * self.cell_w) - ix0
+                cv2.rectangle(overlay, (max(0, cx0), 0),
+                              (min(ix1 - ix0, cx1), iy1 - iy0), red, -1)
+            frame[iy0:iy1, ix0:ix1] = cv2.addWeighted(
+                overlay, 0.35, frame[iy0:iy1, ix0:ix1], 0.65, 0)
+
     def _draw_overlay(self, frame):
         """The grid's own marks, as Grid.draw always drew them after the
         blur. Called only to record the stamp."""
@@ -2836,23 +3579,7 @@ class Grid:
                          cv2.LINE_AA)
             frame[iy0:iy1, ix0:ix1] = cv2.addWeighted(line, 0.45, board, 0.55, 0)
 
-        bad_rows = unreachable_rows() | fixed_unreachable_rows()
-        bad_cols = unreachable_cols()
-        if bad_rows or bad_cols:
-            red = _bgr("#ef4444")
-            overlay = frame[iy0:iy1, ix0:ix1].copy()
-            for r in bad_rows:
-                ry0 = int(y0 + r * self.cell_h) - iy0
-                ry1 = int(y0 + (r + 1) * self.cell_h) - iy0
-                cv2.rectangle(overlay, (0, max(0, ry0)),
-                              (ix1 - ix0, min(iy1 - iy0, ry1)), red, -1)
-            for c in bad_cols:
-                cx0 = int(x0 + c * self.cell_w) - ix0
-                cx1 = int(x0 + (c + 1) * self.cell_w) - ix0
-                cv2.rectangle(overlay, (max(0, cx0), 0),
-                              (min(ix1 - ix0, cx1), iy1 - iy0), red, -1)
-            frame[iy0:iy1, ix0:ix1] = cv2.addWeighted(
-                overlay, 0.35, frame[iy0:iy1, ix0:ix1], 0.65, 0)
+        self.draw_unreachable(frame)
 
         last_row_idx = min(BLUE_LABEL_LAST_ROW, CONFIG.n_rows)
         by1 = int(y0 + last_row_idx * self.cell_h) - iy0
@@ -3181,6 +3908,8 @@ class Dropdown:
     def __init__(self, label: str, x0, y0, x1, y1, kind: str):
         self.label = label
         self.x0, self.y0, self.x1, self.y1 = x0, y0, x1, y1
+        self._x1_min = x1           # with fit_value, it widens past this
+        self.fit_value = False      # for a long value (a camera's own name)
         self.kind = kind
         self.items = []
         self.open = False
@@ -3225,6 +3954,8 @@ class Dropdown:
         vx = self.x0 + 12 + lw + 8
         # ChatGPT's model picker: 16px at weight 650.
         vw, vh = text_size(value, 0.64, 1, weight=650)
+        if self.fit_value:
+            self.x1 = max(self._x1_min, vx + vw + 32)
         draw_text(img, value, (vx, cy + vh // 2), 0.64,
                   C_TEXT if current is not None else C_TEXT_DIM, 1, weight=650)
         draw_chevron(img, (vx + vw + 12, cy + 1), 4, C_TEXT_DIM, 2,
@@ -3239,7 +3970,7 @@ class Dropdown:
 
         pad = 10
         span = self.x1 - self.x0
-        per_row = max(1, (span - 2 * pad) // self.ITEM_W)
+        per_row = max(1, int(span - 2 * pad) // int(self.ITEM_W))
         if self.list_columns is not None:
             per_row = min(self.list_columns,
                           max(1, (img.shape[1] - 16 - 2 * pad) // self.ITEM_W))
@@ -3469,6 +4200,10 @@ class SettingsPanel:
             global GRIPPER_AI
             GRIPPER_AI = not GRIPPER_AI
 
+        def step_grip_ask_model(_d):
+            global GRIP_ASK_MODEL
+            GRIP_ASK_MODEL = not GRIP_ASK_MODEL
+
         def step_automatic_gripper(_d):
             global MANUAL_GRIPPER_STEPS
             MANUAL_GRIPPER_STEPS = not MANUAL_GRIPPER_STEPS
@@ -3501,6 +4236,18 @@ class SettingsPanel:
         def step_err_final(_d):
             global ERR_FINAL
             ERR_FINAL = not ERR_FINAL
+
+        def step_support_camera(d):
+            global SUPPORT_CAMERA_ID
+            devs = camera_devices(refresh=True)
+            ids = [""] + [u for i, (_, u) in enumerate(devs) if i != MAIN_CAMERA_INDEX]
+            i = ids.index(SUPPORT_CAMERA_ID) if SUPPORT_CAMERA_ID in ids else 0
+            SUPPORT_CAMERA_ID = ids[(i + d) % len(ids)]
+            apply_support_camera()
+
+        def step_main_grid(_d):
+            global SHOW_MAIN_GRID
+            SHOW_MAIN_GRID = not SHOW_MAIN_GRID
 
         def step_err_redo(_d):
             global ERR_REDO
@@ -3594,9 +4341,12 @@ class SettingsPanel:
                        step_speed, section="SIMULATION"),
             SettingRow("wait_cap", "Simulated wait cap",
                        lambda: f"{WAIT_MAX_PLAYBACK:g}s", step_wait_cap),
-            SettingRow("gripper_ai", "Grip middle, press centre",
+            SettingRow("gripper_ai", "Gripper AI: micro grip, press centre",
                        lambda: "On" if GRIPPER_AI else "Off", step_gripper_ai,
                        toggle=True),
+            SettingRow("grip_ask_model", "Gripper AI also asks gpt-6-luna",
+                       lambda: "On" if GRIP_ASK_MODEL else "Off",
+                       step_grip_ask_model, toggle=True),
             SettingRow("automatic_gripper", "Automatic gripper actions",
                        lambda: "On" if not MANUAL_GRIPPER_STEPS else "Off",
                        step_automatic_gripper, toggle=True),
@@ -3610,13 +4360,16 @@ class SettingsPanel:
             SettingRow("auto_hx_duration", "Pickup HX duration",
                        lambda: f"{AUTO_PICKUP_HX_S:.1f}s",
                        lambda d: step_auto_gripper_timing("pickup_hx_duration_s", d)),
+            SettingRow("auto_coil", "Gripper coil (LQ after HX)",
+                       lambda: f"{AUTO_PICKUP_COIL_S:.1f}s",
+                       lambda d: step_auto_gripper_timing("pickup_coil_s", d)),
             SettingRow("auto_hu_scale", "Pickup HU lift scale",
                        lambda: f"{AUTO_PICKUP_HU_SCALE:.2f}x",
                        lambda d: step_auto_gripper_timing("pickup_hu_scale", d)),
             SettingRow("auto_command_delay", "Gripper command delay",
                        lambda: f"{AUTO_GRIP_COMMAND_DELAY_S:.1f}s",
                        lambda d: step_auto_gripper_timing("command_delay_s", d)),
-            SettingRow("auto_g90_settle", "G90 settle before P4",
+            SettingRow("auto_g90_settle", "G90 settle before P1",
                        lambda: f"{AUTO_GRIP_P1_SETTLE_S:.1f}s",
                        lambda d: step_auto_gripper_timing("g90_settle_s", d)),
             SettingRow("auto_action_gap", "Gap between actions",
@@ -3640,6 +4393,9 @@ class SettingsPanel:
             SettingRow("auto_press_duration", "Automatic press duration",
                        lambda: f"{AUTO_PRESS_RUN_S:.1f}s",
                        lambda d: step_auto_gripper_timing("press_duration_s", d)),
+            SettingRow("auto_tof_same", "TOF same reading (before a press)",
+                       lambda: f"within {TOF_SAME_MM:.0f} mm",
+                       lambda d: step_auto_gripper_timing("tof_same_mm", d)),
             SettingRow("board_width", "Board width (in)",
                        lambda: f"{BOARD_WIDTH_IN:g} in", step_board_width,
                        section="VISION"),
@@ -3662,6 +4418,11 @@ class SettingsPanel:
             SettingRow("dexterity_check", "Dexterity check",
                        lambda: "On" if DEXTERITY_CHECK else "Off",
                        step_dexterity_check, toggle=True),
+            SettingRow("support_camera", "Supporting view camera (side)",
+                       support_status, step_support_camera, section="CAMERAS"),
+            SettingRow("main_grid", "Coordinate grid on the main view",
+                       lambda: "On" if SHOW_MAIN_GRID else "Off",
+                       step_main_grid, toggle=True),
             SettingRow("err_auto", "ERR on the Go (after pickups)",
                        lambda: dict(ERR_AUTO_MODES).get(ERR_AUTO, "Off"),
                        step_err_auto, section="ERR", toggle=True),
@@ -4430,12 +5191,17 @@ def save_settings(cam: CameraSettings, grid: Grid):
         "behaviour": {
             "manual_gripper_steps": MANUAL_GRIPPER_STEPS,
             "gripper_ai": GRIPPER_AI,
+            "grip_ask_model": GRIP_ASK_MODEL,
             "err_auto": ERR_AUTO,
             "err_final": ERR_FINAL,
             "err_redo": ERR_REDO,
             "planner_effort": PLANNER_EFFORT,
             "repeat_tasks": REPEAT_TASKS,
+            "support_camera": SUPPORT_CAMERA_ID,
+            "main_grid": SHOW_MAIN_GRID,
         },
+        "magnifier": magnifier_settings(),
+        "micro_trig": micro_trig_settings(),
     }
     HOSX_EMBEDDED_STATE["settings"] = data
     embedded_saved = persist_embedded_state()
@@ -4480,15 +5246,24 @@ def load_settings():
     BOARD_WIDTH_IN = float(data.get("vision", {}).get("board_width_in",
                                                       BOARD_WIDTH_IN))
     load_vision_settings(data.get("vision", {}))
+    load_magnifier_settings(data.get("magnifier", {}))
+    load_micro_trig_settings(data.get("micro_trig", {}))
 
-    global MANUAL_GRIPPER_STEPS, GRIPPER_AI, ERR_AUTO, PLANNER_EFFORT
+    global MANUAL_GRIPPER_STEPS, GRIPPER_AI, ERR_AUTO, GRIP_ASK_MODEL
     global ERR_FINAL, ERR_REDO, REPEAT_TASKS
     behaviour = data.get("behaviour", {})
     MANUAL_GRIPPER_STEPS = bool(behaviour.get(
         "manual_gripper_steps", MANUAL_GRIPPER_STEPS))
     GRIPPER_AI = bool(behaviour.get("gripper_ai", GRIPPER_AI))
+    if isinstance(behaviour.get("grip_ask_model"), bool):
+        GRIP_ASK_MODEL = behaviour["grip_ask_model"]
     if isinstance(behaviour.get("repeat_tasks"), bool):
         REPEAT_TASKS = behaviour["repeat_tasks"]
+    global SUPPORT_CAMERA_ID, SHOW_MAIN_GRID
+    if isinstance(behaviour.get("support_camera"), str):
+        SUPPORT_CAMERA_ID = behaviour["support_camera"]
+    if isinstance(behaviour.get("main_grid"), bool):
+        SHOW_MAIN_GRID = behaviour["main_grid"]
     rev = data.get("rev")
     if isinstance(rev, int) and rev >= SETTINGS_REV:
         if behaviour.get("err_auto") in dict(ERR_AUTO_MODES):
@@ -4500,7 +5275,8 @@ def load_settings():
             ERR_FINAL = behaviour["err_final"]
         if isinstance(behaviour.get("err_redo"), bool):
             ERR_REDO = behaviour["err_redo"]
-    # (a saved planner_effort is ignored: every start is on low thinking)
+    # (a saved planner_effort is ignored: the planner is always low.
+    #  user, 2026-10-16: no other level, and no control that picks one)
     load_auto_gripper_timing_settings()
 
     g = data.get("grid", {})
@@ -5268,6 +6044,215 @@ class TrigPanel:
         self.draw_lists(frame, mouse)
 
 
+class MicroTrigPanel:
+    """Trigonometry > Micro Trigonometry (Cmd+U): the Micro Trigonometry's
+    own settings, apart from the tag's -- where the gripper really lands in
+    its macro cell, the parallax of the surface it grips, the camera's nadir,
+    a shift of every micro coordinate and shifts at 3 x 3 points over the
+    board, blended between them. Every step is fine: half a millimetre, a
+    millimetre for the nadir, a twentieth or tenth of an inch for heights.
+    Drawn on the camera view like the Trigonometry card, beside it when
+    that is open too. Each change is saved at once."""
+
+    ROW_H = 34
+    PAD = 22
+    WIDTH = 780
+    # key: (label, step, unit)
+    STEPS = {"land_x": ("Right", MICRO_TRIG_STEP_MM, "mm"),
+             "land_y": ("Down", MICRO_TRIG_STEP_MM, "mm"),
+             "camera": ("Camera height", 0.1, "in"),
+             "grip": ("Grip height", 0.05, "in"),
+             "nadir_x": ("Nadir right", 1.0, "mm"),
+             "nadir_y": ("Nadir down", 1.0, "mm"),
+             "shift_x": ("Right", MICRO_TRIG_STEP_MM, "mm"),
+             "shift_y": ("Down", MICRO_TRIG_STEP_MM, "mm"),
+             "local_x": ("Right", MICRO_TRIG_STEP_MM, "mm"),
+             "local_y": ("Down", MICRO_TRIG_STEP_MM, "mm")}
+
+    def __init__(self):
+        self.visible = False
+        self.buttons = []
+        self.point = 4              # the 3 x 3 point being shifted (the middle)
+        self._last_rect = None
+
+    def toggle(self):
+        self.visible = not self.visible
+
+    def value(self, key) -> float:
+        return {"land_x": MICRO_TRIG_LAND_MM[0], "land_y": MICRO_TRIG_LAND_MM[1],
+                "camera": MICRO_TRIG_CAMERA_IN, "grip": MICRO_TRIG_GRIP_IN,
+                "nadir_x": MICRO_TRIG_NADIR_MM[0], "nadir_y": MICRO_TRIG_NADIR_MM[1],
+                "shift_x": MICRO_TRIG_SHIFT_MM[0], "shift_y": MICRO_TRIG_SHIFT_MM[1],
+                "local_x": MICRO_TRIG_LOCAL_MM[self.point][0],
+                "local_y": MICRO_TRIG_LOCAL_MM[self.point][1]}[key]
+
+    def text(self, key) -> str:
+        v = self.value(key)
+        unit = self.STEPS[key][2]
+        if unit == "in":
+            return f'{v:.2f}"'
+        # one decimal, two when the value needs them (0.25 is not 0.2)
+        return f"{v:+.1f} mm" if abs(v * 10 - round(v * 10)) < 1e-9 else f"{v:+.2f} mm"
+
+    def step(self, key, d) -> str:
+        """One - or + on `key`: the value moves a step, kept in range."""
+        global MICRO_TRIG_CAMERA_IN, MICRO_TRIG_GRIP_IN
+        label, size, _ = self.STEPS[key]
+        v = round(self.value(key) + d * size, 2)
+        if key == "camera":
+            # never below twice the grip height (k stays sensible)
+            MICRO_TRIG_CAMERA_IN = max(1.0, 2.0 * MICRO_TRIG_GRIP_IN, min(240.0, v))
+        elif key == "grip":
+            MICRO_TRIG_GRIP_IN = max(0.0, min(20.0, MICRO_TRIG_CAMERA_IN / 2.0, v))
+        else:
+            limit = (MICRO_TRIG_NADIR_LIMIT_MM if key.startswith("nadir")
+                     else MICRO_TRIG_LIMIT_MM)
+            v = max(-limit, min(limit, v))
+            axis = 0 if key.endswith("_x") else 1
+            {"land": MICRO_TRIG_LAND_MM, "nadir": MICRO_TRIG_NADIR_MM,
+             "shift": MICRO_TRIG_SHIFT_MM,
+             "local": MICRO_TRIG_LOCAL_MM[self.point]}[key.split("_")[0]][axis] = v
+        where = (f" at the board's {MICRO_TRIG_POINTS[self.point]}"
+                 if key.startswith("local") else "")
+        return f"Micro Trigonometry: {label.lower()}{where} {self.text(key)}"
+
+    def reset(self):
+        global MICRO_TRIG_CAMERA_IN, MICRO_TRIG_GRIP_IN
+        MICRO_TRIG_CAMERA_IN, MICRO_TRIG_GRIP_IN = TRIG_CAMERA_HEIGHT_IN, 0.5
+        for pair in ([MICRO_TRIG_LAND_MM, MICRO_TRIG_NADIR_MM, MICRO_TRIG_SHIFT_MM]
+                     + MICRO_TRIG_LOCAL_MM):
+            pair[:] = [0.0, 0.0]
+
+    def hit_test(self, x, y, cam_settings, grid):
+        """A click on the card, in the camera view's pixels: a status line
+        ("" when nothing to say), or None when it is not the card's."""
+        if not self.visible:
+            return None
+        for b in self.buttons:
+            if not b.contains(x, y):
+                continue
+            if b.kind == "mt_close":
+                self.toggle()
+                return "Micro Trigonometry closed."
+            if b.kind == "mt_point":
+                self.point = b.value
+                return (f"Micro Trigonometry: shifting at the board's "
+                        f"{MICRO_TRIG_POINTS[self.point]}")
+            if b.kind == "mt_reset":
+                self.reset()
+                save_settings(cam_settings, grid)
+                return "Micro Trigonometry reset."
+            if b.kind == "mt_step":
+                said = self.step(*b.value)
+                save_settings(cam_settings, grid)
+                return said
+        r = self._last_rect
+        if r and r[0] <= x <= r[2] and r[1] <= y <= r[3]:
+            return ""
+        return None
+
+    def _row(self, frame, key, x0, x1, y, mx, my):
+        """A label, its value, then - and +, between x0 and x1."""
+        label = self.STEPS[key][0]
+        draw_text(frame, label, (x0 + 14, y + 22), 0.46, C_TEXT, 1)
+        vtext = self.text(key)
+        vw, _ = text_size(vtext, 0.46, 2)
+        draw_text(frame, vtext, (x1 - 92 - vw, y + 22), 0.46, C_ACCENT, 2)
+        for label, bx, d in (("-", x1 - 80, -1), ("+", x1 - 38, 1)):
+            b = Button(label, bx, y + 3, bx + 36, y + self.ROW_H - 3, "mt_step",
+                       (key, d), style="ghost", scale=0.6)
+            b.draw(frame, hover=b.contains(mx, my), shadow=False)
+            self.buttons.append(b)
+
+    def draw(self, frame, mouse=(-1, -1), left=None):
+        """The card on the camera view `frame`, its left edge at `left`
+        (beside the Trigonometry card when that is open), in two columns:
+        the landing and the parallax; the shifts."""
+        self.buttons = []
+        if not self.visible:
+            self._last_rect = None
+            return
+        fh, fw = frame.shape[:2]
+        pw = min(self.WIDTH, fw - 2 * self.PAD)
+        # the two columns' heights (headings, rows, the 3 x 3 picker), then
+        # the readout and Reset
+        ph = 72 + max(2 * 30 + 6 * self.ROW_H, 2 * 30 + 4 * self.ROW_H + 83) + 56
+        px = self.PAD if left is None else int(left)
+        px = max(self.PAD, min(fw - pw - self.PAD, px))
+        py = self.PAD
+        self._last_rect = (px, py, px + pw, py + ph)
+        mx, my = mouse
+        glass_card(frame, self._last_rect, DIALOG_RADIUS)
+        draw_text(frame, "Micro Trigonometry", (px + 24, py + 36), 0.72, C_TEXT, 2)
+        close = Button("X", px + pw - 52, py + 12, px + pw - 20, py + 44,
+                       "mt_close", style="text", scale=0.46)
+        close.draw(frame, hover=close.contains(mx, my), shadow=False)
+        self.buttons.append(close)
+        mm = micro_mm_per_cell()
+        draw_text(frame, f"For micro coordinates only, apart from the tag's: a "
+                         f"macro cell is {mm:.1f} mm, a micro cell {mm / MICRO_PER_CELL:.1f} mm.",
+                  (px + 24, py + 60), 0.38, C_TEXT_DIM, 1)
+        mid = px + pw // 2
+        cols = ((px + 24, mid - 12), (mid + 12, px + pw - 24))
+
+        def heading(col, text, y):
+            a, b = cols[col]
+            cv2.line(frame, (a, y + 4), (b, y + 4), C_BORDER, 1)
+            draw_text(frame, text, (a, y + 24), 0.44, C_TEXT, 1)
+            return y + 30
+
+        top = py + 72
+        # left: where the gripper lands, and the parallax of what it grips
+        y = heading(0, "Gripper lands (from its cell's middle)", top)
+        for key in ("land_x", "land_y"):
+            self._row(frame, key, *cols[0], y, mx, my)
+            y += self.ROW_H
+        y = heading(0, "Parallax of the surface it grips", y)
+        for key in ("camera", "grip", "nadir_x", "nadir_y"):
+            self._row(frame, key, *cols[0], y, mx, my)
+            y += self.ROW_H
+        left_end = y
+        # right: every micro coordinate, then here and there
+        y = heading(1, "Shift every micro coordinate", top)
+        for key in ("shift_x", "shift_y"):
+            self._row(frame, key, *cols[1], y, mx, my)
+            y += self.ROW_H
+        y = heading(1, "Shift here and there", y)
+        a, b = cols[1]
+        # each point named by the board cell it is at: A1 ... T20
+        cs = (0, CONFIG.n_cols // 2, CONFIG.n_cols - 1)
+        rs = (0, CONFIG.n_rows // 2, CONFIG.n_rows - 1)
+        short = [coordinate_name(cs[k % 3], rs[k // 3]) for k in range(9)]
+        for k, name in enumerate(short):
+            bx = a + 14 + (k % 3) * 46
+            by = y + (k // 3) * 27
+            btn = Button(name, bx, by, bx + 42, by + 24, "mt_point", k,
+                         style="ghost", scale=0.38)
+            btn.draw(frame, hover=btn.contains(mx, my), active=k == self.point,
+                     shadow=False)
+            self.buttons.append(btn)
+            if any(abs(v) > 1e-9 for v in MICRO_TRIG_LOCAL_MM[k]):
+                cv2.circle(frame, (bx + 37, by + 5), 3, C_ACCENT, -1, cv2.LINE_AA)
+        draw_text(frame, "the board's", (a + 166, y + 30), 0.38, C_TEXT_DIM, 1)
+        draw_text(frame, MICRO_TRIG_POINTS[self.point], (a + 166, y + 50), 0.42,
+                  C_TEXT, 1)
+        y += 3 * 27 + 2
+        for key in ("local_x", "local_y"):
+            self._row(frame, key, *cols[1], y, mx, my)
+            y += self.ROW_H
+        y = max(y, left_end) + 6
+        cv2.line(frame, (px + 24, y), (px + pw - 24, y), C_BORDER, 1)
+        k = micro_trig_k()
+        edge = (1.0 - k) * (CONFIG.n_cols / 2.0) * mm
+        draw_text(frame, f"k = {k:.4f}: a grip at the board's edge moves "
+                         f"{edge:.1f} mm toward the nadir",
+                  (px + 24, y + 28), 0.4, C_TEXT_DIM, 1)
+        reset = Button("Reset", px + pw - 144, y + 8, px + pw - 24, y + 42,
+                       "mt_reset", style="ghost", scale=0.46)
+        reset.draw(frame, hover=reset.contains(mx, my), shadow=False)
+        self.buttons.append(reset)
+
+
 class GripperPanel:
     """The "gripper popup": jaw angle on a slider, a Height Up/Down pair, and
     a mini jog d-pad, opened from its own Gripper menu.
@@ -5313,9 +6298,9 @@ class GripperPanel:
     AUTO_GRIP_WAIT_STOP = "wait_stop"
     AUTO_GRIP_WAIT_HX = "wait_hx"
     AUTO_GRIP_HX = "hx"
+    AUTO_GRIP_COIL = "coil"
     AUTO_GRIP_WAIT_G90 = "wait_g90"
     AUTO_GRIP_WAIT_P1 = "wait_p1"
-    AUTO_GRIP_WAIT_P1_CMD = "wait_p1_cmd"
     AUTO_GRIP_WAIT_HU = "wait_hu"
 
     NOTE = "Automatic pickup, keep, press and release are available below."
@@ -5349,6 +6334,9 @@ class GripperPanel:
         self.failure_reason = ""
         self.move_retries = 0
         self.last_tof = ""
+        # The last automatic pickup's times for the TOF check: the head
+        # still at the bottom (hx stopped .. hu sent), and back up.
+        self.tof_window = None
         self._g90_resent = False
         self.offset_phase = "idle"
         self.offset_action = ""
@@ -5479,6 +6467,7 @@ class GripperPanel:
         on schedule regardless of how often the frame loop happens to call
         in, and sleeping here would freeze the whole window for 0.2s.
         """
+        p3_hold_tick()
         if self.jog_dir is not None and time.time() >= self.jog_until:
             ARDUINO.halt()
             self.jog_dir = None
@@ -5489,6 +6478,7 @@ class GripperPanel:
         now = time.monotonic()
         if (self.offset_phase != "idle" and self.offset_deadline
                 and now >= self.offset_deadline):
+            note_p3_released()
             ARDUINO.halt()
             self.auto_grip_phase = self.AUTO_GRIP_IDLE
             self.auto_grip_down_duration = 0.0
@@ -5512,6 +6502,7 @@ class GripperPanel:
             self._schedule_action_complete(now)
         elif self.offset_phase == "press_down":
             if now - self.auto_press_started_at >= AUTO_GRIP_DOWN_MAX_S:
+                note_p3_released()   # it never arrived: do not put p3 back
                 ARDUINO.halt()
                 # hx ran down the whole wait, so the release undoes all of
                 # it. p3 stops by itself at the saved height, and with no
@@ -5525,6 +6516,8 @@ class GripperPanel:
                     f"{AUTO_GRIP_DOWN_MAX_S:g}s after {self.auto_press_cmd} "
                     f"-- sent s.")
                 return
+        elif self.offset_phase == "release_p4" and now >= self.offset_until:
+            self._begin_release_lift(now)
         elif self.offset_phase == "release_down":
             if now - self.release_down_started_at >= AUTO_RELEASE_P3_MAX_S:
                 ARDUINO.halt()
@@ -5571,11 +6564,28 @@ class GripperPanel:
         if (self.auto_grip_phase == self.AUTO_GRIP_HX
                 and now >= self.auto_grip_up_until):
             if ARDUINO.halt():
+                self._tof_mark("bottom_from", now)
+                if AUTO_PICKUP_COIL_S > 0 and ARDUINO.send_command("lq"):
+                    # the gripper coil: lq for AUTO_PICKUP_COIL_S, then s
+                    self.auto_grip_phase = self.AUTO_GRIP_COIL
+                    self.auto_grip_up_until = now + AUTO_PICKUP_COIL_S
+                    self.last_msg = (f"hx complete -- gripper coil: lq for "
+                                     f"{AUTO_PICKUP_COIL_S:g}s.")
+                    return
                 self.auto_grip_phase = self.AUTO_GRIP_WAIT_G90
                 self.auto_grip_up_until = now + AUTO_GRIP_COMMAND_DELAY_S
                 self.last_msg = "hx complete -- g90 in 1.0s."
             else:
                 self.last_msg = "hx complete -- retrying lowercase s."
+            return
+        if (self.auto_grip_phase == self.AUTO_GRIP_COIL
+                and now >= self.auto_grip_up_until):
+            if ARDUINO.halt():
+                self.auto_grip_phase = self.AUTO_GRIP_WAIT_G90
+                self.auto_grip_up_until = now + AUTO_GRIP_COMMAND_DELAY_S
+                self.last_msg = "Gripper coil done -- g90 in 1.0s."
+            else:
+                self.last_msg = "Gripper coil done -- retrying lowercase s."
             return
         if (self.auto_grip_phase == self.AUTO_GRIP_WAIT_G90
                 and now >= self.auto_grip_up_until):
@@ -5585,31 +6595,20 @@ class GripperPanel:
                 self._g90_resent = False
                 self.auto_grip_phase = self.AUTO_GRIP_WAIT_P1
                 self.auto_grip_up_until = now + AUTO_GRIP_COMMAND_DELAY_S
-                self.last_msg = f"Sent g90 -- {HEIGHT_SAVE_CMD} in 1.0s."
+                self.last_msg = "Sent g90 -- g90 again in 1.0s."
             return
         if (self.auto_grip_phase == self.AUTO_GRIP_WAIT_P1
                 and now >= self.auto_grip_up_until):
-            # g90 once more, half a second before p4: a dropped first one
-            # would otherwise store the height with the jaws still open.
+            # g90 once more, half a second before p1: a dropped first one
+            # would otherwise send p1 with the jaws still open. A pickup
+            # never sends p4.
             if not self._g90_resent:
                 if ARDUINO.send_command(grip_command(GRIP_MAX_DEG)):
                     self._g90_resent = True
                     self.auto_grip_up_until = now + AUTO_GRIP_P1_SETTLE_S
-                    self.last_msg = (f"Sent g90 again -- {HEIGHT_SAVE_CMD} in "
+                    self.last_msg = (f"Sent g90 again -- {PICKUP_P1_CMD} in "
                                      f"{AUTO_GRIP_P1_SETTLE_S:.1f}s.")
                 return
-            # The jaws are shut on it: p4 stores this height, and a press
-            # later in the run goes back down to it with p3. p1 still
-            # follows, a second later, before the lift.
-            if ARDUINO.send_command(HEIGHT_SAVE_CMD):
-                note_height_saved()
-                self.auto_grip_phase = self.AUTO_GRIP_WAIT_P1_CMD
-                self.auto_grip_up_until = now + AUTO_GRIP_COMMAND_DELAY_S
-                self.last_msg = (f"Sent {HEIGHT_SAVE_CMD} (height saved) -- "
-                                 f"{PICKUP_P1_CMD} in 1.0s.")
-            return
-        if (self.auto_grip_phase == self.AUTO_GRIP_WAIT_P1_CMD
-                and now >= self.auto_grip_up_until):
             if ARDUINO.send_command(PICKUP_P1_CMD):
                 self.auto_grip_phase = self.AUTO_GRIP_WAIT_HU
                 self.auto_grip_up_until = now + AUTO_GRIP_COMMAND_DELAY_S
@@ -5618,6 +6617,7 @@ class GripperPanel:
         if (self.auto_grip_phase == self.AUTO_GRIP_WAIT_HU
                 and now >= self.auto_grip_up_until):
             if ARDUINO.send_command(HEIGHT_UP_CMD):
+                self._tof_mark("bottom_to", now)
                 self.auto_grip_phase = self.AUTO_GRIP_UP
                 hu_duration = self.auto_grip_down_duration * AUTO_PICKUP_HU_SCALE
                 self.auto_grip_up_until = now + hu_duration
@@ -5628,6 +6628,7 @@ class GripperPanel:
                 and now >= self.auto_grip_up_until):
             if ARDUINO.halt():
                 HEAD.reset()                # the pickup's lift is done: carry height
+                self._tof_mark("top_from", now)
                 self.auto_grip_phase = self.AUTO_GRIP_IDLE
                 if self.offset_phase == "wait_pickup":
                     self._schedule_action_complete(now)
@@ -5636,6 +6637,21 @@ class GripperPanel:
             else:
                 self.last_msg = "Raise duration finished -- retrying lowercase s."
             return
+
+    def _tof_mark(self, key, now):
+        if self.tof_window is not None:
+            self.tof_window[key] = now
+
+    def pickup_tof_window(self):
+        """{"bottom_from", "bottom_to", "top_from"} (monotonic) of the last
+        automatic pickup once its lift has ended -- the head stopped at the
+        bottom from hx's stop until hu, and back up from top_from -- or
+        None for a pickup that never got that far."""
+        w = self.tof_window
+        if not w or any(w.get(k) is None
+                        for k in ("bottom_from", "bottom_to", "top_from")):
+            return None
+        return dict(w)
 
     def _stop_jog(self) -> str:
         """The d-pad's centre button: send 's' right now, unconditionally.
@@ -5718,32 +6734,32 @@ class GripperPanel:
             else:
                 self.last_msg = "Automatic keep ready -- waiting to send g0."
         elif action == "press":
-            # Back down (p3) to the height a pickup stored with p4.
+            # p3, and it stays on through the press (and a wipe such as
+            # soap) until the release. The release is p4, then hu.
             cmd = press_command()
             if ARDUINO.send_command(cmd):
+                note_p3_holding()
                 self.auto_press_started_at = now
                 self.auto_press_cmd = cmd
                 self.offset_phase = "press_down"
-                self.last_msg = (f"Automatic press: sent {cmd}; waiting for "
-                                 f"the board's s/S.")
+                self.last_msg = (f"Automatic press: sent {cmd}; it stays on "
+                                 f"until release.")
             else:
                 self.last_msg = (f"Automatic press ready -- waiting to send "
                                  f"{cmd}.")
         elif action == "release":
-            if _PRESS_MOVED and press_command() == HEIGHT_RETURN_CMD:
-                # The tool slid along the surface while pressed: down to the
-                # saved height again (p3) before it lifts.
-                if ARDUINO.send_command(HEIGHT_RETURN_CMD):
-                    self.release_down_started_at = now
-                    self.offset_phase = "release_down"
-                    self.last_msg = (f"Automatic release: sent {HEIGHT_RETURN_CMD} "
-                                     f"(back to the saved height); waiting for the "
-                                     f"board's s/S.")
-                else:
-                    self.last_msg = (f"Automatic release ready -- waiting to send "
-                                     f"{HEIGHT_RETURN_CMD}.")
-                return
-            self._begin_release_lift(now)
+            # p4 while p3 is still holding, then hu. p4 is what stores the
+            # height; the lift is what lets go.
+            if ARDUINO.send_command(HEIGHT_SAVE_CMD):
+                note_p3_released()
+                note_height_saved()
+                self.offset_phase = "release_p4"
+                self.offset_until = now + AUTO_GRIP_COMMAND_DELAY_S
+                self.last_msg = (f"Automatic release: sent {HEIGHT_SAVE_CMD} "
+                                 f"-- hu in {AUTO_GRIP_COMMAND_DELAY_S:.1f}s.")
+            else:
+                self.last_msg = (f"Automatic release ready -- waiting to send "
+                                 f"{HEIGHT_SAVE_CMD}.")
 
     def _begin_release_lift(self, now):
         lift = self.auto_press_duration or AUTO_RELEASE_DURATION_S
@@ -5772,6 +6788,7 @@ class GripperPanel:
         """
         if not self.automatic_busy():
             return "No automatic action is running."
+        note_p3_released()
         ARDUINO.halt()
         self.auto_grip_phase = self.AUTO_GRIP_IDLE
         self.auto_grip_down_duration = 0.0
@@ -5808,11 +6825,12 @@ class GripperPanel:
             self.last_msg = self._start_offset_action(next_action)
 
     def _start_auto_grip(self) -> str:
-        """Send hd; then, once the IR sensor reports, hx, s, g90, p4 (only
-        p4 stores this height, for a later p3), p1, hu and s -- a second
-        apart."""
+        """Send hd; then, once the IR sensor reports, hx, s, g90, g90, p1,
+        hu and s. A pickup never sends p4."""
         if self.auto_grip_phase != self.AUTO_GRIP_IDLE:
             return "Automatic gripping is already running."
+        self.tof_window = {"bottom_from": None, "bottom_to": None,
+                           "top_from": None}
         if not ARDUINO.send_command(HEIGHT_DOWN_CMD):
             self.auto_grip_phase = self.AUTO_GRIP_WAIT_DOWN
             self.auto_grip_up_until = time.monotonic()
@@ -5858,6 +6876,7 @@ class GripperPanel:
                         self.offset_phase = "wait_action"
                         self.offset_until = now + AUTO_RETRY_DELAY_S
                     return True
+                note_p3_released()
                 ARDUINO.halt()
                 self.auto_grip_phase = self.AUTO_GRIP_IDLE
                 self.auto_grip_down_duration = 0.0
@@ -5893,7 +6912,7 @@ class GripperPanel:
 
     def _note_press_limit_switch(self) -> bool:
         """The press is down -- hx at the limit switch, or p3 at the height
-        the pickup stored with p4: back off by AUTO_PRESS_BACKOFF_S.
+        p4 stored: back off by AUTO_PRESS_BACKOFF_S.
 
         What a later release has to undo is the descent MINUS that back-off,
         since the back-off has already given part of it back -- the same
@@ -5906,8 +6925,9 @@ class GripperPanel:
         down = ("Limit switch" if self.auto_press_cmd == "hx"
                 else "Saved height reached")
         if self.auto_press_cmd == HEIGHT_RETURN_CMD:
-            # p3 alone: at the saved height it just keeps holding it. No hu,
-            # no s -- the release's own p3 / hu takes over later.
+            # p3 alone: at the saved height it keeps holding. No hu, no s.
+            # It stays on through the rest of the press until release,
+            # which sends p4 and then hu.
             self.auto_press_duration = 0.0
             self.last_msg = f"{down} after {descent:.1f}s -- holding (p3 only)."
             self._schedule_action_complete(now)
@@ -5945,12 +6965,11 @@ class GripperPanel:
             message = f"Pickup: waiting {grip_remaining:.1f}s before hx"
         elif self.auto_grip_phase == self.AUTO_GRIP_HX:
             message = f"Pickup: hx has {grip_remaining:.1f}s remaining"
+        elif self.auto_grip_phase == self.AUTO_GRIP_COIL:
+            message = f"Pickup: gripper coil, lq has {grip_remaining:.1f}s remaining"
         elif self.auto_grip_phase == self.AUTO_GRIP_WAIT_G90:
             message = f"Pickup: waiting {grip_remaining:.1f}s before g90"
         elif self.auto_grip_phase == self.AUTO_GRIP_WAIT_P1:
-            message = (f"Pickup: waiting {grip_remaining:.1f}s before "
-                       f"{HEIGHT_SAVE_CMD}")
-        elif self.auto_grip_phase == self.AUTO_GRIP_WAIT_P1_CMD:
             message = (f"Pickup: waiting {grip_remaining:.1f}s before "
                        f"{PICKUP_P1_CMD}")
         elif self.auto_grip_phase == self.AUTO_GRIP_WAIT_HU:
@@ -5965,8 +6984,10 @@ class GripperPanel:
         elif self.offset_phase == "wait_action":
             message = f"Waiting {remaining:.1f}s before {self.offset_action}"
         elif self.offset_phase == "press_down":
-            message = (f"Press: {self.auto_press_cmd} sent; waiting for the "
-                       f"board's s")
+            message = (f"Press: {self.auto_press_cmd} sent; holding until "
+                       f"release")
+        elif self.offset_phase == "release_p4":
+            message = (f"Release: waiting {remaining:.1f}s before hu")
         elif self.offset_phase == "press_lift_pending":
             message = "Press: down; waiting to send hu"
         elif self.offset_phase in ("press_lift", "wait_release"):
@@ -6426,25 +7447,13 @@ NAMER_MODELS = ("gpt-6-luna",)
 NAMER_MODEL = NAMER_MODELS[0]
 PLANNER_MODEL = "gpt-6-luna"
 PLANNER_MAX_TOKENS = 16000
-# The message box's thinking pill, as in A3-Terra: the planner's reasoning
-# effort, sent to the planner model only. Saved with the settings.
-PLANNER_EFFORTS = (("low", "Low"), ("medium", "Medium"), ("high", "High"))
-PLANNER_EFFORT = "low"      # fast (user, 2026-10-15: "make reasoning low"); the WHICH OBJECTS rule keeps it on the named objects
+# The planner's reasoning, sent to the planner model only. Always low
+# (user, 2026-10-16: "can only be low, so remove that option of choosing
+# also"). A saved planner_effort is ignored. The WHICH OBJECTS rule keeps
+# a low-effort plan on the named objects.
+PLANNER_EFFORT = "low"
 SWEEP_SKIPS_PLANNER = True  # a plain sweep's plan IS HOS X's recipe: no 20,000-token call to be overruled
 PLANNER_PRUNE = True        # a sweep or a fold sends the planner only its own playbook
-
-
-def planner_effort_label():
-    return dict(PLANNER_EFFORTS).get(PLANNER_EFFORT, "Medium")
-
-
-def set_planner_effort(value) -> bool:
-    """Pick the planner's thinking level; True when it changed."""
-    global PLANNER_EFFORT
-    if value not in dict(PLANNER_EFFORTS) or value == PLANNER_EFFORT:
-        return False
-    PLANNER_EFFORT = value
-    return True
 # The board's objects after a NO (each outline as the task object it most
 # probably is) and ERR, the final check that look powers, both use
 # gpt-6-luna at low effort; so does the residual replan behind ERR's
@@ -7647,8 +8656,19 @@ def parse_naming_reply(text, n):
 
 
 def ask_for_names(model, images, prompt, n):
-    """One vision call; returns parse_naming_reply's {number: entry}."""
+    """One vision call; returns parse_naming_reply's {number: entry}. With a
+    supporting view camera, its side view goes last (user, 2026-10-18: "see
+    the object from all sides before naming")."""
     client = make_client()
+    side = support_image_part()
+    extra = []
+    if side is not None:
+        extra = [{"type": "text", "text":
+                  "LAST IMAGE: a SIDE VIEW of the same board from the supporting "
+                  "view camera, taken now. It has no numbers or outlines: use it "
+                  "only to see the numbered objects from the side (height, "
+                  "shape, what they are made of) before naming them. Name only "
+                  "the numbered outlines of the board images."}, side]
     text = call_model(client, model=model, max_tokens=NAMER_MAX_TOKENS,
                       stage="Naming", priority=PRIORITY_NAMING,
                       reasoning=NAMER_REASONING,
@@ -7657,6 +8677,7 @@ def ask_for_names(model, images, prompt, n):
                           *({"type": "image_url", "image_url": {
                               "url": "data:image/jpeg;base64," + base64.b64encode(jpeg).decode(),
                               "detail": "high"}} for jpeg in images),
+                          *extra,
                       ]}])
     return parse_naming_reply(text, n)
 
@@ -14636,9 +15657,20 @@ def _set_goto_cell(line: str, col: int, row: int) -> str:
         line, count=1)
 
 
-def enforce_gripper_targets(text: str, objects, task=""):
+def _with_note(line: str, note: str) -> str:
+    """A plan line with `note` added to its # comment."""
+    return f"{line}; {note}" if "#" in line else f"{line}  # {note}"
+
+
+def enforce_gripper_targets(text: str, objects, task="", grips=None, seen=None):
     """Rewrite a plan so every pickup closes on the middle of the object
     and every bare press lands on the object's centre. See the rules above.
+
+    `grips` -- {object index: grid point} -- is Gripper AI's: that object is
+    picked up at the macro cell its micro cell lies in instead of its middle
+    (moved along with the object wherever the plan has put it), the micro
+    cell noted on the goto. `seen`, a list, gets the index of every object a
+    pickup closes on, in plan order: the ones Gripper AI looks at.
 
     Objects are followed through the plan: an object kept somewhere is found
     there by a later pickup or press. Returns (text, [change dicts]).
@@ -14701,11 +15733,12 @@ def enforce_gripper_targets(text: str, objects, task=""):
     def find(cell, slack=0):
         return object_at_cell(objs, moved, cell, slack)
 
-    def try_shift(gi, planned, idx, target, action, where):
+    def try_shift(gi, planned, idx, target, action, where, always=False):
         """Apply (target - planned) to `gi` and every goto in its held
         route, all together, or not at all if any of them would leave the
         board. Updates `moved[idx]` either way, from whatever cell the
-        object actually ends up registered at."""
+        object actually ends up registered at. -> the cell it is gripped
+        at. `always` reports it even where nothing moved."""
         shift = (target[0] - planned[0], target[1] - planned[1])
         route = held_route(gi, ("keep",) if action == "pickup" else ("release", "keep"))
         if shift != (0, 0) and not all(on_board((c[0] + shift[0], c[1] + shift[1]))
@@ -14715,12 +15748,14 @@ def enforce_gripper_targets(text: str, objects, task=""):
             lines[gi] = _set_goto_cell(lines[gi], *target)
             for j, c in route:
                 lines[j] = _set_goto_cell(lines[j], c[0] + shift[0], c[1] + shift[1])
+        if shift != (0, 0) or always:
             changes.append({"object": objs[idx].get("name"), "action": action,
                             "was": coordinate_name(*planned),
                             "now": coordinate_name(*target), "where": where})
         dest = route[-1][1] if route else planned
         moved[idx] = (moved[idx][0] + dest[0] - planned[0],
                       moved[idx][1] + dest[1] - planned[1])
+        return target
 
     last_goto = None
     holding = None
@@ -14740,13 +15775,31 @@ def enforce_gripper_targets(text: str, objects, task=""):
                 idx = find(planned, GRIP_CELL_SLACK)
                 if idx is not None and planned not in fold_cells:
                     o = objs[idx]
-                    mid = parse_coordinate(middle_grip_cell(o))
-                    target = ((mid[0] + moved[idx][0], mid[1] + moved[idx][1])
-                              if mid is not None else planned)
+                    if seen is not None and idx not in seen:
+                        seen.append(idx)
+                    g = (grips or {}).get(idx)
+                    if g is not None:
+                        # Gripper AI's micro cell, carried with the object
+                        # wherever the plan has put it so far
+                        gp = (g[0] + moved[idx][0], g[1] + moved[idx][1])
+                        target = micro_macro_cell(gp)
+                        where = f"where Gripper AI grips it, micro {micro_name(*gp)}"
+                    else:
+                        mid = parse_coordinate(middle_grip_cell(o))
+                        target = ((mid[0] + moved[idx][0], mid[1] + moved[idx][1])
+                                  if mid is not None else planned)
+                        where = "its middle"
                     if not on_board(target):
                         target = planned
-                    try_shift(gi, planned, idx, target, "pickup",
-                             "its middle")
+                    got = try_shift(gi, planned, idx, target, "pickup", where,
+                                    always=g is not None)
+                    if g is not None and got == target:
+                        lines[gi] = _with_note(
+                            lines[gi], f"Gripper AI: micro {micro_name(*gp)}")
+                    elif g is not None:
+                        changes[-1]["where"] = ("the plan's cell (gripping where "
+                                                "Gripper AI chose would take the "
+                                                "held route off the board)")
                     holding = idx
             last_goto = None
             continue
@@ -14779,7 +15832,389 @@ def gripper_target_lines(changes: list) -> list:
     """Applied gripper rules -> one readable sentence each, for the transcript."""
     verb = {"pickup": "pick up", "press": "press"}
     return [f"{verb.get(c['action'], c['action'])} {c['object']} at {c['now']} "
-            f"- {c['where']} (plan said {c['was']})" for c in changes]
+            f"- {c['where']}"
+            + ("" if c["was"] == c["now"] else f" (plan said {c['was']})")
+            for c in changes]
+
+
+# ---------------------------------------------------------------------------
+# GRIPPER AI -- where the gripper closes on an object, in MICRO coordinates
+# (user, 2026-10-17: "use the magnifier tool to zoom in on the object, and
+# then ... place one end on the place where it is supposed to do it and
+# properly grip it ... not from the top"; then: "you might not even need an
+# LLM because you already know the boundaries of these micro coordinates").
+# For every object the plan picks up, the Magnifier zooms in on it alone and
+# the grip is worked out from its outline to a micro cell and finer
+# (geometric_grip): deep in its material, near its balance point. It goes
+# through the Micro Trigonometry (micro_true_point) to the board point under
+# it, named as a micro coordinate. The move is not changed: the pickup goes
+# to the MACRO cell for that point (micro_macro_cell) and the held route
+# shifts with it (enforce_gripper_targets); the micro coordinate is noted
+# beside it. GRIP_ASK_MODEL (off) also shows gpt-6-luna a zoomed look with
+# the micro grid lettered on it and takes its micro cell instead -- asked
+# again once if off the object. No grip in reach: the object's middle (the
+# rule before).
+# ---------------------------------------------------------------------------
+GRIP_ASK_MODEL = False      # also ask gpt-6-luna, on a zoomed look (Settings)
+GRIP_MODEL = "gpt-6-luna"
+GRIP_REASONING = "low"
+GRIP_MAX_TOKENS = 2000
+GRIP_MICRO_PX = 36          # a micro cell's side on the zoomed look, px
+GRIP_MAX_SIDE = 1400        # ...smaller when the look would be longer than this
+GRIP_MARGIN = 0.5           # cells of board shown round the object
+GRIP_ON_OBJECT = 0.5        # a grip this many cells off the outline is still on it
+GRIP_MAX_OBJECTS = 8        # objects looked at for one plan
+GRIP_DIM = 0.5              # how bright the board round the object stays
+GRIP_DIR_VAR = "HOSX_GRIP_DIR"  # when set, every zoomed look is saved there
+
+GRIP_SYSTEM = """You are Gripper AI for a small gantry robot. Its gripper comes STRAIGHT
+DOWN from above onto the board at the point you choose, closes its two jaws
+on the object there, lifts it and carries it.
+
+The image is a zoomed look at ONE object, cut from the robot's overhead
+camera. The object is outlined in green; the board round it is dimmed. The
+board's grid is drawn over it:
+- MACRO cells: the thick lines. A macro cell is its column letter (the big
+  letters along the top and bottom) and row number (the big numbers down the
+  left and right): F8. Each macro cell's name is also printed in its corner.
+- MICRO cells: the thin lines split every macro cell 4 x 4. Micro columns
+  are a, b, c, d from left to right and micro rows 1, 2, 3, 4 from top to
+  bottom - the small letters and numbers next to the big ones. A micro
+  coordinate is the macro cell, a dot, then the micro column and row: F8.b3
+  is in macro cell F8, second micro column, third micro row.
+
+Choose the ONE micro cell where the middle of the gripper must come down to
+grip this object PROPERLY:
+- on the object's own solid material, where the two jaws can close round it
+  and hold it securely: across its main body, or across a part narrow
+  enough to fit between the jaws (a handle, a bar, a stem);
+- near the middle of its length, so it hangs balanced and does not tip or
+  swing out of the jaws;
+- NOT on its top edge, a corner or an end, not on a thin flap or a soft
+  fold that bends, not on a part that is only lying on it, not just
+  resting on top of a wide flat face, and never on the bare board or on
+  another object.
+
+Reply with exactly these two lines and nothing else:
+GRIP: <micro coordinate, e.g. F8.b3>
+WHY: <a few words>"""
+
+
+def object_polygons(o) -> list:
+    """The outlines of the whole object, its parts' included, in grid units."""
+    polys = []
+    for poly in [o.get("polygon")] + [c.get("polygon") for c in
+                                     (o.get("components") or ())
+                                     if isinstance(c, dict)]:
+        try:
+            pts = [(float(p[0]), float(p[1])) for p in poly or ()]
+        except (TypeError, ValueError, IndexError):
+            continue
+        if len(pts) >= 3:
+            polys.append(pts)
+    return polys
+
+
+def object_extent(o):
+    """(c0, r0, c1, r1) in grid units round the whole object -- its outline
+    and its parts', else the cells it covers -- or None."""
+    pts = [p for poly in object_polygons(o) for p in poly]
+    if not pts:
+        for cell in object_cells(o):
+            c = parse_coordinate(cell)
+            if c is not None:
+                pts += [(c[0], c[1]), (c[0] + 1, c[1] + 1)]
+    if not pts:
+        return None
+    return (min(p[0] for p in pts), min(p[1] for p in pts),
+            max(p[0] for p in pts), max(p[1] for p in pts))
+
+
+GRIP_RASTER = 8             # px a micro cell, measuring an outline: 1/32 cell, ~1 mm
+GRIP_BALANCE = 0.5          # nearness to the balance point, against depth in the material
+
+
+GRIP_SNAP = 0.5             # a chosen grip snaps to the material's middle this near it, cells
+
+
+def geometric_grip(o, reach=None, near=None):
+    """Where the gripper closes on object `o`, worked out from its outline
+    alone, to a micro cell and finer (user, 2026-10-17: "you might not even
+    need an LLM because you already know the boundaries of these micro
+    coordinates"): the point inside it that is deepest in its material for
+    how near it is to its balance point (the outline's centroid) -- the
+    middle of a bar's length, the heart of a block, the body of an L-shape
+    rather than its corner -- never an edge, a corner or its top. `reach`,
+    (c0, r0, c1, r1) cells, keeps it to the part the gripper can reach.
+    `near`, a grip chosen some other way (gpt-6-luna's), is instead moved
+    to the middle of the material within GRIP_SNAP of it: the deepest point
+    there, so the jaws close round the handle it chose, not on its edge.
+    -> a grid point as the camera sees it, or None."""
+    polys = object_polygons(o)
+    ext = object_extent(o)
+    if not polys or ext is None:
+        return near if near is not None else middle_grip_point(o)
+    res = float(GRIP_RASTER * MICRO_PER_CELL)
+    span = max(ext[2] - ext[0], ext[3] - ext[1], 1e-6)
+    res = min(res, 2000.0 / span)       # a board-sized outline stays a small raster
+    pad = 2
+    w = int(math.ceil((ext[2] - ext[0]) * res)) + 2 * pad + 1
+    h = int(math.ceil((ext[3] - ext[1]) * res)) + 2 * pad + 1
+    mask = np.zeros((h, w), np.uint8)
+    for poly in polys:
+        cv2.fillPoly(mask, [np.int32(np.round(
+            [((c - ext[0]) * res + pad, (r - ext[1]) * res + pad) for c, r in poly]))], 1)
+    if not mask.any():
+        return middle_grip_point(o)
+    depth = cv2.distanceTransform(mask, cv2.DIST_L2, 5) / res
+    mo = cv2.moments(mask, binaryImage=True)
+    cx, cy = mo["m10"] / mo["m00"], mo["m01"] / mo["m00"]
+    if reach is not None:
+        # depth and balance are the whole object's; the grip, where reached
+        a0 = int(math.ceil((reach[0] - ext[0]) * res + pad))
+        b0 = int(math.ceil((reach[1] - ext[1]) * res + pad))
+        a1 = int(math.floor((reach[2] - ext[0]) * res + pad))
+        b1 = int(math.floor((reach[3] - ext[1]) * res + pad))
+        keep = np.zeros_like(mask)
+        keep[max(0, b0):max(0, b1), max(0, a0):max(0, a1)] = 1
+        mask = mask & keep
+        if not mask.any():
+            return None
+    ys, xs = np.nonzero(mask)
+    if near is not None:
+        nx = (near[0] - ext[0]) * res + pad
+        ny = (near[1] - ext[1]) * res + pad
+        away = np.hypot(xs - nx, ys - ny) / res
+        close = away <= GRIP_SNAP
+        if not close.any():
+            return None
+        xs, ys, away = xs[close], ys[close], away[close]
+        score = depth[ys, xs] - 0.25 * away
+    else:
+        score = depth[ys, xs] - GRIP_BALANCE * np.hypot(xs - cx, ys - cy) / res
+    k = int(np.argmax(score))
+    return ext[0] + (xs[k] - pad) / res, ext[1] + (ys[k] - pad) / res
+
+
+def grip_distance(o, pt) -> float:
+    """How far grid point `pt` is from the object, in cells: 0 inside its
+    outline (or its parts'), else to the nearest outline edge."""
+    polys = object_polygons(o)
+    if not polys:
+        cells = {parse_coordinate(c) for c in object_cells(o)} - {None}
+        return 0.0 if (int(math.floor(pt[0])), int(math.floor(pt[1]))) in cells else 99.0
+    best = 99.0
+    for poly in polys:
+        if _point_in_poly(pt[0], pt[1], poly):
+            return 0.0
+        for (ax, ay), (bx, by) in zip(poly, poly[1:] + poly[:1]):
+            dx, dy = bx - ax, by - ay
+            t = 0.0 if dx == dy == 0 else max(0.0, min(1.0, (
+                (pt[0] - ax) * dx + (pt[1] - ay) * dy) / (dx * dx + dy * dy)))
+            best = min(best, math.hypot(pt[0] - ax - t * dx, pt[1] - ay - t * dy))
+    return best
+
+
+def render_grip_view(frame_bgr, grid, o, point=None):
+    """The zoomed look Gripper AI decides on: the cells round the whole
+    object `o` (its parts too, GRIP_MARGIN of board round it) cut out of
+    `frame_bgr` -- in `grid`'s pixels -- and blown up so a micro cell is
+    GRIP_MICRO_PX across (smaller only past GRIP_MAX_SIDE), the rest of the
+    board dimmed, the object outlined, the macro grid in thick lines and the
+    micro grid in thin ones, both lettered on all four sides. `point`, a
+    grid point, is marked: the grip chosen. -> (image, (c0, r0, c1, r1)),
+    or None when the object has no extent on the frame."""
+    ext = object_extent(o)
+    if frame_bgr is None or grid is None or ext is None:
+        return None
+    c0 = max(0, int(math.floor(ext[0] - GRIP_MARGIN)))
+    r0 = max(0, int(math.floor(ext[1] - GRIP_MARGIN)))
+    c1 = min(CONFIG.n_cols, max(c0 + 1, int(math.ceil(ext[2] + GRIP_MARGIN))))
+    r1 = min(CONFIG.n_rows, max(r0 + 1, int(math.ceil(ext[3] + GRIP_MARGIN))))
+    fh, fw = frame_bgr.shape[:2]
+    x0, y0 = grid.grid_to_pixel(c0, r0)
+    x1, y1 = grid.grid_to_pixel(c1, r1)
+    ix0, iy0 = max(0, int(round(x0))), max(0, int(round(y0)))
+    ix1, iy1 = min(fw, int(round(x1))), min(fh, int(round(y1)))
+    if ix1 - ix0 < 8 or iy1 - iy0 < 8:
+        return None
+    ncols, nrows = c1 - c0, r1 - r0
+    cell = min(float(GRIP_MICRO_PX * MICRO_PER_CELL),
+               GRIP_MAX_SIDE / float(max(ncols, nrows)))
+    bw, bh = int(round(ncols * cell)), int(round(nrows * cell))
+    board = cv2.resize(frame_bgr[iy0:iy1, ix0:ix1], (bw, bh),
+                       interpolation=cv2.INTER_CUBIC)
+
+    def at(c, r):
+        return int(round((c - c0) * cell)), int(round((r - r0) * cell))
+
+    polys = [np.int32([[at(c, r) for c, r in poly]]) for poly in object_polygons(o)]
+    if polys:
+        keep = np.zeros((bh, bw), np.uint8)
+        for pts in polys:
+            cv2.fillPoly(keep, pts, 255)
+        keep = cv2.dilate(keep, np.ones((5, 5), np.uint8))
+        dim = (board.astype(np.float32) * GRIP_DIM).astype(np.uint8)
+        board = np.where(keep[:, :, None] > 0, board, dim)
+    lines = board.copy()
+    micro = cell / MICRO_PER_CELL
+    for k in range(ncols * MICRO_PER_CELL + 1):
+        x = min(int(round(k * micro)), bw - 1)
+        if k % MICRO_PER_CELL:
+            cv2.line(lines, (x, 0), (x, bh - 1), (215, 215, 215), 1, cv2.LINE_AA)
+    for k in range(nrows * MICRO_PER_CELL + 1):
+        y = min(int(round(k * micro)), bh - 1)
+        if k % MICRO_PER_CELL:
+            cv2.line(lines, (0, y), (bw - 1, y), (215, 215, 215), 1, cv2.LINE_AA)
+    board = cv2.addWeighted(lines, 0.6, board, 0.4, 0)
+    for k in range(ncols + 1):
+        x = min(int(round(k * cell)), bw - 1)
+        cv2.line(board, (x, 0), (x, bh - 1), (255, 240, 160), 3, cv2.LINE_AA)
+    for k in range(nrows + 1):
+        y = min(int(round(k * cell)), bh - 1)
+        cv2.line(board, (0, y), (bw - 1, y), (255, 240, 160), 3, cv2.LINE_AA)
+    for pts in polys:
+        cv2.polylines(board, pts, True, (0, 0, 0), 5, cv2.LINE_AA)
+        cv2.polylines(board, pts, True, (60, 230, 60), 2, cv2.LINE_AA)
+
+    pad_x, pad_y = 70, 62
+    canvas = np.full((bh + 2 * pad_y, bw + 2 * pad_x, 3), 22, np.uint8)
+    canvas[pad_y:pad_y + bh, pad_x:pad_x + bw] = board
+    font = cv2.FONT_HERSHEY_SIMPLEX
+
+    def stamp(text, cx, cy, fs, thick, colour=(255, 255, 255)):
+        """`text` centred on (cx, cy), with a dark halo."""
+        (tw, th), _ = cv2.getTextSize(text, font, fs, thick)
+        org = (int(round(cx - tw / 2.0)), int(round(cy + th / 2.0)))
+        cv2.putText(canvas, text, org, font, fs, (0, 0, 0), thick + 3, cv2.LINE_AA)
+        cv2.putText(canvas, text, org, font, fs, colour, thick, cv2.LINE_AA)
+
+    small = (190, 230, 255)
+    for i in range(ncols):
+        cx = pad_x + (i + 0.5) * cell
+        for y in (pad_y - 40, pad_y + bh + 40):
+            stamp(str(CONFIG.columns[c0 + i]), cx, y, 0.9, 2)
+        for m in range(MICRO_PER_CELL):
+            mx = pad_x + (i + (m + 0.5) / MICRO_PER_CELL) * cell
+            for y in (pad_y - 13, pad_y + bh + 13):
+                stamp(MICRO_COLS[m], mx, y, 0.5, 1, small)
+    for j in range(nrows):
+        cy = pad_y + (j + 0.5) * cell
+        for x in (24, pad_x + bw + pad_x - 24):
+            stamp(str(CONFIG.rows[r0 + j]), x, cy, 0.9, 2)
+        for m in range(MICRO_PER_CELL):
+            my = pad_y + (j + (m + 0.5) / MICRO_PER_CELL) * cell
+            for x in (pad_x - 12, pad_x + bw + 12):
+                stamp(str(m + 1), x, my, 0.5, 1, small)
+    for i in range(ncols):
+        for j in range(nrows):
+            name = coordinate_name(c0 + i, r0 + j)
+            (tw, th), _ = cv2.getTextSize(name, font, 0.5, 1)
+            stamp(name, pad_x + i * cell + 6 + tw / 2.0,
+                  pad_y + j * cell + 8 + th / 2.0, 0.5, 1, (170, 255, 255))
+    if point is not None:
+        px, py = at(*point)
+        px, py = px + pad_x, py + pad_y
+        r = max(6, int(micro * 0.45))
+        cv2.circle(canvas, (px, py), r + 3, (0, 0, 0), 4, cv2.LINE_AA)
+        cv2.circle(canvas, (px, py), r, (255, 0, 255), 3, cv2.LINE_AA)
+        cv2.drawMarker(canvas, (px, py), (255, 0, 255), cv2.MARKER_CROSS,
+                       2 * r + 10, 2, cv2.LINE_AA)
+    return canvas, (c0, r0, c1, r1)
+
+
+def grip_object_text(o, task="") -> str:
+    """What Gripper AI is told of the object, beside its zoomed look."""
+    name = str(o.get("name") or "object")
+    bits = [f"Object to grip: {name}, centre {o.get('center', '?')}"]
+    for key, label in (("color", "colour"), ("size", "size")):
+        v = str(o.get(key) or "").strip()
+        if v and v != "?":
+            bits.append(f"{label}: {v}")
+    if o.get("desc"):
+        bits.append(f"looks like: {o['desc']}")
+    parts = [f"{c.get('name', 'part')} at {c.get('center', '?')}"
+             for c in o.get("components") or () if isinstance(c, dict)]
+    if parts:
+        bits.append("its parts: " + "; ".join(parts))
+    if task:
+        bits.append(f"the task: {task}")
+    return "\n".join(bits)
+
+
+def parse_grip_reply(text):
+    """(grid point, micro coordinate, why) from Gripper AI's reply; the
+    point is None when it names no micro cell."""
+    m = re.search(r"GRIP\s*[:=]\s*([^\n]+)", text or "", re.I)
+    pt = parse_micro(m.group(1) if m else text)
+    w = re.search(r"WHY\s*[:=]\s*([^\n]+)", text or "", re.I)
+    why = w.group(1).strip() if w else ""
+    return pt, (micro_name(*pt) if pt is not None else ""), why
+
+
+def grip_reachable(pt) -> bool:
+    """Whether the gripper can come down on the macro cell of grid point `pt`."""
+    cells = reachable_cells()
+    if cells is None:
+        return False
+    c, r = int(math.floor(pt[0])), int(math.floor(pt[1]))
+    return cells[0] <= c < cells[2] and cells[1] <= r < cells[3]
+
+
+def ask_grip(client, frame_bgr, grid, o, task="", call=None):
+    """gpt-6-luna's grip on one object, on its zoomed look -> {"point"
+    (grid units, as the camera sees it), "micro", "why", "image", "tries"};
+    "point" is None when no answer was on the object (the caller keeps the
+    outline's grip). `call` is call_model, or a stand-in for tests."""
+    call = call or call_model
+    view = render_grip_view(frame_bgr, grid, o)
+    if view is None:
+        return {"point": None, "micro": "", "why": "no zoomed look", "image": None,
+                "tries": 0}
+    image, cells = view
+    b64 = encode_jpeg_b64(image, 92)
+    messages = [{"role": "system", "content": GRIP_SYSTEM},
+                {"role": "user", "content": [
+                    {"type": "text", "text": grip_object_text(o, task)
+                     + f"\nThe zoomed look shows macro cells "
+                       f"{coordinate_name(cells[0], cells[1])} to "
+                       f"{coordinate_name(cells[2] - 1, cells[3] - 1)}."},
+                    {"type": "image_url", "image_url": {
+                        "url": "data:image/jpeg;base64," + b64}}]}]
+    out = {"point": None, "micro": "", "why": "", "image": image, "tries": 0}
+    for attempt in range(2):
+        text = call(client, model=GRIP_MODEL, messages=messages,
+                    max_tokens=GRIP_MAX_TOKENS, stage="Gripper AI",
+                    reasoning=GRIP_REASONING)
+        out["tries"] = attempt + 1
+        pt, micro, why = parse_grip_reply(text)
+        out.update(micro=micro, why=why)
+        if pt is None:
+            problem = "That reply named no micro cell."
+        elif grip_distance(o, pt) > GRIP_ON_OBJECT:
+            problem = f"{micro} is not on the {o.get('name', 'object')}."
+        else:
+            out["point"] = pt
+            break
+        print(f"[gripper] {o.get('name')}: {problem} ({text.strip()[:80]!r})")
+        messages = messages + [
+            {"role": "assistant", "content": text},
+            {"role": "user", "content": problem + " Choose a micro cell on the "
+             "green-outlined object, in the same two lines."}]
+    if out["point"] is not None:
+        out["image"] = render_grip_view(frame_bgr, grid, o, out["point"])[0]
+    folder = os.environ.get(GRIP_DIR_VAR, "").strip()
+    if folder and out["image"] is not None:
+        try:
+            os.makedirs(folder, exist_ok=True)
+            stamp = datetime.datetime.now().strftime("%H%M%S")
+            name = re.sub(r"[^a-z0-9]+", "-", str(o.get("name") or "object").lower())
+            cv2.imwrite(os.path.join(folder, f"grip_{stamp}_{name}_"
+                                             f"{out['micro'] or 'none'}.jpg"),
+                        out["image"])
+        except Exception as e:
+            print(f"[gripper] could not save the zoomed look ({e})")
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -16321,9 +17756,8 @@ class PlungeSequence:
     long it took as the measure of how far down it went. Raising is then the
     mirror image -- HU for that same duration, then stop -- which puts the
     gripper back where it started without needing to know the height in any
-    real units. A pickup also has the board store the height it gripped at
-    (p4) between the grip and the lift, for a later p3 to go back to, and
-    then sends p1 before it lifts.
+    real units. A pickup closes with g90, g90 again, p1, then the lift.
+    It never sends p4.
 
     Every phase is driven from the frame loop rather than by sleeping, so the
     window keeps redrawing and the operator can still hit STOP mid-plunge --
@@ -16382,15 +17816,14 @@ class PlungeSequence:
         self.down_duration = time.monotonic() - self.started_at
         ARDUINO.send_command("g90")
         if self.kind == "pickup":
-            # p4 a second after the grip (it stores the height), p1 a
-            # second after that, the lift a second after p1, as the
-            # gripper card spaces them: the board reads commands with
-            # nothing between them.
-            self.phase = "save"
+            # g90 again a second later, p1 once that settles, the lift a
+            # second after p1. Same spacing as the gripper card. A pickup
+            # never sends p4.
+            self.phase = "g90"
             self.up_until = time.monotonic() + AUTO_GRIP_COMMAND_DELAY_S
-            self.status = f"Gripped -- saving the height ({HEIGHT_SAVE_CMD})..."
+            self.status = "Gripped -- g90 again, then p1..."
             print(f"[plunge] got 's' after {self.down_duration:.2f}s - "
-                  f"sent g90, {HEIGHT_SAVE_CMD} next")
+                  f"sent g90, g90 again next")
             return
         self.phase = "up"
         self.up_until = time.monotonic() + self.down_duration
@@ -16413,16 +17846,14 @@ class PlungeSequence:
                                "down -- stopped it and carried on.")
                 print(f"[plunge] {self.status}")
             return
-        if self.phase in ("save", "p1", "lift"):
+        if self.phase in ("g90", "p1", "lift"):
             if now < self.up_until:
                 return
-            if self.phase == "save":
-                if ARDUINO.send_command(HEIGHT_SAVE_CMD):
-                    note_height_saved()
+            if self.phase == "g90":
+                if ARDUINO.send_command("g90"):
                     self.phase = "p1"
-                    self.up_until = now + AUTO_GRIP_COMMAND_DELAY_S
-                    print(f"[plunge] sent {HEIGHT_SAVE_CMD} - height saved, "
-                          f"{PICKUP_P1_CMD} next")
+                    self.up_until = now + AUTO_GRIP_P1_SETTLE_S
+                    print(f"[plunge] sent g90 again, {PICKUP_P1_CMD} next")
             elif self.phase == "p1":
                 if ARDUINO.send_command(PICKUP_P1_CMD):
                     self.phase = "lift"
@@ -16482,6 +17913,7 @@ class PlanRunner:
         self.auto_press_started_at = 0.0
         self.auto_press_duration = 0.0
         self._auto_stop_until = 0.0
+        self._release_hu_at = 0.0
         self.on_step_done = None
         self.step_wait = None
         self.await_step = False
@@ -16519,6 +17951,8 @@ class PlanRunner:
             # of its own pickups saves a height. The rest of a task after a
             # failed step carries on with the height its first part saved.
             forget_saved_height()
+        note_p3_released()
+        self._release_hu_at = 0.0
         self.active = True
         self.index = -1
         self.finished = False
@@ -16564,6 +17998,7 @@ class PlanRunner:
         self._step_offered = False
         self.auto_press_started_at = 0.0
         self._auto_stop_until = 0.0
+        self._release_hu_at = 0.0
         self._clear_manual()
         if not hasattr(self, "plunge"):
             self.plunge = PlungeSequence()
@@ -16601,6 +18036,8 @@ class PlanRunner:
         state.manual_move_active = False
         state.arrived = False
         state.status_message = why
+        note_p3_released()
+        self._release_hu_at = 0.0
         ARDUINO.send_direction(None)
 
     def _advance(self, state):
@@ -16614,6 +18051,8 @@ class PlanRunner:
             state.target_col = state.target_row = None
             state.status_message = "Plan finished."
             print("[plan] finished")
+            note_p3_released()
+            self._release_hu_at = 0.0
             ARDUINO.send_direction(None)
             return
         self._dispatch(state, self.commands[self.index])
@@ -16686,13 +18125,20 @@ class PlanRunner:
             if bare == "keep":
                 ARDUINO.send_command("g0")
             elif bare == "press":
-                ARDUINO.send_command(press_command())
+                # p3 stays on until release. Do not send s when the press
+                # step's own timer ends -- a wipe (soap) is still using it.
+                if ARDUINO.send_command(press_command()):
+                    note_p3_holding()
                 self.auto_press_started_at = time.monotonic()
                 self.auto_press_duration = AUTO_PRESS_RUN_S
-                self._auto_stop_until = time.monotonic() + AUTO_PRESS_RUN_S
+                self._auto_stop_until = 0.0
             else:
-                ARDUINO.send_command("hu")
-                self._auto_stop_until = time.monotonic() + AUTO_RELEASE_DURATION_S
+                note_p3_released()
+                if ARDUINO.send_command(HEIGHT_SAVE_CMD):
+                    note_height_saved()
+                self._release_hu_at = (time.monotonic()
+                                       + AUTO_GRIP_COMMAND_DELAY_S)
+                self._auto_stop_until = 0.0
         self.await_manual = False
         if manual:
             self.on_manual_action(bare)
@@ -16718,6 +18164,13 @@ class PlanRunner:
             return
         self.plunge.tick()
         now = time.time()
+        p3_hold_tick()
+        if getattr(self, "_release_hu_at", 0) and time.monotonic() >= self._release_hu_at:
+            self._release_hu_at = 0.0
+            if ARDUINO.send_command(HEIGHT_UP_CMD):
+                self._auto_stop_until = (time.monotonic()
+                                        + (self.auto_press_duration
+                                           or AUTO_RELEASE_DURATION_S))
         if self._auto_stop_until and time.monotonic() >= self._auto_stop_until:
             ARDUINO.halt()
             self._auto_stop_until = 0.0
@@ -17072,6 +18525,11 @@ class AIJob:
         self.blocked = False
         self.rejected = ""
         self.grips_applied = []
+        # Gripper AI's looks, one per object the plan picks up: what the
+        # Magnifier shows while it decides (grip_now)
+        self.grip_views = []
+        self._grip_seq = 0
+        self._grip_last = None
         # keep_moves_on_board's changes: put-downs moved back onto the board
         self.placed = []
         self.already_done = ""
@@ -17140,6 +18598,113 @@ class AIJob:
     def _finish(self):
         with self._lock:
             self.done = True
+
+    def grip_now(self):
+        """(change count, the Gripper AI look to show): the one that
+        changed last, the first while all are still looking -- for the
+        Magnifier. The look is a copy: {"name", "extent" (grid units),
+        "point", "micro", "why", "state"}."""
+        with self._lock:
+            if not self.grip_views:
+                return self._grip_seq, None
+            k = self._grip_last if self._grip_last is not None else 0
+            return self._grip_seq, dict(self.grip_views[k])
+
+    def _grips(self, client, task):
+        """Gripper AI on every object the plan picks up (the first
+        GRIP_MAX_OBJECTS): {object index: board grid point}. Each grip is
+        worked out from the object's outline (geometric_grip) -- gpt-6-luna
+        is asked too only with GRIP_ASK_MODEL on -- and goes through the
+        Micro Trigonometry to the board point under it. An object with no
+        grip in reach keeps the middle rule. Every look is published
+        (grip_now) for the Magnifier, the first pickup's last."""
+        picks = []
+        enforce_gripper_targets(self.plan, self.objects, task, seen=picks)
+        picks = picks[:GRIP_MAX_OBJECTS]
+        if not picks:
+            return {}
+        frame = (self.snap or {}).get("frame")
+        names = ", ".join(str(self.objects[i].get("name") or "object")
+                          for i in picks)
+        self._set_stage(f"Gripper AI - zooming in on {names}...")
+        with self._lock:
+            self.grip_views = [{"name": str(self.objects[i].get("name") or "object"),
+                                "extent": object_extent(self.objects[i]),
+                                "point": None, "micro": "", "why": "",
+                                "state": "looking"} for i in picks]
+            self._grip_seq += 1
+        reach = reachable_cells()
+        results = {}
+
+        def one(k, i):
+            o = self.objects[i]
+            seen, how, why = None, "outline", ""
+            if reach is not None:
+                seen = geometric_grip(o, reach)
+            if (GRIP_ASK_MODEL and client is not None and frame is not None
+                    and self.grid is not None):
+                try:
+                    r = ask_grip(client, frame, self.grid, o, task)
+                    if r["point"] is not None:
+                        # its part, at the middle of that part's material
+                        snapped = geometric_grip(o, reach, near=r["point"])
+                        seen = snapped if snapped is not None else r["point"]
+                        how, why = GRIP_MODEL, r["why"]
+                except Exception as e:
+                    print(f"[gripper] {o.get('name')}: {GRIP_MODEL} failed ({e}) "
+                          f"- keeping the outline's grip")
+            look = {"state": "middle", "why": why or "no grip in reach"}
+            if seen is not None:
+                pt = micro_true_point(*seen)
+                cell = micro_macro_cell(pt, reach)
+                if reach is not None and (reach[0] <= cell[0] < reach[2]
+                                          and reach[1] <= cell[1] < reach[3]):
+                    land = micro_landing(cell)
+                    mm = micro_mm_per_cell()
+                    look = {"state": "done", "point": pt, "seen": seen,
+                            "micro": micro_name(*pt), "macro": coordinate_name(*cell),
+                            "land": land, "how": how, "why": why,
+                            "error_mm": math.hypot(pt[0] - land[0],
+                                                   pt[1] - land[1]) * mm}
+            results[i] = look
+            folder = os.environ.get(GRIP_DIR_VAR, "").strip()
+            if folder and frame is not None and self.grid is not None:
+                try:
+                    pic = render_grip_view(frame, self.grid, o, look.get("seen"))
+                    if pic is not None:
+                        os.makedirs(folder, exist_ok=True)
+                        name = re.sub(r"[^a-z0-9]+", "-", str(o.get("name") or "object").lower())
+                        cv2.imwrite(os.path.join(folder, f"grip_{name}_{look.get('micro') or 'middle'}"
+                                                         f"_{how}.jpg"), pic[0])
+                except Exception as e:
+                    print(f"[gripper] could not save the zoomed look ({e})")
+            with self._lock:
+                self.grip_views[k].update(look)
+                self._grip_seq += 1
+                self._grip_last = k
+
+        if GRIP_ASK_MODEL:
+            threads = [threading.Thread(target=one, args=(k, i), daemon=True)
+                       for k, i in enumerate(picks)]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join(timeout=2 * API_TIMEOUT_S * API_RETRIES + 30)
+        else:
+            for k, i in reversed(list(enumerate(picks))):
+                one(k, i)            # the first pickup's look is shown last
+        for i in picks:
+            r = results.get(i) or {}
+            name = self.objects[i].get("name")
+            if r.get("state") == "done":
+                print(f"[gripper] {name}: grips at micro {r['micro']} -> macro "
+                      f"{r['macro']} (by its {r['how']}; the gripper lands "
+                      f"{r['error_mm']:.1f} mm from it)")
+            else:
+                print(f"[gripper] {name}: {r.get('why') or 'no grip'} - "
+                      f"gripping the middle")
+        return {i: r["point"] for i, r in results.items()
+                if r.get("state") == "done"}
 
     def _read_board(self):
         """Vision AI's snapshot of the board as the planner's object list.
@@ -17494,8 +19059,9 @@ class AIJob:
                     print("[placement] kept on the board:\n" + "\n".join(
                         f"  {ln}" for ln in placement_change_lines(self.placed)))
             if GRIPPER_AI:
+                grips = self._grips(client, effective_task)
                 self.plan, self.grips_applied = enforce_gripper_targets(
-                    self.plan, self.objects, effective_task)
+                    self.plan, self.objects, effective_task, grips=grips)
                 if self.grips_applied:
                     print("[gripper] applied:\n" + "\n".join(
                         f"  {ln}" for ln in gripper_target_lines(self.grips_applied)))
@@ -17518,6 +19084,12 @@ INPUTS
 - Final image: the board after execution (the gripper parked out of the
   camera's way when it could be)
 - Optional: execution-start image (fresh scene captured just before execution)
+- Optional: SIDE VIEW images from the supporting view camera, a camera beside
+  the board looking at the gripper and the objects from the side: one taken
+  when execution started and one after it. They show heights, stacking, what
+  is on or inside what, and whether the gripper still holds anything --
+  things the top-down images cannot. Use them to confirm what the top-down
+  images show; they have no grid, so take positions from the top-down ones.
 - Optional: BEFORE OBJECT LIST - every object at planning time, by name,
   with its cells (from Vision AI; fallible)
 - Optional: AFTER OBJECT LIST - the same objects after execution under the
@@ -18151,6 +19723,21 @@ def step_is_checked(cmd: str) -> bool:
     return _bare_step(cmd) in ERR_STEP_ACTIONS
 
 
+def pickup_before_press(cmds, index):
+    """The index of the press that plan step `index` -- a pickup -- comes
+    straight before, or None. Straight before: the steps between are only
+    gotos and waits, so the press is done with what this pickup holds. The
+    TOF check is for that pickup alone (user, 2026-10-17)."""
+    if not (0 <= index < len(cmds)) or _bare_step(cmds[index]) != "pickup":
+        return None
+    for k in range(index + 1, len(cmds)):
+        cmd = str(cmds[k]).strip()
+        if GOTO_RE.match(cmd) or _bare_step(cmd) == "wait_x":
+            continue
+        return k if _bare_step(cmd) == "press" else None
+    return None
+
+
 def _cell_before(cmds, index):
     """The cell the plan last sent the robot to before step `index`."""
     for k in range(min(index, len(cmds)) - 1, -1, -1):
@@ -18390,6 +19977,115 @@ def err_task_for_model(task, history="", rebounds=None):
     return goal, shown, err_earlier_text(goal, rebounds)
 
 
+SUPPORT_GRIP_PROMPT = """
+You check a small gantry robot's pickup from its SUPPORTING VIEW camera: a
+side view that looks straight at the gripper. The gripper has just closed
+its jaws on an object and lifted. Look at the side view (and the top-down
+board view, if given) and say whether the gripper is HOLDING the object
+named in the task, lifted clear of the board.
+
+- HOLDING: the object is between the jaws and off the board.
+- NOT_HOLDING: the jaws are empty, or the object is still lying on the
+  board, or it is hanging loose or falling out.
+Then, when not holding, the likeliest reason, one of:
+  slip    - it was gripped but slid or dropped out (it has moved);
+  point   - the jaws closed beside it or on the wrong part of it;
+  motor   - the jaws did not close (or opened again);
+  nogrip  - it was not gripped at all and has not moved.
+If the side view cannot show it (blocked, dark, out of frame, or no robot
+gripper in sight), answer UNSURE: never guess the robot's grip from a
+picture that does not show the robot's gripper.
+
+Answer in exactly these lines:
+VERDICT: HOLDING | NOT_HOLDING | UNSURE
+PROBLEM: slip | point | motor | nogrip | none
+WHY: <one short sentence about what the side view shows>
+""".strip()
+SUPPORT_GRIP_TIMEOUT_S = 60.0      # no answer by then: the operator is asked
+SUPPORT_RETRY_LIMIT = 2            # automatic re-grips of one object a run;
+                                   # then the operator is asked
+# ERR on the Go asks gpt-6-luna only (user, 2026-10-18: "use gpt 6 luna
+# only" -- a quick Decisions API look before it was tried and taken out):
+# the full-size side view and the board, its verdict stands, UNSURE asks
+# the operator.
+GRIP_LUNA_MODEL = "gpt-6-luna"
+GRIP_LUNA_REASONING = ("medium", "low")
+
+
+def parse_support_grip(text):
+    """(verdict, problem, why) from SUPPORT_GRIP_PROMPT's reply; verdict is
+    "holding", "not holding" or "unsure"."""
+    t = str(text or "")
+    m = re.search(r"VERDICT\s*:\s*\**\s*(NOT[_ ]HOLDING|HOLDING|UNSURE)", t, re.I)
+    verdict = ("unsure" if not m else
+               "not holding" if m.group(1).upper().startswith("NOT") else
+               m.group(1).lower())
+    m = re.search(r"PROBLEM\s*:\s*\**\s*(slip|point|motor|nogrip|none)", t, re.I)
+    problem = m.group(1).lower() if m else "none"
+    if verdict == "not holding" and problem == "none":
+        problem = "nogrip"
+    m = re.search(r"WHY\s*:\s*(.+)", t, re.I)
+    why = m.group(1).strip() if m else ""
+    return verdict, problem, why
+
+
+class SupportGripCheck:
+    """ERR on the Go from the supporting view camera (user, 2026-10-18):
+    after a pickup gpt-6-luna looks at the side view of the gripper (and
+    the board) and says whether it holds the object, instead of the
+    operator's No / Yes. Runs on its own thread; `done`, then `verdict`,
+    `problem`, `why`, `error`."""
+
+    def __init__(self, what: str, task: str, side_bgr, board_bgr=None):
+        self.what, self.task = what, task
+        self.side, self.board = side_bgr, board_bgr
+        self.done = False
+        self.verdict, self.problem, self.why, self.error = "unsure", "none", "", ""
+        self.raw = ""
+        self.started = time.monotonic()
+
+    def start(self):
+        threading.Thread(target=self._run, daemon=True).start()
+        return self
+
+    @staticmethod
+    def _part(img, side, detail="high"):
+        h, w = img.shape[:2]
+        k = min(1.0, side / float(max(h, w)))
+        if k < 1.0:
+            img = cv2.resize(img, (int(w * k), int(h * k)), interpolation=cv2.INTER_AREA)
+        ok, jpg = cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 88])
+        return {"type": "image_url", "image_url": {
+            "url": "data:image/jpeg;base64," + base64.b64encode(jpg.tobytes()).decode(),
+            "detail": detail}}
+
+    def _run(self):
+        try:
+            content = [{"type": "text", "text":
+                        f"TASK: {self.task}\nTHE PICKUP: {self.what}\n\n"
+                        "SUPPORTING VIEW (side view of the gripper, just now):"},
+                       self._part(self.side, SUPPORT_MAX_SIDE)]
+            if self.board is not None:
+                content += [{"type": "text", "text": "MAIN VIEW (top-down, the board):"},
+                            self._part(self.board, 1024)]
+            self.raw = call_model(
+                make_client(), model=GRIP_LUNA_MODEL, max_tokens=2500,
+                reasoning=GRIP_LUNA_REASONING,
+                stage=f"{ERR_NAME} (supporting view, {GRIP_LUNA_MODEL})",
+                messages=[{"role": "system", "content": SUPPORT_GRIP_PROMPT},
+                          {"role": "user", "content": content}])
+            self.verdict, self.problem, self.why = parse_support_grip(self.raw)
+            print(f"[err] {GRIP_LUNA_MODEL}: {self.verdict} ({self.problem}) {self.why}")
+        except Exception as e:
+            self.error = str(e)
+        finally:
+            self.done = True
+
+    def who(self) -> str:
+        """Who answers, for the chat."""
+        return GRIP_LUNA_MODEL
+
+
 class ErrorReboundJob:
     """ERR, the final before/after check, on a worker thread.
 
@@ -18415,6 +20111,11 @@ class ErrorReboundJob:
         self.after_list = after_list or ""
         self.unseen = [str(u) for u in (unseen or ()) if str(u).strip()]
         self.moves = moves or ""    # MEASURED BY HOS X (err_moves_text)
+        # the supporting view camera's side view of the finished board
+        # (user, 2026-10-18), when there is one
+        side = support_frame()
+        self.support = None if side is None else side.copy()
+        self.support_before = None    # set by the caller: at execution start
         self.version = ERR_FINAL_NAME
         # (frame, grid) as the board looked when EXECUTE was pressed.
         # Rendered on this thread, not under the operator's click.
@@ -18526,9 +20227,16 @@ class ErrorReboundJob:
             self.events.strip() or "None logged -- judge from the images."))
         if self.earlier.strip():
             parts.append(self.earlier.strip())
-        parts.append("Images follow, each after its label. All show the same "
-                     "board with the same lettered/numbered grid. No "
-                     "extra-viewpoint images are available.")
+        parts.append("Images follow, each after its label. The board images "
+                     "show the same board with the same lettered/numbered "
+                     "grid." + (" Then come SIDE VIEW images from the "
+                                "supporting view camera (no grid): use them to "
+                                "see heights, stacking, what is inside or on "
+                                "top of what, and whether the gripper still "
+                                "holds anything."
+                                if self.support is not None
+                                or self.support_before is not None
+                                else " No extra-viewpoint images are available."))
         content = [{"type": "text", "text": "\n\n".join(parts)},
                    {"type": "text", "text": "INITIAL IMAGE (the board at "
                                             "planning time):"},
@@ -18541,6 +20249,14 @@ class ErrorReboundJob:
         content += [{"type": "text", "text": "FINAL IMAGE (the board after "
                                              "execution):"},
                     picture(b64_after)]
+        if self.support_before is not None:
+            content += [{"type": "text", "text": "SIDE VIEW AT EXECUTION START "
+                                                 "(supporting view camera):"},
+                        SupportGripCheck._part(self.support_before, SUPPORT_MAX_SIDE)]
+        if self.support is not None:
+            content += [{"type": "text", "text": "SIDE VIEW AFTER EXECUTION "
+                                                 "(supporting view camera, now):"},
+                        SupportGripCheck._part(self.support, SUPPORT_MAX_SIDE)]
         return [{"role": "system", "content": ERR3_PROMPT},
                 {"role": "user", "content": content}]
 
@@ -20981,7 +22697,6 @@ class AppState:
     selected_part: Optional[tuple] = None
     history_open: bool = False
     examples_open: bool = False
-    effort_menu_open: bool = False
     example_notice: Optional[int] = None
     example_notice_until: float = 0.0
     ai_chat: list = field(default_factory=list)
@@ -21019,6 +22734,11 @@ class AppState:
     tag_search: Optional[object] = None
     dseq_ref: Optional[dict] = None
     dseq_slips: dict = field(default_factory=dict)
+    # the supporting view camera (user, 2026-10-18): automatic re-grips its
+    # "not holding" started, per object this run; its side view when the
+    # run started (for ERR)
+    side_retries: dict = field(default_factory=dict)
+    err_start_side: Optional[object] = None
 
     missing_popup: Optional[dict] = None
     missing_popup_done_rect: Optional[tuple] = None
@@ -21040,6 +22760,13 @@ class AppState:
     # {"index", "cmd", "deadline", "moves", "seen", "tag"} while it is up.
     adjust: Optional[dict] = None
     adjust_rects: dict = field(default_factory=dict)
+    # The TOF check after the pickup a press comes straight after (user,
+    # 2026-10-17): {"index", "cmd", "press", "bottom", "top_from",
+    # "deadline", "phase"} -- "reading" while the readings after the lift
+    # come in, "popup" while "the object is right below the TOF sensor" is
+    # up -- and that pop-up's buttons.
+    tof_check: Optional[dict] = None
+    tof_rects: dict = field(default_factory=dict)
 
     err_before: Optional[object] = None
     err_task: str = ""
@@ -21192,7 +22919,7 @@ TASK_EXAMPLES = (
 # The one part of this window that is not ChatGPT's: the box a task is typed
 # into is A3-Terra's ComposeBar, drawn the way Qt draws it there -- the
 # capsule (eight soft shadow strokes, a white gradient, a gloss and a 1.5px
-# rim), the thinking pill, the history, microphone and send circles, the
+# rim), the history, microphone and send circles, the
 # edit's padding, line breaking, scrollbar, selection and caret -- at
 # A3-Terra's own pixel geometry, in the faces Qt uses for it (Avenir Next,
 # and Helvetica, Menlo and Lucida Grande where Qt falls back to them), with
@@ -21204,10 +22931,8 @@ A3_VIOLET = _bgr("#8b5cf6")
 A3_LILAC = _bgr("#c4b5fd")
 A3_RED = _bgr("#ef4444")
 A3_WAVE = _bgr("#8e97a8")
-A3_LIST_EDGE = _bgr("#e4defe")      # A3-Terra's 45% lilac border, on white
 A3_COMPOSE_H = 86       # a 52px row, 9px margins, 8px of shadow padding
 A3_SH_PAD = 8
-A3_PILL_W, A3_PILL_H = 85, 20
 A3_BTN = 36
 A3_EDIT_H = 52
 A3_EDIT_PAD = 6         # the edit's stylesheet padding
@@ -21653,22 +23378,21 @@ def _a3_stamp(key, w, h, paint):
 
 def a3_compose_layout(x, y, width, k=1):
     """Where ComposeBar's row -- margins 26/17/22/17, spacing 8 -- puts the
-    edit, the thinking pill, history, microphone and send in a bar `width`
-    device px wide at (x, y), on a screen of k device px to A3-Terra's one.
-    Qt lays the row out in whole A3-Terra pixels; the pill and the circles
-    sit on the edit's bottom."""
+    edit, history, microphone and send in a bar `width` device px wide at
+    (x, y), on a screen of k device px to A3-Terra's one. Qt lays the row
+    out in whole A3-Terra pixels; the circles sit on the edit's bottom.
+    The thinking pill is gone (user, 2026-10-16): the planner is always
+    low, so the edit runs up to the history circle."""
     w = int(width // k)
     send = w - 22 - A3_BTN
     mic = send - 8 - A3_BTN
     hist = mic - 8 - A3_BTN
-    pill = hist - 8 - A3_PILL_W
     top = 17
     bottom = top + A3_EDIT_H
 
     def at(x0, y0, x1, y1):
         return (x + k * x0, y + k * y0, x + k * x1, y + k * y1)
-    return {"edit": at(26, top, pill - 8, bottom),
-            "pill": at(pill, bottom - A3_PILL_H, pill + A3_PILL_W, bottom),
+    return {"edit": at(26, top, hist - 8, bottom),
             "history": at(hist, bottom - A3_BTN, hist + A3_BTN, bottom),
             "mic": at(mic, bottom - A3_BTN, mic + A3_BTN, bottom),
             "send": at(send, bottom - A3_BTN, send + A3_BTN, bottom)}
@@ -21705,36 +23429,6 @@ def a3_compose_bar(canvas, x, y, width, k=1):
     w = int(width // k)
     _a3_stamp(("bar", w, k), w * k, A3_COMPOSE_H * k, paint).apply(
         canvas, x, y)
-
-
-def a3_thinking_pill(canvas, x, y, label, k=1):
-    """PillComboBox.paintEvent, k device px to A3-Terra's one: the capsule
-    shaded white to #f6f8fc, its 1.5px rim, the level in Helvetica Bold 9px,
-    and the chevron."""
-    def paint(f):
-        h, w = f.shape[:2]
-        x0, y0, x1, y1 = 0.75 * k, 0.75 * k, w - 0.75 * k, h - 0.75 * k
-        rad = (y1 - y0) / 2.0
-        cov = _a3_fill(w, h, x0, y0, x1, y1, rad)[..., None]
-        t = np.clip(np.arange(h, dtype=np.float32) / h, 0, 1)[:, None, None]
-        shade = (np.float32([255, 255, 255])
-                 + np.float32([-3, -7, -9]) * t)
-        f[:] = f * (1.0 - cov) + shade * cov
-        _a3_blend(f, (224, 210, 202),
-                  _a3_stroke(w, h, x0, y0, x1, y1, rad, 1.5 * k)
-                  * (220 / 255.0))
-        asc, desc = a3_vmetrics("helvetica-bold", 9)
-        mid = A3_PILL_H / 2.0                 # in A3-Terra's pixels
-        _a3_blend(f, A3_TEXT, _a3_text_cov(
-            w, h, label, "helvetica-bold", 9, k * (0.75 + 14),
-            k * (mid + (asc - desc) / 2.0), k))
-        cx = A3_PILL_W - 0.75 - 16 / 2.0 - 6
-        _a3_blend(f, (128, 114, 107), _a3_polyline(
-            w, h, [(k * (cx - 4), k * (mid - 2)), (k * cx, k * (mid + 2.4)),
-                   (k * (cx + 4), k * (mid - 2))], 1.6 * k)
-            * (220 / 255.0))
-    _a3_stamp(("pill", label, k), A3_PILL_W * k, A3_PILL_H * k,
-              paint).apply(canvas, x, y)
 
 
 def _a3_button_glyph(w, h, glyph, face, px, k=1):
@@ -21905,9 +23599,6 @@ class AISidebar:
         self._send_is_stop = False
         self.mic_btn = Button("", *lay["mic"], "ai_mic")
         self.history_btn = Button("", *lay["history"], "ai_history")
-        self.effort_btn = Button("", *lay["pill"], "ai_effort")
-        self._effort_rects = []
-        self._effort_menu_rect = None
         # ChatGPT's header pair: a black pill and an outlined one, 44px
         # tall, 12px of padding either side of a 14px semibold label.
         ew = round(button_width("Examples", outlined=True))
@@ -21964,13 +23655,6 @@ class AISidebar:
                 and self.y0 <= y <= self.y0 + self.height)
 
     def hit_test(self, x, y, history_open=False, state=None):
-        if state is not None and state.effort_menu_open:
-            for rect, value in self._effort_rects:
-                if rect[0] <= x < rect[2] and rect[1] <= y < rect[3]:
-                    return ("ai_effort_pick", value)
-            rect = self._effort_menu_rect
-            if rect and rect[0] <= x <= rect[2] and rect[1] <= y <= rect[3]:
-                return "ai_none"
         if state is not None:
             self.expire_example_notice(state)
             if state.examples_open or state.example_notice is not None:
@@ -21998,8 +23682,6 @@ class AISidebar:
             return "ai_stop" if self._send_is_stop else "ai_send"
         if self.mic_btn.contains(x, y):
             return "ai_mic"
-        if self.effort_btn.contains(x, y):
-            return "ai_effort"
         if getattr(self, "err_btn", None) is not None and self.err_btn.contains(x, y):
             return "ai_err_toggle"
         if self._action_mode == "exec":
@@ -22550,7 +24232,6 @@ class AISidebar:
         else:
             self._history_rects = []
             self._history_list_rect = None
-        self._draw_effort_menu(canvas, state, mouse)
         self._draw_examples(canvas, state, mouse)
 
     @staticmethod
@@ -22560,8 +24241,9 @@ class AISidebar:
 
     def _draw_compose(self, canvas, state, mx, my, busy):
         """A3-Terra's message box: the capsule, then the edit -- or the
-        waveform while the microphone records -- the thinking pill, history,
-        microphone and send."""
+        waveform while the microphone records -- history, microphone and
+        send. The planner stays on low reasoning, so there is no thinking
+        pill (user, 2026-10-16)."""
         k = self.k
         cx0, cy0, cx1, _ = self.compose
         a3_compose_bar(canvas, cx0, cy0, cx1 - cx0, k)
@@ -22573,8 +24255,6 @@ class AISidebar:
         else:
             self._wave_live = False
             self._draw_field(canvas, state, transcribing)
-        b = self.effort_btn
-        a3_thinking_pill(canvas, b.x0, b.y0, planner_effort_label(), k)
         b = self.history_btn
         a3_history_button(canvas, b.x0, b.y0, hover=self._over(b, mx, my),
                           k=k)
@@ -22706,41 +24386,6 @@ class AISidebar:
             a3_wave_bar(canvas, fx0 + k * x, fy0 + k * (mid - amp / 2),
                         fy0 + k * (mid + amp / 2), clip, k)
             x -= 6.0
-
-    def _draw_effort_menu(self, canvas, state, mouse):
-        """The thinking pill's list as A3-Terra's RoundedComboBox opens it:
-        a white card with a lilac hairline and 10px corners, 27px rows of
-        Avenir Next 10px with hairlines between, the current level shaded --
-        opening upward, as Qt opens a list with no room below it."""
-        self._effort_rects = []
-        self._effort_menu_rect = None
-        if not state.effort_menu_open:
-            return
-        mx, my = mouse
-        k = self.k
-        b = self.effort_btn
-        row_h = 27 * k
-        longest = max(_qround(a3_positions(label, "helvetica-bold", 9)[-1])
-                      for _, label in PLANNER_EFFORTS)
-        w = (max(longest + 72, A3_PILL_W) + 6) * k
-        h = (27 * len(PLANNER_EFFORTS) + 10) * k
-        rect = (b.x0, b.y0 - h, b.x0 + w, b.y0)
-        self._effort_menu_rect = rect
-        drop_shadow(canvas, rect, 10 * k, spread=12 * k, strength=0.14)
-        rounded_rect(canvas, rect, 10 * k, C_CARD, -1)
-        rounded_rect(canvas, rect, 10 * k, A3_LIST_EDGE, k)
-        for i, (value, label) in enumerate(PLANNER_EFFORTS):
-            ry = rect[1] + 5 * k + i * row_h
-            row = (rect[0] + 3 * k, ry, rect[2] - 3 * k, ry + row_h)
-            hover = row[0] <= mx < row[2] and row[1] <= my < row[3]
-            if value == PLANNER_EFFORT:
-                canvas[row[1]:row[3] - k, row[0]:row[2]] = _bgr("#f1f1f4")
-            elif hover:
-                canvas[row[1]:row[3] - k, row[0]:row[2]] = _bgr("#f6f6f8")
-            canvas[row[3] - k:row[3], row[0]:row[2]] = A3_LIST_EDGE
-            a3_text(canvas, label, row[0] + 16 * k, row[1] + 16 * k, A3_TEXT,
-                    k=k)
-            self._effort_rects.append((row, value))
 
     @classmethod
     def _wrap(cls, text, width, scale):
@@ -23548,7 +25193,8 @@ def focus_macos_app(on_port_settings=None, on_serial_console=None,
                     current_camera=None, on_help=None, on_manual_move=None,
                     on_settings=None, on_trigonometry=None,
                     on_gripper=None, on_gripper_offset=None,
-                    on_example=None, on_repeat=None):
+                    on_example=None, on_repeat=None, on_magnifier=None,
+                    on_micro_trig=None):
     """Bring the window to the front, and give it a menu bar.
 
     Without a main menu there is nothing for Cmd+Q to fire: HighGUI never
@@ -23559,7 +25205,8 @@ def focus_macos_app(on_port_settings=None, on_serial_console=None,
     and "Serial Console...". "Examples" prepares benchmark task drafts.
     "Settings" opens the same frosted settings
     card the gear button does -- playback speed, refresh rate, and the rest
-    -- the way HOS X's own Settings menu does. "Help" gets a couple of
+    -- the way HOS X's own Settings menu does. "Other Tools" holds the
+    Magnifier (Cmd+B). "Help" gets a couple of
     informational items. `current_camera` is a callable so the checkmark
     tracks whichever camera is actually live, not just whatever was live
     when the menu was built.
@@ -23593,7 +25240,7 @@ def focus_macos_app(on_port_settings=None, on_serial_console=None,
                     for cam_index in cameras:
                         def make_cb(idx=cam_index):
                             return lambda: on_select_camera(idx)
-                        entry = _menu_item(f"Camera {cam_index}", make_cb())
+                        entry = _menu_item(camera_name(cam_index), make_cb())
                         if current_camera is not None and current_camera() == cam_index:
                             entry.setState_(1)
                         cam_menu.addItem_(entry)
@@ -23637,6 +25284,9 @@ def focus_macos_app(on_port_settings=None, on_serial_console=None,
                 trig_menu = NSMenu.alloc().initWithTitle_("Trigonometry")
                 trig_menu.addItem_(_menu_item("Camera / Tag Height...",
                                               on_trigonometry, "t"))
+                if on_micro_trig is not None:
+                    trig_menu.addItem_(_menu_item("Micro Trigonometry...",
+                                                  on_micro_trig, "u"))
                 trig_item.setSubmenu_(trig_menu)
                 bar.insertItem_atIndex_(trig_item, insert_at)
                 insert_at += 1
@@ -23651,6 +25301,15 @@ def focus_macos_app(on_port_settings=None, on_serial_console=None,
                                                   on_gripper_offset))
                 grip_item.setSubmenu_(grip_menu)
                 bar.insertItem_atIndex_(grip_item, insert_at)
+                insert_at += 1
+
+            if on_magnifier is not None and _MenuTarget is not None:
+                tools_item = NSMenuItem.alloc().init()
+                tools_menu = NSMenu.alloc().initWithTitle_("Other Tools")
+                tools_menu.addItem_(_menu_item("Magnifier...", on_magnifier,
+                                               "b"))
+                tools_item.setSubmenu_(tools_menu)
+                bar.insertItem_atIndex_(tools_item, insert_at)
                 insert_at += 1
 
             if _MenuTarget is not None:
@@ -23689,6 +25348,10 @@ def main():
 
     try:
         cam_mgr = CameraManager(settings=cam_settings)
+        camera_devices()
+        print("[camera] main view camera: "
+              f"{camera_name(cam_mgr.current_index())}")
+        apply_support_camera()
     except RuntimeError as e:
         print(f"ERROR: {e}")
         vision.stop()
@@ -23739,11 +25402,16 @@ def main():
                         k=box_k)
     runner = PlanRunner()
     sim = SimRunner()
-    camera_dd = Dropdown("Camera", 20, 8, 190, 50, "camera")
-    camera_dd.ITEM_W = 96
-    camera_dd.set_items([(i, f"Cam {i}") for i in cam_mgr.available_indices])
+    camera_dd = Dropdown("Main view", 20, 8, 190, 50, "camera")
+    camera_dd.fit_value = True
+    camera_dd.set_items([(i, camera_name(i)) for i in cam_mgr.available_indices])
+    # each camera by its own name, the list as wide as the longest
+    camera_dd.ITEM_W = max([96] + [text_size(label, 0.5, 1, weight=600)[0] + 36
+                                   for _, label in camera_dd.items])
     settings_button = Button("Settings", total_w - 108, 6, total_w - 20, 50,
                              "settings", style="primary", scale=0.56)
+    # the Side view button beside the camera list and its pop-up
+    side_pop = {"open": False, "button": None, "card": None, "close": None}
 
     def relayout(w, h):
         """Re-place everything around a video of this size."""
@@ -23775,10 +25443,12 @@ def main():
 
     settings_panel = SettingsPanel(cam_settings, grid, on_grid_size_changed, state)
     trig_panel = TrigPanel()
+    micro_trig_panel = MicroTrigPanel()
     port_panel = PortPanel(ARDUINO)
     console_panel = ConsolePanel(ARDUINO)
     manual_move_panel = ManualMovePanel()
     gripper_panel = GripperPanel()
+    magnifier = Magnifier()
     ARDUINO.on_line = console_panel.log
     console_panel.on_rx_bytes = runner.plunge.note_rx
     simple_gripper = SimpleGripperPanel()
@@ -23922,6 +25592,17 @@ def main():
             state.pending_qa = []
             state.status_message = "Thanks -- planning now."
 
+    def show_job_grip(job):
+        """Gripper AI's newest look from planning job `job`, on the
+        Magnifier -- once each time it changes."""
+        if job is None or state.board_raw is None:
+            return
+        seq, look = job.grip_now()
+        if look is not None and magnifier.grip_seen != (id(job), seq):
+            magnifier.grip_seen = (id(job), seq)
+            vh, vw = state.board_raw.shape[:2]
+            magnifier.show_grip(look, grid, (vw, vh))
+
     def collect_ai_result():
         """Fold a finished job into the board, and start the plan running.
 
@@ -23930,6 +25611,9 @@ def main():
         would look like success.
         """
         job, state.ai_job = state.ai_job, None
+        # the outline grip is decided in a moment: its look may not have
+        # been drawn yet
+        show_job_grip(job)
         state.pending_questions = []
         state.pending_qa = []
         state.answering_free = False
@@ -24207,7 +25891,122 @@ def main():
             state.status_message = ("Picked up -- adjust the gripper with "
                                     "the joystick, or Skip.")
             return True
+        return pickup_checks(index, cmd)
+
+    def pickup_checks(index, cmd):
+        """After a step: the TOF check (only after the pickup a press comes
+        straight after), then ERR on the Go. True holds the plan."""
+        if start_tof_check(index, cmd):
+            return True
         return step_check_start(index, cmd)
+
+    def start_tof_check(index, cmd):
+        """The pickup a press comes straight after is back up (user,
+        2026-10-17). If the TOF sensor reads the same now as it did at the
+        bottom, it is looking at the object hanging in the jaws, not at the
+        board -- the object is right below it, and the press (p3 goes down
+        by that sensor) would go wrong. Holds the plan while the readings
+        from after the lift come in (tick_tof_check)."""
+        if (not TOF_CHECK or MANUAL_GRIPPER_STEPS
+                or _bare_step(cmd) != "pickup"):
+            return False
+        press = pickup_before_press(runner.commands, index)
+        if press is None:
+            return False
+        # this pickup's own times, used once: a later pickup by hand must
+        # never be judged on them
+        win, gripper_panel.tof_window = gripper_panel.pickup_tof_window(), None
+        if win is None:
+            print(f"[tof] step {index + 1}: not an automatic pickup that came "
+                  f"back up -- no TOF check")
+            return False
+        # the later half of the time at the bottom, once the board's own
+        # (filtered) reading has settled from the way down -- or all of it
+        mid = (win["bottom_from"] + win["bottom_to"]) / 2.0
+        bottom = TOF.values(mid, win["bottom_to"])
+        if len(bottom) < TOF_UP_READINGS:
+            bottom = TOF.values(win["bottom_from"], win["bottom_to"])
+        if not bottom:
+            print(f"[tof] step {index + 1}: no TOF reading while the head was "
+                  f"down -- not checked")
+            return False
+        state.tof_check = {
+            "index": index, "cmd": cmd, "press": press, "bottom": bottom,
+            "top_from": win["top_from"] + TOF_UP_SETTLE_S,
+            "deadline": win["top_from"] + TOF_UP_WAIT_S, "phase": "reading"}
+        state.status_message = "Checking the TOF sensor before the press..."
+        return True
+
+    def tick_tof_check():
+        """Once a frame: once enough readings from after the lift are in,
+        decide -- the same as at the bottom puts the pop-up up; otherwise
+        the plan goes on (by way of ERR on the Go's question)."""
+        chk = state.tof_check
+        if chk is None:
+            return
+        if not runner.active:
+            state.tof_check = None
+            state.tof_rects = {}
+            return
+        if chk["phase"] != "reading":
+            return
+        top = TOF.values(chk["top_from"])
+        if len(top) < TOF_UP_READINGS and time.monotonic() < chk["deadline"]:
+            return
+        verdict = tof_same_reading(chk["bottom"], top)
+        step = chk["index"] + 1
+        if verdict is None:
+            print(f"[tof] step {step}: no TOF reading after the lift -- not "
+                  f"checked")
+            tof_done(chk)
+            return
+        same, down, up = verdict
+        print(f"[tof] step {step} (the pickup before the press at step "
+              f"{chk['press'] + 1}): {down:.0f} mm down "
+              f"({len(chk['bottom'])} readings), {up:.0f} mm up "
+              f"({len(top)}) -> {'the same' if same else 'different'} "
+              f"(within {TOF_SAME_MM:g} mm is the same)")
+        if not same:
+            tof_done(chk)
+            return
+        chk.update(phase="popup", down=down, up=up)
+        chat_say(state, "error",
+                 f"The object is right below the TOF sensor: it read "
+                 f"{down:.0f} mm at the pickup and {up:.0f} mm after coming "
+                 f"up. The press at step {chk['press'] + 1} goes down by "
+                 f"that sensor.")
+        state.status_message = "The object is right below the TOF sensor."
+
+    def tof_done(chk):
+        """The TOF check is over: ERR on the Go's question next, if it is
+        on; otherwise the plan goes on."""
+        state.tof_check = None
+        state.tof_rects = {}
+        if not step_check_start(chk["index"], chk["cmd"]):
+            state.status_message = "Carrying on with the plan."
+
+    def tof_continue():
+        """Continue (or Enter) on the TOF pop-up: on to the press."""
+        chk = state.tof_check
+        if chk is None:
+            return
+        chat_say(state, "assistant",
+                 f"Continuing -- on to the press at step {chk['press'] + 1}.")
+        tof_done(chk)
+
+    def tof_stop():
+        """Stop (or Esc) on the TOF pop-up: the run ends here."""
+        if state.tof_check is None:
+            return
+        state.tof_check = None
+        state.tof_rects = {}
+        runner.stop(state, "Stopped -- the object is right below the TOF "
+                           "sensor.")
+        state.exec_pending = bool(runner.commands)
+        state.exec_cancelled = True
+        chat_say(state, "assistant",
+                 "Stopped -- the object is right below the TOF sensor. Press "
+                 "Execute physically to run it again from the top.")
 
     def finish_adjust(why="time"):
         """The adjust pop-up is over (its time ran out, or Skip): the plan
@@ -24221,7 +26020,7 @@ def main():
                      "Gripper adjusted with the joystick after the pickup.")
         if not runner.active:
             return
-        if not step_check_start(adj["index"], adj["cmd"]):
+        if not pickup_checks(adj["index"], adj["cmd"]):
             state.status_message = ("Skipped -- carrying on with the plan."
                                     if why == "skip"
                                     else "Carrying on with the plan.")
@@ -24272,6 +26071,25 @@ def main():
             state.step_err_prev = after if after is not None else source
         target, _ = pickup_target(index)
         what = f"the {target.get('name')}" if target else "the object"
+        side = support_frame()
+        if side is not None:
+            # the supporting view camera answers, not the operator
+            # (user, 2026-10-18); the operator can still say No / Yes
+            board = source if source is not None else None
+            state.step_fail = {
+                "index": index, "cmd": cmd,
+                "title": f"{step} — checking the grip from the side...",
+                "word": "CHECK",
+                "reason": (f"{ERR_NAME} is looking at {what} on the supporting "
+                           f"view camera ({support_name()})."),
+                "what": what, "choices": False, "fix": "",
+                "default": "continue", "kind": "support",
+                "job": SupportGripCheck(what, state.err_task or "", side.copy(),
+                                        None if board is None else board.copy()).start(),
+                "deadline": None,
+            }
+            state.status_message = state.step_fail["title"]
+            return True
         # (user, 2026-10-14) "Retry gripping?" -- No (or silence) carries on;
         # Yes shows what went wrong: slippage, wrong grip point, motor
         # reversal, did not grip at all
@@ -24349,10 +26167,17 @@ def main():
             left = max(0, math.ceil(state.adjust["deadline"] - time.monotonic()))
             return (f"Adjust the gripper with the joystick -- carrying on in "
                     f"{left}s (Skip carries on now).")
+        if state.tof_check is not None:
+            if state.tof_check["phase"] == "popup":
+                return ("The object is right below the TOF sensor -- "
+                        "Continue or Stop?")
+            return "Checking the TOF sensor before the press..."
         if state.dseq is not None:
             return f"{dseq_name(state.dseq)}: {state.dseq.note}"
         if state.step_fail is not None:
             kind = state.step_fail.get("kind") or "ai"
+            if kind == "support":
+                return f"{state.step_fail['title']}"
             if kind == "operator":
                 if state.step_fail.get("choices"):
                     return "What went wrong with the pickup? Pick one of the four."
@@ -24369,6 +26194,50 @@ def main():
         if not runner.active:
             state.step_fail = None
             return
+        if fail.get("kind") == "support":
+            job = fail.get("job")
+            late = time.monotonic() - job.started > SUPPORT_GRIP_TIMEOUT_S
+            if not job.done and not late:
+                return
+            name = f"{ERR_NAME} ({job.who()})"
+            if job.done and not job.error and job.verdict == "holding":
+                chat_say(state, "assistant", f"{name}: holding {fail['what']}. "
+                         f"{job.why}".strip())
+                step_fail_continue()
+                return
+            if job.done and not job.error and job.verdict == "not holding":
+                chat_say(state, "error", f"{name}: not holding {fail['what']}. "
+                         f"{job.why}".strip())
+                tries = state.side_retries.get(fail["what"], 0)
+                if tries < SUPPORT_RETRY_LIMIT:
+                    state.side_retries[fail["what"]] = tries + 1
+                    fail["choices"] = True
+                    step_fail_pick(job.problem)
+                    return
+                # it still sees no grip after its own re-grips: the
+                # operator decides, with the problem picked out for them
+                chat_say(state, "assistant",
+                         f"{name}: still not holding after {tries} automatic "
+                         f"re-grip{'s' if tries != 1 else ''} - asking you.")
+                fail.update(kind="operator", job=None, choices=True,
+                            title=fail["title"].replace(
+                                "checking the grip from the side...",
+                                "still not holding"),
+                            deadline=None)
+                state.status_message = "What went wrong with the pickup?"
+                return
+            # unsure, failed or too slow: the operator's own question
+            why = (job.error and f"the check failed ({job.error})") or (
+                "no answer in time" if not job.done else
+                f"it could not tell ({job.why})" if job.why else "it could not tell")
+            chat_say(state, "assistant", f"{name}: {why} - asking you.")
+            fail.update(kind="operator", job=None,
+                        title=fail["title"].replace("checking the grip from the side...",
+                                                    "retry gripping?"),
+                        reason=(f"Picked up {fail['what']}. No carries on · Yes: say "
+                                f"what went wrong."),
+                        deadline=time.monotonic() + STEP_FAIL_WAIT_S)
+            return
         if fail["deadline"] is not None and time.monotonic() >= fail["deadline"]:
             if fail["default"] == "replan":
                 step_fail_replan()
@@ -24384,7 +26253,7 @@ def main():
         index = fail.get("index", -1)
         if isinstance(index, int) and index >= 0:
             state.step_results[index] = "ok"
-        word = "No retry" if fail.get("kind") == "operator" else "YES"
+        word = "No retry" if fail.get("kind") in ("operator", "support") else "YES"
         chat_say(state, "assistant",
                  f"{word} — carrying on after step {fail['index'] + 1}.")
         state.status_message = "Carrying on with the plan."
@@ -24398,6 +26267,7 @@ def main():
             step_fail_continue()
             return
         if key == "yes":
+            fail["kind"], fail["job"] = "operator", None   # the operator's own answer
             fail["choices"] = True
             fail["deadline"] = None          # waits for what went wrong
             state.status_message = "What went wrong with the pickup?"
@@ -24803,10 +26673,15 @@ def main():
         state.run_open = True
         state.repeat_watch = None
         state.adjust = None
+        state.tof_check = None
+        state.tof_rects = {}
         if not state.resume_run:
             # A run carrying a task on after a replan keeps the task's own
             # execution-start photo for the whole-task CHECK.
             state.err_start = start
+            side = support_frame()
+            state.err_start_side = None if side is None else side.copy()
+            state.side_retries = {}
         state.step_err_prev = None
         state.step_err_job = None
         state.step_fail = None
@@ -24878,11 +26753,13 @@ def main():
         rebounds = HOSX_EMBEDDED_STATE.get("error_rebounds") or []
         goal, shown, earlier = err_task_for_model(
             state.err_task, build_chat_history_text(state.ai_chat), rebounds)
-        state.err_job = ErrorReboundJob(
+        err_job = ErrorReboundJob(
             shown, state.err_before, after, before_list,
             start_source=state.err_start, events=events,
             after_list=after_list, unseen=unseen, moves=moves,
-            earlier=earlier, asked=state.err_task, goal=goal).start()
+            earlier=earlier, asked=state.err_task, goal=goal)
+        err_job.support_before = state.err_start_side
+        state.err_job = err_job.start()
         state.status_message = (f"{ERR_FINAL_NAME}: checking the finished "
                                 f"task...")
 
@@ -25392,8 +27269,6 @@ def main():
         in_video = 0 <= vy < frame_h and 0 <= vx < frame_w
 
         if event == cv2.EVENT_LBUTTONDOWN:
-            if state.effort_menu_open and not sidebar.contains(x, y):
-                state.effort_menu_open = False
             rect = state.dseq_cancel_rect
             if (state.dseq is not None and rect is not None
                     and rect[0] <= vx <= rect[2] and rect[1] <= vy <= rect[3]):
@@ -25424,7 +27299,8 @@ def main():
                              "watched.")
                     return
             if (repeat_rect is not None and repeat_rect[0] <= x <= repeat_rect[2]
-                    and repeat_rect[1] <= y <= repeat_rect[3]):
+                    and repeat_rect[1] <= y <= repeat_rect[3]
+                    and not magnifier.covers(x, y)):
                 toggle_repeat()
                 return
             if state.step_fail is not None and state.step_fail_rects:
@@ -25444,6 +27320,14 @@ def main():
                         if bx0 <= vx <= bx1 and by0 <= vy <= by1:
                             act()
                             return
+            if state.tof_check is not None and state.tof_rects:
+                kind = popup_hit(state.tof_rects, vx, vy)
+                if kind == "continue":
+                    tof_continue()
+                    return
+                if kind == "stop":
+                    tof_stop()
+                    return
             if state.missing_popup is not None:
                 task = state.missing_popup["task"]
                 if state.missing_popup_done_rect is not None:
@@ -25482,6 +27366,14 @@ def main():
                 if bx0 <= vx <= bx1 and by0 <= vy <= by1:
                     cancel_auto_execute()
                     return
+            if side_pop["open"]:
+                for key in ("close", "card"):
+                    r = side_pop[key]
+                    if r is not None and r[0] <= x <= r[2] and r[1] <= y <= r[3]:
+                        if key == "close":
+                            side_pop["open"] = False
+                            state.status_message = "Supporting view closed."
+                        return
             if camera_dd.open:
                 chosen = camera_dd.hit_item(x, y)
                 on_button = camera_dd.contains(x, y)
@@ -25489,14 +27381,29 @@ def main():
                 camera_dd.open = False
                 if chosen is not None:
                     if cam_mgr.select(chosen):
-                        state.status_message = f"Camera {chosen} selected."
+                        state.status_message = f"Main view camera: {camera_name(chosen)}."
                     else:
-                        state.status_message = f"Camera {chosen} failed to open."
+                        state.status_message = f"{camera_name(chosen)} failed to open."
                     return
                 if on_button or in_list:
                     return
+            # The Magnifier card is drawn over the top bar and the sidebar
+            # (it can be dragged anywhere), under the pop-ups and the open
+            # camera list: it takes a click before what it covers.
+            consumed = magnifier.press(x, y)
+            if consumed is not None:
+                if consumed:
+                    state.status_message = consumed
+                if magnifier.dragging is None and magnifier.take_dirty():
+                    save_settings(cam_settings, grid)
+                return
             if camera_dd.contains(x, y):
                 camera_dd.open = not camera_dd.open
+                return
+            if side_pop["button"] is not None and side_pop["button"].contains(x, y):
+                side_pop["open"] = not side_pop["open"]
+                state.status_message = ("Supporting view open." if side_pop["open"]
+                                        else "Supporting view closed.")
                 return
             if settings_button.contains(x, y):
                 settings_panel.toggle()
@@ -25513,9 +27420,6 @@ def main():
                                        state=state)
                 if DEBUG_INPUT:
                     print(f"[click] sidebar.hit_test -> {hit}", flush=True)
-                if hit != "ai_effort" and not (
-                        isinstance(hit, tuple) and hit[0] == "ai_effort_pick"):
-                    state.effort_menu_open = False
                 if hit == "ai_err_toggle":
                     # both error checks together: ERR on the Go and ERR
                     global ERR_AUTO, ERR_FINAL
@@ -25545,16 +27449,6 @@ def main():
                         state.ai_focus = True
                         state.ai_caret_reset_at = time.time()
                     state.history_open = False
-                elif hit == "ai_effort":
-                    state.history_open = False
-                    state.examples_open = False
-                    state.effort_menu_open = not state.effort_menu_open
-                elif isinstance(hit, tuple) and hit[0] == "ai_effort_pick":
-                    state.effort_menu_open = False
-                    if set_planner_effort(hit[1]):
-                        save_settings(cam_settings, grid)
-                    state.status_message = (
-                        f"Planner thinking: {planner_effort_label()}.")
                 elif hit == "ai_history":
                     state.examples_open = False
                     state.example_notice = None
@@ -25638,6 +27532,11 @@ def main():
                     if consumed:
                         state.status_message = consumed
                     return
+                consumed = micro_trig_panel.hit_test(vx, vy, cam_settings, grid)
+                if consumed is not None:
+                    if consumed:
+                        state.status_message = consumed
+                    return
                 consumed = trig_panel.hit_test(vx, vy, cam_settings, grid,
                                               state, runner, sim)
                 if consumed is not None:
@@ -25649,6 +27548,15 @@ def main():
                     if consumed:
                         state.status_message = consumed
                     return
+                if magnifier.visible:
+                    # The Magnifier is open: a click picks the spot it
+                    # magnifies (a drag moves it), and never aims the gantry.
+                    magnifier.set_point(vx, vy, frame_w, frame_h)
+                    magnifier.dragging = "point"
+                    state.status_message = ("Magnifying that spot -- drag to "
+                                            "move it, Cmd+B closes.")
+                    if not settings_panel.edit_corners:
+                        return
                 if settings_panel.edit_corners:
                     idx = grid.nearest_corner(vx, vy)
                     if idx is not None:
@@ -25675,6 +27583,17 @@ def main():
             return
 
         elif event == cv2.EVENT_MOUSEMOVE:
+            if magnifier.dragging == "point":
+                magnifier.set_point(min(max(vx, 0), frame_w - 1),
+                                    min(max(vy, 0), frame_h - 1),
+                                    frame_w, frame_h)
+                if state.dragging_corner is None:
+                    return
+            elif magnifier.dragging is not None:
+                moved = magnifier.drag(x, y)
+                if moved:
+                    state.status_message = moved
+                return
             moved = gripper_panel.drag(vx, vy)
             if moved is not None:
                 state.status_message = moved
@@ -25682,6 +27601,8 @@ def main():
                 grid.move_corner(state.dragging_corner, vx, vy)
 
         elif event == cv2.EVENT_LBUTTONUP:
+            if magnifier.release() and magnifier.take_dirty():
+                save_settings(cam_settings, grid)
             if gripper_panel.release():
                 return
             if state.dragging_corner is not None:
@@ -25713,10 +27634,8 @@ def main():
         if manual_move_panel.text_focus:
             manual_move_panel.handle_key(key, state, runner, sim)
             return None
-        if key == 27 and (state.effort_menu_open or state.history_open
-                          or state.examples_open):
+        if key == 27 and (state.history_open or state.examples_open):
             # Esc closes an open popover first -- with none open it quits.
-            state.effort_menu_open = False
             state.history_open = False
             state.examples_open = False
             return None
@@ -25733,6 +27652,16 @@ def main():
             # the adjust pop-up after a pickup: Enter or Esc is its Skip
             if key in (13, 10, 27):
                 finish_adjust("skip")
+                return None
+        if (state.tof_check is not None and not state.ai_focus
+                and state.tof_check["phase"] == "popup"):
+            # "the object is right below the TOF sensor": Enter carries on,
+            # Esc stops the run (it must not fall through and quit)
+            if key in (13, 10):
+                tof_continue()
+                return None
+            if key == 27:
+                tof_stop()
                 return None
         was_focused = state.ai_focus
         if sidebar.handle_edit_key(state, key, mods) == "send":
@@ -25780,10 +27709,15 @@ def main():
                 manual_move_panel.close()
             elif settings_panel.visible:
                 settings_panel.toggle()
+            elif micro_trig_panel.visible:
+                micro_trig_panel.toggle()
             elif trig_panel.visible:
                 trig_panel.toggle()
             elif gripper_panel.visible:
                 gripper_panel.close()
+            elif magnifier.visible:
+                magnifier.close()
+                state.status_message = "Magnifier closed."
             else:
                 return "quit"
             return None
@@ -25812,7 +27746,7 @@ def main():
         if cam_mgr.select(index):
             state.status_message = f"Switched to camera {index}."
         else:
-            state.status_message = f"Camera {index} is already selected."
+            state.status_message = f"{camera_name(index)} is already the main view camera."
 
     def show_help(topic):
         if topic == "about":
@@ -25826,7 +27760,9 @@ def main():
                      "N name the objects on the board, "
                      "W save settings, Esc cancel/quit, Cmd+, Port Settings, "
                      "Cmd+K Serial Console, Cmd+M Manual Move, "
-                     "Cmd+; Settings, Cmd+T Trigonometry, Cmd+G Gripper. "
+                     "Cmd+; Settings, Cmd+T Trigonometry, Cmd+U Micro "
+                     "Trigonometry, Cmd+G Gripper, "
+                     "Cmd+B Magnifier (Other Tools). "
                      "Gripper offset is the first block on the Gripper card "
                      "and on the Trigonometry card.")
 
@@ -25834,13 +27770,22 @@ def main():
     cv2.resizeWindow(WINDOW_NAME, win_w, win_h)
     cv2.moveWindow(WINDOW_NAME, *window_origin())
     set_mouse_handler(WINDOW_NAME, on_mouse)
+    def toggle_magnifier():
+        """Other Tools > Magnifier, or Cmd+B: open or close it."""
+        magnifier.toggle()
+        state.status_message = (
+            "Magnifier open -- click the camera view to magnify a spot."
+            if magnifier.visible else "Magnifier closed.")
+
     MENU_ACTIONS = {
         ",": port_panel.open,
         "k": console_panel.open,
         "m": manual_move_panel.toggle,
         ";": settings_panel.toggle,
         "t": trig_panel.toggle,
+        "u": micro_trig_panel.toggle,
         "g": gripper_panel.toggle,
+        "b": toggle_magnifier,
     }
 
     def on_cmd_key(ch):
@@ -25866,7 +27811,9 @@ def main():
                     on_gripper_offset=gripper_panel.open,
                     on_example=lambda index: sidebar.handle_example_action(
                         state, ("ai_example_pick", index)),
-                    on_repeat=toggle_repeat)
+                    on_repeat=toggle_repeat,
+                    on_magnifier=MENU_ACTIONS["b"],
+                    on_micro_trig=MENU_ACTIONS["u"])
     def on_scroll(dy):
         """A trackpad/wheel scroll, delivered via AppKit because
         cv2.EVENT_MOUSEWHEEL never fires for a two-finger swipe on this
@@ -26070,10 +28017,14 @@ def main():
 
         grid_key = (tuple(grid.box), CONFIG.n_cols, CONFIG.n_rows,
                     frozenset(unreachable_rows() | fixed_unreachable_rows()),
-                    frozenset(unreachable_cols()), settings_panel.edit_corners)
+                    frozenset(unreachable_cols()), settings_panel.edit_corners,
+                    SHOW_MAIN_GRID)
         if fresh or base is None or grid_key != base_grid_have:
             base = state.board_raw.copy()
-            grid.draw(base, show_corners=settings_panel.edit_corners)
+            if SHOW_MAIN_GRID or settings_panel.edit_corners:
+                grid.draw(base, show_corners=settings_panel.edit_corners)
+            else:
+                grid.draw_unreachable(base)
             base_grid_have = grid_key
             state.board_view = base
         frame = base.copy()
@@ -26125,6 +28076,7 @@ def main():
         collect_err_result()
         collect_step_err_result()
         tick_adjust()
+        tick_tof_check()
         tick_step_fail()
         if (ERR_FINAL and runner.finished and state.err_ready
                 and not state.auto_check_done and state.err_job is None
@@ -26153,6 +28105,7 @@ def main():
                                 sim.colour)
         draw_sim_overlay(frame, grid, sim)
         draw_guidance_banner(frame, state)
+        magnifier.draw_marker(frame, grid)
         # The pop-ups are worked out here and drawn once the window is
         # composed: above the camera display, never over it.
         popups = []
@@ -26193,6 +28146,10 @@ def main():
         if state.adjust is not None and runner.active:
             popups.append(("adjust", state.adjust["deadline"] - time.monotonic(),
                            state.adjust["moves"]))
+        state.tof_rects = {}
+        if (state.tof_check is not None and runner.active
+                and state.tof_check["phase"] == "popup"):
+            popups.append(("tof", state.tof_check))
         state.repeat_ask_rects = {}
         if state.repeat_ask is not None:
             popups.append(("repeat_ask", state.repeat_ask["task"],
@@ -26204,6 +28161,9 @@ def main():
         mx, my = state.mouse
         settings_panel.draw(frame, (mx - video_x, my - video_y))
         trig_panel.draw(frame, grid, (mx - video_x, my - video_y))
+        tr = trig_panel._last_rect if trig_panel.visible else None
+        micro_trig_panel.draw(frame, (mx - video_x, my - video_y),
+                              left=tr[0] + tr[2] + 12 if tr else None)
         port_panel.draw(frame, (mx - video_x, my - video_y))
         console_panel.draw(frame, (mx - video_x, my - video_y))
         manual_move_panel.draw(frame, (mx - video_x, my - video_y))
@@ -26239,12 +28199,18 @@ def main():
         round_video_corners(canvas, wash, video_x, video_y, w, h)
         rounded_rect(canvas, video_rect, VIDEO_RADIUS, C_BORDER, 1)
 
-        camera_dd.draw(canvas, f"Cam {cam_mgr.current_index()}",
+        camera_dd.draw(canvas, camera_name(cam_mgr.current_index()),
                        hover=camera_dd.contains(mx, my))
         settings_button.draw(canvas, hover=settings_button.contains(mx, my))
+        sbx = int(camera_dd.x1) + 10
+        side_pop["button"] = Button("Side view", sbx, 8,
+                                    sbx + round(button_width("Side view", outlined=True, scale=0.5)),
+                                    50, "side_view", scale=0.5)
+        side_pop["button"].draw(canvas, hover=side_pop["button"].contains(mx, my),
+                                active=side_pop["open"])
         draw_text(canvas, f"{CONFIG.n_cols}x{CONFIG.n_rows} grid   "
                           f"Vision AI: {vision.status()}",
-                  (206, 34), 0.52, C_TEXT_FAINT, 1)
+                  (int(side_pop["button"].x1) + 16, 34), 0.52, C_TEXT_FAINT, 1)
 
         typed = f"{state.typed_col or '--'}{state.typed_row if state.typed_row else ''}"
         chip_w = max(104, text_size(typed, 0.56, 1, weight=600)[0] + 86)
@@ -26276,6 +28242,42 @@ def main():
 
         sidebar.draw(canvas, state, runner, sim, (mx, my), shadow=False,
                      card=False)
+        # Gripper AI's looks as they come: the Magnifier zooms on each object
+        # it decides on and marks the grip it chose
+        show_job_grip(state.ai_job)
+        # Other Tools > Magnifier: beside the board, in the camera view's own
+        # margin -- the wider side -- so the sidebar stays in sight (over the
+        # sidebar when there is no room), under the run's pop-ups
+        bx0, _, bx1, _ = grid.box
+        mag_spare = max(
+            ((video_x + bx1 + 12, video_y + 8, video_x + w - 8, video_y + h - 8, False),
+             (video_x + 8, video_y + 8, video_x + bx0 - 12, video_y + h - 8, True)),
+            key=lambda r: r[2] - r[0])
+        # the supporting view camera, live: in the wider margin beside the
+        # board, the other one while the Magnifier has that
+        margins = sorted(
+            ((video_x + bx1 + 12, video_y + 8, video_x + w - 8, video_y + h - 8),
+             (video_x + 8, video_y + 8, video_x + bx0 - 12, video_y + h - 8)),
+            key=lambda r: r[2] - r[0])
+        if not side_pop["open"]:    # the pop-up shows it larger
+            draw_support_view(canvas, margins[0] if magnifier.visible else margins[1],
+                              (video_x, video_y, video_x + w, video_y + h))
+        mag_objects = ()
+        if magnifier.visible:
+            mview = vision.view()
+            if mview is not None:
+                mkey = (id(mview), w, len(vision.namer.names))
+                if getattr(magnifier, "_objects_key", None) != mkey:
+                    magnifier._objects_key = mkey
+                    magnifier._objects = magnifier_objects(
+                        mview, vision.namer.names, vision.namer.info,
+                        w / float(mview["frame"].shape[1]))
+                mag_objects = magnifier._objects
+        magnifier.draw(canvas, state.board_src, (w, h), (mx, my),
+                       dock=(sidebar.x0, sidebar.y0, sidebar.x0 + sidebar.width,
+                             sidebar.y0 + sidebar.height),
+                       grid=grid, cam_key=cam_have, objects=mag_objects,
+                       spare=mag_spare)
 
         # each pop-up above the camera display (a second one above the
         # first); their buttons are hit-tested in the video's own pixels
@@ -26315,7 +28317,11 @@ def main():
                 card, rects = draw_repeat_watch_popup(
                     canvas, video_rect, args[0], time.monotonic(), taken=taken)
                 state.repeat_rects = {k: in_video(r) for k, r in rects.items()}
-            elif args[0].get("kind") == "operator":
+            elif kind == "tof":
+                card, rects = draw_tof_popup(canvas, video_rect, args[0],
+                                             TOF.latest(), taken=taken)
+                state.tof_rects = {k: in_video(r) for k, r in rects.items()}
+            elif args[0].get("kind") in ("operator", "support"):
                 card, rects = draw_pickup_popup(canvas, video_rect, *args, taken=taken)
                 state.step_fail_rects = {k: in_video(r) for k, r in rects.items()}
             else:
@@ -26333,6 +28339,11 @@ def main():
         draw_text(canvas, state.status_message, (24, status_y), 0.48,
                   C_TEXT_FAINT, 1)
 
+        if side_pop["open"]:
+            side_pop["card"], side_pop["close"] = draw_support_popup(
+                canvas, (video_x, video_y, video_x + w, video_y + h), (mx, my))
+        else:
+            side_pop["card"] = side_pop["close"] = None
         camera_dd.draw_list(canvas, cam_mgr.current_index(), (mx, my))
 
         frame_count += 1
@@ -26490,6 +28501,7 @@ def update_guidance(state: AppState):
     (or being pushed off course) immediately changes what it says. "Arrived"
     is only ever shown when the tag is actually sitting on the target.
     """
+    p3_hold_tick()
     state.out_of_reach = False
     if automatic_gripper_busy():
         return
@@ -27009,6 +29021,13 @@ def draw_pickup_popup(img, video_rect, fail, seconds_left, taken=()) -> tuple:
     """The pickup question (user, 2026-10-14): "Retry gripping?" No (or
     silence) carries on; Yes shows what went wrong -- slippage, wrong grip
     point, motor reversal, did not grip. -> (card, {key: rect})."""
+    if fail.get("kind") == "support":
+        card, (no, yes) = draw_popup_above(
+            img, video_rect, fail.get("title") or "Checking the grip...",
+            [fail.get("reason") or "", "Or answer yourself: No carries on, Yes retries."],
+            [("No", "pickup_no", "ghost"), ("Yes", "pickup_yes", "ghost")],
+            colours=[None, C_TEXT], taken=taken)
+        return card, {"no": no, "yes": yes}
     if not fail.get("choices"):
         foot = ("No carries on." if seconds_left is None else
                 f"No / carrying on in {max(0, math.ceil(seconds_left))}s...")
@@ -27026,6 +29045,26 @@ def draw_pickup_popup(img, video_rect, fail, seconds_left, taken=()) -> tuple:
         [(label, f"pickup_{key}", "ghost") for key, label, _, _ in PICKUP_PROBLEMS],
         taken=taken)
     return card, {key: r for (key, _, _, _), r in zip(PICKUP_PROBLEMS, rects)}
+
+
+def draw_tof_popup(img, video_rect, check, live=None, taken=()) -> tuple:
+    """The pickup a press comes straight after read the same on the TOF
+    sensor at the bottom and once back up (user, 2026-10-17): the object is
+    right below the sensor. Both readings, the sensor's live one, and
+    Continue (on to the press) or Stop (the run ends).
+    -> (card, {"stop": rect, "continue": rect})."""
+    down, up, press = check.get("down"), check.get("up"), check.get("press")
+    first = (f"TOF read {down:.0f} mm at the pickup and {up:.0f} mm after "
+             f"coming up -- it sees the object, not the board.")
+    second = ((f"TOF now: {live:.0f} mm. " if live is not None else "")
+              + "The press" + (f" (step {press + 1})" if press is not None
+                               else "") + " goes down by this sensor.")
+    card, (stop, cont) = draw_popup_above(
+        img, video_rect, "The object is right below the TOF sensor",
+        [first, second],
+        [("Stop", "tof_stop", "ghost"), ("Continue", "tof_continue", "primary")],
+        colours=[C_RED, C_TEXT], taken=taken)
+    return card, {"stop": stop, "continue": cont}
 
 
 def draw_step_fail_popup(img, video_rect, fail, seconds_left,
@@ -27151,6 +29190,983 @@ def draw_repeat_toggle(img, rect, on, hover=False):
     draw_text(img, REPEAT_LABEL, (x0 + 16, y0 + (y1 - y0 + th) / 2.0), 0.56,
               C_TEXT, 1, weight=600, spacing=BUTTON_SPACING)
     draw_switch(img, (x1 - 14 - 36, y0, x1 - 14, y1), on)
+
+
+# Other Tools > Magnifier (Cmd+B), user 2026-10-17. A click on the camera
+# view picks a spot; the rectangle round it -- Width x Height px of the
+# camera view, outlined on the view at exactly that size -- is shown on the
+# Magnifier card magnified, live, cut from the camera's own full-size frame
+# (the window's view is that frame scaled down). Over it: the board's
+# coordinate grid -- the macro cells ("F8") and, zoomed in, the micro cells
+# inside each ("F8.b3") -- and the objects Vision AI outlined, each labelled
+# "Object 1", "Object 2", ... before its name. The card sits beside the
+# board, over the camera view's own margin, so the sidebar stays in sight
+# (over the sidebar only when there is no room); its title bar drags it.
+# Gripper AI zooms it on each object it grips (user, 2026-10-17: no
+# threshold, no width limit -- see GRIPPER AI).
+MAGNIFIER_ZOOM = 3.0            # times bigger than the camera view shows it
+MAGNIFIER_ZOOM_RANGE = (1.0, 10.0)
+MAGNIFIER_ZOOM_STEP = 0.1
+MAGNIFIER_W = 120               # the rectangle's width on the camera view, px
+MAGNIFIER_H = 90                # ...and its height
+MAGNIFIER_SIZE_RANGE = (10, 800)
+MAGNIFIER_SIZE_STEP = 1
+
+
+def magnifier_settings() -> dict:
+    """The Magnifier's sliders, as save_settings keeps them."""
+    return {"zoom": MAGNIFIER_ZOOM, "width": MAGNIFIER_W,
+            "height": MAGNIFIER_H}
+
+
+def load_magnifier_settings(m):
+    """The saved Magnifier sliders. A value of the wrong kind or out of
+    range keeps the default, as load_vision_settings does. A saved
+    "threshold" (the slider was removed, user 2026-10-17) is ignored."""
+    global MAGNIFIER_ZOOM
+    if not isinstance(m, dict):
+        return
+
+    def number(v):
+        return (isinstance(v, (int, float)) and not isinstance(v, bool)
+                and math.isfinite(v))
+
+    z = m.get("zoom")
+    if number(z) and MAGNIFIER_ZOOM_RANGE[0] <= z <= MAGNIFIER_ZOOM_RANGE[1]:
+        MAGNIFIER_ZOOM = round(float(z), 1)
+    for key, name in (("width", "MAGNIFIER_W"), ("height", "MAGNIFIER_H")):
+        v = m.get(key)
+        if number(v) and MAGNIFIER_SIZE_RANGE[0] <= v <= MAGNIFIER_SIZE_RANGE[1]:
+            globals()[name] = int(v)
+
+
+def _pair(v):
+    return (float(v[0]), float(v[1])) if isinstance(v, (tuple, list)) else (float(v), float(v))
+
+
+def magnify_patch(raw, adjust, fitted_wh, centre, src_size, out_size,
+                  pad=C_CARD_SOFT):
+    """The rectangle of the camera view `src_size` (w, h) px around
+    `centre`, shown `out_size` (w, h) px. `centre` and `src_size` are in the
+    camera view's pixels (continuous: pixel i's middle is i + 0.5), the view
+    being `fitted_wh` -- CameraSettings.fitted of `raw`. It is cut from
+    `raw` itself, the camera's own frame, with `adjust` applied, so it has
+    every pixel the camera took. Outside the view is `pad`. A single number
+    for a size means a square."""
+    sw, sh = _pair(src_size)
+    ow, oh = (max(1, int(v)) for v in _pair(out_size))
+    turned = adjust._turn(raw)
+    h, w = turned.shape[:2]
+    if adjust.zoom > 1.001:
+        x0, y0, cw, ch = adjust._zoom_crop(w, h)
+    else:
+        x0, y0, cw, ch = 0, 0, w, h
+    fw, fh = (max(1, int(v)) for v in fitted_wh)
+    kx, ky = cw / float(fw), ch / float(fh)
+    nx = max(2, int(round(sw * kx)))
+    ny = max(2, int(round(sh * ky)))
+    xa = int(round(x0 + centre[0] * kx - nx / 2.0))
+    ya = int(round(y0 + centre[1] * ky - ny / 2.0))
+    patch = np.empty((ny, nx, 3), np.uint8)
+    patch[:] = pad
+    ix0, iy0 = max(xa, x0), max(ya, y0)
+    ix1, iy1 = min(xa + nx, x0 + cw), min(ya + ny, y0 + ch)
+    if ix1 > ix0 and iy1 > iy0:
+        patch[iy0 - ya:iy1 - ya, ix0 - xa:ix1 - xa] = adjust._tone(
+            np.ascontiguousarray(turned[iy0:iy1, ix0:ix1]))
+    return cv2.resize(patch, (ow, oh), interpolation=(
+        cv2.INTER_CUBIC if ow >= nx else cv2.INTER_AREA))
+
+
+MAGNIFIER_JOIN = 0.01   # parts this close (of the frame's longer side) are joined
+_PLACEHOLDER_NAME_RE = re.compile(r"^\s*object\s*#?\s*\d+\s*$", re.I)
+
+
+def outlines_meet(a, b, gap) -> bool:
+    """Whether two outlines (lists of contours, the same pixels) come within
+    `gap` px of each other -- touching, or a hairline apart."""
+    a = [np.asarray(c, np.float64).reshape(-1, 2) for c in a if len(c)]
+    b = [np.asarray(c, np.float64).reshape(-1, 2) for c in b if len(c)]
+    if not a or not b:
+        return False
+    pa, pb = np.concatenate(a), np.concatenate(b)
+    ba = (*pa.min(0), *pa.max(0))
+    bb = (*pb.min(0), *pb.max(0))
+    if (ba[0] - gap > bb[2] or bb[0] - gap > ba[2]
+            or ba[1] - gap > bb[3] or bb[1] - gap > ba[3]):
+        return False
+    x0 = min(ba[0], bb[0]) - gap - 2
+    y0 = min(ba[1], bb[1]) - gap - 2
+    # a coarse mask is plenty for "within a hairline": ~128 px across
+    k = max(1.0, max(max(ba[2], bb[2]) + gap + 2 - x0,
+                     max(ba[3], bb[3]) + gap + 2 - y0) / 128.0)
+    shape = (int((max(ba[3], bb[3]) + gap + 2 - y0) / k) + 2,
+             int((max(ba[2], bb[2]) + gap + 2 - x0) / k) + 2)
+    ma, mb = np.zeros(shape, np.uint8), np.zeros(shape, np.uint8)
+    cv2.drawContours(ma, [np.round((c - (x0, y0)) / k).astype(np.int32)
+                          .reshape(-1, 1, 2) for c in a], -1, 1, -1)
+    cv2.drawContours(mb, [np.round((c - (x0, y0)) / k).astype(np.int32)
+                          .reshape(-1, 1, 2) for c in b], -1, 1, -1)
+    r = max(1, int(round(gap / k)))
+    ma = cv2.dilate(ma, np.ones((2 * r + 1, 2 * r + 1), np.uint8))
+    return bool(np.any(ma & mb))
+
+
+def magnifier_wholes(view, names, info):
+    """{outline index: the outline indices that make up the whole of it}, for
+    the Magnifier's dropdown (user, 2026-10-17: picking the slider takes in
+    the whole slider, every part of it and the long bar it slides on): the
+    outline, the other parts of the same object it is joined to (touching or
+    a hairline apart -- a caliper's slider and its bar), the pieces of the
+    same thing the namer named apart (a hand brush's handle and bristles),
+    and everything outlined inside any of those (the slider's screen). A part
+    lying loose on something (a pen on a book) and a piece of some other
+    thing (a brush in a dustpan) stay whole things of their own; the robot
+    never joins what is not the robot. Surfaces are left out."""
+    objects, ids = view.get("objects") or [], view.get("ids") or []
+    n = min(len(objects), len(ids))
+    names, info = names or {}, info or {}
+    frame = view.get("frame")
+    skipped = {i for i in range(n)
+               if is_surface_name(names.get(ids[i]) or "") or not len(objects[i])}
+    raw = list(view.get("parents") or [None] * n)[:n]
+    raw += [None] * (n - len(raw))
+    parents = _kept_parents(raw, skipped)
+
+    def meta(i):
+        return info.get(ids[i]) or {}
+
+    def robot(i):
+        return bool(meta(i).get("robot"))
+
+    def thing(i):
+        return str(meta(i).get("thing") or "").strip().lower()
+
+    def attached(i):
+        """A part fixed to the object it lies on."""
+        p = parents[i]
+        if p is None or meta(i).get("loose") or robot(i) != robot(p):
+            return False
+        t = thing(i)
+        host = (clean_object_name(names.get(ids[p])) or "", thing(p))
+        return not t or any(h and (t in h or h in t) for h in host)
+
+    kept = [i for i in range(n) if i not in skipped]
+    root = {i: i for i in kept}
+
+    def find(i):
+        while root[i] != i:
+            root[i] = root[root[i]]
+            i = root[i]
+        return i
+
+    gap = MAGNIFIER_JOIN * (max(frame.shape[:2]) if frame is not None else 1280)
+    # the parts of one object that are joined to each other
+    by_parent = {}
+    for i in kept:
+        if attached(i):
+            by_parent.setdefault(parents[i], []).append(i)
+    # ...and the pieces of one thing, each a whole thing by itself
+    tags = {thing(i) for i in kept if not attached(i) and thing(i)}
+    for i in kept:
+        if attached(i) or robot(i):
+            continue
+        t = thing(i) or clean_object_name(names.get(ids[i])) or ""
+        if t in tags:
+            by_parent.setdefault(("thing", t), []).append(i)
+    for group in by_parent.values():
+        for a_k, a in enumerate(group):
+            for b in group[a_k + 1:]:
+                if (find(a) != find(b) and robot(a) == robot(b)
+                        and outlines_meet(objects[a], objects[b], gap)):
+                    root[find(a)] = find(b)
+
+    def inside(j, members):
+        p, seen = parents[j], 0
+        while p is not None and seen < n:
+            if p in members:
+                return True
+            p, seen = parents[p], seen + 1
+        return False
+
+    joined = {}
+    for i in kept:
+        joined.setdefault(find(i), set()).add(i)
+    wholes = {}
+    for members in joined.values():
+        whole = sorted(members | {j for j in kept if inside(j, members)})
+        for i in members:
+            wholes[i] = whole
+    return wholes
+
+
+def magnifier_objects(view, names, info, scale):
+    """Vision AI's outlined objects for the Magnifier, in the camera view's
+    pixels: [(number, name, [contours], robot, whole box)], numbered 1, 2,
+    ... left to right, top to bottom -- the same numbers wherever the
+    Magnifier looks. The whole box (x0, y0, x1, y1) is round the whole of
+    it (magnifier_wholes): the rectangle the dropdown puts round it. Bare
+    board and surfaces are left out, as the view leaves them out; a name
+    that is only "object 6" is none (the label says "Object N" already)."""
+    if not view:
+        return []
+    objects, ids = view.get("objects") or [], view.get("ids") or []
+    names = names or {}
+    boxes, out = {}, []
+    for i, (contours, tid) in enumerate(zip(objects, ids)):
+        name = names.get(tid) or ""
+        if is_surface_name(name):
+            continue
+        if _PLACEHOLDER_NAME_RE.match(name):
+            name = ""
+        scaled = [(np.asarray(c, np.float32).reshape(-1, 2) * scale)
+                  for c in contours if len(c)]
+        if not scaled:
+            continue
+        pts = np.concatenate(scaled)
+        boxes[i] = (float(pts[:, 0].min()), float(pts[:, 1].min()),
+                    float(pts[:, 0].max()), float(pts[:, 1].max()))
+        out.append(((float(pts[:, 1].min()) // 40, float(pts[:, 0].min())),
+                    i, name, scaled,
+                    bool(((info or {}).get(tid) or {}).get("robot"))))
+    wholes = magnifier_wholes(view, names, info) if out else {}
+
+    def whole_box(i):
+        bs = [boxes[j] for j in wholes.get(i, [i]) if j in boxes] or [boxes[i]]
+        return (min(b[0] for b in bs), min(b[1] for b in bs),
+                max(b[2] for b in bs), max(b[3] for b in bs))
+
+    out.sort(key=lambda e: e[0])
+    return [(k + 1, name, scaled, robot, whole_box(i))
+            for k, (_, i, name, scaled, robot) in enumerate(out)]
+
+
+class Magnifier:
+    """Other Tools > Magnifier (Cmd+B): its card, its sliders, and the spot
+    it magnifies -- `point`, a share of the camera view across and down, so
+    it stays on the same spot when the window is resized.
+
+    Width and Height are the rectangle on the camera view (outlined there at
+    exactly that size); the card shows it Magnification times bigger, made
+    smaller only when that would not fit the window (the caption then says
+    the magnification shown). Each slider has a - and a + for a slight
+    step: 0.1x or 1 px.
+
+    Gripper AI shows its looks here (show_grip): zoomed on the object as far
+    as the card's room allows, the micro grid drawn, the micro cell it grips
+    at marked."""
+
+    PAD = 20
+    TITLE_H = 56
+    CAPTION_H = 36
+    ROW_H = 64
+    MIN_W = 280                 # narrow enough for the margin beside the board
+    STEP_W = 32
+    PICK_H = 52
+    SCALE = 0.5
+    GRID_C = _bgr("#ffffff")
+    LABEL_C = _bgr("#0d0d0d")
+    LABEL_FS = 0.45             # "Object N: name" on the magnified view
+    GRIP_C = (255, 0, 255)      # Gripper AI's grip mark, as on its own look
+
+    def __init__(self):
+        self.visible = False
+        self.point = None
+        self.origin = None          # the card's top-left, once dragged
+        self.dragging = None        # a slider's kind, "card" or "point"
+        self._grab = (0, 0)
+        self.buttons = []
+        self.rect = None
+        self.view_rect = None
+        self.shown = (0, 0)         # the magnified rectangle on the card, px
+        self.shown_zoom = MAGNIFIER_ZOOM
+        self._fitted = None
+        self._dirty = False
+        self._key = None
+        self._view = None
+        self.objects_seen = []
+        self.objects_all = []       # magnifier_objects() as last drawn
+        self.pick_open = False      # the object dropdown's list is down
+        self.picked = None          # "Object N: name" chosen from it
+        self.picked_number = None   # ...and its N
+        self._labels, self._labels_key = [], None   # _place_labels, cached
+        self.grip = None            # Gripper AI's look being shown (show_grip)
+        self.grip_seen = None       # (job, change count) shown last
+        self.auto_zoom = False      # zoomed as far as fits, not by the slider
+        self.sliders = (
+            Slider("Magnification", "mag_zoom", *MAGNIFIER_ZOOM_RANGE,
+                   "{:.1f}", "x"),
+            Slider("Width", "mag_w", *MAGNIFIER_SIZE_RANGE, "{:.0f}", " px"),
+            Slider("Height", "mag_h", *MAGNIFIER_SIZE_RANGE, "{:.0f}", " px"),
+        )
+
+    def open(self):
+        self.visible = True
+
+    def close(self):
+        self.visible = False
+        self.dragging = None
+        self.grip = None
+        self.auto_zoom = False
+
+    def toggle(self):
+        if self.visible:
+            self.close()
+        else:
+            self.open()
+
+    def slider(self, kind):
+        return next((s for s in self.sliders if s.kind == kind), None)
+
+    def shown_sliders(self):
+        """The sliders on the card: none while it shows Gripper AI's look,
+        which is zoomed to fit the object -- its whole height goes to that."""
+        return () if self.grip else self.sliders
+
+    def value_of(self, kind):
+        return {"mag_zoom": MAGNIFIER_ZOOM, "mag_w": MAGNIFIER_W,
+                "mag_h": MAGNIFIER_H}.get(kind)
+
+    def set_value(self, kind, value):
+        global MAGNIFIER_ZOOM, MAGNIFIER_W, MAGNIFIER_H
+        sl = self.slider(kind)
+        if sl is None:
+            return
+        v = sl.clamp(value)
+        old = self.value_of(kind)
+        if kind == "mag_zoom":
+            self.auto_zoom = False
+            MAGNIFIER_ZOOM = round(round(v / MAGNIFIER_ZOOM_STEP) * MAGNIFIER_ZOOM_STEP, 1)
+        elif kind == "mag_w":
+            MAGNIFIER_W = int(round(v))
+        else:
+            MAGNIFIER_H = int(round(v))
+        self._dirty = self._dirty or self.value_of(kind) != old
+
+    def step(self, kind, d):
+        size = {"mag_zoom": MAGNIFIER_ZOOM_STEP}.get(kind, 1)
+        self.set_value(kind, self.value_of(kind) + d * size)
+
+    def take_dirty(self) -> bool:
+        """Whether a slider moved since last asked: time to save."""
+        was, self._dirty = self._dirty, False
+        return was
+
+    def text(self, kind) -> str:
+        return self.slider(kind).text(self.value_of(kind))
+
+    def status_line(self) -> str:
+        return (f"Magnifier: {MAGNIFIER_ZOOM:.1f}x, {MAGNIFIER_W} x "
+                f"{MAGNIFIER_H} px.")
+
+    def source_size(self):
+        """The rectangle on the camera view, (w, h) px."""
+        return float(MAGNIFIER_W), float(MAGNIFIER_H)
+
+    def set_point(self, vx, vy, frame_w, frame_h):
+        """Magnify around the camera view's pixel (vx, vy) -- a spot of the
+        user's own, so the dropdown no longer names an object."""
+        self.point = (min(1.0, max(0.0, (vx + 0.5) / float(max(1, frame_w)))),
+                      min(1.0, max(0.0, (vy + 0.5) / float(max(1, frame_h)))))
+        self.picked = self.picked_number = None
+        self.grip = None
+        self.auto_zoom = False
+
+    def show_grip(self, look, grid, frame_wh):
+        """Gripper AI's look at one object (AIJob.grip_now): the card opens
+        on the whole object -- GRIP_MARGIN of board round it, zoomed as far
+        as the card's room allows -- and marks the micro cell it grips at
+        once that is chosen."""
+        global MAGNIFIER_W, MAGNIFIER_H
+        ext = look.get("extent") if look else None
+        if not ext or grid is None:
+            return
+        fw, fh = (max(1, int(v)) for v in frame_wh)
+        x0, y0 = grid.grid_to_pixel(ext[0] - GRIP_MARGIN, ext[1] - GRIP_MARGIN)
+        x1, y1 = grid.grid_to_pixel(ext[2] + GRIP_MARGIN, ext[3] + GRIP_MARGIN)
+        lo, hi = MAGNIFIER_SIZE_RANGE
+        MAGNIFIER_W = int(min(hi, max(lo, math.ceil(x1 - x0))))
+        MAGNIFIER_H = int(min(hi, max(lo, math.ceil(y1 - y0))))
+        self.point = (min(1.0, max(0.0, (x0 + x1) / 2.0 / fw)),
+                      min(1.0, max(0.0, (y0 + y1) / 2.0 / fh)))
+        self.grip = dict(look, name=str(look.get("name") or "object"),
+                         micro=look.get("micro") or "",
+                         state=look.get("state") or "looking")
+        self.picked = f"Gripper AI: {self.grip['name']}"
+        self.picked_number = None
+        self.pick_open = False
+        self.auto_zoom = True
+        self.visible = True
+
+    def source_rect(self, frame_w, frame_h):
+        """(x0, y0, x1, y1) of the rectangle on the camera view (floats)."""
+        cx, cy = self.point[0] * frame_w, self.point[1] * frame_h
+        sw, sh = self.source_size()
+        return cx - sw / 2.0, cy - sh / 2.0, cx + sw / 2.0, cy + sh / 2.0
+
+    def draw_marker(self, frame, grid=None):
+        """The rectangle being magnified, outlined on the camera view at
+        exactly its Width x Height -- and Gripper AI's grip in it."""
+        if not self.visible or self.point is None:
+            return
+        fh, fw = frame.shape[:2]
+        x0, y0, x1, y1 = self.source_rect(fw, fh)
+        a = (int(round(x0)), int(round(y0)))
+        b = (int(round(x1)) - 1, int(round(y1)) - 1)
+        cv2.rectangle(frame, (a[0] - 2, a[1] - 2), (b[0] + 2, b[1] + 2), C_CARD, 1)
+        cv2.rectangle(frame, a, b, C_OVERLAY, 1)
+        g = self.grip
+        if g and g.get("point") is not None and grid is not None:
+            gx, gy = (int(round(v)) for v in grid.grid_to_pixel(
+                *micro_seen_point(*g["point"])))
+            cv2.circle(frame, (gx, gy), 6, (0, 0, 0), 3, cv2.LINE_AA)
+            cv2.circle(frame, (gx, gy), 5, self.GRIP_C, 2, cv2.LINE_AA)
+
+    def caption(self, grid=None) -> str:
+        if self.point is None or not self._fitted:
+            return "Click anywhere on the camera view to magnify it."
+        g = self.grip
+        if g:
+            if g.get("point") is not None:
+                cell = g.get("macro") or coordinate_name(
+                    *(int(math.floor(v)) for v in g["point"]))
+                off = (f", lands {g['error_mm']:.1f} mm off"
+                       if g.get("error_mm") is not None else "")
+                return f"Grip micro {g['micro']} -> macro {cell}{off}"
+            if g.get("state") == "middle":
+                return f"No grip chosen - the {g['name']} is gripped at its middle"
+            return f"Gripper AI is looking at the {g['name']}..."
+        fw, fh = self._fitted
+        px, py = self.point[0] * fw, self.point[1] * fh
+        where = ""
+        if grid is not None and grid.contains_pixel(px, py):
+            col, row = grid.pixel_to_cell(px, py)
+            where = f" at {coordinate_name(col, row)}"
+        n = len(self.objects_seen)
+        objs = f", {n} object{'s' if n != 1 else ''}" if n else ""
+        return (f"{MAGNIFIER_W} x {MAGNIFIER_H} px{where}, shown "
+                f"{self.shown_zoom:.1f}x{objs}")
+
+    def _overlay(self, img, x0, y0, k, grid, objects):
+        """The board's coordinate grid and the objects, on the magnified
+        rectangle `img` -- whose top-left is camera-view point (x0, y0),
+        `k` card px per view px."""
+        oh, ow = img.shape[:2]
+
+        def at(x, y):
+            return int(round((x - x0) * k)), int(round((y - y0) * k))
+
+        def chip(text, tx, ty, scale=0.42):
+            (tw, th), _ = cv2.getTextSize(text, FONT, scale, 1)
+            box = (tx - 2, ty - th - 3, tx + tw + 2, ty + 3)
+            cv2.rectangle(img, box[:2], box[2:], C_CARD, -1)
+            cv2.putText(img, text, (tx, ty), FONT, scale, self.LABEL_C, 1,
+                        cv2.LINE_AA)
+            return box
+
+        marks = []      # the coordinate chips, kept clear of object labels
+        mw = mh = 0.0   # a micro cell's size on the card
+        if grid is not None:
+            gx0, gy0, gx1, gy1 = grid.box
+            cols, rows = CONFIG.n_cols, CONFIG.n_rows
+            cw, ch = (gx1 - gx0) / cols, (gy1 - gy0) / rows
+            # the micro cells (MICRO_PER_CELL x MICRO_PER_CELL in each macro
+            # cell) once they are big enough on the card to tell apart:
+            # thin lines under the macro ones
+            mw, mh = cw * k / MICRO_PER_CELL, ch * k / MICRO_PER_CELL
+            if min(mw, mh) >= 9:
+                # where the Micro Trigonometry's shifts put them: each line
+                # drawn through micro_seen_point, a micro cell at a time
+                fine = img.copy()
+                c_lo = max(0, int((x0 - gx0) / cw) - 1)
+                c_hi = min(cols, int((x0 + ow / k - gx0) / cw) + 2)
+                r_lo = max(0, int((y0 - gy0) / ch) - 1)
+                r_hi = min(rows, int((y0 + oh / k - gy0) / ch) + 2)
+
+                def seen(c, r):
+                    sc, sr = micro_seen_point_cached(c, r)
+                    return at(gx0 + sc * cw, gy0 + sr * ch)
+
+                n = MICRO_PER_CELL
+                for i in range(c_lo * n, c_hi * n + 1):
+                    if i % n:
+                        cv2.polylines(fine, [np.int32([seen(i / n, j / n) for j in
+                                                       range(r_lo * n, r_hi * n + 1)])],
+                                      False, self.GRID_C, 1)
+                for j in range(r_lo * n, r_hi * n + 1):
+                    if j % n:
+                        cv2.polylines(fine, [np.int32([seen(i / n, j / n) for i in
+                                                       range(c_lo * n, c_hi * n + 1)])],
+                                      False, self.GRID_C, 1)
+                cv2.addWeighted(fine, 0.5, img, 0.5, 0, dst=img)
+            for i in range(cols + 1):
+                X = at(gx0 + i * cw, 0)[0]
+                if 0 <= X < ow:
+                    cv2.line(img, (X, max(0, at(0, gy0)[1])),
+                             (X, min(oh - 1, at(0, gy1)[1])), C_TEXT, 3)
+                    cv2.line(img, (X, max(0, at(0, gy0)[1])),
+                             (X, min(oh - 1, at(0, gy1)[1])), self.GRID_C, 1)
+            for j in range(rows + 1):
+                Y = at(0, gy0 + j * ch)[1]
+                if 0 <= Y < oh:
+                    cv2.line(img, (max(0, at(gx0, 0)[0]), Y),
+                             (min(ow - 1, at(gx1, 0)[0]), Y), C_TEXT, 3)
+                    cv2.line(img, (max(0, at(gx0, 0)[0]), Y),
+                             (min(ow - 1, at(gx1, 0)[0]), Y), self.GRID_C, 1)
+            (nw, nh), _ = cv2.getTextSize("M20", FONT, 0.42, 1)
+            if cw * k >= 2 * (nw + 6) and ch * k >= 2 * (nh + 8):
+                # every cell in sight named at its top-left corner ("J7")
+                for i in range(cols):
+                    for j in range(rows):
+                        X, Y = at(gx0 + i * cw, gy0 + j * ch)
+                        X2, Y2 = at(gx0 + (i + 1) * cw, gy0 + (j + 1) * ch)
+                        if X2 <= 0 or Y2 <= 0 or X >= ow or Y >= oh:
+                            continue
+                        name = coordinate_name(i, j)
+                        tx, ty = max(X, 0) + 3, max(Y, 0) + 14
+                        (tw, th), _ = cv2.getTextSize(name, FONT, 0.42, 1)
+                        # only in a cell with room for it: half a cell at
+                        # the edge would run its name into the next one's
+                        if (min(X2, ow) - max(X, 0) < tw + 6
+                                or min(Y2, oh) - max(Y, 0) < th + 8):
+                            continue
+                        marks.append(chip(name, tx, ty))
+            else:
+                # cells too small on the card for a name in each (it would
+                # hide what is in them): the column letters along the top
+                # and the row numbers down the left, as the board has them
+                top, bottom = at(0, gy0)[1], at(0, gy1)[1]
+                left, right = at(gx0, 0)[0], at(gx1, 0)[0]
+                if bottom > 0 and top < oh and right > 0 and left < ow:
+                    for i in range(cols):
+                        a = max(at(gx0 + i * cw, 0)[0], 0)
+                        b = min(at(gx0 + (i + 1) * cw, 0)[0], ow)
+                        name = str(CONFIG.columns[i])
+                        (tw, th), _ = cv2.getTextSize(name, FONT, 0.42, 1)
+                        ty = max(top, 0) + th + 4
+                        if b - a >= tw + 6 and ty + 3 <= oh:
+                            marks.append(chip(name, (a + b - tw) // 2, ty))
+                    for j in range(rows):
+                        a = max(at(0, gy0 + j * ch)[1], 0)
+                        b = min(at(0, gy0 + (j + 1) * ch)[1], oh)
+                        name = str(CONFIG.rows[j])
+                        (tw, th), _ = cv2.getTextSize(name, FONT, 0.42, 1)
+                        tx, ty = max(left, 0) + 4, (a + b + th) // 2
+                        box = (tx - 2, ty - th - 3, tx + tw + 2, ty + 3)
+                        if (b - a < th + 8 or tx + tw + 2 > ow or any(
+                                box[0] < m[2] and m[0] < box[2] and box[1] < m[3]
+                                and m[1] < box[3] for m in marks)):
+                            continue
+                        marks.append(chip(name, tx, ty))
+            if min(mw, mh) >= 15:
+                # the micro columns' letters along the bottom and the micro
+                # rows' numbers down the right: "F8" + "b3" = F8.b3
+                for i in range(cols * MICRO_PER_CELL):
+                    X = at(gx0 + (i + 0.5) * cw / MICRO_PER_CELL, 0)[0]
+                    if 4 <= X < ow - 8:
+                        letter = MICRO_COLS[i % MICRO_PER_CELL]
+                        (tw, th), _ = cv2.getTextSize(letter, FONT, 0.36, 1)
+                        marks.append(chip(letter, X - tw // 2, oh - 5, 0.36))
+                for j in range(rows * MICRO_PER_CELL):
+                    Y = at(0, gy0 + (j + 0.5) * ch / MICRO_PER_CELL)[1]
+                    if 12 <= Y < oh - 18:
+                        digit = str(j % MICRO_PER_CELL + 1)
+                        (tw, th), _ = cv2.getTextSize(digit, FONT, 0.36, 1)
+                        marks.append(chip(digit, ow - tw - 5, Y + th // 2, 0.36))
+        # Gripper AI's grip: kept clear of the labels like the coordinates
+        grip_at = land_at = None
+        g = self.grip
+        if g and g.get("point") is not None and grid is not None:
+            grip_at = X, Y = at(*grid.grid_to_pixel(*micro_seen_point(*g["point"])))
+            if g.get("land") is not None:
+                land_at = at(*grid.grid_to_pixel(*micro_seen_point(*g["land"])))
+            gr = int(max(8, min(22, 0.45 * min(mw, mh) if mw else 8)))
+            grip_text = f"Grip {g['micro']}"
+            (tw, th), _ = cv2.getTextSize(grip_text, FONT, 0.5, 1)
+            tx = int(min(max(4, X - tw // 2), ow - tw - 6))
+            ty = Y - gr - 10 if Y - gr - 10 - th > 4 else Y + gr + th + 10
+            grip_box = (tx - 4, ty - th - 5, tx + tw + 4, ty + 5)
+            marks += [(X - gr - 4, Y - gr - 4, X + gr + 4, Y + gr + 4), grip_box]
+        self.objects_seen = []
+        shown = []
+        for number, name, contours, robot, _ in objects or ():
+            pts = [np.round((c - (x0, y0)) * k).astype(np.int32) for c in contours]
+            allp = np.concatenate(pts)
+            if (allp[:, 0].max() < 0 or allp[:, 1].max() < 0
+                    or allp[:, 0].min() >= ow or allp[:, 1].min() >= oh):
+                continue
+            colour = (150, 150, 150) if robot else (0, 200, 0)
+            cv2.polylines(img, pts, True, colour, 2, cv2.LINE_AA)
+            label = f"Object {number}" + (f": {name}" if name else "")
+            self.objects_seen.append(label)
+            shown.append((number, label, colour, pts, allp))
+        # the labels' places change only with the outlines, not every frame;
+        # they keep off the crosshair the card draws in the middle
+        cx, cy, r = ow // 2, oh // 2, 22
+        key = (tuple((s[1], *(int(v) // 6 for v in (
+                   s[4][:, 0].min(), s[4][:, 1].min(), s[4][:, 0].max(),
+                   s[4][:, 1].max()))) for s in shown),
+               ow, oh, self.picked_number, tuple(marks))
+        if key != self._labels_key:
+            self._labels = self._place_labels(
+                shown, marks + [(cx - r, cy - r, cx + r, cy + r)], ow, oh)
+            self._labels_key = key
+        for label, colour, (x, y), box, lead in self._labels:
+            if lead is not None:        # a label away from its outline
+                cv2.line(img, lead[0], lead[1], colour, 1, cv2.LINE_AA)
+                cv2.circle(img, lead[1], 2, colour, -1, cv2.LINE_AA)
+            roi = img[box[1]:box[3], box[0]:box[2]]
+            roi[:] = roi // 4           # see-through: what is under it shows
+            cv2.putText(img, label, (x, y), FONT, self.LABEL_FS, colour, 1,
+                        cv2.LINE_AA)
+        if land_at is not None:
+            # where the gripper really comes down for that macro cell
+            lx, ly = land_at
+            cv2.rectangle(img, (lx - 5, ly - 5), (lx + 5, ly + 5), (0, 0, 0), 3)
+            cv2.rectangle(img, (lx - 5, ly - 5), (lx + 5, ly + 5), C_OVERLAY, 1)
+        if grip_at is not None:
+            X, Y = grip_at
+            cv2.circle(img, (X, Y), gr + 2, (0, 0, 0), 4, cv2.LINE_AA)
+            cv2.circle(img, (X, Y), gr, self.GRIP_C, 2, cv2.LINE_AA)
+            cv2.drawMarker(img, (X, Y), self.GRIP_C, cv2.MARKER_CROSS,
+                           2 * gr + 8, 2, cv2.LINE_AA)
+            cv2.rectangle(img, grip_box[:2], grip_box[2:], (0, 0, 0), -1)
+            cv2.putText(img, grip_text, (tx, ty), FONT, 0.5, self.GRIP_C, 1,
+                        cv2.LINE_AA)
+
+    def _place_labels(self, shown, marks, ow, oh):
+        """Where each "Object N: name" goes on a ow x oh magnified view:
+        against its own outline (touching its box), over as little of any
+        object as it can -- the bare board beside it when there is some --
+        and never over another label or a coordinate. The picked object's
+        first. One that could not go against its outline gets a leader line
+        to it. -> [(label, colour, (x, y) baseline, chip box, leader line
+        or None)]."""
+        fs = self.LABEL_FS
+        ink = np.zeros((oh, ow), np.uint8)
+        for *_, pts, _ in shown:
+            cv2.fillPoly(ink, pts, 1)
+        inks = cv2.integral(ink)
+        taken = np.zeros((oh, ow), np.uint8)       # coordinates, labels placed
+        for m in marks:
+            taken[max(0, m[1]):max(0, m[3]), max(0, m[0]):max(0, m[2])] = 1
+        out = []
+        for number, label, colour, pts, allp in sorted(
+                shown, key=lambda s: (s[0] != self.picked_number, s[0])):
+            (tw, th), _ = cv2.getTextSize(label, FONT, fs, 1)
+            ox0, oy0 = int(allp[:, 0].min()), int(allp[:, 1].min())
+            ox1, oy1 = int(allp[:, 0].max()), int(allp[:, 1].max())
+            X, Y = (a.ravel() for a in np.meshgrid(
+                np.arange(3, max(4, ow - tw - 5), 4),
+                np.arange(th + 5, max(th + 6, oh - 3), 3)))
+            bx0, by0 = np.clip(X - 3, 0, ow), np.clip(Y - th - 4, 0, oh)
+            bx1, by1 = np.clip(X + tw + 3, 0, ow), np.clip(Y + 4, 0, oh)
+
+            def inside(t):      # pixels of summed-area table t in each chip
+                return t[by1, bx1] - t[by0, bx1] - t[by1, bx0] + t[by0, bx0]
+
+            gap = np.hypot(np.maximum(0, np.maximum(ox0 - bx1, bx0 - ox1)),
+                           np.maximum(0, np.maximum(oy0 - by1, by0 - oy1)))
+            # off its own outline's box costs more than over an object; the
+            # top-left corner (where it has always been) breaks a tie
+            score = (100.0 * inside(cv2.integral(taken)) + inside(inks)
+                     + 6.0 * gap + 0.05 * np.hypot(X - ox0, Y - oy0 + 6))
+            b = int(np.argmin(score))
+            box = (int(bx0[b]), int(by0[b]), int(bx1[b]), int(by1[b]))
+            taken[box[1]:box[3], box[0]:box[2]] = 1
+            # the outline's point in sight nearest the chip (every pixel of
+            # it: a rectangle's outline is only its four corners), and the
+            # chip's point nearest that
+            edge = np.zeros((oh, ow), np.uint8)
+            cv2.polylines(edge, pts, True, 1, 1)
+            ys, xs = np.nonzero(edge)
+            line = np.stack([xs, ys], 1) if len(xs) else allp
+            near = np.stack([np.clip(line[:, 0], box[0], box[2] - 1),
+                             np.clip(line[:, 1], box[1], box[3] - 1)], 1)
+            d = np.hypot(*(line - near).T)
+            j = int(np.argmin(d))
+            lead = None
+            if d[j] > 6:
+                lead = ((int(near[j][0]), int(near[j][1])),
+                        (int(line[j][0]), int(line[j][1])))
+            out.append((label, colour, (int(X[b]), int(Y[b])), box, lead))
+        return out
+
+    def _render(self, src, grid=None, objects=(), cam_key=None):
+        if self.point is None or src is None or not self._fitted:
+            return None
+        raw, adjust = src
+        fw, fh = self._fitted
+        sw, sh = self.source_size()
+        ow, oh = self.shown
+        key = (cam_key, self.point, self._fitted, self.shown, sw, sh,
+               id(objects), self.picked_number,
+               None if not self.grip else (self.grip.get("micro"),
+                                           self.grip.get("state")),
+               None if grid is None else tuple(grid.box), micro_trig_key())
+        if cam_key is None or key != self._key or self._view is None:
+            view = magnify_patch(raw, adjust, self._fitted,
+                                 (self.point[0] * fw, self.point[1] * fh),
+                                 (sw, sh), (ow, oh))
+            x0, y0, _, _ = self.source_rect(fw, fh)
+            self._overlay(view, x0, y0, ow / sw, grid, objects)
+            self._view, self._key = view, key
+        return self._view
+
+    @staticmethod
+    def _crosshair(img, cx, cy, gap=6, arm=14):
+        """Where the click was: four short arms, the spot itself clear."""
+        for a, b in (((cx - gap - arm, cy), (cx - gap, cy)),
+                     ((cx + gap, cy), (cx + gap + arm, cy)),
+                     ((cx, cy - gap - arm), (cx, cy - gap)),
+                     ((cx, cy + gap), (cx, cy + gap + arm))):
+            cv2.line(img, a, b, C_CARD, 4, cv2.LINE_AA)
+            cv2.line(img, a, b, C_OVERLAY, 2, cv2.LINE_AA)
+
+    def layout(self, canvas_wh, dock=None, spare=None):
+        """(card rect, (shown w, h)) for a window `canvas_wh`: the rectangle
+        Magnification times bigger -- for Gripper AI, as big as fits -- made
+        smaller (keeping its shape) only when that would not fit where the
+        card is. That is `spare`, (x0, y0, x1, y1, flush right): the camera
+        view's own margin beside the board, so neither the board nor the
+        sidebar is covered (user, 2026-10-17: "the magnifier's place has to
+        be somewhere else so that it is also shown"), the card as wide as
+        that margin. With no room there (narrower than MIN_W) it sits over
+        the sidebar `dock`, as wide as that. Dragged anywhere, it is as big
+        as the window lets it be."""
+        W, H = canvas_wh
+        pad = self.PAD
+        chrome = (self.TITLE_H + self.CAPTION_H + self.PICK_H
+                  + len(self.shown_sliders()) * self.ROW_H + pad // 2)
+        if self.origin is not None:
+            area, flush_right = (8, 8, W - 8, H - 8), False
+        elif (spare is not None and spare[2] - spare[0] >= self.MIN_W
+                and spare[3] - spare[1] >= chrome + 60):
+            area, flush_right = tuple(spare[:4]), bool(spare[4:5] and spare[4])
+        else:
+            dx0, dy0, dx1, _ = dock if dock else (W - 400, TOP_BAR_H, W, H)
+            area, flush_right = (dx0, dy0 + 8, dx1, H - 8), True
+        max_w = max(40, min(W - 16, area[2] - area[0]) - 2 * pad)
+        max_h = max(40, min(H - 16, area[3] - area[1]) - chrome)
+        sw, sh = self.source_size()
+        f = min(MAGNIFIER_ZOOM_RANGE[1] if self.auto_zoom else MAGNIFIER_ZOOM,
+                max_w / sw, max_h / sh)
+        ow, oh = max(1, int(round(sw * f))), max(1, int(round(sh * f)))
+        self.shown_zoom = f
+        card_w = max(self.MIN_W, ow + 2 * pad)
+        card_h = chrome + oh
+        if self.origin is None:
+            x0 = area[2] - card_w if flush_right else area[0]
+            y0 = area[1]
+        else:
+            x0, y0 = self.origin
+        x0 = int(max(8, min(W - card_w - 8, x0)))
+        y0 = int(max(8, min(H - card_h - 8, y0)))
+        return (x0, y0, x0 + card_w, y0 + card_h), (ow, oh)
+
+    def draw(self, canvas, src, fitted_wh, mouse=(-1, -1), dock=None,
+             grid=None, cam_key=None, objects=(), spare=None):
+        """The card, on the window. `src` is (raw frame, camera settings)
+        of the newest frame, `fitted_wh` the camera view's size, `spare` the
+        room beside the board it sits in and `dock` the sidebar it sits over
+        when there is none (until dragged), `grid` the board's grid and
+        `objects` magnifier_objects() -- both drawn on the magnified
+        rectangle."""
+        self.buttons = []
+        if not self.visible:
+            self.rect = self.view_rect = None
+            return
+        H, W = canvas.shape[:2]
+        self._fitted = (tuple(int(v) for v in fitted_wh)
+                        if fitted_wh and min(fitted_wh) > 0 else None)
+        rect, self.shown = self.layout((W, H), dock, spare)
+        ow, oh = self.shown
+        x0, y0, x1, y1 = self.rect = rect
+        pad = self.PAD
+        mx, my = mouse
+        # white, with the pop-ups' black outline and no shadow -- painted
+        # straight on: glass_card records a stamp per size, ~50 ms for each
+        # new size while a size slider is dragged
+        rounded_rect(canvas, rect, POPOVER_RADIUS, C_CARD, -1)
+        rounded_rect(canvas, rect, POPOVER_RADIUS, C_TEXT, POPUP_OUTLINE)
+        draw_text(canvas, "Magnifier", (x0 + pad, y0 + 36), 0.7, C_TEXT, 1,
+                  weight=600)
+        close = Button("X", x1 - 52, y0 + 12, x1 - 20, y0 + 44, "mag_close",
+                       style="text", scale=0.46)
+        close.draw(canvas, hover=close.contains(mx, my), shadow=False)
+        self.buttons.append(close)
+
+        vx0 = x0 + (x1 - x0 - ow) // 2
+        vy0 = y0 + self.TITLE_H
+        vx1, vy1 = min(W, vx0 + ow), min(H, vy0 + oh)
+        self.view_rect = (vx0, vy0, vx1, vy1)
+        view = self._render(src, grid, objects, cam_key)
+        if view is None:
+            self.objects_seen = []
+            canvas[vy0:vy1, vx0:vx1] = C_CARD_SOFT
+            mid = (vy0 + vy1) // 2
+            draw_text_centred(canvas, "Click the camera view",
+                              (vx0, mid - 34, vx1, mid - 2), self.SCALE,
+                              C_TEXT_DIM, 1)
+            draw_text_centred(canvas, "to magnify that spot.",
+                              (vx0, mid + 2, vx1, mid + 34), self.SCALE,
+                              C_TEXT_DIM, 1)
+        else:
+            canvas[vy0:vy1, vx0:vx1] = view[:vy1 - vy0, :vx1 - vx0]
+            if not self.grip:       # a grip has its own mark
+                self._crosshair(canvas, vx0 + ow // 2, vy0 + oh // 2)
+        cv2.rectangle(canvas, (vx0, vy0), (vx1 - 1, vy1 - 1), C_BORDER, 1)
+
+        cap = fit_text(self.caption(grid), x1 - x0 - 2 * pad, 0.42)
+        draw_text(canvas, cap, (x0 + pad, vy0 + oh + 24), 0.42, C_TEXT_DIM, 1)
+        self.objects_all = list(objects or ())
+        y = vy0 + oh + self.CAPTION_H
+        pick = Button(fit_text(f"{self.picked or 'Pick an object'}  v",
+                               x1 - x0 - 2 * pad - 24, self.SCALE),
+                      x0 + pad, y, x1 - pad, y + 40, "mag_pick",
+                      style="ghost", scale=self.SCALE)
+        pick.draw(canvas, hover=pick.contains(mx, my), shadow=False)
+        self.buttons.append(pick)
+        list_y = y + 44
+        y += self.PICK_H
+        for sl in self.shown_sliders():
+            self._slider_row(canvas, sl, x0 + pad, x1 - pad, y, mx, my)
+            y += self.ROW_H
+        if self.pick_open:
+            # the list, over the sliders: one row per object Vision AI outlined
+            items = self.objects_all or [
+                (None, "No objects outlined yet", None, False, None)]
+            rh = 34
+            n = max(1, min(len(items), (H - 16 - list_y) // rh))
+            box = (x0 + pad, list_y, x1 - pad, list_y + n * rh + 8)
+            rounded_rect(canvas, box, 12, C_CARD, -1)
+            rounded_rect(canvas, box, 12, C_TEXT, 1)
+            for k, (number, name, _, _, _) in enumerate(items[:n]):
+                ry = list_y + 4 + k * rh
+                label = (f"Object {number}" + (f": {name}" if name else "")
+                         if number else name)
+                b = Button(fit_text(label, x1 - x0 - 2 * pad - 24, self.SCALE),
+                           x0 + pad + 4, ry, x1 - pad - 4, ry + rh - 2,
+                           "mag_item", number, style="text", scale=self.SCALE)
+                b.draw(canvas, hover=b.contains(mx, my), shadow=False)
+                self.buttons.insert(0, b)
+
+    def _slider_row(self, canvas, sl, left, right, y, mx, my):
+        """The label and its value, then - track +."""
+        draw_text(canvas, sl.label, (left, y + 18), self.SCALE, C_TEXT, 1)
+        value = self.text(sl.kind)
+        vw, _ = text_size(value, self.SCALE, 1, weight=600)
+        draw_text(canvas, value, (right - vw, y + 18), self.SCALE, C_TEXT, 1,
+                  weight=600)
+        by0, by1 = y + 28, y + 28 + self.STEP_W
+        for label, x_a, x_b, d in (("-", left, left + self.STEP_W, -1),
+                                   ("+", right - self.STEP_W, right, 1)):
+            b = Button(label, x_a, by0, x_b, by1, "mag_step", (sl.kind, d),
+                       style="ghost", scale=self.SCALE)
+            b.draw(canvas, hover=b.contains(mx, my), shadow=False)
+            self.buttons.append(b)
+        cy = (by0 + by1) // 2
+        sl.set_rect(left + self.STEP_W + 16, cy - 7,
+                    right - self.STEP_W - 16, cy + 7)
+        sl.draw(canvas, self.value_of(sl.kind), hover=sl.contains(mx, my),
+                active=self.dragging == sl.kind)
+
+    def pick_object(self, number):
+        """The dropdown's choice: the rectangle goes round the whole of that
+        object -- it, its parts and the parts joined to it (magnifier_wholes)
+        -- centred on it, Width x Height that box plus a margin."""
+        global MAGNIFIER_W, MAGNIFIER_H
+        hit = next((o for o in self.objects_all if o[0] == number), None)
+        if hit is None or not self._fitted:
+            return ""
+        number, name, contours, _, whole = hit
+        if whole is None:
+            pts = np.concatenate(contours)
+            whole = (*pts.min(axis=0), *pts.max(axis=0))
+        x0, y0, x1, y1 = (float(v) for v in whole)
+        lo, hi = MAGNIFIER_SIZE_RANGE
+        MAGNIFIER_W = int(min(hi, max(lo, math.ceil(x1 - x0) + 16)))
+        MAGNIFIER_H = int(min(hi, max(lo, math.ceil(y1 - y0) + 16)))
+        fw, fh = self._fitted
+        self.point = (min(1.0, max(0.0, (x0 + x1) / 2.0 / fw)),
+                      min(1.0, max(0.0, (y0 + y1) / 2.0 / fh)))
+        self.picked = f"Object {number}" + (f": {name}" if name else "")
+        self.picked_number = number
+        self._dirty = True
+        return f"Magnifying {self.picked}."
+
+    def covers(self, x, y) -> bool:
+        """Whether the card, as last drawn, is over window pixel (x, y)."""
+        r = self.rect if self.visible else None
+        return r is not None and r[0] <= x <= r[2] and r[1] <= y <= r[3]
+
+    def press(self, x, y):
+        """A click on the window, in its own pixels. None when it is not
+        the card's; otherwise a status line ("" when there is nothing to
+        say). A click on the magnified rectangle moves the spot to it."""
+        if not self.visible or self.rect is None:
+            return None
+        for b in self.buttons:
+            if b.contains(x, y):
+                if b.kind == "mag_close":
+                    self.close()
+                    return "Magnifier closed."
+                if b.kind == "mag_pick":
+                    self.pick_open = not self.pick_open
+                    return ""
+                if b.kind == "mag_item":
+                    self.pick_open = False
+                    return self.pick_object(b.value)
+                if self.pick_open:
+                    self.pick_open = False
+                    return ""
+                kind, d = b.value
+                self.step(kind, d)
+                return self.status_line()
+        for sl in self.shown_sliders():
+            if sl.contains(x, y):
+                self.dragging = sl.kind
+                self.set_value(sl.kind, sl.value_at(x))
+                return self.status_line()
+        x0, y0, x1, y1 = self.rect
+        if not (x0 <= x <= x1 and y0 <= y <= y1):
+            return None
+        v = self.view_rect
+        if (v and self.point is not None and self._fitted
+                and v[0] <= x < v[2] and v[1] <= y < v[3]):
+            fw, fh = self._fitted
+            k = max(self.shown_zoom, 1e-6)
+            cx, cy = v[0] + self.shown[0] / 2.0, v[1] + self.shown[1] / 2.0
+            self.point = (
+                min(1.0, max(0.0, self.point[0] + (x + 0.5 - cx) / k / fw)),
+                min(1.0, max(0.0, self.point[1] + (y + 0.5 - cy) / k / fh)))
+            return ""
+        if y < y0 + self.TITLE_H:
+            self.dragging = "card"
+            self._grab = (x - x0, y - y0)
+        return ""
+
+    def drag(self, x, y):
+        """The mouse moved with the button down: a slider, or the card by
+        its title bar. (The spot itself is moved by the caller, which knows
+        the camera view.)"""
+        if not self.visible or self.dragging in (None, "point"):
+            return None
+        if self.dragging == "card":
+            self.origin = (x - self._grab[0], y - self._grab[1])
+            return ""
+        sl = self.slider(self.dragging)
+        if sl is None:
+            self.dragging = None
+            return None
+        self.set_value(sl.kind, sl.value_at(x))
+        return self.status_line()
+
+    def release(self) -> bool:
+        """The button came up: True when that ended one of the card's drags."""
+        was, self.dragging = self.dragging, None
+        return was is not None
+
 
 
 def _run_single_file_self_test_impl():
@@ -28597,10 +31613,12 @@ def _run_single_file_self_test_impl():
     # -- A3-Terra's message box: laid out, broken into lines and wired up
     #    as A3-Terra's is
     _lay = a3_compose_layout(0, 0, 357)
-    check_top(_lay == {"edit": (26, 17, 110, 69), "pill": (118, 49, 203, 69),
+    # the thinking pill is gone: the edit runs up to the history circle
+    # (user, 2026-10-16). history/mic/send stay where A3-Terra put them.
+    check_top(_lay == {"edit": (26, 17, 203, 69),
                        "history": (211, 33, 247, 69),
                        "mic": (255, 33, 291, 69), "send": (299, 33, 335, 69)},
-              f"the message box left A3-Terra's layout: {_lay}")
+              f"the message box left its layout: {_lay}")
     _lay2 = a3_compose_layout(0, 0, 715, 2)
     check_top(_lay2 == {_n: tuple(2 * _v for _v in _r)
                         for _n, _r in _lay.items()},
@@ -28643,18 +31661,17 @@ def _run_single_file_self_test_impl():
               and a3_caret_line([(0, 4), (5, 8)], 4) == (0, 4)
               and a3_caret_line([(0, 4), (4, 8)], 8) == (1, 4),
               "the caret sits on the wrong side of a line break")
-    _ck_state.effort_menu_open = True
     _ck_canvas[:] = 230
     _ck_bar.draw(_ck_canvas, _ck_state, PlanRunner(), SimRunner())
-    _rows = {v: r for r, v in _ck_bar._effort_rects}
-    check_top(set(_rows) == set(dict(PLANNER_EFFORTS)) and all(
-        _ck_bar.hit_test((r[0] + r[2]) // 2, (r[1] + r[3]) // 2,
-                         state=_ck_state) == ("ai_effort_pick", v)
-        for v, r in _rows.items()),
-        "the thinking levels do not answer a click")
-    _ck_state.effort_menu_open = False
-    for _btn, _want in ((_ck_bar.effort_btn, "ai_effort"),
-                        (_ck_bar.history_btn, "ai_history"),
+    check_top(PLANNER_EFFORT == "low"
+              and not hasattr(_ck_bar, "effort_btn")
+              and "pill" not in _lay,
+              "the planner is not locked to low, or the thinking pill remains")
+    _fx0, _fy0, _fx1, _fy1 = _ck_bar.field
+    check_top(_ck_bar.hit_test(_fx1 - 4, (_fy0 + _fy1) // 2,
+                               state=_ck_state) == "ai_focus",
+              "where the thinking pill was, a click does not type")
+    for _btn, _want in ((_ck_bar.history_btn, "ai_history"),
                         (_ck_bar.mic_btn, "ai_mic"),
                         (_ck_bar.send_btn, "ai_send")):
         check_top(_ck_bar.hit_test((_btn.x0 + _btn.x1) // 2,
@@ -30264,6 +33281,7 @@ def _run_single_file_self_test_impl():
         def halt(self):
             self.commands.append((self.clock.now, "s"))
             HEAD.note("s", self.clock.now)
+            p3_hold_after_stop()
             return True
 
         def send_direction(self, direction, slow=False):
@@ -30375,7 +33393,7 @@ def _run_single_file_self_test_impl():
         descent = panel.auto_grip_down_duration
         advance(AUTO_GRIP_COMMAND_DELAY_S)
         advance(AUTO_PICKUP_HX_S)
-        advance(AUTO_GRIP_COMMAND_DELAY_S)
+        advance(AUTO_PICKUP_COIL_S)      # the gripper coil: lq, then s
         advance(AUTO_GRIP_COMMAND_DELAY_S)
         advance(AUTO_GRIP_COMMAND_DELAY_S)
         advance(AUTO_GRIP_COMMAND_DELAY_S)
@@ -30389,21 +33407,22 @@ def _run_single_file_self_test_impl():
         advance(descent + 0.05)
         advance(AUTO_ACTION_GAP_S)
         commands = [command for _, command in fake.commands]
-        check(commands == ["hd", "hx", "s", "g90", "g90", "p4", "p1", "hu", "s"],
+        check(commands == ["hd", "hx", "s", "lq", "s", "g90", "g90", "p1", "hu", "s"],
               f"unexpected pickup sequence: {commands}")
+        check("p4" not in commands, f"a pickup sent p4: {commands}")
         check(not any(c in ("u", "d", "l", "r") for c in commands),
               f"the deleted approach offset still drives the axes: {commands}")
         times = [at for at, _ in fake.commands]
         check(times[1] - times[0] >= AUTO_GRIP_COMMAND_DELAY_S,
               "hx followed the IR sensor without the one-second gap")
         check(times[2] - times[1] >= AUTO_PICKUP_HX_S, "hx duration was short")
-        check(times[3] - times[2] >= AUTO_GRIP_COMMAND_DELAY_S,
-              "hx-to-g90 wait was short")
-        check(times[4] - times[3] >= 0.5 and times[5] - times[4] >= 0.5,
-              "g90-to-p4 wait was short")
-        check(times[6] - times[5] >= AUTO_GRIP_COMMAND_DELAY_S,
-              "p4-to-p1 wait was short")
-        check(times[7] - times[6] >= AUTO_GRIP_COMMAND_DELAY_S,
+        check(times[3] == times[2] and abs(times[4] - times[3] - AUTO_PICKUP_COIL_S) < 0.11,
+              f"the gripper coil was not lq for {AUTO_PICKUP_COIL_S}s right after hx")
+        check(times[5] - times[4] >= AUTO_GRIP_COMMAND_DELAY_S,
+              "coil-to-g90 wait was short")
+        check(times[6] - times[5] >= 0.5 and times[7] - times[6] >= 0.5,
+              "g90-to-p1 wait was short")
+        check(times[8] - times[7] >= AUTO_GRIP_COMMAND_DELAY_S,
               "p1-to-hu wait was short")
         check(panel.offset_phase == "idle", "pickup state did not reset")
         check(press_command() == "p3",
@@ -30412,6 +33431,16 @@ def _run_single_file_self_test_impl():
         # the descent only): up at the end -- no needless lift before a retry
         check(HEAD.is_up(clock.now) and HEAD.longest_s > 0.0,
               f"a whole pickup left the head reading down: {HEAD.down_left(clock.now):.2f}s")
+        # the TOF check's times: down from hx's stop until hu, up from the
+        # lift's own stop
+        _tw = panel.pickup_tof_window()
+        check(_tw is not None and abs(_tw["bottom_from"] - times[2]) < 1e-9
+              and abs(_tw["bottom_to"] - times[8]) < 1e-9
+              and abs(_tw["top_from"] - times[9]) < 1e-9,
+              f"the pickup's TOF times are not hx's stop, hu and the lift's "
+              f"end: {_tw} {times}")
+        check(GripperPanel().pickup_tof_window() is None,
+              "a card that never picked anything up gave TOF times")
 
         clock.now = 200.0
         fake.commands = []
@@ -30480,17 +33509,21 @@ def _run_single_file_self_test_impl():
               f"a sensorless descent: up {HEAD.is_up(clock.now)}, lift "
               f"{HEAD.lift_time(clock.now):.2f}s (cap {_cap:.2f}s)")
 
-        # a release after a press that moved goes back down (p3) first
+        # Release is p4, then hu. A press that slid (soap) does not get
+        # another p3: the one from the press is still on.
         clock.now = 450.0
         fake.commands = []
         panel = GripperPanel()
+        note_p3_holding()
         note_press_moved(True)
         panel.start_automatic_action("release")
         advance(AUTO_ACTION_GAP_S)
-        check([command for _, command in fake.commands] == ["p3"],
-              "a release after a moved press did not go back to its height first")
-        check(panel.note_rx(b"S") and fake.commands[-1][1] == "hu",
-              "the release did not lift once p3 reached its height")
+        check([command for _, command in fake.commands] == ["p4"],
+              "a release after a moved press did not send p4")
+        check(not _P3_ON, "release left p3 on")
+        advance(AUTO_GRIP_COMMAND_DELAY_S)
+        check([c for _, c in fake.commands] == ["p4", "hu"],
+              "release did not follow p4 with hu")
         note_press_moved(False)
 
         clock.now = 500.0
@@ -30498,15 +33531,19 @@ def _run_single_file_self_test_impl():
         panel = GripperPanel()
         panel.start_automatic_action("release")
         advance(AUTO_ACTION_GAP_S)
-        check([command for _, command in fake.commands] == ["hu"],
-              "release did not send hu")
+        check([command for _, command in fake.commands] == ["p4"],
+              "release did not send p4")
+        advance(AUTO_GRIP_COMMAND_DELAY_S)
+        check([command for _, command in fake.commands] == ["p4", "hu"],
+              "release did not follow p4 with hu")
         advance(AUTO_RELEASE_DURATION_S / 2.0)
-        check([command for _, command in fake.commands] == ["hu"],
+        check([command for _, command in fake.commands] == ["p4", "hu"],
               "release stopped before its full duration")
         advance(AUTO_RELEASE_DURATION_S)
         times = dict((command, at) for at, command in fake.commands)
         commands = [command for _, command in fake.commands]
-        check(commands == ["hu", "s"], f"release did not run hu then s: {commands}")
+        check(commands == ["p4", "hu", "s"],
+              f"release did not run p4, hu, s: {commands}")
         check(times["s"] - times["hu"] > AUTO_RELEASE_DURATION_S - 1e-6,
               f"release ran for less than {AUTO_RELEASE_DURATION_S:.1f}s")
         check(HEAD.is_up(clock.now), "a finished release left the head reading down")
@@ -30533,15 +33570,24 @@ def _run_single_file_self_test_impl():
               f"a press sent something besides p3: {fake.commands}")
         check(panel.offset_phase == "idle" and not panel.offset_failed,
               "press did not finish cleanly")
+        # A stroke of a wipe stops the gantry (s). p3 has to come back on,
+        # and stay on, until release.
+        ARDUINO.halt()
+        advance(AUTO_GRIP_COMMAND_DELAY_S)
+        check([c for _, c in fake.commands] == ["p3", "s", "p3"],
+              f"a stop while pressing left p3 off: {fake.commands}")
         fake.commands = []
         panel.start_automatic_action("release")
         advance(AUTO_ACTION_GAP_S)
-        check([c for _, c in fake.commands] == ["hu"], "release did not lift")
+        check([c for _, c in fake.commands] == ["p4"], "release did not send p4")
+        advance(AUTO_GRIP_COMMAND_DELAY_S)
+        check([c for _, c in fake.commands] == ["p4", "hu"],
+              "release did not follow p4 with hu")
         advance(AUTO_RELEASE_DURATION_S + 0.1)
-        check([c for _, c in fake.commands] == ["hu", "s"],
+        check([c for _, c in fake.commands] == ["p4", "hu", "s"],
               f"release did not end with s: {fake.commands}")
 
-        # A press after a pickup: p3, back down to the height p4 stored.
+        # A press after a pickup: p3. The pickup itself did not send p4.
         clock.now = 680.0
         fake.commands = []
         note_height_saved()
@@ -30596,14 +33642,15 @@ def _run_single_file_self_test_impl():
         fake.commands = []
         panel.start_automatic_action("release")
         advance(AUTO_ACTION_GAP_S)
+        advance(AUTO_GRIP_COMMAND_DELAY_S)
         advance(AUTO_RELEASE_DURATION_S + 0.05)
         commands = [c for _, c in fake.commands]
         times = [at for at, _ in fake.commands]
-        check(commands == ["hu", "s"]
-              and times[1] - times[0] < AUTO_RELEASE_DURATION_S + 0.1,
+        check(commands == ["p4", "hu", "s"]
+              and times[2] - times[1] < AUTO_RELEASE_DURATION_S + 0.1,
               f"the release after a silent p3 lifted too far: {fake.commands}")
 
-        # STOP in the second between g90 and p4: no p4, nothing stored.
+        # STOP in the second between the two g90s: no p1, and never p4.
         clock.now = 690.0
         fake.commands = []
         forget_saved_height()
@@ -30614,18 +33661,19 @@ def _run_single_file_self_test_impl():
         panel.note_rx(b"S")
         advance(AUTO_GRIP_COMMAND_DELAY_S)
         advance(AUTO_PICKUP_HX_S)
+        advance(AUTO_PICKUP_COIL_S)
         advance(AUTO_GRIP_COMMAND_DELAY_S)
         check(panel.auto_grip_phase == panel.AUTO_GRIP_WAIT_P1,
-              f"g90 was not followed by the wait for p4: "
+              f"g90 was not followed by the wait for p1: "
               f"{panel.auto_grip_phase}")
         panel.abort_automatic_action()
         advance(AUTO_GRIP_COMMAND_DELAY_S * 2)
         commands = [c for _, c in fake.commands]
         check("p4" not in commands and "p1" not in commands
               and commands[-1] == "s",
-              f"a stopped pickup still stored its height: {commands}")
+              f"a stopped pickup still sent p1 or p4: {commands}")
         check(press_command() == "p3",
-              "a pickup stopped before p4 left a height stored")
+              "a pickup stopped before p1 left a press that is not p3")
 
         # A broom sweep: one pickup, then press ... release twice -- both
         # presses go back to the height it saved.
@@ -30642,12 +33690,11 @@ def _run_single_file_self_test_impl():
             if panel.offset_phase == "idle" and not panel.pending_auto_actions:
                 break
         sweep = [c for _, c in fake.commands]
-        check(sweep == ["p3", "hu", "s", "p3", "hu", "s"],
+        check(sweep == ["p3", "p4", "hu", "s", "p3", "p4", "hu", "s"],
               f"two presses after one pickup did not both use p3: {sweep}")
 
-        # The runner's own sequence, used when no gripper card is wired: a
-        # pickup stores its height with p4, then sends p1, a second
-        # either side; a pour does not.
+        # The runner's own sequence, used when no gripper card is wired:
+        # g90, g90, p1, hu. It never sends p4. A pour does not send p1.
         clock.now = 760.0
         fake.commands = []
         forget_saved_height()
@@ -30667,16 +33714,18 @@ def _run_single_file_self_test_impl():
             clock.now += 0.05
             plunge.tick()
         commands = [c for _, c in fake.commands]
-        check(commands == ["hd", "g90", "p4", "p1", "hu", "s"],
+        check(commands == ["hd", "g90", "g90", "p1", "hu", "s"],
               f"the runner's pickup ran {commands}")
+        check("p4" not in commands, f"the runner's pickup sent p4: {commands}")
         times = [at for at, _ in fake.commands]
         check(times[2] - times[1] >= AUTO_GRIP_COMMAND_DELAY_S - 1e-6
-              and times[3] - times[2] >= AUTO_GRIP_COMMAND_DELAY_S - 1e-6
+              and times[3] - times[2] >= AUTO_GRIP_P1_SETTLE_S - 1e-6
               and times[4] - times[3] >= AUTO_GRIP_COMMAND_DELAY_S - 1e-6,
-              f"the runner's pickup crowded p4 or p1: {fake.commands}")
+              f"the runner's pickup crowded g90 or p1: {fake.commands}")
         check(abs((times[5] - times[4]) - 0.7) < 0.06,
               f"the runner's lift did not mirror its descent: {fake.commands}")
-        check(press_command() == "p3", "the runner's pickup saved no height")
+        check(press_command() == "p3",
+              "a press after the runner's pickup did not send p3")
         fake.commands = []
         forget_saved_height()
         plunge = PlungeSequence()
@@ -30763,16 +33812,16 @@ def _run_single_file_self_test_impl():
               "four chained automatic actions did not all finish")
         check(not panel.offset_failed, "a chained automatic action failed")
         chain = [command for _, command in fake.commands]
-        moving = ("r", "d", "l", "u", "hd", "hx", "hu")
+        moving = ("r", "d", "l", "u", "lq", "hd", "hx", "hu")
         strays = [index for index, command in enumerate(chain)
                   if command == "s" and (index == 0
                                          or chain[index - 1] not in moving)]
         check(not strays,
               f"stop sent with nothing to stop, at {strays} of {chain}")
-        check(chain == ["hd", "hx", "s", "g90", "g90", "p4", "p1", "hu", "s",
+        check(chain == ["hd", "hx", "s", "lq", "s", "g90", "g90", "p1", "hu", "s",
                         "g0",
                         "p3",
-                        "hu", "s"],
+                        "p4", "hu", "s"],
               f"the chained actions did not all run: {chain}")
 
         box = {"name": "box", "center": "D4",
@@ -30825,6 +33874,33 @@ def _run_single_file_self_test_impl():
         check(elapsed < 0.1,
               f"send_direction blocked the caller for {elapsed:.2f}s -- "
               f"the write is not actually off the main thread")
+
+        # every gripper word on its own line, p4 too (user, 2026-10-17):
+        # after a word, after a bare stop, and after bare motion letters
+        class _WirePort:
+            is_open = True
+
+            def __init__(self):
+                self.data = b""
+
+            def write(self, data):
+                self.data += data
+
+            def close(self):
+                self.is_open = False
+
+        link = SerialLink()
+        link.conn = _WirePort()
+        link._ready_at = 0.0
+        for _tok in ("p4", "s", "p4", "hu", "rq", "s", "p4", "p3", "p1"):
+            link.send_command(_tok)
+        _want = b"p4\ns\np4\nhu\nrqs\np4\np3\np1\n"
+        _until = time.time() + 2.0
+        while link.conn.data != _want and time.time() < _until:
+            time.sleep(0.01)
+        check(link.conn.data == _want,
+              f"p4 did not go out on a line of its own: {link.conn.data!r}")
+        HEAD.reset()
 
         # no model picks the grip: a pickup the planner wrote one cell off
         # the box still closes on the box's middle, and one two cells off
@@ -30934,7 +34010,7 @@ def _run_single_file_self_test_impl():
 
         # The press comes after the pickup above: back to its height (p3).
         for action, first in (("pickup", "hd"), ("keep", "g0"),
-                              ("press", "p3"), ("release", "hu")):
+                              ("press", "p3"), ("release", "p4")):
             clock.now += 10.0
             fake.commands = []
             gp, card = wire()
@@ -30970,10 +34046,10 @@ def _run_single_file_self_test_impl():
               "a manual keep did not open the card and wait")
 
         # Each action stopped as soon as it starts: the pickup never gets
-        # to p4, and the press still starts with p3.
+        # to p1, and the press still starts with p3.
         forget_saved_height()
         for action, first in (("pickup", "hd"), ("keep", "g0"),
-                              ("press", "p3"), ("release", "hu")):
+                              ("press", "p3"), ("release", "p4")):
             clock.now += 10.0
             fake.commands = []
             fake.failed_writes = 1
@@ -31628,6 +34704,519 @@ def _run_single_file_self_test_impl():
     check(not re.search(r"sk-(?:proj|live|svcacct)-\w{20,}",
                         open(SCRIPT_PATH, encoding="utf-8").read()),
           "an API key is written into the HOS X script")
+
+    # ---- The TOF check before a press (user, 2026-10-17): MM decides,
+    # never RAW; only the pickup a press comes straight after is checked
+    _t = parse_tof_line("TOF:MM=81 RAW=80 VALID=1 P1=-1 P3=HOLD")
+    check(_t == {"mm": 81.0, "raw": 80.0, "valid": True},
+          f"a TOF line was read wrongly: {_t}")
+    check(parse_tof_line("TOF:MM=81 RAW=80 VALID=0")["valid"] is False,
+          "a reading the board marked VALID=0 was believed")
+    check(parse_tof_line("TOF:MM=-1 RAW=3")["valid"] is False,
+          "a negative TOF reading was believed")
+    check(parse_tof_line("tof:mm=12.5,raw=9")["mm"] == 12.5,
+          "a lower-case TOF line was not read")
+    check(all(parse_tof_line(x) is None for x in
+              ("TOF:RAW=80 VALID=1", "S", "ERR:limit", "", None, "MM=40",
+               "TOF:MM=abc")),
+          "a line without an MM reading gave a TOF reading")
+    _mon = TofMonitor()
+    for _k, (_mm, _raw) in enumerate(((40, 90), (41, 160), (39, 15))):
+        check(_mon.note_line(f"TOF:MM={_mm} RAW={_raw} VALID=1",
+                             now=10.0 + _k), "a TOF line was not taken")
+    check(_mon.note_line("TOF:MM=500 RAW=40 VALID=0", now=13.0)
+          and not _mon.note_line("sensors ok", now=13.5),
+          "the TOF monitor took a line it should not have")
+    check(_mon.values(10.0, 12.0) == [40.0, 41.0, 39.0],
+          f"TOF readings were not kept by their MM: {_mon.values(10.0, 12.0)}")
+    check(_mon.values(11.5) == [39.0], "an invalid TOF reading was counted")
+    check(_mon.latest(now=13.2) == 39.0 and _mon.latest(max_age=0.5, now=20.0) is None,
+          "the live TOF reading was wrong, or a stale one was given")
+    _mon.note_line("TOF:MM=55", now=12.0 + TOF_KEEP_S + 1.0)
+    check(_mon.values(0.0) == [55.0], "old TOF readings were never dropped")
+    check(tof_same_reading([40, 41, 40], [41, 42, 41], 5.0) == (True, 40.0, 41.0)
+          and tof_same_reading([40, 41, 40], [95, 96], 5.0)[0] is False
+          and tof_same_reading([40, 40, 100], [44], 5.0) == (True, 40.0, 44.0)
+          and tof_same_reading([], [40]) is None
+          and tof_same_reading([40], []) is None,
+          "the TOF same-reading rule is wrong")
+    _plan = ["goto_coordinate = B, 3", "pickup", "goto_coordinate = H, 8",
+             "wait_X(2)", "press", "goto_coordinate = H, 9", "release",
+             "goto_coordinate = B, 3", "keep", "goto_coordinate = C, 4",
+             "pickup", "goto_coordinate = D, 5", "keep", "Task_Completed"]
+    check(pickup_before_press(_plan, 1) == 4,
+          "the pickup a press comes after was not found")
+    check(pickup_before_press(_plan, 10) is None
+          and pickup_before_press(_plan, 4) is None
+          and pickup_before_press(_plan, 0) is None
+          and pickup_before_press(_plan, 99) is None,
+          "a pickup with no press after it, or a step that is no pickup, "
+          "was checked")
+    check(pickup_before_press(["pickup", "keep", "pickup", "press"], 0) is None
+          and pickup_before_press(["pickup", "keep", "pickup", "press"], 2) == 3
+          and pickup_before_press(["pickup", "pour(0.5)", "press"], 0) is None
+          and pickup_before_press(["pickup"], 0) is None,
+          "the TOF check is not for the one pickup straight before the press")
+    _img = np.full((820, 1400, 3), 200, np.uint8)
+    _card, _rects = draw_tof_popup(
+        _img, (40, 320, 1360, 800), {"down": 81.0, "up": 82.0, "press": 4}, 83.0)
+    check(set(_rects) == {"stop", "continue"} and _card[3] <= 320
+          and all(r[0] >= _card[0] and r[2] <= _card[2] for r in _rects.values()),
+          f"the TOF pop-up covered the camera view or lost a button: {_card}")
+
+    # ---- The Magnifier (Other Tools, Cmd+B): the spot clicked is the one
+    # magnified, cut from the camera's own frame under every camera setting
+    def _dot(img, ch):
+        """The middle of the red (ch 2) or blue (ch 0) test dot, or None."""
+        ys, xs = np.where((img[:, :, ch] > 180) & (img[:, :, 2 - ch] < 90))
+        return ((float(xs.mean()) + 0.5, float(ys.mean()) + 0.5)
+                if len(xs) else None)
+
+    for _cs in (CameraSettings(), CameraSettings(zoom=1.1),
+                CameraSettings(zoom=1.6, rotation=90),
+                CameraSettings(zoom=1.3, rotation=270, mirror=True),
+                CameraSettings(rotation=180, mirror=True)):
+        # a red and a blue dot 30 camera px apart; magnified 10x around the
+        # spot half way between them, they must sit 10x as far apart, either
+        # side of the middle
+        _raw = np.full((1080, 1920, 3), 128, np.uint8)
+        cv2.rectangle(_raw, (1100, 610), (1105, 615), (0, 0, 255), -1)
+        cv2.rectangle(_raw, (1130, 610), (1135, 615), (255, 0, 0), -1)
+        _fit = _cs.fitted(_raw, 1413, 900)
+        _fwh = (_fit.shape[1], _fit.shape[0])
+        _a, _b = _dot(_fit, 2), _dot(_fit, 0)
+        check(_a is not None and _b is not None,
+              f"the test dots are not on the view: {_cs}")
+        _d = math.hypot(_b[0] - _a[0], _b[1] - _a[1])
+        _out = int(round(20 * _d))
+        _p = magnify_patch(_raw, _cs, _fwh, ((_a[0] + _b[0]) / 2.0,
+                                             (_a[1] + _b[1]) / 2.0),
+                           2.0 * _d, _out)
+        _pa, _pb = _dot(_p, 2), _dot(_p, 0)
+        check(_p.shape == (_out, _out, 3) and _pa is not None
+              and _pb is not None
+              and abs(math.hypot(_pb[0] - _pa[0], _pb[1] - _pa[1]) / _d - 10.0) < 0.5
+              and abs((_pa[0] + _pb[0]) / 2.0 - _out / 2.0) < 0.03 * _out
+              and abs((_pa[1] + _pb[1]) / 2.0 - _out / 2.0) < 0.03 * _out,
+              f"the magnified spot is not the one clicked, 10x ({_cs}): "
+              f"{_a} {_b} in the view, {_pa} {_pb} of {_out} magnified")
+    _p = magnify_patch(_raw, _cs, _fwh, (0.5, 0.5), 40.0, 200)
+    check(tuple(int(v) for v in _p[2, 2]) == tuple(C_CARD_SOFT)
+          and tuple(int(v) for v in _p[150, 150]) == (128, 128, 128),
+          "beyond the camera view's edge is not padded")
+    _grad = np.tile(np.arange(1920, dtype=np.float32)[None, :] * 255 / 1919,
+                    (1080, 1)).astype(np.uint8)
+    _grad = cv2.cvtColor(_grad, cv2.COLOR_GRAY2BGR)
+    _cs = CameraSettings()
+    _gfit = _cs.fitted(_grad, 1413, 900)
+    _gwh = (_gfit.shape[1], _gfit.shape[0])
+    check(len(set(np.unique(magnify_patch(
+              _grad, _cs, _gwh, (_gwh[0] / 2.0, 300.0), 100.0, 300)).tolist())
+              - {0, 255}) > 5,
+          "the magnifier is black and white (its threshold was removed)")
+    _mz = magnifier_settings()
+    try:
+        load_magnifier_settings({"zoom": 2.5, "width": 120, "height": 80})
+        _mag = Magnifier()
+        _canvas = np.full((998, 1823, 3), 252, np.uint8)
+        _dock = (1823 - 10 - 380, 56, 1823 - 10, 998)
+        _cs = CameraSettings(zoom=1.1)
+        _raw = np.full((1080, 1920, 3), 128, np.uint8)
+        cv2.circle(_raw, (960, 540), 40, (20, 200, 30), -1)
+        _fit = _cs.fitted(_raw, 1413, 942)
+        _fwh = (_fit.shape[1], _fit.shape[0])
+        _grid = Grid(_fwh[0], _fwh[1], None)
+        _mag.draw(_canvas, (_raw, _cs), _fwh, dock=_dock)
+        check(_mag.rect is None and _mag.press(1600, 300) is None,
+              "a closed Magnifier drew or took a click")
+        _mag.open()
+        _mag.set_point(_fwh[0] // 2, _fwh[1] // 2, *_fwh)
+        _mag.draw(_canvas, (_raw, _cs), _fwh, dock=_dock)
+        check(_mag.shown == (300, 200) and _mag.rect[2] <= _dock[2] + 1,
+              f"120 x 80 at 2.5x is not a 300 x 200 view: {_mag.shown}")
+        _v = _mag.view_rect
+        check(tuple(int(c) for c in _canvas[_v[1] + 100 + 30, _v[0] + 150 + 30])
+              == (20, 200, 30), "the card does not show the magnified spot")
+        # the rectangle on the view is exactly Width x Height
+        _frame = np.full((_fwh[1], _fwh[0], 3), 128, np.uint8)
+        _mag.draw_marker(_frame)
+        _ys, _xs = np.where(np.all(_frame == np.array(C_OVERLAY, np.uint8), axis=2))
+        check(_xs.max() - _xs.min() + 1 == 120 and _ys.max() - _ys.min() + 1 == 80,
+              f"the outlined rectangle is not 120 x 80: "
+              f"{_xs.max() - _xs.min() + 1} x {_ys.max() - _ys.min() + 1}")
+
+        def _btn(kind, d):
+            return next(b for b in _mag.buttons if b.kind == "mag_step"
+                        and b.value == (kind, d))
+
+        def _centre(b):
+            return ((b.x0 + b.x1) // 2, (b.y0 + b.y1) // 2)
+
+        _mag.take_dirty()
+        _mag.press(*_centre(_btn("mag_w", 1)))
+        _mag.press(*_centre(_btn("mag_h", -1)))
+        _mag.press(*_centre(_btn("mag_zoom", 1)))
+        check(MAGNIFIER_W == 121 and MAGNIFIER_H == 79 and MAGNIFIER_ZOOM == 2.6
+              and _mag.take_dirty(),
+              f"the -/+ did not step width, height, zoom: "
+              f"{MAGNIFIER_W} {MAGNIFIER_H} {MAGNIFIER_ZOOM}")
+        _hs = _mag.slider("mag_h")
+        _mag.press(_hs.x1, (_hs.y0 + _hs.y1) // 2)
+        _mag.release()
+        _mag.draw(_canvas, (_raw, _cs), _fwh, dock=_dock)
+        check(MAGNIFIER_H == MAGNIFIER_SIZE_RANGE[1]
+              and _mag.rect[3] <= _canvas.shape[0] - 8
+              and abs(_mag.shown[0] / _mag.shown[1] - 121 / 800) < 0.02,
+              f"a tall rectangle did not shrink to fit, shape kept: {_mag.shown}")
+        load_magnifier_settings({"zoom": 4.0, "width": 200, "height": 100})
+        # the coordinate grid and numbered objects on the magnified view
+        _view = {"objects": [[np.array([[900, 500], [1020, 500], [1020, 580],
+                                        [900, 580]], np.int32)]],
+                 "ids": [7]}
+        _objs = magnifier_objects(_view, {7: "green ball"}, {}, _fwh[0] / 1920.0)
+        check(_objs and _objs[0][0] == 1 and _objs[0][1] == "green ball",
+              f"objects were not numbered: {_objs}")
+        _mag.draw(_canvas, (_raw, _cs), _fwh, dock=_dock, grid=_grid,
+                  objects=_objs)
+        check(_mag.objects_seen == ["Object 1: green ball"],
+              f"the object label is not 'Object 1: green ball': {_mag.objects_seen}")
+        load_magnifier_settings({"width": 700, "height": 90})
+        _mag.draw(_canvas, (_raw, _cs), _fwh, dock=_dock, grid=_grid,
+                  objects=_objs)
+        check(_mag.rect[2] - _mag.rect[0] <= 380 and _mag.shown[0] <= 340,
+              f"a wide rectangle widened the card past the sidebar: {_mag.rect}")
+        _pk = next(b for b in _mag.buttons if b.kind == "mag_pick")
+        _mag.press(*_centre(_pk))
+        _mag.draw(_canvas, (_raw, _cs), _fwh, dock=_dock, grid=_grid,
+                  objects=_objs)
+        _it = next(b for b in _mag.buttons if b.kind == "mag_item")
+        check(_mag.press(*_centre(_it)) == "Magnifying Object 1: green ball."
+              and not _mag.pick_open,
+              "picking Object 1 from the dropdown did not magnify it")
+        _s = _fwh[0] / 1920.0
+        check(abs(MAGNIFIER_W - (round(120 * _s) + 16)) <= 1
+              and abs(_mag.point[0] * _fwh[0] - 960 * _s) < 1.5,
+              f"the rectangle is not round the picked object: {MAGNIFIER_W} "
+              f"{_mag.point}")
+        # picking takes in the whole of it (user, 2026-10-17): a caliper's
+        # slider with its screen and the long bar, each a part of the
+        # caliper; a loose pen on a book, a brush's two pieces, the robot
+
+        def _rc(x0, y0, x1, y1):
+            return np.int32([[x0, y0], [x1, y0], [x1, y1], [x0, y1]]).reshape(-1, 1, 2)
+
+        _cshapes = [
+            np.int32([[500, 400], [670, 400], [670, 420], [1060, 420],
+                      [1060, 460], [670, 460], [670, 560], [500, 560]]
+                     ).reshape(-1, 1, 2),                   # 0 the caliper
+            _rc(500, 400, 670, 560), _rc(520, 415, 620, 455),  # 1 slider, 2 screen
+            _rc(673, 420, 1060, 460), _rc(300, 100, 400, 900),  # 3 bar, 4 strip
+            _rc(1200, 600, 1500, 900), _rc(1250, 650, 1450, 680),  # 5 book, 6 pen
+            _rc(1200, 200, 1400, 240), _rc(1402, 180, 1480, 260),  # 7, 8 brush
+            _rc(1062, 430, 1150, 450)]                      # 9 the gripper
+        _cobjs = [[c] for c in _cshapes]
+        _cids = list(range(40, 50))
+        _cv = {"objects": _cobjs, "ids": _cids, "parents": find_parents(_cobjs),
+               "frame": _raw}
+        _cn = dict(zip(_cids, ["digital caliper", "slider", "screen", "Object 6",
+                               "", "book", "pen", "handle", "bristles",
+                               "gripper"]))
+        _ci = {46: {"loose": True}, 47: {"thing": "hand brush"},
+               48: {"thing": "hand brush"}, 49: {"robot": True}}
+        check(_cv["parents"][1:4] == [0, 1, 0] and _cv["parents"][6] == 5,
+              f"the test's parts are not parts: {_cv['parents']}")
+        _ents = magnifier_objects(_cv, _cn, _ci, _s)
+        _num = {e[1]: e[0] for e in _ents}
+        check("" in _num and "Object 6" not in _num,
+              f"a name that is only 'Object 6' was kept: {sorted(_num)}")
+        load_magnifier_settings({"zoom": 3.0, "width": 120, "height": 90})
+        _mag.draw(_canvas, (_raw, _cs), _fwh, dock=_dock, grid=_grid,
+                  objects=_ents)
+
+        def _covers(i):
+            c = _cshapes[i].reshape(-1, 2) * _s
+            r = _mag.source_rect(*_fwh)
+            return (r[0] <= c[:, 0].min() and r[1] <= c[:, 1].min()
+                    and r[2] >= c[:, 0].max() and r[3] >= c[:, 1].max())
+
+        _cases = (("slider", (1, 2, 3), (4, 9)), ("screen", (2,), (3,)),
+                  ("digital caliper", (0, 1, 2, 3), (9,)),
+                  ("pen", (6,), (5,)), ("book", (5, 6), ()),
+                  ("handle", (7, 8), ()), ("gripper", (9,), (3,)))
+        for _nm, _yes, _no in _cases:
+            _mag.pick_object(_num[_nm])
+            check(all(_covers(i) for i in _yes)
+                  and not any(_covers(i) for i in _no),
+                  f"picking the {_nm} did not take in just "
+                  f"{[_cn[_cids[i]] for i in _yes]}: {MAGNIFIER_W} x "
+                  f"{MAGNIFIER_H} at {_mag.point}")
+        _mag.pick_object(_num["slider"])
+        _mag.draw(_canvas, (_raw, _cs), _fwh, dock=_dock, grid=_grid,
+                  objects=_ents)
+        _lb = [b[3] for b in _mag._labels]
+        check(_mag._labels and _mag._labels[0][0] == "Object %d: slider"
+              % _num["slider"] and not any(
+                  a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]
+                  for k, a in enumerate(_lb) for b in _lb[k + 1:]),
+              f"the labels overlap, or the picked one is not first: {_mag._labels}")
+        _mag.set_point(_fwh[0] // 2, _fwh[1] // 2, *_fwh)
+        check(_mag.picked is None and _mag.picked_number is None,
+              "a click on the camera view left the dropdown naming an object")
+        load_magnifier_settings({"zoom": 4.0, "width": 200, "height": 100})
+        _mag.draw(_canvas, (_raw, _cs), _fwh, dock=_dock, grid=_grid)
+        _v = _mag.view_rect
+        _vv = _canvas[_v[1]:_v[3], _v[0]:_v[2]]
+        _white = np.all(_vv == 255, axis=2)
+        check(_white.any(axis=0).sum() > 0 and _white.sum() > 200,
+              "no coordinate grid lines on the magnified view")
+        check(_mag.caption(_grid).startswith("200 x 100 px at "),
+              f"the caption: {_mag.caption(_grid)}")
+        _close = next(b for b in _mag.buttons if b.kind == "mag_close")
+        check(_mag.press(*_centre(_close)) == "Magnifier closed."
+              and not _mag.visible, "the Magnifier's X did not close it")
+        load_magnifier_settings({"zoom": 99, "width": -5, "threshold": 128})
+        check("threshold" not in magnifier_settings()
+              and not any(s.kind == "mag_threshold" for s in Magnifier().sliders),
+              "the Magnifier still has a threshold")
+        check(magnifier_settings()["width"] == 200 and MAGNIFIER_ZOOM == 4.0,
+              "an out-of-range saved Magnifier slider was taken")
+    finally:
+        load_magnifier_settings(_mz)
+
+    # Micro coordinates, Micro Trigonometry and Gripper AI's micro grip
+    # (user, 2026-10-17)
+    check(micro_name(5.3, 7.6) == "F8.b3" and micro_name(19.99, 19.99) == "T20.d4",
+          f"micro_name: {micro_name(5.3, 7.6)} {micro_name(19.99, 19.99)}")
+    check(all(parse_micro(t) == (5.375, 7.625) for t in
+              ("GRIP: F8.b3", "f8 b3", "F8:B3", "F8b3", "F8, b3"))
+          and parse_micro("F8.e3") is None and parse_micro("F8.b5") is None,
+          "a micro coordinate is not read back to the middle of its micro cell")
+    _mt = micro_trig_settings()
+    try:
+        load_micro_trig_settings({"camera_in": 35.0, "grip_in": 0.0,
+                                  "nadir_mm": [0, 0], "shift_mm": [0, 0],
+                                  "land_mm": [0, 0], "local_mm": [[0, 0]] * 9})
+        check(micro_true_point(3.2, 15.7) == (3.2, 15.7),
+              "Micro Trigonometry moved a point with nothing set")
+        load_micro_trig_settings({"grip_in": 1.0})
+        _q = micro_true_point(0.0, CONFIG.n_rows / 2.0)
+        _want = CONFIG.n_cols / 2.0 * (1.0 - 34.0 / 35.0)
+        check(abs(_q[0] - _want) < 1e-9 and abs(_q[1] - CONFIG.n_rows / 2.0) < 1e-9,
+              f"the gripped surface's parallax is not pulled to the nadir: {_q}")
+        _mm = micro_mm_per_cell()
+        load_micro_trig_settings({"grip_in": 0.0, "shift_mm": [3.0, -1.5]})
+        _q = micro_true_point(10.0, 10.0)
+        check(abs((_q[0] - 10.0) * _mm - 3.0) < 1e-6
+              and abs((_q[1] - 10.0) * _mm + 1.5) < 1e-6,
+              f"the shift of every micro coordinate is not 3 mm, -1.5 mm: {_q}")
+        _loc = [[0.0, 0.0] for _ in range(9)]
+        _loc[0] = [2.0, 0.0]
+        load_micro_trig_settings({"shift_mm": [0, 0], "local_mm": _loc})
+        _a = micro_shift_at(0.0, 0.0)
+        _b = micro_shift_at((CONFIG.n_cols // 2 + 1) / 2.0, (CONFIG.n_rows // 2 + 1) / 2.0)
+        check(abs(_a[0] * _mm - 2.0) < 1e-6 and abs(_b[0] * _mm - 0.5) < 1e-6
+              and micro_shift_at(0.8 * CONFIG.n_cols, 0.8 * CONFIG.n_rows) == (0.0, 0.0),
+              "the top-left point's shift is not blended out toward the middle")
+        _s = micro_seen_point(*micro_true_point(2.0, 3.0, 0.0))
+        check(abs(_s[0] - 2.0) < 1e-6 and abs(_s[1] - 3.0) < 1e-6,
+              f"micro_seen_point does not undo micro_true_point: {_s}")
+        load_micro_trig_settings({"local_mm": [[0, 0]] * 9, "land_mm": [6.0, 0.0]})
+        check(micro_macro_cell((5.95, 7.5)) == (5, 7)
+              and micro_macro_cell((5.1, 7.5)) == (4, 7),
+              "the landing offset does not pick the cell landing nearest the grip")
+        load_micro_trig_settings({"land_mm": [99.0, 0.0], "grip_in": -1,
+                                  "local_mm": [[0, 0]] * 8})
+        check(MICRO_TRIG_LAND_MM == [6.0, 0.0] and MICRO_TRIG_GRIP_IN == 0.0,
+              "an out-of-range Micro Trigonometry setting was taken")
+        load_micro_trig_settings({"land_mm": [0.0, 0.0]})
+
+        def _ob(name, poly, comps=()):
+            return {"name": name, "center": "F8", "polygon": poly,
+                    "components": list(comps), "touches": "F8"}
+
+        _g = geometric_grip(_ob("box", [(4, 4), (8, 4), (8, 7), (4, 7)]))
+        check(abs(_g[0] - 6.0) < 0.06 and abs(_g[1] - 5.5) < 0.06,
+              f"a block is not gripped at its heart: {_g}")
+        _bar = _ob("bar", [(2, 10), (12, 10), (12, 10.4), (2, 10.4)])
+        _g = geometric_grip(_bar)
+        check(abs(_g[0] - 7.0) < 0.1 and 10.0 < _g[1] < 10.4,
+              f"a bar is not gripped at the middle of its length: {_g}")
+        check(geometric_grip(_bar, reach=(0, 0, 5, 20))[0] < 5.0
+              and geometric_grip(_bar, reach=(15, 0, 20, 20)) is None,
+              "the outline grip is not kept to the reachable part")
+        # a brush: its head (C3-F5) and handle (x 3.4-4.6, rows 6-9); a grip
+        # asked on the handle's right edge snaps to the handle's middle
+        _brush = _ob("brush", [(2, 2), (6, 2), (6, 5), (4.6, 5), (4.6, 9),
+                               (3.4, 9), (3.4, 5), (2, 5)])
+        _g = geometric_grip(_brush, near=(4.55, 7.0))
+        check(_g is not None and abs(_g[0] - 4.0) < 0.1 and abs(_g[1] - 7.0) < 0.3,
+              f"a grip on a handle's edge is not snapped to its middle: {_g}")
+        check(geometric_grip(_brush, near=(9.0, 9.0)) is None,
+              "a chosen grip far off the object was snapped onto it")
+        _cal = [(4.4, 6.9), (7.6, 7.0), (7.6, 7.3), (14.4, 7.3), (14.4, 8.1),
+                (7.6, 8.1), (7.6, 8.4), (7.2, 8.5), (5.8, 8.6), (5.6, 9.1),
+                (5.4, 9.7), (5.0, 9.8), (4.6, 9.5), (4.5, 8.8)]
+        _caliper = _ob("digital caliper", _cal)
+        _g = geometric_grip(_caliper)
+        check(_point_in_poly(_g[0], _g[1], _cal) and _g[1] > 7.05
+              and min(math.hypot(_g[0] - x, _g[1] - y) for x, y in _cal) > 0.2,
+              f"an L-shaped caliper is not gripped inside its body: {_g}")
+        _plan = ("1. goto_coordinate = F, 8\n2. pickup\n3. goto_coordinate = K, 4\n"
+                 "4. keep\n5. Task_Completed")
+        _seen = []
+        enforce_gripper_targets(_plan, [_caliper], "", seen=_seen)
+        _txt, _chg = enforce_gripper_targets(_plan, [_caliper], "",
+                                             grips={0: (9.3, 7.7)})
+        _ln = _txt.splitlines()
+        check(_seen == [0] and "J, 8" in _ln[0] and "micro J8.b3" in _ln[0]
+              and "O, 4" in _ln[2] and _chg and _chg[0]["now"] == "J8"
+              and parse_plan_commands(_txt)[0].replace(" ", "") == "goto_coordinate=J,8",
+              f"Gripper AI's micro grip did not move the pickup and the held "
+              f"route by its macro cell: {_ln[:3]} {_chg}")
+        # the planning job's grips: the outline, the trigonometry, the look
+        _job = AIJob(None, "move the digital caliper to K4")
+        _job.plan, _job.objects = _plan, [_caliper]
+        _grips = _job._grips(None, "move the digital caliper to K4")
+        _seq, _look = _job.grip_now()
+        check(set(_grips) == {0} and _look["state"] == "done"
+              and _look["micro"] == micro_name(*_grips[0])
+              and _look["macro"] == coordinate_name(*micro_macro_cell(_grips[0]))
+              and _look["error_mm"] < micro_mm_per_cell(),
+              f"the planning job's Gripper AI look: {_look}")
+        # the Micro Trigonometry card fits a 610 px camera view, and steps
+        _mp = MicroTrigPanel()
+        _mp.toggle()
+        _vf = np.full((610, 1087, 3), 200, np.uint8)
+        _mp.draw(_vf)
+        _real_save = globals()["save_settings"]
+        globals()["save_settings"] = lambda *a, **k: True
+        try:
+            _pl = next(b for b in _mp.buttons if b.kind == "mt_step"
+                       and b.value == ("shift_x", 1))
+            _said = _mp.hit_test((_pl.x0 + _pl.x1) / 2, (_pl.y0 + _pl.y1) / 2,
+                                 None, None)
+            _pt = next(b for b in _mp.buttons if b.kind == "mt_point" and b.value == 2)
+            _mp.hit_test(_pt.x0 + 2, _pt.y0 + 2, None, None)
+            _mp.draw(_vf)
+            _lp = next(b for b in _mp.buttons if b.kind == "mt_step"
+                       and b.value == ("local_y", -1))
+            _said2 = _mp.hit_test((_lp.x0 + _lp.x1) / 2, (_lp.y0 + _lp.y1) / 2,
+                                  None, None)
+        finally:
+            globals()["save_settings"] = _real_save
+        check(_mp._last_rect[3] <= 610 and MICRO_TRIG_SHIFT_MM[0] == 0.5
+              and "+0.5 mm" in _said and MICRO_TRIG_LOCAL_MM[2] == [0.0, -0.5]
+              and "top-right" in _said2
+              and _pt.label == coordinate_name(CONFIG.n_cols - 1, 0),
+              f"the Micro Trigonometry card: {_mp._last_rect} {_said!r} {_said2!r}")
+        # the Magnifier on a grip: beside the board, zoomed, no sliders
+        _gm = Magnifier()
+        _cs = CameraSettings()
+        _fr = np.full((1080, 1920, 3), 140, np.uint8)
+        _fit = _cs.fitted(_fr, 1413, 900)
+        _fwh = (_fit.shape[1], _fit.shape[0])
+        _vg = Grid(_fwh[0], _fwh[1], None)
+        _gm.show_grip(_look, _vg, _fwh)
+        _canvas = np.full((998, 1823, 3), 252, np.uint8)
+        _spare = (1110, 150, 1423, 950, False)
+        _gm.draw(_canvas, (_fr, _cs), _fwh, dock=(1433, 56, 1813, 998),
+                 grid=_vg, spare=_spare)
+        check(_gm.visible and _gm.auto_zoom and not _gm.shown_sliders()
+              and _gm.rect[0] >= _spare[0] - 1 and _gm.rect[2] <= _spare[2] + 1
+              and _gm.caption(_vg).startswith("Grip micro ")
+              and _gm.picked == "Gripper AI: digital caliper",
+              f"the Magnifier does not show Gripper AI's look beside the board: "
+              f"{_gm.rect} {_gm.caption(_vg)!r}")
+        _gm.set_point(_fwh[0] // 2, _fwh[1] // 2, *_fwh)
+        check(_gm.grip is None and not _gm.auto_zoom and _gm.shown_sliders(),
+              "a click on the view left the Magnifier on Gripper AI's look")
+    finally:
+        load_micro_trig_settings(_mt)
+
+    # Camera names and the supporting view camera (user, 2026-10-18)
+    check(camera_name(97) == "Camera 97" and isinstance(camera_devices(), list),
+          f"a camera with no known name: {camera_name(97)!r}")
+    check(SHOW_MAIN_GRID is False or "main_grid" in (
+              (HOSX_EMBEDDED_STATE.get("settings") or {}).get("behaviour") or {}),
+          "the main view's coordinate grid is not off by default")
+    check([parse_support_grip(t)[:2] for t in (
+              "VERDICT: HOLDING\nPROBLEM: none\nWHY: in the jaws",
+              "verdict: not_holding\nproblem: Motor\nwhy: jaws open",
+              "VERDICT: **NOT HOLDING**\nPROBLEM: none",
+              "VERDICT: UNSURE\nWHY: dark", "no idea")]
+          == [("holding", "none"), ("not holding", "motor"),
+              ("not holding", "nogrip"), ("unsure", "none"), ("unsure", "none")]
+          and parse_support_grip("VERDICT: HOLDING\nWHY: lifted clear")[2] == "lifted clear",
+          "the supporting view's reply is misread")
+    _side = np.full((720, 1280, 3), 90, np.uint8)
+    _board = np.full((1080, 1920, 3), 160, np.uint8)
+    _real = {k: globals()[k] for k in ("call_model", "make_client", "support_frame")}
+    _asked = []
+
+    def _fake_model(client, **kw):
+        _asked.append(kw)
+        if "supporting view" in str(kw.get("stage")):
+            return "VERDICT: NOT_HOLDING\nPROBLEM: slip\nWHY: it fell out"
+        if kw.get("stage") == "Naming":
+            return '{"objects": [{"n": 1, "name": "red block"}]}'
+        return "VERDICT: Done_correctly\nOBJECTS: block=ok\nREASON: fine\nNEXT:"
+    try:
+        globals().update(call_model=_fake_model, make_client=lambda: None,
+                         support_frame=lambda: _side)
+        _n0 = len(_asked)
+        _sg = SupportGripCheck("the block", "move the block", _side, _board).start()
+        _t0 = time.monotonic()
+        while not _sg.done and time.monotonic() - _t0 < 5:
+            time.sleep(0.01)
+        _imgs = [c for c in _asked[-1]["messages"][1]["content"]
+                 if c.get("type") == "image_url"]
+        check(_sg.done and _sg.verdict == "not holding" and _sg.problem == "slip"
+              and len(_asked) - _n0 == 1 and _asked[-1]["model"] == "gpt-6-luna"
+              and len(_imgs) == 2
+              and all(i["image_url"]["detail"] == "high" for i in _imgs)
+              and _asked[-1]["messages"][0]["content"] == SUPPORT_GRIP_PROMPT
+              and "no robot\ngripper in sight" in SUPPORT_GRIP_PROMPT
+              and _sg.who() == "gpt-6-luna",
+              f"the supporting view check (gpt-6-luna only, one call): "
+              f"{_sg.verdict} {_sg.problem} {_sg.error}")
+        _names = ask_for_names("gpt-6-luna", [b"\xff\xd8jpeg"], "name them", 1)
+        _cont = _asked[-1]["messages"][0]["content"]
+        check(_names.get(1, {}).get("name") == "red block"
+              and _cont[-1].get("type") == "image_url"
+              and "SIDE VIEW" in _cont[-2].get("text", "")
+              and sum(c.get("type") == "image_url" for c in _cont) == 2,
+              "naming is not shown the supporting view's side view last")
+        _ej = ErrorReboundJob("move the block", _board, _board)
+        _ej.support_before = _side
+        _msg = _ej._messages("AAAA", "BBBB")
+        _ct = _msg[1]["content"]
+        _txt = " ".join(c.get("text", "") for c in _ct if c.get("type") == "text")
+        check(sum(c.get("type") == "image_url" for c in _ct) == 4
+              and "SIDE VIEW AT EXECUTION START" in _txt
+              and "SIDE VIEW AFTER EXECUTION" in _txt
+              and "No extra-viewpoint" not in _txt
+              and "SIDE VIEW images from the supporting view camera" in ERR3_PROMPT,
+              "ERR is not given the supporting view's side views")
+        globals()["support_frame"] = lambda: None
+        _ej2 = ErrorReboundJob("move the block", _board, _board)
+        _t2 = " ".join(c.get("text", "") for c in _ej2._messages("AAAA", "BBBB")[1]["content"]
+                       if c.get("type") == "text")
+        check(_ej2.support is None and "No extra-viewpoint images are available" in _t2
+              and "SIDE VIEW AFTER" not in _t2,
+              "ERR with no supporting camera still mentions a side view")
+        check(draw_support_view(np.zeros((600, 900, 3), np.uint8),
+                                (10, 10, 300, 590), (0, 0, 900, 600)) is None,
+              "a side view was drawn with no supporting camera")
+        globals()["support_frame"] = lambda: _side
+        _cv = np.zeros((600, 900, 3), np.uint8)
+        _r = draw_support_view(_cv, (10, 10, 300, 590), (0, 0, 900, 600))
+        _r2 = draw_support_view(_cv, (10, 10, 60, 590), (0, 0, 900, 600))
+        check(_r is not None and _r[0] >= 10 and _r[2] <= 300 and _r[3] <= 590
+              and abs((_r[2] - _r[0]) / float(_r[3] - _r[1] - 24) - 16 / 9.0) < 0.05
+              and _r2 is not None and _r2[3] <= 592 and _r2[2] - _r2[0] >= 160,
+              f"the side view inset: in a margin {_r}, in a narrow one {_r2}")
+    finally:
+        globals().update(_real)
 
     folder = os.path.dirname(SCRIPT_PATH)
     # settings.json is the gripper-timing file the app writes beside itself.

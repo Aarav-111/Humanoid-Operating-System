@@ -8,11 +8,11 @@
   <a href="https://github.com/Aarav-111/Humanoid-Operating-System#camera-ready-gripper"><img src="assets/badges/hos-gripper.svg" alt="New: Camera-Ready Gripper"></a>
   <a href="https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Software"><img src="assets/badges/hos-python.svg" alt="Python: 3"></a>
   <a href="https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware/Firmware"><img src="assets/badges/hos-arduino.svg" alt="Arduino: Shell 1.5"></a>
-  <a href="https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/LICENSE"><img src="assets/badges/hos-license.svg" alt="License: Non-Commercial MIT"></a>
+  <a href="https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-6366f1?style=flat-square" alt="License: MIT"></a>
 </p>
 
 <p align="center">
-  <b>Demo Videos</b> &nbsp;|&nbsp; <b>Camera-Ready Gripper</b> &nbsp;|&nbsp; <b>Architecture</b> &nbsp;|&nbsp; <b>Navigate</b> &nbsp;|&nbsp; <b>Roadmap</b> &nbsp;|&nbsp; <b>Run It</b> &nbsp;|&nbsp; <b>Team</b>
+  <b>Demo Videos</b> &nbsp;|&nbsp; <b>Camera-Ready Gripper</b> &nbsp;|&nbsp; <b>Architecture</b> &nbsp;|&nbsp; <b>Navigate</b> &nbsp;|&nbsp; <b>Roadmap</b> &nbsp;|&nbsp; <b>Running Cost</b> &nbsp;|&nbsp; <b>Run It</b> &nbsp;|&nbsp; <b>Team</b>
 </p>
 
 ---
@@ -90,11 +90,22 @@ Robots in homes and workspaces need more than a fixed sequence of moves. They ne
 </p>
 
 
+### 17 October 2026: License update
+
+- The [LICENSE](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/LICENSE) file is now the standard MIT License. The non-commercial clause was removed ([3f5f257](https://github.com/Aarav-111/Humanoid-Operating-System/commit/3f5f257783e1aae8fdec38a778f892bcabffdb67)).
+
 ### 17 October 2026: HOS X
 
 HOS X is about bringing the robot into real-world applications.
 
 Product Hunt: [HOS on Product Hunt](https://www.producthunt.com/products/humanoid-operating-system)
+
+### 12 October 2026: S1.5-SRC update
+
+- A new **Re-execute** button in the main window runs the current plan again from the top. If a run is in progress, it stops and restarts. It stays greyed out until a plan is ready.
+- The Re-execute button takes the place of the old Vision AI Sequence button. The Vision AI Sequence still runs after an operator NO on a pickup.
+- When the AprilTag comes back into view on the way back, the gantry now moves up (uq) for one more second before labelling.
+- Commit: [3a3e359](https://github.com/Aarav-111/Humanoid-Operating-System/commit/3a3e359)
 
 Full commit history is on the [commits page](https://github.com/Aarav-111/Humanoid-Operating-System/commits/main).
 
@@ -273,7 +284,29 @@ Download the STL files from [Hardware/3D Models](https://github.com/Aarav-111/Hu
 </p>
 
 
-Source: [Software/S1.5-SRC.py](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Software/S1.5-SRC.py) at commit [7fe076e](https://github.com/Aarav-111/Humanoid-Operating-System/commit/7fe076e6622cab2954850d361ee9b7810eea0f29).
+All numbers below are **estimates**, not measured bills. They cover the AI API only.
+
+| Item | Model calls | USD (est.) | INR (est.) |
+| --- | --- | --- | --- |
+| Planner call | 1 | $0.0035 | Rs 0.34 |
+| Vision naming call (2 photos) | 1 | $0.0013 | Rs 0.12 |
+| ERR final check call (1 photo) | 1 | $0.0009 | Rs 0.08 |
+| Vision AI Sequence call (only after an operator NO) | 1 | $0.0009 | Rs 0.08 |
+| Dexterity check call | 1 | $0.0005 | Rs 0.04 |
+| Typical task, no failures | 4 | about $0.006 | about Rs 0.59 |
+| Typical, per 100 tasks | 400 | about $0.60 | about Rs 59 |
+| Worst case task, 2 replans | 8 | about $0.015 | about Rs 1.43 |
+| Worst case, per 100 tasks | 800 | about $1.47 | about Rs 143 |
+
+**What HOS calls:** OpenAI API with your own key. Model `gpt-6-luna` for planning, vision naming, dexterity, ERR and Vision AI Sequence, at `low` reasoning effort, standard tier. Replanning is limited to 2 automatic attempts. Optional voice input uses `gpt-4o-transcribe` (fallback `whisper-1`) and is not included.
+
+**Price used:** `gpt-6-luna` standard tier, $0.10 per 1M input tokens and $0.50 per 1M output tokens. Source: [OpenAI API pricing](https://developers.openai.com/api/docs/pricing), checked 18 October 2026 (same as on 11 October 2026). Exchange rate: 1 USD = Rs 96.78 (10 October 2026).
+
+**Assumptions:** about 20,000 input and 3,000 output tokens for the planner, 5,000 in and 1,500 out for vision naming, 3,500 in and 1,000 out for ERR and Vision AI Sequence, 2,000 in and 500 out for dexterity. Photo token counts are rough guesses. No prompt caching. Output includes reasoning tokens. Taxes and transcription not included. Check the `[timing]` lines S1.5-SRC prints for real token counts.
+
+**Hardware:** the hardware docs list parts but no prices, so no hardware cost is given. Main parts: Arduino Uno and CNC Shield V3 with A4988 drivers, NEMA 17 steppers, 12 V 10 A power supply, 2020 V-slot frame, GT2 belts and pulleys, T8 lead screw, 8 mm rods, time-of-flight and IR sensors, AprilTag 36h11 and 3D-printed parts.
+
+Source: [Software/S1.5-SRC.py](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Software/S1.5-SRC.py), first worked out at commit [7fe076e](https://github.com/Aarav-111/Humanoid-Operating-System/commit/7fe076e6622cab2954850d361ee9b7810eea0f29) and rechecked at [3a3e359](https://github.com/Aarav-111/Humanoid-Operating-System/commit/3a3e359) (no change to models or call count).
 
 ---
 

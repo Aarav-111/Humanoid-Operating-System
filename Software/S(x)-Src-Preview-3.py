@@ -107,7 +107,7 @@ ALPHABET = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 DEBUG_INPUT = bool(os.environ.get("HOSX_DEBUG_INPUT"))
 
 SCRIPT_PATH = os.path.abspath(__file__)
-HOSX_EMBEDDED_STATE_B64 = "eyJzZXR0aW5ncyI6eyJyZXYiOjIsImNhbWVyYSI6eyJ6b29tIjoxLjEsImJyaWdodG5lc3MiOjAsImNvbnRyYXN0IjoxLjAsInNhdHVyYXRpb24iOjEuMCwic2hhcnBuZXNzIjowLjAsInJvdGF0aW9uIjowLCJtaXJyb3IiOmZhbHNlfSwiZ3JpZCI6eyJuX2NvbHMiOjIwLCJuX3Jvd3MiOjIwLCJib3giOlsxNjQuNzc2NDM3MTg5NDk2MDgsNi4wMDYxNjE2MTYxNjE2MDksNzY2LjA0Nzk3NzI4ODg1NzQsNjA3LjU4MjA3MDcwNzA3MDhdLCJzcXVhcmVfY2VsbHMiOnRydWUsImZyYW1lX3NpemUiOlsxMDkwLDYxM10sImJveF9yZWwiOlswLjE1MTE3MTA0MzI5MzExNTY4LDAuMDA5Nzk3OTc5Nzk3OTc5Nzg2LDAuNzAyNzk2MzA5NDM5MzE4NywwLjk5MTE2MTYxNjE2MTYxNjJdfSwidHJpZ19vZmZzZXQiOnsiY2FtZXJhX2hlaWdodF9pbiI6MzUuMCwidGFnX2hlaWdodF9pbiI6NS41LCJib2FyZF9oZWlnaHRfaW4iOjAuMCwicGl2b3RfeCI6MC4wLCJwaXZvdF95IjowLjAsImdyaXBwZXJfdXBfZG93biI6LTcsImdyaXBwZXJfcmlnaHRfbGVmdCI6MCwiZ3JpcHBlcl92ZXJ0aWNhbF9kaXJlY3Rpb24iOiJ1cCIsImdyaXBwZXJfaG9yaXpvbnRhbF9kaXJlY3Rpb24iOiJsZWZ0IiwibnVkZ2VfcyI6MC4yLCJudWRnZV9kaXJlY3Rpb24iOiJyaWdodCIsIm51ZGdlX2FjdGlvbnMiOnsicGlja3VwIjp0cnVlLCJrZWVwIjpmYWxzZSwicHJlc3MiOmZhbHNlLCJyZWxlYXNlIjp0cnVlfX0sInZpc2lvbiI6eyJib2FyZF93aWR0aF9pbiI6MjQuMCwiY29uZl90aHJlcyI6MC4yNSwiaW91X3RocmVzIjowLjcsIm1heF9hcmVhIjowLjUsIm91dGxpbmVfcHgiOjIsIm1hcmtfcGFydHMiOnRydWUsInNob3dfbmFtZXMiOnRydWUsIm5hbWVyX21vZGVsIjoiZ3B0LTYtbHVuYSIsInByaW9yaXR5X25hbWluZyI6ZmFsc2UsIm1heF9mcHMiOjEwLjAsInNjZW5lX2hpbnQiOiJUaGUgcGhvdG8gc2hvd3MgdGhlIHdvcmsgYXJlYSBvZiBhIHNtYWxsIGdhbnRyeSByb2JvdCwgc28gaXQgbWF5IGhvbGQgcGFydHMgb2YgdGhlIHJvYm90IGl0c2VsZiAoYWx1bWluaXVtIGZyYW1lIHJhaWxzLCBsZWFkIHNjcmV3cywgc21vb3RoIHJvZHMsIHN0ZXBwZXIgbW90b3JzLCBiZWx0cywgcHVsbGV5cywgYSBncmlwcGVyLCBjYWJsZXMpIGFzIHdlbGwgYXMgZXZlcnlkYXkgb2JqZWN0cy4ifSwiYmVoYXZpb3VyIjp7Im1hbnVhbF9ncmlwcGVyX3N0ZXBzIjpmYWxzZSwiZ3JpcHBlcl9haSI6dHJ1ZSwiZXJyX2F1dG8iOiJzdGVwIiwiZXJyX2ZpbmFsIjp0cnVlLCJlcnJfcmVkbyI6ZmFsc2UsInBsYW5uZXJfZWZmb3J0IjoibG93IiwicmVwZWF0X3Rhc2tzIjpmYWxzZX0sIm1hZ25pZmllciI6eyJ6b29tIjoxLjUsIndpZHRoIjozMTgsImhlaWdodCI6MTEwLCJ0aHJlc2hvbGQiOjB9fSwiY3VzdG9tX3RyYWluaW5nIjpbXSwiZXJyb3JfcmVib3VuZHMiOlt7InRhc2siOiJzd2FwIGFsbCB0aGUgb2JqZWN0cyBvbiB0aGUgYm9hcmQiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiT2JqZWN0cyBkaWQgbm90IHN3YXAgcG9zaXRpb25zOyBzY3Jld2RyaXZlciByZW1haW5zIGF0IEgxNCBhbmQgdXRpbGl0eSBrbmlmZSByZW1haW5zIGF0IFAxMS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA4LTMxVDIwOjQ1OjA2In0seyJ0YXNrIjoid2F0ZXIgbXkgcGxhbnRzIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6Ik5vIHZpc2libGUgZXZpZGVuY2UgdGhlIHBsYW50IHdhcyB3YXRlcmVkOyBjdXAgYW5kIHBsYW50IHJlbWFpbiBlc3NlbnRpYWxseSB1bmNoYW5nZWQuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0wMVQxNTo0NjoxMyJ9LHsidGFzayI6IndhdGVyIG15IHBsYW50cyIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJObyB2aXNpYmxlIGV2aWRlbmNlIHRoZSBwbGFudCB3YXMgd2F0ZXJlZDsgcGxhbnQgYW5kIG11ZyBvbmx5IHNoaWZ0ZWQgc2xpZ2h0bHkuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0wMlQxNDozMTo1MCJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNwb3QgaW4gdGhlIGJvZHkuIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5IiwicmVhc29uIjoiYmxhY2sgc29jayB3YXMgbW92ZWQgaW50byB0aGUgYm93bCwgd2l0aCB0aGUgYm93bCBzdGlsbCBjb250YWluaW5nIGl0IGluIHRoZSBmaW5hbCBpbWFnZSIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTE6NTE6MjIifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzcG90IGluIHRoZSBib2R5LiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJibGFjayBzb2NrIHdhcyBtb3ZlZCBuZWFyIEs0IGluc3RlYWQgb2YgYmVpbmcga2VwdCBpbiB0aGUgYm93bC9ib2R5IGF0IFEzIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMTo1MTozNiJ9LHsidGFzayI6InNvcnQgdGhlIHNvY2tlcyBhbmQga2VlcCB0aGUgd2hpdGVzIGluIHRlIGJvd2wiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiV2hpdGUgc29ja3MgYXJlIG5vdCB2aXNpYmxlIGluIHRoZSBib3dsIGluIHRoZSBmaW5hbCBpbWFnZTsgb25seSB0aGUgYmxhY2sgc29ja3MgcmVtYWluIG9uIHRoZSBib2FyZC4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDEyOjAzOjAwIn0seyJ0YXNrIjoiS2VlcCB0aGUgYmxhY2sgc29ja3Mgc3RhY2tlZCB0b2dldGhlci4iLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiT25seSBvbmUgYmxhY2sgc29jayBpcyB2aXNpYmxlIGluIHRoZSBmaW5hbCBpbWFnZTsgdGhlIHR3byBzb2NrcyBhcmUgbm90IGNvbmZpcm1lZCBzdGFja2VkIHRvZ2V0aGVyLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTI6MDU6MTMifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzb2NrcyBzdGFja2VkIHRvZ2V0aGVyLiIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsInJlYXNvbiI6IlRoZSB0d28gYmxhY2sgc29ja3MgYXJlIHN0YWNrZWQgdG9nZXRoZXIgaW4gdGhlIGZpbmFsIGltYWdlLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTI6MDU6MjMifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzb2NrIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsInJlYXNvbiI6ImJsYWNrIHNvY2sgaXMgcGxhY2VkIGluIHRoZSBncmVlbiBib3dsIGluIHRoZSBmaW5hbCBpbWFnZS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDEzOjAxOjM0In0seyJ0YXNrIjoiU29ydCB0aGUgYmxhY2sgYW5kIHdoaXRlIHNvY2tzLCBhbmQgcHV0IGFsbCB0aGUgd2hpdGVzIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJXaGl0ZSBzb2NrIGlzIGluIHRoZSBib3dsLCBidXQgb25lIHdoaXRlIHNvY2sgcmVtYWlucyBvdXRzaWRlIHRoZSBib3dsLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTY6Mjc6NDgifSx7InRhc2siOiJTb3J0IG15IGNsb3RoZXMgb3Igc29ja3MgaW50byBibGFjayBhbmQgd2hpdGUuIEtlZXAgYWxsIHRoZSBibGFja3MgaW4gdGhlIGJvd2wuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6Ik9ubHkgb25lIGJsYWNrIHNvY2sgaXMgaW4gdGhlIGJvd2w7IHRoZSBvdGhlciBibGFjayBzb2NrIGlzIG5vdCB2ZXJpZmllZCBpbiB0aGUgYm93bC4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDE2OjM5OjQyIn0seyJ0YXNrIjoiS2VlcCB0aGUgbGVhdmVzIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJMZWF2ZXMgYXJlIG5vdCBmdWxseSBpbiB0aGUgYm93bDsgcGFydCBvZiB0aGUgc3ByaWcgcmVtYWlucyBvdXRzaWRlIG9uIHRoZSByaW0vdGFibGUuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxNjo0Nzo1MiJ9LHsidGFzayI6Im1vZSB0aGUgYmtvb2sgdG8gaXQncyBsZWZ0IiwidmVyc2lvbiI6IkVSUi0zIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsIm9iamVjdHMiOlsibm90ZWJvb2s9d3JvbmciXSwicmVhc29uIjoiVGhlIG5vdGVib29rIHJlbWFpbnMgaW4gdGhlIHNhbWUgcG9zaXRpb24gYXMgaW4gdGhlIHN0YXJ0IGltYWdlcyBhbmQgd2FzIG5vdCBtb3ZlZCBsZWZ0LiIsIm5leHQiOiJGSVg6IG1vdmUgdGhlIG5vdGVib29rIGxlZnQgZnJvbSBpdHMgY3VycmVudCBwb3NpdGlvbiBhbmQgcmVsZWFzZSBpdCB0aGVyZSIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMDJUMTg6MDQ6MDAifSx7InRhc2siOiJtb2UgdGhlIGJrb29rIHRvIGl0J3MgbGVmdCIsInZlcnNpb24iOiJFUlItMyIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsIm9iamVjdHMiOlsibm90ZWJvb2s9b2siXSwicmVhc29uIjoiVGhlIGJsYWNrIG5vdGVib29rIGlzIHZpc2libHkgc2hpZnRlZCBsZWZ0IGZyb20gaXRzIHN0YXJ0IHBvc2l0aW9uIChmcm9tIGFib3V0IEctTCBjb2x1bW5zIHRvIGFib3V0IEQtSiBjb2x1bW5zKSBhbmQgaXMgcmVzdGluZyBvbiB0aGUgYm9hcmQgd2l0aCBubyBncmlwcGVyIGhvbGRpbmcgaXQ7IG5vIG90aGVyIHRhc2sgY29uc3RyYWludHMgYXJlIHZpc2libHkgdmlvbGF0ZWQuIiwibmV4dCI6IiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMDJUMTg6MDQ6MjIifSx7InRhc2siOiJyZWRvIiwidmVyc2lvbiI6IkVSUiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJvYmplY3RzIjpbImNsb3RoPXdyb25nIiwid29vZCBibG9jaz13cm9uZyJdLCJyZWFzb24iOiJUaGUgY2xvdGggc3RheWVkIGF0IEc3IGluc3RlYWQgb2YgYmVpbmcgbW92ZWQsIGFuZCB0aGUgd29vZCBibG9jayB3YXMgZGlzcGxhY2VkIGZyb20gQTEzIHRvIEExMS4iLCJuZXh0IjoiRklYOiBNb3ZlIHRoZSBjbG90aCBmcm9tIEc3IHRvIEQxMTsgcmV0dXJuIHRoZSB3b29kIGJsb2NrIGZyb20gQTExIHRvIEExMy4iLCJtb2RlbCI6ImdwdC02LWx1bmEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTExVDE2OjM4OjQxIn0seyJ0YXNrIjoia2VlcCB0aGUgY2xvdGggdG8gaXQncyByaWdodCIsInZlcnNpb24iOiJFUlIiLCJ2ZXJkaWN0IjoiZG9uZSBjb3JyZWN0bHkiLCJvYmplY3RzIjpbImNsb3RoPW9rIl0sInJlYXNvbiI6IlRoZSBjbG90aCBtb3ZlZCByaWdodCBmcm9tIEs1IHRvIFAzIGFuZCBpcyB2aXNpYmxlIG9uIHRoZSBib2FyZC4iLCJuZXh0IjoiIiwibW9kZWwiOiJncHQtNi1sdW5hIiwidGltZXN0YW1wIjoiMjAyNi0xMC0xMVQxNzoyNToyMCJ9LHsidGFzayI6ImtlZXAgdGhlIGNsb3RoIHRvIGl0J3MgcmlnaHQiLCJ2ZXJzaW9uIjoiRVJSIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5Iiwib2JqZWN0cyI6WyJjbG90aD1vayJdLCJyZWFzb24iOiJUaGUgY2xvdGggbW92ZWQgZnJvbSB0aGUgbGVmdC1jZW50ZXIgdG8gdGhlIHJpZ2h0IHNpZGUgb2YgdGhlIGJvYXJkIGFuZCBpcyB2aXNpYmxlIHRoZXJlLiIsIm5leHQiOiIiLCJtb2RlbCI6ImdwdC02LWx1bmEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTEyVDEwOjA5OjIxIn0seyJ0YXNrIjoicGlja3VwIHRoZSBzY3Jld2RyaXZlciIsInZlcnNpb24iOiJFUlIiLCJ2ZXJkaWN0IjoiY2Fubm90IHZlcmlmeSIsIm9iamVjdHMiOlsic2NyZXdkcml2ZXI9dW52ZXJpZmllZCJdLCJyZWFzb24iOiJUaGUgc2NyZXdkcml2ZXIgaXMgbm8gbG9uZ2VyIHZpc2libGUgYXQgaXRzIHN0YXJ0aW5nIHBvc2l0aW9uLCBhbmQgbm8gZXZpZGVuY2UgY29uZmlybXMgaXQgaXMgaGVsZCBieSB0aGUgZ3JpcHBlci4iLCJuZXh0IjoiUkVUQUtFOiBjbGVhciB0aGUgZ3JpcHBlciBhbmQgb2J0YWluIGEgdmlldyBjb25maXJtaW5nIHRoZSBzY3Jld2RyaXZlciBpcyBoZWxkLCBvciBwcm92aWRlIGdyYXNwL2NvbnRhY3Qgc2Vuc29yIGV2aWRlbmNlLiIsIm1vZGVsIjoiZ3B0LTYtbHVuYSIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMTJUMTA6MTI6MzAifSx7InRhc2siOiJ0cnkgYWdhaW4iLCJ2ZXJzaW9uIjoiRVJSIiwidmVyZGljdCI6ImNhbm5vdCB2ZXJpZnkiLCJvYmplY3RzIjpbInBsYXN0aWMgY29udGFpbmVyPXVudmVyaWZpZWQiLCJ3aGl0ZSB0YXBlPW9rIiwicmVkIHRhcGU9dW52ZXJpZmllZCIsInBsYXN0aWMgbGlkPW9rIiwiZGVicmlzPW9rIiwidGFwZSByb2xsPW9rIl0sInJlYXNvbiI6IuKAnFRyeSBhZ2FpbuKAnSBkb2VzIG5vdCBzcGVjaWZ5IGEgZ29hbDsgdGhlIHBsYXN0aWMgY29udGFpbmVyIGlzIG5vdCB2aXNpYmxlLCBhbmQgdGhlIHJlZCB0YXBlIG1vdmVkLiIsIm5leHQiOiJSRVRBS0U6IHByb3ZpZGUgdGhlIGludGVuZGVkIHRhc2sgYW5kIGEgdmlldyB0aGF0IHJldmVhbHMgd2hlcmUgdGhlIHBsYXN0aWMgY29udGFpbmVyIGlzLiIsIm1vZGVsIjoiZ3B0LTYtbHVuYSIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMTNUMTc6NDg6MDMifSx7InRhc2siOiJLZWVwIGFsbCB0aGUgZWxlY3RyaWNhbCB0YXBlcyBpbiB0aGUgcGxhc3RpYyBib3guIiwidmVyc2lvbiI6IkVSUiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJvYmplY3RzIjpbIm1hc2tpbmcgdGFwZT13cm9uZyIsInBsYXN0aWMgbGlkPW9rIiwicmVkIGluc3VsYXRpb24gdGFwZT11bnZlcmlmaWVkIiwic3BlY2s9b2siLCJncmVlbiBpbnN1bGF0aW9uIHRhcGU9dW52ZXJpZmllZCJdLCJyZWFzb24iOiJNYXNraW5nIHRhcGUgcmVtYWlucyBvdXRzaWRlIHRoZSBwbGFzdGljIGxpZOKAmXMgZm9vdHByaW50LiBUaGUgcmVkIGFuZCBncmVlbiB0YXBlcyBhcmUgd2l0aGluIGl0cyBmb290cHJpbnQsIGJ1dCB0aGUgaW1hZ2UgZG9lcyBub3QgY29uZmlybSB0aGV5IGFyZSBpbnNpZGUgdGhlIGJveC4iLCJuZXh0IjoiRklYOiBNb3ZlIG1hc2tpbmcgdGFwZSBpbnRvIHRoZSBwbGFzdGljIGJveDsgZG8gbm90IHRvdWNoIG9iamVjdHMgbWFya2VkIG9rLiBSRVRBS0U6IFByb3ZpZGUgYSB2aWV3IHRoYXQgY29uZmlybXMgd2hldGhlciB0aGUgcmVkIGFuZCBncmVlbiB0YXBlcyBhcmUgaW5zaWRlIHRoZSBib3guIiwibW9kZWwiOiJncHQtNi1sdW5hIiwidGltZXN0YW1wIjoiMjAyNi0xMC0xM1QxODowMzozNyJ9LHsidGFzayI6IlRoZSBiYW5hbmEgaW4gdGhlIGJhc2tldCIsInZlcnNpb24iOiJFUlIiLCJ2ZXJkaWN0IjoiZG9uZSBjb3JyZWN0bHkiLCJvYmplY3RzIjpbImJhc2tldD1vayIsImJhbmFuYT1vayJdLCJyZWFzb24iOiJUaGUgYmFuYW5hIGlzIHZpc2libGUgaW5zaWRlIHRoZSBiYXNrZXQgaW4gdGhlIGZpbmFsIGltYWdlLiIsIm5leHQiOiIiLCJtb2RlbCI6ImdwdC02LWx1bmEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTEzVDE4OjA3OjEyIn0seyJ0YXNrIjoiS2VlcCBhbGwgdGhlIGVsZWN0cmljIHRhcGVzIG9uIHRoZSBwYXBlciBiYWciLCJ2ZXJzaW9uIjoiRVJSIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsIm9iamVjdHMiOlsibWFza2luZyB0YXBlPXdyb25nIiwicGFwZXI9b2siLCJyZWQgdGFwZT13cm9uZyIsImdyZWVuIHRhcGU9dW52ZXJpZmllZCJdLCJyZWFzb24iOiJNYXNraW5nIGFuZCByZWQgdGFwZSByZW1haW4gb2ZmIHRoZSBwYXBlcjsgZ3JlZW4gdGFwZSBjYW5ub3QgYmUgaW5kaXZpZHVhbGx5IGNvbmZpcm1lZC4iLCJuZXh0IjoiRklYOiBNb3ZlIG1hc2tpbmcgdGFwZSBhbmQgcmVkIHRhcGUgb250byB0aGUgcGFwZXIuIFJFVEFLRTogc2hvdyBncmVlbiB0YXBlIGNsZWFybHkgb24gdGhlIHBhcGVyLCB3aXRoIHRoZSB2aWV3IHVub2JzdHJ1Y3RlZC4iLCJtb2RlbCI6ImdwdC02LWx1bmEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTE2VDEwOjA5OjAxIn0seyJ0YXNrIjoia2VlcCAxIHRhcGUgb24gdGhlIHBhcGVyIGJhZyIsInZlcnNpb24iOiJFUlIiLCJ2ZXJkaWN0IjoiZG9uZSBjb3JyZWN0bHkiLCJvYmplY3RzIjpbInBhcGVyIHN0cmlwPW9rIiwicGFwZXIgYmFnPW9rIiwicmVkIHRhcGUgcm9sbD1vayIsImdyZWVuIHRhcGUgcm9sbD1vayJdLCJyZWFzb24iOiJUaGUgcmVkIHRhcGUgcm9sbCBpcyBvbiB0aGUgcGFwZXIgYmFnOyB0aGUgb3RoZXIgb2JqZWN0cyBzdGF5ZWQgaW4gcGxhY2UuIiwibmV4dCI6IiIsIm1vZGVsIjoiZ3B0LTYtbHVuYSIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMTZUMTY6NDE6MDIifSx7InRhc2siOiJrZWVwIHRoZSByZWQgdGFwZSBvbiB0aGUgY2FyZGJvYXJkIiwidmVyc2lvbiI6IkVSUiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJvYmplY3RzIjpbInJlZCB0YXBlPXdyb25nIiwiY2FyZGJvYXJkPW9rIl0sInJlYXNvbiI6IlRoZSByZWQgdGFwZSByZW1haW5zIGJlc2lkZSB0aGUgY2FyZGJvYXJkLCBub3Qgb24gaXQuIiwibmV4dCI6IkZJWDogUGxhY2UgdGhlIHJlZCB0YXBlIG9uIHRoZSBjYXJkYm9hcmQ7IGRvIG5vdCBtb3ZlIHRoZSBjYXJkYm9hcmQuIiwibW9kZWwiOiJncHQtNi1sdW5hIiwidGltZXN0YW1wIjoiMjAyNi0xMC0xNlQxNzoxODoyOCJ9LHsidGFzayI6InRyeSBhZ2FpbiIsInZlcnNpb24iOiJFUlIiLCJ2ZXJkaWN0IjoiY2Fubm90IHZlcmlmeSIsIm9iamVjdHMiOlsidGFwZT11bnZlcmlmaWVkIiwiY2FyZGJvYXJkPW9rIl0sInJlYXNvbiI6IlRoZSB0YXBlIG1vdmVkIGZyb20gTjcgdG8gRDgsIGJ1dCDigJx0cnkgYWdhaW7igJ0gZG9lcyBub3Qgc3BlY2lmeSB0aGUgaW50ZW5kZWQgZ29hbC4iLCJuZXh0IjoiUkVUQUtFOiBwcm92aWRlIHRoZSBpbnRlbmRlZCBnb2FsIG9yIGRlc3RpbmF0aW9uIGZvciB0aGUgdGFwZS4iLCJtb2RlbCI6ImdwdC02LWx1bmEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTE2VDE3OjIwOjEwIn0seyJ0YXNrIjoiYXBwbHkgc29hcCBvbiB0aGUgcGxhdGUgdXNpbmcgdGUgYnJvd24gc3BvbmdlIGFmdGVyIGRpcHBpbmcgaW50byBpbiBib3dsIHNvYXAiLCJ2ZXJzaW9uIjoiRVJSIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsIm9iamVjdHMiOlsiYm93bD13cm9uZyIsInBsYXRlPXVudmVyaWZpZWQiLCJzcG9uZ2U9b2siLCJkZWJyaXM9b2siXSwicmVhc29uIjoiVGhlIGJvd2wgbW92ZWQgYWx0aG91Z2ggdGhlIHBsYW4gZGlkIG5vdCBtb3ZlIGl0LiBUaGUgc3BvbmdlIGlzIG9uIHRoZSBib2FyZCBhbmQgdGhlIHBsYXRlIGlzIGluIHRoZSB3b3JrZWQgYXJlYSwgYnV0IHNvYXAgYXBwbGljYXRpb24gY2Fubm90IGJlIGNvbmZpcm1lZCB2aXN1YWxseSBvciBmcm9tIGxvZ2dlZCBldmlkZW5jZS4iLCJuZXh0IjoiRklYOiBSZXR1cm4gdGhlIGJvd2wgdG8gaXRzIG9yaWdpbmFsIHBvc2l0aW9uIHdpdGhvdXQgZGlzdHVyYmluZyB0aGUgcGxhdGUgb3Igc3BvbmdlLiBSRVRBS0U6IHByb3ZpZGUgY2xvc2UgZXZpZGVuY2UgdGhhdCBzb2FwIHdhcyBhcHBsaWVkIHRvIHRoZSBwbGF0ZS4iLCJtb2RlbCI6ImdwdC02LWx1bmEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTE2VDE3OjI4OjUwIn1dfQ=="  # HOSX_EMBEDDED_STATE
+HOSX_EMBEDDED_STATE_B64 = "eyJzZXR0aW5ncyI6eyJyZXYiOjIsImNhbWVyYSI6eyJ6b29tIjoxLjEsImJyaWdodG5lc3MiOjAsImNvbnRyYXN0IjoxLjAsInNhdHVyYXRpb24iOjEuMCwic2hhcnBuZXNzIjowLjAsInJvdGF0aW9uIjowLCJtaXJyb3IiOmZhbHNlfSwiZ3JpZCI6eyJuX2NvbHMiOjIwLCJuX3Jvd3MiOjIwLCJib3giOlsxNjQuNjI1MjY2MTQ2MjAyOTYsNS45OTYzNjM2MzYzNjM2MjksNzY1LjM0NTE4MDk3OTQxOCw2MDYuNTkwOTA5MDkwOTA5MV0sInNxdWFyZV9jZWxscyI6dHJ1ZSwiZnJhbWVfc2l6ZSI6WzEwODksNjEyXSwiYm94X3JlbCI6WzAuMTUxMTcxMDQzMjkzMTE1NjgsMC4wMDk3OTc5Nzk3OTc5Nzk3ODYsMC43MDI3OTYzMDk0MzkzMTg3LDAuOTkxMTYxNjE2MTYxNjE2Ml19LCJ0cmlnX29mZnNldCI6eyJjYW1lcmFfaGVpZ2h0X2luIjozNS4wLCJ0YWdfaGVpZ2h0X2luIjo1LjUsImJvYXJkX2hlaWdodF9pbiI6MC4wLCJwaXZvdF94IjowLjAsInBpdm90X3kiOjAuMCwiZ3JpcHBlcl91cF9kb3duIjotOCwiZ3JpcHBlcl9yaWdodF9sZWZ0IjowLCJncmlwcGVyX3ZlcnRpY2FsX2RpcmVjdGlvbiI6InVwIiwiZ3JpcHBlcl9ob3Jpem9udGFsX2RpcmVjdGlvbiI6ImxlZnQiLCJudWRnZV9zIjowLjIsIm51ZGdlX2RpcmVjdGlvbiI6InJpZ2h0IiwibnVkZ2VfYWN0aW9ucyI6eyJwaWNrdXAiOnRydWUsImtlZXAiOmZhbHNlLCJwcmVzcyI6ZmFsc2UsInJlbGVhc2UiOnRydWV9fSwidmlzaW9uIjp7ImJvYXJkX3dpZHRoX2luIjoyNC4wLCJjb25mX3RocmVzIjowLjI1LCJpb3VfdGhyZXMiOjAuNywibWF4X2FyZWEiOjAuNSwib3V0bGluZV9weCI6MiwibWFya19wYXJ0cyI6dHJ1ZSwic2hvd19uYW1lcyI6dHJ1ZSwibmFtZXJfbW9kZWwiOiJncHQtNi1sdW5hIiwicHJpb3JpdHlfbmFtaW5nIjpmYWxzZSwibWF4X2ZwcyI6MTAuMCwic2NlbmVfaGludCI6IlRoZSBwaG90byBzaG93cyB0aGUgd29yayBhcmVhIG9mIGEgc21hbGwgZ2FudHJ5IHJvYm90LCBzbyBpdCBtYXkgaG9sZCBwYXJ0cyBvZiB0aGUgcm9ib3QgaXRzZWxmIChhbHVtaW5pdW0gZnJhbWUgcmFpbHMsIGxlYWQgc2NyZXdzLCBzbW9vdGggcm9kcywgc3RlcHBlciBtb3RvcnMsIGJlbHRzLCBwdWxsZXlzLCBhIGdyaXBwZXIsIGNhYmxlcykgYXMgd2VsbCBhcyBldmVyeWRheSBvYmplY3RzLiJ9LCJiZWhhdmlvdXIiOnsibWFudWFsX2dyaXBwZXJfc3RlcHMiOmZhbHNlLCJncmlwcGVyX2FpIjp0cnVlLCJncmlwX2Fza19tb2RlbCI6ZmFsc2UsImVycl9hdXRvIjoib2ZmIiwiZXJyX2ZpbmFsIjpmYWxzZSwiZXJyX3JlZG8iOmZhbHNlLCJwbGFubmVyX2VmZm9ydCI6ImxvdyIsInJlcGVhdF90YXNrcyI6ZmFsc2UsInN1cHBvcnRfY2FtZXJhIjoiMHgxMTQwMDAwMzJlNjkyMjEiLCJtYWluX2dyaWQiOmZhbHNlLCJ0aGVtZSI6ImxpZ2h0In0sIm1hZ25pZmllciI6eyJ6b29tIjoxLjUsIndpZHRoIjo1OSwiaGVpZ2h0Ijo4Mn0sIm1pY3JvX3RyaWciOnsiY2FtZXJhX2luIjozNS4wLCJncmlwX2luIjowLjUsIm5hZGlyX21tIjpbMC4wLDAuMF0sInNoaWZ0X21tIjpbMC4wLDAuMF0sImxhbmRfbW0iOlswLjAsMC4wXSwibG9jYWxfbW0iOltbMC4wLDAuMF0sWzAuMCwwLjBdLFswLjAsMC4wXSxbMC4wLDAuMF0sWzAuMCwwLjBdLFswLjAsMC4wXSxbMC4wLDAuMF0sWzAuMCwwLjBdLFswLjAsMC4wXV19fSwiY3VzdG9tX3RyYWluaW5nIjpbXSwiZXJyb3JfcmVib3VuZHMiOlt7InRhc2siOiJzd2FwIGFsbCB0aGUgb2JqZWN0cyBvbiB0aGUgYm9hcmQiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiT2JqZWN0cyBkaWQgbm90IHN3YXAgcG9zaXRpb25zOyBzY3Jld2RyaXZlciByZW1haW5zIGF0IEgxNCBhbmQgdXRpbGl0eSBrbmlmZSByZW1haW5zIGF0IFAxMS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA4LTMxVDIwOjQ1OjA2In0seyJ0YXNrIjoid2F0ZXIgbXkgcGxhbnRzIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6Ik5vIHZpc2libGUgZXZpZGVuY2UgdGhlIHBsYW50IHdhcyB3YXRlcmVkOyBjdXAgYW5kIHBsYW50IHJlbWFpbiBlc3NlbnRpYWxseSB1bmNoYW5nZWQuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0wMVQxNTo0NjoxMyJ9LHsidGFzayI6IndhdGVyIG15IHBsYW50cyIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJObyB2aXNpYmxlIGV2aWRlbmNlIHRoZSBwbGFudCB3YXMgd2F0ZXJlZDsgcGxhbnQgYW5kIG11ZyBvbmx5IHNoaWZ0ZWQgc2xpZ2h0bHkuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0wMlQxNDozMTo1MCJ9LHsidGFzayI6IktlZXAgdGhlIGJsYWNrIHNwb3QgaW4gdGhlIGJvZHkuIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5IiwicmVhc29uIjoiYmxhY2sgc29jayB3YXMgbW92ZWQgaW50byB0aGUgYm93bCwgd2l0aCB0aGUgYm93bCBzdGlsbCBjb250YWluaW5nIGl0IGluIHRoZSBmaW5hbCBpbWFnZSIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTE6NTE6MjIifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzcG90IGluIHRoZSBib2R5LiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJibGFjayBzb2NrIHdhcyBtb3ZlZCBuZWFyIEs0IGluc3RlYWQgb2YgYmVpbmcga2VwdCBpbiB0aGUgYm93bC9ib2R5IGF0IFEzIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxMTo1MTozNiJ9LHsidGFzayI6InNvcnQgdGhlIHNvY2tlcyBhbmQga2VlcCB0aGUgd2hpdGVzIGluIHRlIGJvd2wiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiV2hpdGUgc29ja3MgYXJlIG5vdCB2aXNpYmxlIGluIHRoZSBib3dsIGluIHRoZSBmaW5hbCBpbWFnZTsgb25seSB0aGUgYmxhY2sgc29ja3MgcmVtYWluIG9uIHRoZSBib2FyZC4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDEyOjAzOjAwIn0seyJ0YXNrIjoiS2VlcCB0aGUgYmxhY2sgc29ja3Mgc3RhY2tlZCB0b2dldGhlci4iLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5IiwicmVhc29uIjoiT25seSBvbmUgYmxhY2sgc29jayBpcyB2aXNpYmxlIGluIHRoZSBmaW5hbCBpbWFnZTsgdGhlIHR3byBzb2NrcyBhcmUgbm90IGNvbmZpcm1lZCBzdGFja2VkIHRvZ2V0aGVyLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTI6MDU6MTMifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzb2NrcyBzdGFja2VkIHRvZ2V0aGVyLiIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsInJlYXNvbiI6IlRoZSB0d28gYmxhY2sgc29ja3MgYXJlIHN0YWNrZWQgdG9nZXRoZXIgaW4gdGhlIGZpbmFsIGltYWdlLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTI6MDU6MjMifSx7InRhc2siOiJLZWVwIHRoZSBibGFjayBzb2NrIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsInJlYXNvbiI6ImJsYWNrIHNvY2sgaXMgcGxhY2VkIGluIHRoZSBncmVlbiBib3dsIGluIHRoZSBmaW5hbCBpbWFnZS4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDEzOjAxOjM0In0seyJ0YXNrIjoiU29ydCB0aGUgYmxhY2sgYW5kIHdoaXRlIHNvY2tzLCBhbmQgcHV0IGFsbCB0aGUgd2hpdGVzIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJXaGl0ZSBzb2NrIGlzIGluIHRoZSBib3dsLCBidXQgb25lIHdoaXRlIHNvY2sgcmVtYWlucyBvdXRzaWRlIHRoZSBib3dsLiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMDktMTFUMTY6Mjc6NDgifSx7InRhc2siOiJTb3J0IG15IGNsb3RoZXMgb3Igc29ja3MgaW50byBibGFjayBhbmQgd2hpdGUuIEtlZXAgYWxsIHRoZSBibGFja3MgaW4gdGhlIGJvd2wuIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsInJlYXNvbiI6Ik9ubHkgb25lIGJsYWNrIHNvY2sgaXMgaW4gdGhlIGJvd2w7IHRoZSBvdGhlciBibGFjayBzb2NrIGlzIG5vdCB2ZXJpZmllZCBpbiB0aGUgYm93bC4iLCJtb2RlbCI6ImdwdC01LjQiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTExVDE2OjM5OjQyIn0seyJ0YXNrIjoiS2VlcCB0aGUgbGVhdmVzIGluIHRoZSBib3dsLiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJyZWFzb24iOiJMZWF2ZXMgYXJlIG5vdCBmdWxseSBpbiB0aGUgYm93bDsgcGFydCBvZiB0aGUgc3ByaWcgcmVtYWlucyBvdXRzaWRlIG9uIHRoZSByaW0vdGFibGUuIiwibW9kZWwiOiJncHQtNS40IiwidGltZXN0YW1wIjoiMjAyNi0wOS0xMVQxNjo0Nzo1MiJ9LHsidGFzayI6Im1vZSB0aGUgYmtvb2sgdG8gaXQncyBsZWZ0IiwidmVyc2lvbiI6IkVSUi0zIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsIm9iamVjdHMiOlsibm90ZWJvb2s9d3JvbmciXSwicmVhc29uIjoiVGhlIG5vdGVib29rIHJlbWFpbnMgaW4gdGhlIHNhbWUgcG9zaXRpb24gYXMgaW4gdGhlIHN0YXJ0IGltYWdlcyBhbmQgd2FzIG5vdCBtb3ZlZCBsZWZ0LiIsIm5leHQiOiJGSVg6IG1vdmUgdGhlIG5vdGVib29rIGxlZnQgZnJvbSBpdHMgY3VycmVudCBwb3NpdGlvbiBhbmQgcmVsZWFzZSBpdCB0aGVyZSIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMDJUMTg6MDQ6MDAifSx7InRhc2siOiJtb2UgdGhlIGJrb29rIHRvIGl0J3MgbGVmdCIsInZlcnNpb24iOiJFUlItMyIsInZlcmRpY3QiOiJkb25lIGNvcnJlY3RseSIsIm9iamVjdHMiOlsibm90ZWJvb2s9b2siXSwicmVhc29uIjoiVGhlIGJsYWNrIG5vdGVib29rIGlzIHZpc2libHkgc2hpZnRlZCBsZWZ0IGZyb20gaXRzIHN0YXJ0IHBvc2l0aW9uIChmcm9tIGFib3V0IEctTCBjb2x1bW5zIHRvIGFib3V0IEQtSiBjb2x1bW5zKSBhbmQgaXMgcmVzdGluZyBvbiB0aGUgYm9hcmQgd2l0aCBubyBncmlwcGVyIGhvbGRpbmcgaXQ7IG5vIG90aGVyIHRhc2sgY29uc3RyYWludHMgYXJlIHZpc2libHkgdmlvbGF0ZWQuIiwibmV4dCI6IiIsIm1vZGVsIjoiZ3B0LTUuNCIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMDJUMTg6MDQ6MjIifSx7InRhc2siOiJyZWRvIiwidmVyc2lvbiI6IkVSUiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJvYmplY3RzIjpbImNsb3RoPXdyb25nIiwid29vZCBibG9jaz13cm9uZyJdLCJyZWFzb24iOiJUaGUgY2xvdGggc3RheWVkIGF0IEc3IGluc3RlYWQgb2YgYmVpbmcgbW92ZWQsIGFuZCB0aGUgd29vZCBibG9jayB3YXMgZGlzcGxhY2VkIGZyb20gQTEzIHRvIEExMS4iLCJuZXh0IjoiRklYOiBNb3ZlIHRoZSBjbG90aCBmcm9tIEc3IHRvIEQxMTsgcmV0dXJuIHRoZSB3b29kIGJsb2NrIGZyb20gQTExIHRvIEExMy4iLCJtb2RlbCI6ImdwdC02LWx1bmEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTExVDE2OjM4OjQxIn0seyJ0YXNrIjoia2VlcCB0aGUgY2xvdGggdG8gaXQncyByaWdodCIsInZlcnNpb24iOiJFUlIiLCJ2ZXJkaWN0IjoiZG9uZSBjb3JyZWN0bHkiLCJvYmplY3RzIjpbImNsb3RoPW9rIl0sInJlYXNvbiI6IlRoZSBjbG90aCBtb3ZlZCByaWdodCBmcm9tIEs1IHRvIFAzIGFuZCBpcyB2aXNpYmxlIG9uIHRoZSBib2FyZC4iLCJuZXh0IjoiIiwibW9kZWwiOiJncHQtNi1sdW5hIiwidGltZXN0YW1wIjoiMjAyNi0xMC0xMVQxNzoyNToyMCJ9LHsidGFzayI6ImtlZXAgdGhlIGNsb3RoIHRvIGl0J3MgcmlnaHQiLCJ2ZXJzaW9uIjoiRVJSIiwidmVyZGljdCI6ImRvbmUgY29ycmVjdGx5Iiwib2JqZWN0cyI6WyJjbG90aD1vayJdLCJyZWFzb24iOiJUaGUgY2xvdGggbW92ZWQgZnJvbSB0aGUgbGVmdC1jZW50ZXIgdG8gdGhlIHJpZ2h0IHNpZGUgb2YgdGhlIGJvYXJkIGFuZCBpcyB2aXNpYmxlIHRoZXJlLiIsIm5leHQiOiIiLCJtb2RlbCI6ImdwdC02LWx1bmEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTEyVDEwOjA5OjIxIn0seyJ0YXNrIjoicGlja3VwIHRoZSBzY3Jld2RyaXZlciIsInZlcnNpb24iOiJFUlIiLCJ2ZXJkaWN0IjoiY2Fubm90IHZlcmlmeSIsIm9iamVjdHMiOlsic2NyZXdkcml2ZXI9dW52ZXJpZmllZCJdLCJyZWFzb24iOiJUaGUgc2NyZXdkcml2ZXIgaXMgbm8gbG9uZ2VyIHZpc2libGUgYXQgaXRzIHN0YXJ0aW5nIHBvc2l0aW9uLCBhbmQgbm8gZXZpZGVuY2UgY29uZmlybXMgaXQgaXMgaGVsZCBieSB0aGUgZ3JpcHBlci4iLCJuZXh0IjoiUkVUQUtFOiBjbGVhciB0aGUgZ3JpcHBlciBhbmQgb2J0YWluIGEgdmlldyBjb25maXJtaW5nIHRoZSBzY3Jld2RyaXZlciBpcyBoZWxkLCBvciBwcm92aWRlIGdyYXNwL2NvbnRhY3Qgc2Vuc29yIGV2aWRlbmNlLiIsIm1vZGVsIjoiZ3B0LTYtbHVuYSIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMTJUMTA6MTI6MzAifSx7InRhc2siOiJ0cnkgYWdhaW4iLCJ2ZXJzaW9uIjoiRVJSIiwidmVyZGljdCI6ImNhbm5vdCB2ZXJpZnkiLCJvYmplY3RzIjpbInBsYXN0aWMgY29udGFpbmVyPXVudmVyaWZpZWQiLCJ3aGl0ZSB0YXBlPW9rIiwicmVkIHRhcGU9dW52ZXJpZmllZCIsInBsYXN0aWMgbGlkPW9rIiwiZGVicmlzPW9rIiwidGFwZSByb2xsPW9rIl0sInJlYXNvbiI6IuKAnFRyeSBhZ2FpbuKAnSBkb2VzIG5vdCBzcGVjaWZ5IGEgZ29hbDsgdGhlIHBsYXN0aWMgY29udGFpbmVyIGlzIG5vdCB2aXNpYmxlLCBhbmQgdGhlIHJlZCB0YXBlIG1vdmVkLiIsIm5leHQiOiJSRVRBS0U6IHByb3ZpZGUgdGhlIGludGVuZGVkIHRhc2sgYW5kIGEgdmlldyB0aGF0IHJldmVhbHMgd2hlcmUgdGhlIHBsYXN0aWMgY29udGFpbmVyIGlzLiIsIm1vZGVsIjoiZ3B0LTYtbHVuYSIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMTNUMTc6NDg6MDMifSx7InRhc2siOiJLZWVwIGFsbCB0aGUgZWxlY3RyaWNhbCB0YXBlcyBpbiB0aGUgcGxhc3RpYyBib3guIiwidmVyc2lvbiI6IkVSUiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJvYmplY3RzIjpbIm1hc2tpbmcgdGFwZT13cm9uZyIsInBsYXN0aWMgbGlkPW9rIiwicmVkIGluc3VsYXRpb24gdGFwZT11bnZlcmlmaWVkIiwic3BlY2s9b2siLCJncmVlbiBpbnN1bGF0aW9uIHRhcGU9dW52ZXJpZmllZCJdLCJyZWFzb24iOiJNYXNraW5nIHRhcGUgcmVtYWlucyBvdXRzaWRlIHRoZSBwbGFzdGljIGxpZOKAmXMgZm9vdHByaW50LiBUaGUgcmVkIGFuZCBncmVlbiB0YXBlcyBhcmUgd2l0aGluIGl0cyBmb290cHJpbnQsIGJ1dCB0aGUgaW1hZ2UgZG9lcyBub3QgY29uZmlybSB0aGV5IGFyZSBpbnNpZGUgdGhlIGJveC4iLCJuZXh0IjoiRklYOiBNb3ZlIG1hc2tpbmcgdGFwZSBpbnRvIHRoZSBwbGFzdGljIGJveDsgZG8gbm90IHRvdWNoIG9iamVjdHMgbWFya2VkIG9rLiBSRVRBS0U6IFByb3ZpZGUgYSB2aWV3IHRoYXQgY29uZmlybXMgd2hldGhlciB0aGUgcmVkIGFuZCBncmVlbiB0YXBlcyBhcmUgaW5zaWRlIHRoZSBib3guIiwibW9kZWwiOiJncHQtNi1sdW5hIiwidGltZXN0YW1wIjoiMjAyNi0xMC0xM1QxODowMzozNyJ9LHsidGFzayI6IlRoZSBiYW5hbmEgaW4gdGhlIGJhc2tldCIsInZlcnNpb24iOiJFUlIiLCJ2ZXJkaWN0IjoiZG9uZSBjb3JyZWN0bHkiLCJvYmplY3RzIjpbImJhc2tldD1vayIsImJhbmFuYT1vayJdLCJyZWFzb24iOiJUaGUgYmFuYW5hIGlzIHZpc2libGUgaW5zaWRlIHRoZSBiYXNrZXQgaW4gdGhlIGZpbmFsIGltYWdlLiIsIm5leHQiOiIiLCJtb2RlbCI6ImdwdC02LWx1bmEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTEzVDE4OjA3OjEyIn0seyJ0YXNrIjoiS2VlcCBhbGwgdGhlIGVsZWN0cmljIHRhcGVzIG9uIHRoZSBwYXBlciBiYWciLCJ2ZXJzaW9uIjoiRVJSIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsIm9iamVjdHMiOlsibWFza2luZyB0YXBlPXdyb25nIiwicGFwZXI9b2siLCJyZWQgdGFwZT13cm9uZyIsImdyZWVuIHRhcGU9dW52ZXJpZmllZCJdLCJyZWFzb24iOiJNYXNraW5nIGFuZCByZWQgdGFwZSByZW1haW4gb2ZmIHRoZSBwYXBlcjsgZ3JlZW4gdGFwZSBjYW5ub3QgYmUgaW5kaXZpZHVhbGx5IGNvbmZpcm1lZC4iLCJuZXh0IjoiRklYOiBNb3ZlIG1hc2tpbmcgdGFwZSBhbmQgcmVkIHRhcGUgb250byB0aGUgcGFwZXIuIFJFVEFLRTogc2hvdyBncmVlbiB0YXBlIGNsZWFybHkgb24gdGhlIHBhcGVyLCB3aXRoIHRoZSB2aWV3IHVub2JzdHJ1Y3RlZC4iLCJtb2RlbCI6ImdwdC02LWx1bmEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTE2VDEwOjA5OjAxIn0seyJ0YXNrIjoia2VlcCAxIHRhcGUgb24gdGhlIHBhcGVyIGJhZyIsInZlcnNpb24iOiJFUlIiLCJ2ZXJkaWN0IjoiZG9uZSBjb3JyZWN0bHkiLCJvYmplY3RzIjpbInBhcGVyIHN0cmlwPW9rIiwicGFwZXIgYmFnPW9rIiwicmVkIHRhcGUgcm9sbD1vayIsImdyZWVuIHRhcGUgcm9sbD1vayJdLCJyZWFzb24iOiJUaGUgcmVkIHRhcGUgcm9sbCBpcyBvbiB0aGUgcGFwZXIgYmFnOyB0aGUgb3RoZXIgb2JqZWN0cyBzdGF5ZWQgaW4gcGxhY2UuIiwibmV4dCI6IiIsIm1vZGVsIjoiZ3B0LTYtbHVuYSIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMTZUMTY6NDE6MDIifSx7InRhc2siOiJrZWVwIHRoZSByZWQgdGFwZSBvbiB0aGUgY2FyZGJvYXJkIiwidmVyc2lvbiI6IkVSUiIsInZlcmRpY3QiOiJkb25lIHdyb25nbHkiLCJvYmplY3RzIjpbInJlZCB0YXBlPXdyb25nIiwiY2FyZGJvYXJkPW9rIl0sInJlYXNvbiI6IlRoZSByZWQgdGFwZSByZW1haW5zIGJlc2lkZSB0aGUgY2FyZGJvYXJkLCBub3Qgb24gaXQuIiwibmV4dCI6IkZJWDogUGxhY2UgdGhlIHJlZCB0YXBlIG9uIHRoZSBjYXJkYm9hcmQ7IGRvIG5vdCBtb3ZlIHRoZSBjYXJkYm9hcmQuIiwibW9kZWwiOiJncHQtNi1sdW5hIiwidGltZXN0YW1wIjoiMjAyNi0xMC0xNlQxNzoxODoyOCJ9LHsidGFzayI6InRyeSBhZ2FpbiIsInZlcnNpb24iOiJFUlIiLCJ2ZXJkaWN0IjoiY2Fubm90IHZlcmlmeSIsIm9iamVjdHMiOlsidGFwZT11bnZlcmlmaWVkIiwiY2FyZGJvYXJkPW9rIl0sInJlYXNvbiI6IlRoZSB0YXBlIG1vdmVkIGZyb20gTjcgdG8gRDgsIGJ1dCDigJx0cnkgYWdhaW7igJ0gZG9lcyBub3Qgc3BlY2lmeSB0aGUgaW50ZW5kZWQgZ29hbC4iLCJuZXh0IjoiUkVUQUtFOiBwcm92aWRlIHRoZSBpbnRlbmRlZCBnb2FsIG9yIGRlc3RpbmF0aW9uIGZvciB0aGUgdGFwZS4iLCJtb2RlbCI6ImdwdC02LWx1bmEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTE2VDE3OjIwOjEwIn0seyJ0YXNrIjoiYXBwbHkgc29hcCBvbiB0aGUgcGxhdGUgdXNpbmcgdGUgYnJvd24gc3BvbmdlIGFmdGVyIGRpcHBpbmcgaW50byBpbiBib3dsIHNvYXAiLCJ2ZXJzaW9uIjoiRVJSIiwidmVyZGljdCI6ImRvbmUgd3JvbmdseSIsIm9iamVjdHMiOlsiYm93bD13cm9uZyIsInBsYXRlPXVudmVyaWZpZWQiLCJzcG9uZ2U9b2siLCJkZWJyaXM9b2siXSwicmVhc29uIjoiVGhlIGJvd2wgbW92ZWQgYWx0aG91Z2ggdGhlIHBsYW4gZGlkIG5vdCBtb3ZlIGl0LiBUaGUgc3BvbmdlIGlzIG9uIHRoZSBib2FyZCBhbmQgdGhlIHBsYXRlIGlzIGluIHRoZSB3b3JrZWQgYXJlYSwgYnV0IHNvYXAgYXBwbGljYXRpb24gY2Fubm90IGJlIGNvbmZpcm1lZCB2aXN1YWxseSBvciBmcm9tIGxvZ2dlZCBldmlkZW5jZS4iLCJuZXh0IjoiRklYOiBSZXR1cm4gdGhlIGJvd2wgdG8gaXRzIG9yaWdpbmFsIHBvc2l0aW9uIHdpdGhvdXQgZGlzdHVyYmluZyB0aGUgcGxhdGUgb3Igc3BvbmdlLiBSRVRBS0U6IHByb3ZpZGUgY2xvc2UgZXZpZGVuY2UgdGhhdCBzb2FwIHdhcyBhcHBsaWVkIHRvIHRoZSBwbGF0ZS4iLCJtb2RlbCI6ImdwdC02LWx1bmEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTE2VDE3OjI4OjUwIn0seyJ0YXNrIjoic3VjdGlvbiBjdXAgaXMgYm90dGxlIiwiZ29hbCI6InN1Y3Rpb24gY3VwIGlzIGJvdHRsZSIsInZlcnNpb24iOiJFUlIiLCJ2ZXJkaWN0IjoiZG9uZSB3cm9uZ2x5Iiwib2JqZWN0cyI6WyJzdWN0aW9uIGN1cD13cm9uZyJdLCJyZWFzb24iOiJUaGUgc3VjdGlvbiBjdXAgbW92ZWQgZnJvbSBGNyB0byBKOCBidXQgcmVtYWlucyBvbiB0aGUgYm9hcmQ7IGl0IGlzIG5vdCBoZWxkIGFzIHJlcXVpcmVkIGJ5IHRoZSBwaWNrdXAgcGxhbi4iLCJuZXh0IjoiRklYOiBQaWNrIHVwIHRoZSBzdWN0aW9uIGN1cCBhdCBKOCBhbmQga2VlcCBob2xkaW5nIGl0LiIsIm1vZGVsIjoiZ3B0LTYtbHVuYSIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMThUMTk6MjA6MDYifSx7InRhc2siOiJrZWVwIHRoZSBib3R0bGUgdG8gaXQncyBsZWZ0IiwiZ29hbCI6ImtlZXAgdGhlIGJvdHRsZSB0byBpdCdzIGxlZnQiLCJ2ZXJzaW9uIjoiRVJSIiwidmVyZGljdCI6ImNhbm5vdCB2ZXJpZnkiLCJvYmplY3RzIjpbInVuaWRlbnRpZmllZCBvYmplY3QgMj11bnZlcmlmaWVkIiwidW5pZGVudGlmaWVkIG9iamVjdCAxPXVudmVyaWZpZWQiXSwicmVhc29uIjoiVGhlIG9iamVjdCBhdCBMNyBpcyBub3QgdmlzaWJsZSBhdCB0aGUgY29tbWFuZGVkIGRlc3RpbmF0aW9uIEs3LCBhbmQgdGhlIG90aGVyIGxpc3RlZCBvYmplY3QgY2Fubm90IGJlIGNvbmZpcm1lZC4iLCJuZXh0IjoiUkVUQUtFOiBjbGVhciB0aGUgZ3JpcHBlciBhbmQgY2FwdHVyZSBhIHRvcC1kb3duIHZpZXcgdGhhdCBzaG93cyBib3RoIG9iamVjdHMgYW5kIEs3LiIsIm1vZGVsIjoiZ3B0LTYtbHVuYSIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMThUMjA6MTU6MDYifV19"  # HOSX_EMBEDDED_STATE
 try:
     HOSX_EMBEDDED_STATE = json.loads(
         base64.b64decode(HOSX_EMBEDDED_STATE_B64).decode("utf-8"))
@@ -638,6 +638,53 @@ C_BTN_FG    = _bgr("#ffffff")
 C_GHOST     = _bgr("#ffffff")
 C_GHOST_HOV = _bgr("#f3f3f3")
 C_OUTLINE   = _bgr("#cccccc")       # 20% black: an outlined button's edge
+C_COMPOSE   = _bgr("#f9f9f9")       # the prompt box's fill
+C_SWITCH_TRACK = _bgr("#d6d6d6")    # an off switch's track
+
+# Light and dark mode, switched by the sun/moon toggle in the top bar
+# (user, 2026-10-18). Dark is ChatGPT's dark theme: a #212121 page, #303030
+# surfaces, #ececec ink, white pill buttons with black text.
+THEMES = {
+    "light": {name: globals()[name] for name in (
+        "C_BG", "C_CARD", "C_CARD_SOFT", "C_BORDER", "C_DIVIDER", "C_RULE",
+        "C_TEXT", "C_TEXT_DIM", "C_TEXT_FAINT", "C_ACCENT", "C_SELECTED",
+        "C_BUBBLE", "C_BUBBLE_EDGE", "C_ERROR_TEXT", "C_ERROR_BG",
+        "C_SWITCH_OFF", "C_BTN", "C_BTN_HOVER", "C_BTN_FG", "C_GHOST",
+        "C_GHOST_HOV", "C_OUTLINE", "C_COMPOSE", "C_SWITCH_TRACK")},
+    "dark": {
+        "C_BG": _bgr("#212121"), "C_CARD": _bgr("#2a2a2a"),
+        "C_CARD_SOFT": _bgr("#303030"), "C_BORDER": _bgr("#3a3a3a"),
+        "C_DIVIDER": _bgr("#363636"), "C_RULE": _bgr("#383838"),
+        "C_TEXT": _bgr("#ececec"), "C_TEXT_DIM": _bgr("#b4b4b4"),
+        "C_TEXT_FAINT": _bgr("#8f8f8f"), "C_ACCENT": _bgr("#ececec"),
+        "C_SELECTED": _bgr("#424242"), "C_BUBBLE": _bgr("#303030"),
+        "C_BUBBLE_EDGE": _bgr("#3d3d3d"), "C_ERROR_TEXT": _bgr("#ff6b62"),
+        "C_ERROR_BG": _bgr("#3a2120"), "C_SWITCH_OFF": _bgr("#4a4a4a"),
+        "C_BTN": _bgr("#ffffff"), "C_BTN_HOVER": _bgr("#e3e3e3"),
+        "C_BTN_FG": _bgr("#0d0d0d"), "C_GHOST": _bgr("#212121"),
+        "C_GHOST_HOV": _bgr("#303030"), "C_OUTLINE": _bgr("#4d4d4d"),
+        "C_COMPOSE": _bgr("#303030"), "C_SWITCH_TRACK": _bgr("#4a4a4a")},
+}
+THEME = "light"
+_THEME_HOOKS = []     # caches other parts of HOS X drop when the theme changes
+
+
+def apply_theme(name):
+    """Swap every palette colour to `name`'s and forget the drawings
+    recorded in the old ones."""
+    global THEME
+    if name not in THEMES:
+        return
+    THEME = name
+    globals().update(THEMES[name])
+    for cache in ("_CARD_STAMPS", "_SHADOW_STAMPS", "_BUTTON_STAMPS"):
+        if cache in globals():
+            globals()[cache].clear()
+    for hook in _THEME_HOOKS:
+        try:
+            hook()
+        except Exception:
+            pass
 
 
 def css_baseline(px, line_h):
@@ -1378,10 +1425,12 @@ def text_size(label, scale, thickness=1, weight=None, family="ui"):
     return size
 
 
-def draw_text(img, label, org, scale=0.5, colour=C_TEXT, thickness=1,
+def draw_text(img, label, org, scale=0.5, colour=None, thickness=1,
               weight=None, family="ui", spacing=0.0):
     """`label` with its baseline-left at `org` (`spacing`: CSS
     letter-spacing, px, for SF Pro)."""
+    if colour is None:
+        colour = C_TEXT
     text = ascii_text(label)
     if not text:
         return
@@ -1486,7 +1535,7 @@ def text_advance(label, scale, thickness=1, weight=None, family="ui",
     return float(text_size(label, scale, thickness, weight, family)[0])
 
 
-def draw_text_centred(img, label, rect, scale=0.5, colour=C_TEXT, thickness=1,
+def draw_text_centred(img, label, rect, scale=0.5, colour=None, thickness=1,
                       weight=None, family="ui", spacing=0.0):
     x0, y0, x1, y1 = rect
     w = text_advance(label, scale, thickness, weight, family, spacing)
@@ -1841,14 +1890,14 @@ def draw_support_view(canvas, area, video):
     if y0 < 0 or x0 < 0 or y0 + 24 + bh > H or x0 + bw > W:
         return None
     cv2.rectangle(canvas, (x0 - 1, y0 - 1), (x0 + bw, y0 + 24 + bh), (0, 0, 0), 1)
-    cv2.rectangle(canvas, (x0, y0), (x0 + bw - 1, y0 + 23), (255, 255, 255), -1)
+    cv2.rectangle(canvas, (x0, y0), (x0 + bw - 1, y0 + 23), C_CARD, -1)
     label, font = f"Supporting view: {support_name()}", cv2.FONT_HERSHEY_SIMPLEX
     if cv2.getTextSize(label, font, 0.42, 1)[0][0] > bw - 12:
         while len(label) > 4 and cv2.getTextSize(label + "...", font, 0.42,
                                                  1)[0][0] > bw - 12:
             label = label[:-1]
         label = label.rstrip() + "..."
-    cv2.putText(canvas, label, (x0 + 6, y0 + 16), font, 0.42, (20, 20, 20), 1,
+    cv2.putText(canvas, label, (x0 + 6, y0 + 16), font, 0.42, C_TEXT, 1,
                 cv2.LINE_AA)
     canvas[y0 + 24:y0 + 24 + bh, x0:x0 + bw] = pic
     return (x0, y0, x0 + bw, y0 + 24 + bh)
@@ -2253,6 +2302,10 @@ AUTO_PICKUP_HX_S = 1.0       # a pickup: hd first, then hx for this long
 # Gripper coil (user, 2026-10-18): after the pickup's hd and hx, lq for
 # this long, then s, before the jaws close (g90). 0 = no coil.
 AUTO_PICKUP_COIL_S = 0.5
+# lq goes out this long after hx's stop: sent at once, the bare "s" and the
+# bare "lq" reached the board as one word, "slq", and the coil never ran
+# (user, 2026-10-18).
+AUTO_PICKUP_COIL_GAP_S = 0.2
 AUTO_PICKUP_HU_SCALE = 1.0    # pickup hu uses measured hd duration times this scale
 AUTO_GRIP_P1_SETTLE_S = 0.5   # second g90 settle before p1
 AUTO_PRESS_RUN_S = 3.0       # the runner's own press (no card) runs this long
@@ -2458,6 +2511,7 @@ def tof_same_reading(bottom, top, margin=None):
 
 # The gripper's words, each sent on a line of its own -- p4 included (user,
 # 2026-10-17: "send p4 always in newline"; it used to go out bare).
+SERIAL_BARE_GAP_S = 0.06
 GRIPPER_WORD_RE = re.compile(r"hd|hx|hu|g\d{1,2}|p[134]")
 
 
@@ -2514,8 +2568,17 @@ class SerialLink:
                 wire = letter + "\n" if word else letter
                 if word and self._prev_bare:
                     wire = "\n" + wire
+                # two bare letters written back to back reach the board as
+                # one word ("s" + "lq" -> "slq", 2026-10-18): a bare letter
+                # never follows another sooner than SERIAL_BARE_GAP_S
+                if not word and self._prev_bare:
+                    wait = getattr(self, "_bare_at", 0.0) + SERIAL_BARE_GAP_S - time.monotonic()
+                    if wait > 0:
+                        time.sleep(wait)
                 self._prev_bare = not word
                 conn.write(wire.encode("ascii"))
+                if not word:
+                    self._bare_at = time.monotonic()
                 if self.on_line:
                     self.on_line("tx", letter)
             except Exception as e:
@@ -4100,7 +4163,7 @@ def draw_switch(img, rect, on: bool, hover=False):
     r = h // 2
     track = C_BLUE if on else C_SWITCH_OFF
     if hover:
-        track = _bgr("#0074e0") if on else _bgr("#d6d6d6")
+        track = _bgr("#0074e0") if on else C_SWITCH_TRACK
     rounded_rect(img, (x0, y0, x1, y1), r, track, -1)
     kx = (x1 - r) if on else (x0 + r)
     kr = r - 2
@@ -5199,6 +5262,7 @@ def save_settings(cam: CameraSettings, grid: Grid):
             "repeat_tasks": REPEAT_TASKS,
             "support_camera": SUPPORT_CAMERA_ID,
             "main_grid": SHOW_MAIN_GRID,
+            "theme": THEME,
         },
         "magnifier": magnifier_settings(),
         "micro_trig": micro_trig_settings(),
@@ -5211,11 +5275,92 @@ def save_settings(cam: CameraSettings, grid: Grid):
     return embedded_saved and gripper_saved
 
 
+# The operator's own settings as of 2026-10-19 (user: "hardcode these settings
+# ... if anybody downloads the code without the settings, this will be the
+# default"): used whenever no saved settings are found. The supporting
+# camera is left unset -- its ID belongs to one Mac.
+DEFAULT_SETTINGS = {'rev': 2,
+ 'camera': {'zoom': 1.1,
+            'brightness': 0,
+            'contrast': 1.0,
+            'saturation': 1.0,
+            'sharpness': 0.0,
+            'rotation': 0,
+            'mirror': False},
+ 'grid': {'n_cols': 20,
+          'n_rows': 20,
+          'box': [164.62526614620296,
+                  5.996363636363629,
+                  765.345180979418,
+                  606.5909090909091],
+          'square_cells': True,
+          'frame_size': [1089, 612],
+          'box_rel': [0.15117104329311568,
+                      0.009797979797979786,
+                      0.7027963094393187,
+                      0.9911616161616162]},
+ 'trig_offset': {'camera_height_in': 35.0,
+                 'tag_height_in': 5.5,
+                 'board_height_in': 0.0,
+                 'pivot_x': 0.0,
+                 'pivot_y': 0.0,
+                 'gripper_up_down': -8,
+                 'gripper_right_left': 0,
+                 'gripper_vertical_direction': 'up',
+                 'gripper_horizontal_direction': 'left',
+                 'nudge_s': 0.2,
+                 'nudge_direction': 'right',
+                 'nudge_actions': {'pickup': True,
+                                   'keep': False,
+                                   'press': False,
+                                   'release': True}},
+ 'vision': {'board_width_in': 24.0,
+            'conf_thres': 0.25,
+            'iou_thres': 0.7,
+            'max_area': 0.5,
+            'outline_px': 2,
+            'mark_parts': True,
+            'show_names': True,
+            'namer_model': 'gpt-6-luna',
+            'priority_naming': False,
+            'max_fps': 10.0,
+            'scene_hint': 'The photo shows the work area of a small gantry robot, so '
+                          'it may hold parts of the robot itself (aluminium frame '
+                          'rails, lead screws, smooth rods, stepper motors, belts, '
+                          'pulleys, a gripper, cables) as well as everyday objects.'},
+ 'behaviour': {'manual_gripper_steps': False,
+               'gripper_ai': True,
+               'grip_ask_model': False,
+               'err_auto': 'off',
+               'err_final': False,
+               'err_redo': False,
+               'planner_effort': 'low',
+               'repeat_tasks': False,
+               'support_camera': '',
+               'main_grid': False,
+               'theme': 'light'},
+ 'magnifier': {'zoom': 1.5, 'width': 59, 'height': 82},
+ 'micro_trig': {'camera_in': 35.0,
+                'grip_in': 0.5,
+                'nadir_mm': [0.0, 0.0],
+                'shift_mm': [0.0, 0.0],
+                'land_mm': [0.0, 0.0],
+                'local_mm': [[0.0, 0.0],
+                             [0.0, 0.0],
+                             [0.0, 0.0],
+                             [0.0, 0.0],
+                             [0.0, 0.0],
+                             [0.0, 0.0],
+                             [0.0, 0.0],
+                             [0.0, 0.0],
+                             [0.0, 0.0]]}}
+
+
 def load_settings():
     """Returns (CameraSettings, (box, frame_size, square_cells, box_rel) or
     None). Grid dimensions are applied to CONFIG as a side effect."""
     cam = CameraSettings()
-    data = copy.deepcopy(HOSX_EMBEDDED_STATE.get("settings") or {})
+    data = copy.deepcopy(HOSX_EMBEDDED_STATE.get("settings") or DEFAULT_SETTINGS)
     if not isinstance(data, dict):
         print("[settings] ignoring malformed embedded settings")
         data = {}
@@ -5264,6 +5409,8 @@ def load_settings():
         SUPPORT_CAMERA_ID = behaviour["support_camera"]
     if isinstance(behaviour.get("main_grid"), bool):
         SHOW_MAIN_GRID = behaviour["main_grid"]
+    if behaviour.get("theme") in THEMES:
+        apply_theme(behaviour["theme"])
     rev = data.get("rev")
     if isinstance(rev, int) and rev >= SETTINGS_REV:
         if behaviour.get("err_auto") in dict(ERR_AUTO_MODES):
@@ -5395,6 +5542,7 @@ class ManualMovePanel:
         runner.stop(state, "Manual move started.")
         sim.stop(state, "Manual move started.")
         state.target_col, state.target_row = self.sel_col, self.sel_row
+        state.no_centring = False
         state.arrived = False
         state.action_label = None
         state.manual_move_active = True
@@ -5430,6 +5578,7 @@ class ManualMovePanel:
             return "That is the edge of the board."
         self.sel_col, self.sel_row = col, row
         state.target_col, state.target_row = col, row
+        state.no_centring = False
         state.arrived = False
         state.action_label = None
         state.manual_move_active = True
@@ -6298,6 +6447,7 @@ class GripperPanel:
     AUTO_GRIP_WAIT_STOP = "wait_stop"
     AUTO_GRIP_WAIT_HX = "wait_hx"
     AUTO_GRIP_HX = "hx"
+    AUTO_GRIP_COIL_WAIT = "coil_wait"
     AUTO_GRIP_COIL = "coil"
     AUTO_GRIP_WAIT_G90 = "wait_g90"
     AUTO_GRIP_WAIT_P1 = "wait_p1"
@@ -6565,18 +6715,25 @@ class GripperPanel:
                 and now >= self.auto_grip_up_until):
             if ARDUINO.halt():
                 self._tof_mark("bottom_from", now)
-                if AUTO_PICKUP_COIL_S > 0 and ARDUINO.send_command("lq"):
-                    # the gripper coil: lq for AUTO_PICKUP_COIL_S, then s
-                    self.auto_grip_phase = self.AUTO_GRIP_COIL
-                    self.auto_grip_up_until = now + AUTO_PICKUP_COIL_S
-                    self.last_msg = (f"hx complete -- gripper coil: lq for "
-                                     f"{AUTO_PICKUP_COIL_S:g}s.")
+                if AUTO_PICKUP_COIL_S > 0:
+                    # the gripper coil: a short gap, lq for AUTO_PICKUP_COIL_S, then s
+                    self.auto_grip_phase = self.AUTO_GRIP_COIL_WAIT
+                    self.auto_grip_up_until = now + AUTO_PICKUP_COIL_GAP_S
+                    self.last_msg = (f"hx complete -- gripper coil: lq in "
+                                     f"{AUTO_PICKUP_COIL_GAP_S:g}s.")
                     return
                 self.auto_grip_phase = self.AUTO_GRIP_WAIT_G90
                 self.auto_grip_up_until = now + AUTO_GRIP_COMMAND_DELAY_S
                 self.last_msg = "hx complete -- g90 in 1.0s."
             else:
                 self.last_msg = "hx complete -- retrying lowercase s."
+            return
+        if (self.auto_grip_phase == self.AUTO_GRIP_COIL_WAIT
+                and now >= self.auto_grip_up_until):
+            if ARDUINO.send_command("lq"):
+                self.auto_grip_phase = self.AUTO_GRIP_COIL
+                self.auto_grip_up_until = now + AUTO_PICKUP_COIL_S
+                self.last_msg = (f"Gripper coil: lq for {AUTO_PICKUP_COIL_S:g}s.")
             return
         if (self.auto_grip_phase == self.AUTO_GRIP_COIL
                 and now >= self.auto_grip_up_until):
@@ -6965,6 +7122,8 @@ class GripperPanel:
             message = f"Pickup: waiting {grip_remaining:.1f}s before hx"
         elif self.auto_grip_phase == self.AUTO_GRIP_HX:
             message = f"Pickup: hx has {grip_remaining:.1f}s remaining"
+        elif self.auto_grip_phase == self.AUTO_GRIP_COIL_WAIT:
+            message = f"Pickup: gripper coil, lq in {grip_remaining:.1f}s"
         elif self.auto_grip_phase == self.AUTO_GRIP_COIL:
             message = f"Pickup: gripper coil, lq has {grip_remaining:.1f}s remaining"
         elif self.auto_grip_phase == self.AUTO_GRIP_WAIT_G90:
@@ -8665,10 +8824,20 @@ def ask_for_names(model, images, prompt, n):
     if side is not None:
         extra = [{"type": "text", "text":
                   "LAST IMAGE: a SIDE VIEW of the same board from the supporting "
-                  "view camera, taken now. It has no numbers or outlines: use it "
-                  "only to see the numbered objects from the side (height, "
-                  "shape, what they are made of) before naming them. Name only "
-                  "the numbered outlines of the board images."}, side]
+                  "view camera, taken now -- a low, close look across the board, "
+                  "often much closer and sharper than the top-down images. It "
+                  "has no numbers or outlines. First match each object it shows "
+                  "to its numbered outline (by colour, size, shape and where it "
+                  "sits), then NAME THAT OBJECT FROM THE SIDE VIEW: its texture, "
+                  "material, thickness and 3D shape there decide what it is, over "
+                  "a guess from the flat top view (lighting in either view does "
+                  "not change what an object is). The close-up is evidence, not a "
+                  "guess: when it shows which KIND of thing an object is, give "
+                  "that specific kind as the name, not only its category word. "
+                  "Say in its desc what the side "
+                  "view showed. Objects the side view does not show are named "
+                  "from the board images as usual. Name only the numbered "
+                  "outlines of the board images."}, side]
     text = call_model(client, model=model, max_tokens=NAMER_MAX_TOKENS,
                       stage="Naming", priority=PRIORITY_NAMING,
                       reasoning=NAMER_REASONING,
@@ -12880,7 +13049,7 @@ the window", "slide the window open", "close the guard on the drill press",
 "open the jar", "lift the toilet seat" are all `open_door`/`close_door`.
 
 **2. Contact pass - drag a held tool across cells.**
-Pick up a tool (broom, mop, cloth, sponge), move above the FIRST cell, `press` to put the tool in contact with the surface, then issue one `goto_coordinate` per cell. The tool stays in contact and works every cell it crosses. `release` lifts it at the end. Across more than one row, zigzag - see **Serpentine coverage** - EXCEPT a broom sweep, which never zigzags: every consecutive valid head lane is its own separate press/release pair that travels TOWARD and ENDS AT the shared point inside the dustpan (or the pile when no collector exists), never back and forth. Calculate the first and last head lanes from the rectangle edges and bristle footprint, then use every lane one grid step apart. See playbook 1/1b for the broom's actual pattern; do not apply Serpentine coverage to sweeping with either a broom or a scrub brush.
+Pick up a tool (broom, mop, cloth, sponge), move above the FIRST cell, `press` to put the tool in contact with the surface, then issue one `goto_coordinate` per cell. The tool stays in contact and works every cell it crosses. `release` lifts it at the end: write `release` RIGHT AFTER the stroke's last pressed goto_coordinate - never a goto back before it. The order is always release, then go back, then keep. Never travel back while pressed: no pressed goto to a cell already covered, to the start or toward the pickup cell - the moment the last NEW cell is covered, `release` there; only then goto back (lifted) and keep. Across more than one row, zigzag - see **Serpentine coverage** - EXCEPT a broom sweep, which never zigzags: every consecutive valid head lane is its own separate press/release pair that travels TOWARD and ENDS AT the shared point inside the dustpan (or the pile when no collector exists), never back and forth. Calculate the first and last head lanes from the rectangle edges and bristle footprint, then use every lane one grid step apart. See playbook 1/1b for the broom's actual pattern; do not apply Serpentine coverage to sweeping with either a broom or a scrub brush.
 
 Tool by task: normal broom or scrub brush for sweeping, mop for mopping, cloth/sponge for wiping /
 scrubbing / soaping. Do not substitute cloth for a broom when the task is to
@@ -18074,6 +18243,12 @@ class PlanRunner:
             state.target_col, state.target_row = coord
             state.arrived = False
             state.action_label = None
+            # a pressed stroke's end: release the moment it stops, no
+            # centring nudges back first (user, 2026-10-19: release, then
+            # go back, then keep)
+            nxt = (self.commands[self.index + 1].split("(", 1)[0].strip().lower()
+                   if self.index + 1 < len(self.commands) else "")
+            state.no_centring = nxt == "release"
             if self._pressed:
                 self._moved_pressed = True
             self.mode = "move"
@@ -19984,12 +20159,20 @@ its jaws on an object and lifted. Look at the side view (and the top-down
 board view, if given) and say whether the gripper is HOLDING the object
 named in the task, lifted clear of the board.
 
-- HOLDING: the object is between the jaws and off the board.
-- NOT_HOLDING: the jaws are empty, or the object is still lying on the
-  board, or it is hanging loose or falling out.
+The ONLY question is: is the object in the gripper and off the board?
+- HOLDING: the gripper has the object and it is lifted off the board --
+  however it hangs. Tilted, slanted, crooked, off-centre, dangling, held by
+  an edge, a corner or an end, partly sticking out, swinging: all HOLDING.
+  How neat the grip looks never matters; any part of the object in or
+  against the jaws, and the object off the board, is HOLDING.
+- NOT_HOLDING: only when the jaws are clearly empty, or the object is
+  still resting on the board (not lifted at all), or it has visibly
+  dropped -- falling or lying back on the board.
+When in doubt between the two, and the object is off the board near the
+jaws, answer HOLDING.
 Then, when not holding, the likeliest reason, one of:
-  slip    - it was gripped but slid or dropped out (it has moved);
-  point   - the jaws closed beside it or on the wrong part of it;
+  slip    - it was gripped but dropped out (it has moved);
+  point   - the jaws closed beside it, missing it;
   motor   - the jaws did not close (or opened again);
   nogrip  - it was not gripped at all and has not moved.
 If the side view cannot show it (blocked, dark, out of frame, or no robot
@@ -22665,6 +22848,7 @@ class AppState:
     target_cell_center_px: Optional[tuple] = None
     stop_cell_rect: Optional[tuple] = None   # the tag's stop cell, in pixels
     centring_key: Optional[tuple] = None     # the target being centred on
+    no_centring: bool = False                # this goto ends a pressed stroke
     centring_tries: dict = field(default_factory=dict)
     centring_nudge: Optional[tuple] = None   # (turn, until): a timed slow jog
     centring_stop_at: float = 0.0            # when it last stopped
@@ -22741,6 +22925,9 @@ class AppState:
     err_start_side: Optional[object] = None
 
     missing_popup: Optional[dict] = None
+    suggestions: tuple = ()                  # Suggested Tasks on the empty chat
+    missing_asked: set = field(default_factory=set)   # names asked about this task
+    missing_ask: Optional[dict] = None   # {"task", "queue", "said", "objects"}
     missing_popup_done_rect: Optional[tuple] = None
     missing_popup_cancel_rect: Optional[tuple] = None
 
@@ -22835,6 +23022,86 @@ def chat_ask(state, question: str, options):
     """
     state.ai_chat.append({"role": "choices", "text": str(question),
                           "options": list(options) + [FREE_ANSWER],
+                          "answer": None})
+    state.chat_scroll = 0
+
+
+SUGGEST_MAX = 4
+_SWEEPERS = ("broom", "brush")
+_COLLECTORS = ("dustpan", "dust pan", "tray", "pan")
+_WIPERS = ("cloth", "sponge", "towel", "rag", "tissue", "napkin")
+_HOLDERS = ("plate", "tray", "box", "bowl", "basket", "bin", "container",
+            "mat", "cardboard", "board", "dish", "lid")
+
+
+def suggest_tasks(names) -> list:
+    """Suggested Tasks (user, 2026-10-19): once the board is named and no
+    task has been given, a few tasks to click, ChatGPT-style -- made from
+    the object names, no model call."""
+    objs = []
+    for n in names or ():
+        n = " ".join(str(n or "").split())
+        low = n.lower()
+        if (not n or low in (o.lower() for o in objs) or low == "unknown"
+                or is_surface_name(n) or is_hand_name(n)
+                or any(w in low for w in ("robot", "gripper", "carriage"))):
+            continue
+        objs.append(n)
+    if not objs:
+        return []
+    has = lambda words: next((o for o in objs if any(w in o.lower() for w in words)), None)
+    out = []
+    sweeper, collector, wiper = has(_SWEEPERS), has(_COLLECTORS), has(_WIPERS)
+    if sweeper and collector:
+        out.append(f"Sweep into the {collector} with the {sweeper}")
+    if wiper:
+        out.append(f"Wipe the board with the {wiper}")
+    plain = [o for o in objs if o not in (sweeper, collector, wiper)] or objs
+    holder = has(_HOLDERS)
+    movable = [o for o in objs if o not in (holder, collector)]
+    if holder and movable:
+        word = "in" if any(w in holder.lower() for w in ("box", "bowl", "basket", "bin", "cup", "container")) else "on"
+        out.append(f"Put the {movable[0]} {word} the {holder}")
+    a = plain[0]
+    out.append(f"Move the {a} 3 cells to the right")
+    if len(plain) > 1:
+        out.append(f"Pick up the {plain[1]} and keep it 2 cells down")
+    seen, res = set(), []
+    for t in out:
+        if t.lower() not in seen:
+            seen.add(t.lower())
+            res.append(t)
+    return res[:SUGGEST_MAX]
+
+
+MISSING_NONE = "None of these"
+MISSING_ASK_MAX = 10
+
+
+def missing_choices(name, objects) -> list:
+    """What a missing `name` might really be, Vision AI having called it
+    something else: the objects sharing a word with it first, then the rest
+    of the board's list (user, 2026-10-18)."""
+    want = set(re.findall(r"[a-z]+", clean_object_name(name).lower()))
+    seen, scored = set(), []
+    for i, o in enumerate(objects or ()):
+        n = str(o.get("name") or "").strip()
+        if not n or n.lower() in seen or is_surface_name(n) or is_hand_name(n):
+            continue
+        seen.add(n.lower())
+        words = set(re.findall(r"[a-z]+", " ".join(
+            [n] + [str(a) for a in (o.get("aka") or [])]).lower()))
+        scored.append((-len(want & words), i, n))
+    scored.sort()
+    return [n for _, _, n in scored[:MISSING_ASK_MAX]]
+
+
+def chat_ask_missing(state, name, options):
+    """Is the missing object one of these? -- clickable, in the chat."""
+    state.ai_chat.append({"role": "choices", "kind": "missing", "missing": name,
+                          "text": f"Is the {name}, which I can't see and is "
+                                  f"missing, one of these?",
+                          "options": list(options) + [MISSING_NONE],
                           "answer": None})
     state.chat_scroll = 0
 
@@ -22956,6 +23223,16 @@ A3_FACES = {            # (file, face index) of each face the box draws with
     "lucida-bold": ("/System/Library/Fonts/LucidaGrande.ttc", 1),
 }
 _A3_STAMPS = {}
+A3_LIGHT = {"A3_TEXT": A3_TEXT, "A3_TEXT_DIM": A3_TEXT_DIM}
+A3_DARK = {"A3_TEXT": _bgr("#ececec"), "A3_TEXT_DIM": _bgr("#9a9a9a")}
+
+
+def _a3_theme():
+    globals().update(A3_DARK if THEME == "dark" else A3_LIGHT)
+    _A3_STAMPS.clear()
+
+
+_THEME_HOOKS.append(_a3_theme)
 _A3_FONTS = {}
 _A3_FACE_INFO = {}
 _A3_POSITIONS = {}
@@ -23418,16 +23695,17 @@ def a3_compose_bar(canvas, x, y, width, k=1):
                           * (alpha / 255.0))
         fill = _a3_fill(w, h, x0, y0, x1, y1, rad)
         yy = np.arange(h, dtype=np.float32)[:, None]
-        _a3_blend(f, (255, 255, 255),
+        dark = THEME == "dark"
+        _a3_blend(f, (48, 48, 48) if dark else (255, 255, 255),
                   fill * (245.0 - 30.0 * np.clip(yy / h, 0, 1)) / 255.0)
-        _a3_blend(f, (255, 255, 255),
+        _a3_blend(f, (58, 58, 58) if dark else (255, 255, 255),
                   fill * (150.0 * (1.0 - np.clip(yy / (h * 0.6), 0, 1)))
                   / 255.0)
-        _a3_blend(f, (218, 204, 196),
+        _a3_blend(f, (77, 77, 77) if dark else (218, 204, 196),
                   _a3_stroke(w, h, x0, y0, x1, y1, rad, 1.5 * k)
                   * (200 / 255.0))
     w = int(width // k)
-    _a3_stamp(("bar", w, k), w * k, A3_COMPOSE_H * k, paint).apply(
+    _a3_stamp(("bar", w, k, THEME), w * k, A3_COMPOSE_H * k, paint).apply(
         canvas, x, y)
 
 
@@ -23898,6 +24176,7 @@ class AISidebar:
         answered = tuple(m.get("answer") for m in state.ai_chat
                          if m.get("role") == "choices")
         return (len(state.ai_chat), scroll_px, self.view, answered,
+                state.suggestions,
                 id(live), id(live.commands), live.index, live.active,
                 len(live.commands),
                 self._stage_key(state.ai_job), self._stage_key(state.err_job))
@@ -23949,16 +24228,32 @@ class AISidebar:
             # 24px on a 28px line, a 16px grey suggestion under it.
             title = "What should the robot do?"
             tw = text_advance(title, 0.96, 1)
-            ty = vh // 2 - 28
+            ty = vh // 2 - 28 - (60 * len(state.suggestions) // 2 if state.suggestions else 0)
             draw_text(vp, title, ((vw - tw) / 2, ty + css_baseline(24, 28)),
                       0.96, C_TEXT, 1)
             hint = 'e.g. "put the red cube on the tray"'
             hw = text_advance(hint, 0.64, 1)
-            draw_text(vp, hint, ((vw - hw) / 2, ty + 40 + css_baseline(16, 26)),
-                      0.64, C_TEXT_DIM, 1)
+            self._choice_rects = []
+            if state.suggestions:
+                # Suggested Tasks: one click runs it
+                draw_text(vp, "Suggested tasks", (self.PAD, ty + 92), 0.52,
+                          C_TEXT_FAINT, 1, weight=600)
+                y = ty + 104
+                for task in state.suggestions:
+                    row = (self.PAD, y, vw - self.PAD, y + self.OPT_H)
+                    css_rect(vp, row, self.OPT_H / 2.0, C_CARD, C_OUTLINE)
+                    label = self._fit(task, row[2] - row[0] - 32, 0.52)
+                    draw_text(vp, label, (row[0] + 16, y + 27), 0.52, C_TEXT, 1,
+                              weight=600)
+                    self._choice_rects.append(
+                        ((row[0] + vx0, row[1] + vy0, row[2] + vx0, row[3] + vy0),
+                         {"kind": "suggest"}, task))
+                    y += self.OPT_H + self.OPT_GAP
+            else:
+                draw_text(vp, hint, ((vw - hw) / 2, ty + 40 + css_baseline(16, 26)),
+                          0.64, C_TEXT_DIM, 1)
             canvas[vy0:vy1, vx0:vx1] = vp
             self._cache, self._cache_key = vp, key
-            self._choice_rects = []
             return
 
         self._vp_origin = (vx0, vy0)
@@ -24056,7 +24351,7 @@ class AISidebar:
         card is the plan currently being walked.
         """
         y1 = y0 + 54 + max(1, len(cmds)) * self.ROW_H
-        css_rect(vp, (x0, y0, x1, y1), 24, _bgr("#f9f9f9"), C_BORDER)
+        css_rect(vp, (x0, y0, x1, y1), 24, C_COMPOSE, C_BORDER)
         live_plan = cmds is live.commands and live.active
         draw_text(vp, "Plan", (x0 + 16, y0 + 29), self.SCALE, C_TEXT, 1,
                   weight=600)
@@ -25564,8 +25859,39 @@ def main():
         chat_say(state, "assistant", "Before I start:")
         chat_ask(state, q["question"], q["options"])
 
+    def ask_missing_next():
+        """The next missing object to ask about, or -- all answered -- the
+        task again, told what each one is."""
+        ma = state.missing_ask
+        if ma is None:
+            return
+        if ma["queue"]:
+            name = ma["queue"].pop(0)
+            state.missing_asked.add(name.lower())
+            chat_ask_missing(state, name, missing_choices(name, ma["objects"]))
+            state.status_message = f"Waiting for you: which one is the {name}?"
+            return
+        state.missing_ask = None
+        task = ma["task"] + "".join(f" (the {m} is the {a})" for m, a in ma["said"])
+        state.status_message = "Thanks -- planning again."
+        launch_ai(task=task, ask=False)
+
     def answer_question(msg, option):
         """One option clicked. Ask the next, or release the worker."""
+        if msg.get("kind") == "suggest":
+            state.suggestions = ()
+            state.missing_asked, state.missing_ask = set(), None
+            launch_ai(task=option)
+            return
+        if msg.get("kind") == "missing":
+            if msg.get("answer") is not None or state.missing_ask is None:
+                return
+            msg["answer"] = option
+            chat_say(state, "user", option)
+            if option != MISSING_NONE:
+                state.missing_ask["said"].append((msg["missing"], option))
+            ask_missing_next()
+            return
         job = state.ai_job
         if not state.pending_questions or job is None:
             return
@@ -25646,6 +25972,18 @@ def main():
                    if any(_same_object_word(m, d) for m in missing)]
             missing = [m for m in missing
                        if not any(_same_object_word(m, d) for d in job.out_of_reach)]
+            # Vision AI may have named it something else: ask which one it
+            # is before calling it missing (user, 2026-10-18)
+            ask = [m for m in missing if m.lower() not in state.missing_asked
+                   and missing_choices(m, job.objects)]
+            if ask:
+                runner.load("")
+                sim.load([])
+                state.exec_pending = False
+                state.missing_ask = {"task": job.task, "queue": ask, "said": [],
+                                     "objects": list(job.objects)}
+                ask_missing_next()
+                return
             if runner.load(job.plan) == 0:
                 summary = extract_plan_summary(job.plan)
                 if far and not missing:
@@ -26880,6 +27218,9 @@ def main():
                     break
             record_answer(task)
             return
+        if from_box:
+            state.missing_asked = set()
+            state.missing_ask = None
         if state.ai_job is not None and not state.ai_job.done:
             if state.ai_job.blocked:
                 state.ai_job.cancel()
@@ -27245,6 +27586,7 @@ def main():
 
     dseq_button = None      # the main window's sequence button, as drawn
     repeat_rect = None      # ...and its Repeated Tasks button
+    theme_rect = None       # ...and its light/dark mode toggle
 
     def popup_hit(rects, vx, vy):
         """The kind of the pop-up button (video pixels) at (vx, vy), or None."""
@@ -27298,6 +27640,16 @@ def main():
                              "Not now -- the board as it is now is the one "
                              "watched.")
                     return
+            if (theme_rect is not None and theme_rect[0] <= x <= theme_rect[2]
+                    and theme_rect[1] <= y <= theme_rect[3]
+                    and not magnifier.covers(x, y)):
+                sun, _ = theme_toggle_halves(theme_rect)
+                want = "light" if x < sun[2] else "dark"
+                if want != THEME:
+                    apply_theme(want)
+                    save_settings(cam_settings, grid)
+                state.status_message = f"{want.capitalize()} mode."
+                return
             if (repeat_rect is not None and repeat_rect[0] <= x <= repeat_rect[2]
                     and repeat_rect[1] <= y <= repeat_rect[3]
                     and not magnifier.covers(x, y)):
@@ -28072,6 +28424,14 @@ def main():
         if state.ai_job is not None and state.ai_job.done:
             collect_ai_result()
         name_before_task()
+        # Suggested Tasks: once naming has happened, until a task is given
+        if not state.ai_chat and state.ai_job is None and vision.namer.names:
+            names = tuple(vision.namer.names.values())
+            if names != getattr(state, "_suggest_from", None):
+                state._suggest_from = names
+                state.suggestions = tuple(suggest_tasks(names))
+        elif state.suggestions and state.ai_chat:
+            state.suggestions = ()
         drain_queued_ai()
         collect_err_result()
         collect_step_err_result()
@@ -28181,7 +28541,7 @@ def main():
         # panel on it -- to be composed again: frames the operator felt as
         # lag between a click and its result.
         wash_key = (total_w, total_h, video_x, video_y, w, h,
-                    sidebar.x0, sidebar.y0, sidebar.width, sidebar.height)
+                    sidebar.x0, sidebar.y0, sidebar.width, sidebar.height, THEME)
         if wash is None or wash_key != wash_have:
             # ChatGPT's page: plain white, structure from hairlines and
             # surface tone rather than shadows or a coloured wash.
@@ -28239,6 +28599,8 @@ def main():
         draw_repeat_toggle(canvas, repeat_rect, REPEAT_TASKS,
                            hover=(repeat_rect[0] <= mx <= repeat_rect[2]
                                   and repeat_rect[1] <= my <= repeat_rect[3]))
+        theme_rect = (repeat_rect[0] - 12 - THEME_TOGGLE_W, 6, repeat_rect[0] - 12, 50)
+        draw_theme_toggle(canvas, theme_rect, (mx, my))
 
         sidebar.draw(canvas, state, runner, sim, (mx, my), shadow=False,
                      card=False)
@@ -28547,7 +28909,8 @@ def update_guidance(state: AppState):
 
     now = time.monotonic()
     track_slow_speed(state)
-    step, turn = ("done", None) if moves else centring_step(state, now)
+    step, turn = (("done", None) if moves or state.no_centring
+                  else centring_step(state, now))
     if step != "done":
         state.arrived = False
         state.guide_dir, state.guide_steps = turn, 1 if turn else 0
@@ -29190,6 +29553,50 @@ def draw_repeat_toggle(img, rect, on, hover=False):
     draw_text(img, REPEAT_LABEL, (x0 + 16, y0 + (y1 - y0 + th) / 2.0), 0.56,
               C_TEXT, 1, weight=600, spacing=BUTTON_SPACING)
     draw_switch(img, (x1 - 14 - 36, y0, x1 - 14, y1), on)
+
+
+THEME_TOGGLE_W = 84
+
+
+def draw_sun(img, c, colour, r=5):
+    cx, cy = int(c[0]), int(c[1])
+    cv2.circle(img, (cx, cy), r, colour, 2, cv2.LINE_AA)
+    for k in range(8):
+        a = k * math.pi / 4
+        p0 = (int(round(cx + (r + 3) * math.cos(a))), int(round(cy + (r + 3) * math.sin(a))))
+        p1 = (int(round(cx + (r + 5) * math.cos(a))), int(round(cy + (r + 5) * math.sin(a))))
+        cv2.line(img, p0, p1, colour, 2, cv2.LINE_AA)
+
+
+def draw_moon(img, c, colour, bg, r=8):
+    cx, cy = int(c[0]), int(c[1])
+    cv2.circle(img, (cx, cy), r, colour, -1, cv2.LINE_AA)
+    cv2.circle(img, (cx + 5, cy - 4), r - 1, bg, -1, cv2.LINE_AA)
+
+
+def theme_toggle_halves(rect):
+    x0, y0, x1, y1 = rect
+    mid = (x0 + x1) // 2
+    return (x0 + 4, y0 + 4, mid, y1 - 4), (mid, y0 + 4, x1 - 4, y1 - 4)
+
+
+def draw_theme_toggle(img, rect, mouse=(-1, -1)):
+    """Light/dark mode: an outlined pill holding a sun and a moon; the mode
+    in use sits on a filled half."""
+    x0, y0, x1, y1 = rect
+    css_rect(img, rect, (y1 - y0) / 2.0, C_GHOST, C_OUTLINE)
+    sun, moon = theme_toggle_halves(rect)
+    for half, mode in ((sun, "light"), (moon, "dark")):
+        hover = half[0] <= mouse[0] <= half[2] and half[1] <= mouse[1] <= half[3]
+        fill = C_SELECTED if THEME == mode else (C_GHOST_HOV if hover else None)
+        if fill is not None:
+            css_rect(img, half, (half[3] - half[1]) / 2.0, fill)
+        c = ((half[0] + half[2]) / 2.0, (half[1] + half[3]) / 2.0)
+        ink = C_TEXT if THEME == mode else C_TEXT_FAINT
+        if mode == "light":
+            draw_sun(img, c, ink)
+        else:
+            draw_moon(img, c, ink, fill if fill is not None else C_GHOST)
 
 
 # Other Tools > Magnifier (Cmd+B), user 2026-10-17. A click on the camera
@@ -33393,7 +33800,8 @@ def _run_single_file_self_test_impl():
         descent = panel.auto_grip_down_duration
         advance(AUTO_GRIP_COMMAND_DELAY_S)
         advance(AUTO_PICKUP_HX_S)
-        advance(AUTO_PICKUP_COIL_S)      # the gripper coil: lq, then s
+        advance(AUTO_PICKUP_COIL_GAP_S)  # the gripper coil: a gap, lq,
+        advance(AUTO_PICKUP_COIL_S)      # then s
         advance(AUTO_GRIP_COMMAND_DELAY_S)
         advance(AUTO_GRIP_COMMAND_DELAY_S)
         advance(AUTO_GRIP_COMMAND_DELAY_S)
@@ -33416,8 +33824,10 @@ def _run_single_file_self_test_impl():
         check(times[1] - times[0] >= AUTO_GRIP_COMMAND_DELAY_S,
               "hx followed the IR sensor without the one-second gap")
         check(times[2] - times[1] >= AUTO_PICKUP_HX_S, "hx duration was short")
-        check(times[3] == times[2] and abs(times[4] - times[3] - AUTO_PICKUP_COIL_S) < 0.11,
-              f"the gripper coil was not lq for {AUTO_PICKUP_COIL_S}s right after hx")
+        check(abs(times[3] - times[2] - AUTO_PICKUP_COIL_GAP_S) < 0.11
+              and abs(times[4] - times[3] - AUTO_PICKUP_COIL_S) < 0.11,
+              f"the gripper coil was not lq for {AUTO_PICKUP_COIL_S}s, "
+              f"{AUTO_PICKUP_COIL_GAP_S}s after hx's s")
         check(times[5] - times[4] >= AUTO_GRIP_COMMAND_DELAY_S,
               "coil-to-g90 wait was short")
         check(times[6] - times[5] >= 0.5 and times[7] - times[6] >= 0.5,
@@ -33661,6 +34071,7 @@ def _run_single_file_self_test_impl():
         panel.note_rx(b"S")
         advance(AUTO_GRIP_COMMAND_DELAY_S)
         advance(AUTO_PICKUP_HX_S)
+        advance(AUTO_PICKUP_COIL_GAP_S)
         advance(AUTO_PICKUP_COIL_S)
         advance(AUTO_GRIP_COMMAND_DELAY_S)
         check(panel.auto_grip_phase == panel.AUTO_GRIP_WAIT_P1,

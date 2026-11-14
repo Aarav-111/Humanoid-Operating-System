@@ -90,7 +90,9 @@ Robots in homes and workspaces need more than a fixed sequence of moves. They ne
 </p>
 
 
-### 14 November 2026: Shell x firmware (TMC2209 sensorless Z)
+### 14 November 2026: The Giga Hardware Upgrade (Shell x)
+
+**The giga hardware upgrade:** Shell x firmware with a TMC2209 sensorless Z axis.
 
 - New firmware [Shell_x.ino](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Firmware/Shell_x/Shell_x.ino) for the Arduino Uno and CNC Shield V3. The time-of-flight (VL53L0X) and IR sensors are removed. The Z axis now uses an MKS TMC2209 V2.0 driver with StallGuard4 sensorless contact detection.
 - New Z commands: ZG (pickup descent until contact), ZP (press until a load threshold, then lift 0.5 mm), ZR (return exactly to the start height) and tuning commands. All Shell 1.5 X, Y, gripper and joystick behaviour is unchanged.
@@ -386,6 +388,8 @@ Source: [Software/S1.5-SRC.py](https://github.com/Aarav-111/Humanoid-Operating-S
 Full build guide, bill of materials and assembly steps: [HOS-Documentation-v2.5.pdf](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/HOS-Documentation-v2.5.pdf). That PDF describes Shell 1.5 with ToF and IR. The Shell x changes below are not in the PDF yet.
 
 ### Shell x: TMC2209 sensorless Z
+
+> **The Giga Hardware Upgrade.** The ToF and IR sensors are gone. The Z axis now senses contact and pressure through the TMC2209 driver itself.
 
 <p align="center">
   <img src="assets/shell-x/shell-x-tmc2209-logic.png" alt="Shell x logic: pickup, press, return and the TMC2209 wiring" width="100%">

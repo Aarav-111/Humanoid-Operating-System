@@ -1,0 +1,55 @@
+[PASS] boot_tmc_ok
+[PASS] boot_uart_absent_and_ZI
+[PASS] HD_stall_S_ZS
+    note: HD stall: n=8048, penetration 0.120 mm, lost 0 steps
+    note: HD: min Z step period 169 us (requested 166)
+[PASS] HD_cap_ZM
+[PASS] HD_contact_latch
+[PASS] HX_stall
+[PASS] HX_S_stop
+[PASS] ZG_pickup_then_G45_ZR
+    note: ZG stall at n=4048, pen 0.120 mm, lost 0
+    note: ZG: min Z step period 231 us (requested 200)
+[PASS] ZP_hard_object
+    note: ZP hard: SG:HIT=-1 BASE=299 BY=DIAG, lost 0
+[PASS] ZP_sponge_SG_threshold_backoff
+    note: ZP sponge: SG:HIT=218 BASE=299 BY=SG, depth into sponge 2.14 mm
+    note: ZP: min Z step period 290 us (requested 250)
+[PASS] ZR_exact_after_joystick_jogs
+    note: ZR jog test: stall -4048, after up jog -2548, after down jog -3048
+[PASS] S_mid_ZP_keeps_Z0
+[PASS] settings_CFG_and_ranges
+[PASS] s_never_misparsed
+[PASS] UDLR_Q_unchanged
+    note: u: 2745 steps/s (requested 2994)
+    note: d: 2745 steps/s (requested 2994)
+    note: r: 2745 steps/s (requested 2994)
+    note: l: 2745 steps/s (requested 2994)
+    note: uq: 995 steps/s (requested 998)
+    note: dq: 995 steps/s (requested 998)
+    note: rq: 995 steps/s (requested 998)
+    note: lq: 995 steps/s (requested 998)
+[PASS] P_N_removed_E_I
+    note: E at rest: SG:RESULT=0 SGTHRS=70 DIAG=0 UART_ERR=0
+[PASS] no_step_bursts_with_blocking_cmds
+    note: ZP with blocking ZT/E/J: min Z step period 290 us (requested 250)
+    note: HD with E: min Z step period 169 us (requested 166)
+[PASS] noise_free_air_no_false_trigger
+[PASS] sponge_ZG_detects
+    note: ZG on sponge: stopped 3.88 mm into a 5 mm sponge (late, as expected), lost 0
+[PASS] missed_object_default_cap
+[PASS] step_speeds
+    note: HD: 4773 steps/s = 11.9 mm/s (requested 6024)
+    note: ZR: 4720 steps/s = 11.8 mm/s (requested 6024)
+    note: ZG: 4016 steps/s = 10.0 mm/s (requested 5000)
+    note: ZP: 3083 steps/s = 7.7 mm/s (requested 4000)
+    note: back-off: 1740 steps/s = 4.3 mm/s (requested 2000)
+[PASS] SG_streaming_ZV1
+    note: SG stream lines during ZP: 86
+[PASS] repress_after_backoff
+    note: re-press after back-off: extra lost steps 0 (grinding while blanked)
+[PASS] HD_takes_over_ZG_and_ZR
+[PASS] SW_double_tap_stops_ZP
+[PASS] random_command_fuzz
+    note: fuzz: 248 output lines, lost 0 steps, min Z step period 169 us
+RESULT 26/26 passed

@@ -2598,7 +2598,7 @@ class HeadTracker:
     not 25 s of lift: a safety lift is at most one whole descent the board
     has reported (else a release's lift) plus the pickup's hx."""
 
-    DOWN = ("hd", "hx", "p3")
+    DOWN = ("hd",)
     UP_TOL_S = 0.15              # this much down time left still counts as up
     LIFT_MARGIN_S = 0.5          # a safety lift runs this much longer
 
@@ -2660,7 +2660,7 @@ class HeadTracker:
 
     def lift_time(self, now=None) -> float:
         """How long an hu brings the head fully back up from here."""
-        cap = max(self.longest_s, AUTO_RELEASE_DURATION_S) + AUTO_PICKUP_HX_S
+        cap = max(self.longest_s, AUTO_RELEASE_DURATION_S)
         return min(self.down_left(now), cap) * AUTO_PICKUP_HU_SCALE + self.LIFT_MARGIN_S
 
     def reset(self):
@@ -2944,7 +2944,7 @@ def tof_same_reading(bottom, top, margin=None):
 # The gripper's words, each sent on a line of its own -- p4 included (user,
 # 2026-10-17: "send p4 always in newline"; it used to go out bare).
 SERIAL_BARE_GAP_S = 0.06
-GRIPPER_WORD_RE = re.compile(r"hd|hx|hu|g\d{1,2}|p[134]")
+GRIPPER_WORD_RE = re.compile(r"hd|hu|g\d{1,2}")
 
 
 class SerialLink:
@@ -4810,7 +4810,7 @@ class SettingsPanel:
                        lambda: f"{WAIT_MAX_PLAYBACK:g}s", step_wait_cap),
             SettingRow("gripper_ai", "Gripper AI: micro grip, press centre",
                        lambda: "On" if GRIPPER_AI else "Off", step_gripper_ai,
-                       toggle=True),
+                       toggle=True, section="GRIPPER"),
             SettingRow("grip_ask_model", "Gripper AI also asks gpt-6-luna",
                        lambda: "On" if GRIP_ASK_MODEL else "Off",
                        step_grip_ask_model, toggle=True),
@@ -4824,21 +4824,12 @@ class SettingsPanel:
             SettingRow("auto_hd_timeout", "HD contact timeout",
                        lambda: f"{AUTO_GRIP_DOWN_MAX_S:.1f}s",
                        lambda d: step_auto_gripper_timing("pickup_hd_timeout_s", d)),
-            SettingRow("auto_hx_duration", "Pickup HX duration",
-                       lambda: f"{AUTO_PICKUP_HX_S:.1f}s",
-                       lambda d: step_auto_gripper_timing("pickup_hx_duration_s", d)),
-            SettingRow("auto_coil", "Gripper coil (LQ after HX)",
-                       lambda: f"{AUTO_PICKUP_COIL_S:.1f}s",
-                       lambda d: step_auto_gripper_timing("pickup_coil_s", d)),
             SettingRow("auto_hu_scale", "Pickup HU lift scale",
                        lambda: f"{AUTO_PICKUP_HU_SCALE:.2f}x",
                        lambda d: step_auto_gripper_timing("pickup_hu_scale", d)),
             SettingRow("auto_command_delay", "Gripper command delay",
                        lambda: f"{AUTO_GRIP_COMMAND_DELAY_S:.1f}s",
                        lambda d: step_auto_gripper_timing("command_delay_s", d)),
-            SettingRow("auto_g90_settle", "G90 settle before P1",
-                       lambda: f"{AUTO_GRIP_P1_SETTLE_S:.1f}s",
-                       lambda d: step_auto_gripper_timing("g90_settle_s", d)),
             SettingRow("auto_action_gap", "Gap between actions",
                        lambda: f"{AUTO_ACTION_GAP_S:.2f}s",
                        lambda d: step_auto_gripper_timing("action_gap_s", d)),
@@ -4953,6 +4944,9 @@ class SettingsPanel:
                 if isinstance(result, str):
                     return result
                 return f"{row.label}: {row.read()}"
+            if b.kind == "jump":
+                self.scroll = max(0, min(int(b.value), self._max_scroll))
+                return ""
             if b.kind == "corners":
                 self.edit_corners = not self.edit_corners
                 return ("Drag the four handles to resize the board."
@@ -5002,7 +4996,27 @@ class SettingsPanel:
         row_h = self.ROW_H
 
         content_h = row_h * len(self.rows) + HEADER_H * n_sections
-        chrome_h = self.PAD * 2 + 34 + row_h * 2
+        # section chips: one tap scrolls to that group
+        offsets, yy = [], 0
+        for r in self.rows:
+            if r.section:
+                offsets.append((r.section, yy))
+                yy += HEADER_H
+            yy += row_h
+        chip_rows, cur, cur_w = [], [], 0
+        for name, off in offsets:
+            label = display_label(name)
+            cw = text_size(label, 0.4, 1)[0] + 22
+            if cur and cur_w + cw + 6 > pw - 48:
+                chip_rows.append(cur)
+                cur, cur_w = [], 0
+            cur.append((label, off, cw))
+            cur_w += cw + 6
+        if cur:
+            chip_rows.append(cur)
+        CHIP_H = 28
+        chips_h = len(chip_rows) * (CHIP_H + 4) + (6 if chip_rows else 0)
+        chrome_h = self.PAD * 2 + 34 + row_h * 2 + chips_h
         view_h = max(0, min(content_h, fh - 2 * self.PAD - chrome_h))
         self._max_scroll = max(0, content_h - view_h)
         self.scroll = max(0, min(self.scroll, self._max_scroll))
@@ -5033,7 +5047,24 @@ class SettingsPanel:
         close_top.draw(frame, hover=close_top.contains(mx, my), shadow=False)
         self.buttons.append(close_top)
 
-        vy0 = py + 54
+        cy = py + 54
+        active = 0
+        for i, (_n, off) in enumerate(offsets):
+            if off <= self.scroll + 1:
+                active = i
+        k = 0
+        for line in chip_rows:
+            cx = px + 24
+            for label, off, cw in line:
+                chip = Button(label, cx, cy, cx + cw, cy + CHIP_H, "jump",
+                              value=off, scale=0.4,
+                              style="accent" if k == active else "ghost")
+                chip.draw(frame, hover=chip.contains(mx, my), shadow=False)
+                self.buttons.append(chip)
+                cx += cw + 6
+                k += 1
+            cy += CHIP_H + 4
+        vy0 = py + 54 + chips_h
         vy1 = min(fh, vy0 + view_h)
         self._view = (px, vy0, min(fw, px + pw), vy1)
         vp = frame[vy0:vy1, px:px + pw]
@@ -5084,7 +5115,7 @@ class SettingsPanel:
         if self._max_scroll:
             self._scrollbar(frame, px + pw - 10, vy0, vy1, view_h, content_h)
 
-        y = py + 54 + view_h
+        y = py + 54 + chips_h + view_h
         half = (pw - 60) // 2
         corners = Button("EDIT CORNERS", px + 24, y + 4, px + 24 + half,
                          y + row_h - 6, "corners",
@@ -6906,8 +6937,6 @@ class GripperPanel:
     AUTO_GRIP_WAIT_UP = "wait_up"
     AUTO_GRIP_UP = "up"
     AUTO_GRIP_WAIT_STOP = "wait_stop"
-    AUTO_GRIP_WAIT_HX = "wait_hx"
-    AUTO_GRIP_HX = "hx"
     AUTO_GRIP_COIL_WAIT = "coil_wait"
     AUTO_GRIP_COIL = "coil"
     AUTO_GRIP_WAIT_G90 = "wait_g90"
@@ -6940,7 +6969,7 @@ class GripperPanel:
         self.auto_pulse_until = 0.0
         self.auto_press_started_at = 0.0
         self.auto_press_duration = 0.0
-        self.auto_press_cmd = "hx"
+        self.auto_press_cmd = "hd"
         self.release_down_started_at = 0.0
         self.failure_reason = ""
         self.move_retries = 0
@@ -7288,7 +7317,10 @@ class GripperPanel:
             if self.auto_grip_phase != self.AUTO_GRIP_IDLE:
                 self.offset_phase = "wait_pickup"
         elif action == "keep":
-            if ARDUINO.send_command("g0"):
+            if self._grip_sent == "g0":
+                self.last_msg = "Automatic keep: already g0 -- nothing sent."
+                self._schedule_action_complete(now)
+            elif ARDUINO.send_command("g0"):
                 self.grip = 0.0
                 self._grip_sent = "g0"
                 self.last_msg = "Automatic keep: sent g0."
@@ -7558,9 +7590,6 @@ class GripperPanel:
                 if b.kind == "grip_height":
                     self.last_msg = self._height_step(up=b.value)
                     return self.last_msg
-                if b.kind == "grip_hx":
-                    self.last_msg = self._send_height_command("hx", "press")
-                    return self.last_msg
                 if b.kind == "grip_pulse":
                     self.last_msg = self._start_auto_pulse(b.value, b.value)
                     return self.last_msg
@@ -7747,34 +7776,26 @@ class GripperPanel:
                   hscale, C_ACCENT, 2)
         y += S(26)
         gap = max(12, S(12))
-        third = int((pw - 28 - 28 - 2 * gap) // 3)
+        third = int((pw - 28 - 28 - gap) // 2)
         y0, y1 = int(y), int(y + row_h - S(8))
         down_btn = Button("DOWN (hd)", px + 28, y0, px + 28 + third, y1,
                           "grip_height", value=False, scale=0.52 * k)
         up_x0 = int(px + 28 + third + gap)
-        up_btn = Button("UP (hu)", up_x0, y0, up_x0 + third, y1,
+        up_btn = Button("UP (hu)", up_x0, y0, px + pw - 28, y1,
                 "grip_height", value=True,
                         scale=0.52 * k)
-        hx_x0 = int(up_x0 + third + gap)
-        hx_btn = Button("HX", hx_x0, y0, px + pw - 28, y1,
-                "grip_hx", style="accent", scale=0.52 * k)
         down_btn.draw(frame, hover=down_btn.contains(mx, my), shadow=False)
         up_btn.draw(frame, hover=up_btn.contains(mx, my), shadow=False)
-        hx_btn.draw(frame, hover=hx_btn.contains(mx, my), shadow=False)
-        self.buttons.extend([down_btn, up_btn, hx_btn])
+        self.buttons.extend([down_btn, up_btn])
         y += row_h + S(10)
 
         pulse_gap = max(12, S(12))
         half = int((pw - 56 - pulse_gap) // 2)
         hu_pulse = Button("HU 0.1s", px + 28, int(y),
-                          px + 28 + half, int(y + row_h - S(8)),
-                          "grip_pulse", value="hu", scale=0.5 * k)
-        hx_pulse = Button("HX 0.1s", int(px + 28 + half + pulse_gap), int(y),
                           px + pw - 28, int(y + row_h - S(8)),
-                          "grip_pulse", value="hx", scale=0.5 * k)
+                          "grip_pulse", value="hu", scale=0.5 * k)
         hu_pulse.draw(frame, hover=hu_pulse.contains(mx, my), shadow=False)
-        hx_pulse.draw(frame, hover=hx_pulse.contains(mx, my), shadow=False)
-        self.buttons.extend([hu_pulse, hx_pulse])
+        self.buttons.extend([hu_pulse])
         y += row_h + S(10)
 
         auto_gap = max(12, S(12))

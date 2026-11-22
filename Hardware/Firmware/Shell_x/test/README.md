@@ -1,5 +1,7 @@
 # Shell x host test harness
 
+> **Note:** this harness tests the dropped TMC2209 sensorless-Z build of Shell x (commit [69c1562](https://github.com/Aarav-111/Humanoid-Operating-System/commit/69c1562)). It does not apply to the current Shell-x v0.20 (A4988 on Z, binary potentiometer on A0) in `../Shell_x.ino`. Its tests expect the old TMC2209 commands. To run it, check out `Shell_x.ino` from 69c1562 first.
+
 Builds the real, unmodified `../Shell_x.ino` on the box with a mock
 Arduino core and runs 26 scenario tests. Run: `./run.sh` (all) or
 `./run.sh <test_name>`. Charts: `python3 plot.py` -> `Shell_x_tests.png` (needs matplotlib, run after `./run.sh`).

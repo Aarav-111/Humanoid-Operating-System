@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/hos-banner-4k.png" alt="Humanoid Operating System banner" width="80%">
+  <img src="assets/hos-banner-2026.svg" alt="Humanoid Operating System banner" width="80%">
 </p>
 
 <p align="center">
@@ -33,7 +33,7 @@ Instead of training isolated models per task (the approach used by most VLA mode
 </p>
 
 
-**Status:** HOS 1.5 is the current release (11 October 2026). HOS X launches by 26 November 2026. HOS 1.0 and earlier retire on 30 November 2026. HS2 (formerly HOS 2.0) is expected in January 2027. Built by Prolabs Robotics, Bengaluru, India.
+**Status:** HOS 1.5 is the current release (11 October 2026). HOS X launches by 26 November 2026. HOS 1.0 and earlier retire on 30 November 2026. HOS 2.0 is expected in January 2027. Built by Prolabs Robotics, Bengaluru, India.
 
 ---
 
@@ -52,7 +52,7 @@ timeline
              : Shell-x v0.20 and docs v3.0 (22 Nov)
              : HOS X launch (by 26 Nov)
              : HOS 1.0 and earlier retired (30 Nov)
-    Jan 2027 : HS2 (formerly HOS 2.0)
+    Jan 2027 : HOS 2.0
 ```
 
 | Version | Date | Status | What it is |
@@ -63,7 +63,7 @@ timeline
 | **HOS X** | by 26 Nov 2026 | **Launching this week** | Real-world applications, S(x)-Src |
 | Shell-x v0.20 | 22 Nov 2026 | Current hardware | A4988 on X, Y, Z with a pot Z sensor |
 | IEEE paper | Soon | In progress | Second paper on the methods behind HOS |
-| HS2 | Jan 2027 | Delayed | Next major version (formerly HOS 2.0) |
+| HOS 2.0 | Jan 2027 | Delayed | Next major version |
 
 ---
 
@@ -127,15 +127,15 @@ Robots in homes and workspaces need more than a fixed sequence of moves. They ne
 ## Recent Updates
 
 <p align="center">
-  <img src="assets/hos-timeline.svg" alt="Release timeline from HOS 0.9 to the camera-ready gripper" width="80%">
+  <img src="assets/hos-timeline.svg" alt="Release timeline from HOS 0.9 (Sep 2026) to HOS 2.0 (Jan 2027)" width="80%">
 </p>
 
 
-### 23 November 2026: HOS X release, HS2 delay and HOS 1.0 sunset
+### 23 November 2026: HOS X release, HOS 2.0 delay and HOS 1.0 sunset
 
 **HOS X releases this week.** HOS X ships in the next 4 to 5 days, before Thursday, 26 November 2026. It builds on HOS 1.5 task compilation and is about bringing the robot into real-world applications. Release notes and a demo will follow at launch.
 
-**HS2 (formerly HOS 2.0) delayed to January 2027.** HOS 2.0 is now called HS2. It has been delayed further and is now expected in January 2027.
+**HOS 2.0 delayed to January 2027.** HOS 2.0 has been delayed further and is now expected in January 2027.
 
 **New IEEE paper.** Another research paper on the methods behind HOS will be submitted to IEEE soon.
 
@@ -373,10 +373,10 @@ Download the STL files from [Hardware/3D Models](https://github.com/Aarav-111/Hu
 
 ## Roadmap
 
-Next up: HOS X launch (by 26 Nov 2026), HOS 1.0 sunset (30 Nov 2026), the second IEEE paper, camera-ready gripper files, and HS2 in January 2027. See the [Release Timeline](#release-timeline).
+Next up: HOS X launch (by 26 Nov 2026), HOS 1.0 sunset (30 Nov 2026), the second IEEE paper, camera-ready gripper files, and HOS 2.0 in January 2027. See the [Release Timeline](#release-timeline).
 
 <p align="center">
-  <img src="assets/hos-roadmap.svg" alt="Roadmap: 10 of 13 items done, with camera-ready gripper files, S(x)-SRC release and HOS 2.0 planned" width="80%">
+  <img src="assets/hos-roadmap.svg" alt="Roadmap: 9 done, 4 now, 3 next, with HOS X, the HOS 1.0 sunset and HOS 2.0" width="80%">
 </p>
 
 

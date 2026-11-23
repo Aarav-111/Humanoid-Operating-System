@@ -3,19 +3,20 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Aarav-111/Humanoid-Operating-System#recent-updates"><img src="assets/badges/hos-latest.svg" alt="Latest: HOS 1.5"></a>
+  <a href="https://github.com/Aarav-111/Humanoid-Operating-System#recent-updates"><img src="https://img.shields.io/badge/Latest-HOS%201.5-0ea5e9?style=flat-square" alt="Latest: HOS 1.5"></a>
+<a href="#release-timeline"><img src="https://img.shields.io/badge/Next-HOS%20X%20by%2026%20Nov%202026-f97316?style=flat-square" alt="Next: HOS X by 26 Nov 2026"></a>
   <a href="https://github.com/Aarav-111/Humanoid-Operating-System#benchmarking"><img src="assets/badges/hos-mmro.svg" alt="MMRO (K5D): 99%"></a>
   <a href="https://github.com/Aarav-111/Humanoid-Operating-System#camera-ready-gripper"><img src="assets/badges/hos-gripper.svg" alt="New: Camera-Ready Gripper"></a>
-  <a href="https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Software"><img src="assets/badges/hos-python.svg" alt="Python: 3"></a>
-  <a href="https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware/Firmware"><img src="assets/badges/hos-arduino.svg" alt="Arduino: Shell 1.5"></a>
+  <a href="https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Software"><img src="https://img.shields.io/badge/Python-3-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python: 3"></a>
+  <a href="https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware/Firmware"><img src="https://img.shields.io/badge/Firmware-Shell--x%20v0.20-00979D?style=flat-square&logo=arduino&logoColor=white" alt="Firmware: Shell-x v0.20"></a>
   <a href="https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-6366f1?style=flat-square" alt="License: MIT"></a>
 </p>
 
 <p align="center">
-  <b>Demo Videos</b> &nbsp;|&nbsp; <b>Camera-Ready Gripper</b> &nbsp;|&nbsp; <b>Architecture</b> &nbsp;|&nbsp; <b>Navigate</b> &nbsp;|&nbsp; <b>Roadmap</b> &nbsp;|&nbsp; <b>Running Cost</b> &nbsp;|&nbsp; <b>Run It</b> &nbsp;|&nbsp; <b>Team</b>
+  <a href="#release-timeline"><b>Releases</b></a> &nbsp;|&nbsp; <a href="#demo-videos"><b>Demo Videos</b></a> &nbsp;|&nbsp; <a href="#camera-ready-gripper"><b>Gripper</b></a> &nbsp;|&nbsp; <a href="#recent-updates"><b>Updates</b></a> &nbsp;|&nbsp; <a href="#system-architecture"><b>Architecture</b></a> &nbsp;|&nbsp; <a href="#navigate-this-repository"><b>Navigate</b></a> &nbsp;|&nbsp; <a href="#run-it-from-the-terminal"><b>Run It</b></a> &nbsp;|&nbsp; <a href="#roadmap"><b>Roadmap</b></a> &nbsp;|&nbsp; <a href="#running-cost"><b>Cost</b></a> &nbsp;|&nbsp; <a href="#hardware"><b>Hardware</b></a> &nbsp;|&nbsp; <a href="#team-and-contact"><b>Team</b></a>
 </p>
 
-**The HOS website is live:** [https://sites.google.com/view/prolabsrobotics/hos](https://sites.google.com/view/prolabsrobotics/HOS)
+**The HOS website is live:** [https://sites.google.com/view/prolabsrobotics/HOS](https://sites.google.com/view/prolabsrobotics/HOS)
 
 ---
 
@@ -32,7 +33,37 @@ Instead of training isolated models per task (the approach used by most VLA mode
 </p>
 
 
-**Status:** HOS 1.5 released (11 October 2026). HOS X releases before 26 November 2026. HS2 (formerly HOS 2.0) is delayed to January 2027. Active research and prototyping continue. Built by Prolabs Robotics, Bengaluru, India.
+**Status:** HOS 1.5 is the current release (11 October 2026). HOS X launches by 26 November 2026. HOS 1.0 and earlier retire on 30 November 2026. HS2 (formerly HOS 2.0) is expected in January 2027. Built by Prolabs Robotics, Bengaluru, India.
+
+---
+
+## Release Timeline
+
+```mermaid
+timeline
+    title HOS releases
+    Sep 2026 : HOS 0.9 launch (21 Sep)
+             : A3-Terra flagship launch
+    Oct 2026 : HOS 1.5 released (11 Oct)
+             : HOS X announced, S(x) preview (17 to 19 Oct)
+             : Hardware docs v2.5 (25 Oct)
+    Nov 2026 : Newsletter and back EMF gripper (3 Nov)
+             : Shell x TMC2209 build (14 Nov, dropped)
+             : Shell-x v0.20 and docs v3.0 (22 Nov)
+             : HOS X launch (by 26 Nov)
+             : HOS 1.0 and earlier retired (30 Nov)
+    Jan 2027 : HS2 (formerly HOS 2.0)
+```
+
+| Version | Date | Status | What it is |
+| --- | --- | --- | --- |
+| HOS 0.9 | 21 Sep 2026 | Retiring 30 Nov 2026 | First public launch |
+| HOS 1.0 | 2026 | Retiring 30 Nov 2026 | No fixes after 30 Nov |
+| **HOS 1.5** | 11 Oct 2026 | **Current** | Task compilation, S1.5-SRC, Re-execute |
+| **HOS X** | by 26 Nov 2026 | **Launching this week** | Real-world applications, S(x)-Src |
+| Shell-x v0.20 | 22 Nov 2026 | Current hardware | A4988 on X, Y, Z with a pot Z sensor |
+| IEEE paper | Soon | In progress | Second paper on the methods behind HOS |
+| HS2 | Jan 2027 | Delayed | Next major version (formerly HOS 2.0) |
 
 ---
 
@@ -40,13 +71,19 @@ Instead of training isolated models per task (the approach used by most VLA mode
 
 <table align="center">
   <tr>
-    <td align="center" width="50%">
+    <td align="center" width="33%">
       <a href="https://www.youtube.com/watch?v=wpmh6HE-oz8">
         <img src="https://img.youtube.com/vi/wpmh6HE-oz8/hqdefault.jpg" alt="HOS 1.5 task compilation" width="100%">
       </a>
       <br><b>HOS 1.5 task compilation</b><br>11 October 2026
     </td>
-    <td align="center" width="50%">
+    <td align="center" width="33%">
+<a href="https://www.youtube.com/watch?v=iFTcnTx10k4">
+<img src="https://img.youtube.com/vi/iFTcnTx10k4/hqdefault.jpg" alt="Launching A3-Terra" width="100%">
+</a>
+<br><b>Launching A3-Terra, the HOS flagship</b><br>September 2026
+</td>
+<td align="center" width="33%">
       <a href="https://youtu.be/9Af5JZoZxco">
         <img src="assets/hos-0.9-thumb.svg" alt="HOS 0.9 launch video" width="100%">
       </a>
@@ -54,6 +91,8 @@ Instead of training isolated models per task (the approach used by most VLA mode
     </td>
   </tr>
 </table>
+
+<p align="center"><a href="https://www.youtube.com/@prolabsrobotics"><img src="https://img.shields.io/badge/YouTube-%40prolabsrobotics-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Prolabs Robotics on YouTube"></a></p>
 
 ---
 
@@ -116,6 +155,9 @@ Robots in homes and workspaces need more than a fixed sequence of moves. They ne
 - New hardware documentation PDF [HOS-Documentation-v3.0.pdf](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/HOS-Documentation-v3.0.pdf) for Shell-x v0.20. It replaces v2.5 and covers the A4988 wiring with a diagram, the sliding potentiometer, a new bill of materials, the v0.20 commands, speeds, first power-on test, troubleshooting and limits. The old v2.5 PDF was removed.
 - The Shell-x v0.20 firmware is now in the repository as [Shell_x.ino](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Firmware/Shell_x/Shell_x.ino). It compiles for the Arduino Uno with no extra libraries.
 
+<details>
+<summary><b>Older updates (12 October to 14 November 2026)</b></summary>
+
 ### 14 November 2026: The Giga Hardware Upgrade (Shell x)
 
 **The giga hardware upgrade:** Shell x firmware with a TMC2209 sensorless Z axis.
@@ -173,6 +215,8 @@ Product Hunt: [HOS on Product Hunt](https://www.producthunt.com/products/humanoi
 - The Re-execute button takes the place of the old Vision AI Sequence button. The Vision AI Sequence still runs after an operator NO on a pickup.
 - When the AprilTag comes back into view on the way back, the gantry now moves up (uq) for one more second before labelling.
 - Commit: [3a3e359](https://github.com/Aarav-111/Humanoid-Operating-System/commit/3a3e359)
+
+</details>
 
 Full commit history is on the [commits page](https://github.com/Aarav-111/Humanoid-Operating-System/commits/main).
 
@@ -327,7 +371,9 @@ Download the STL files from [Hardware/3D Models](https://github.com/Aarav-111/Hu
 
 ---
 
-## Roadmap for 2026
+## Roadmap
+
+Next up: HOS X launch (by 26 Nov 2026), HOS 1.0 sunset (30 Nov 2026), the second IEEE paper, camera-ready gripper files, and HS2 in January 2027. See the [Release Timeline](#release-timeline).
 
 <p align="center">
   <img src="assets/hos-roadmap.svg" alt="Roadmap: 10 of 13 items done, with camera-ready gripper files, S(x)-SRC release and HOS 2.0 planned" width="80%">
@@ -553,9 +599,9 @@ The 14 November build used an MKS TMC2209 V2.0 on Z with StallGuard over UART. I
 
 
 <p align="center">
-  <a href="https://HOS.prolabsrobotics.chatgpt.site"><img src="https://img.shields.io/badge/Website-HOS.prolabsrobotics-6366f1?style=for-the-badge" alt="HOS website"></a>
+  <a href="https://sites.google.com/view/prolabsrobotics/HOS"><img src="https://img.shields.io/badge/Website-HOS-6366f1?style=for-the-badge" alt="HOS website"></a>
   <a href="mailto:prolabsrobotics@gmail.com"><img src="https://img.shields.io/badge/Email-prolabsrobotics%40gmail.com-EA4335?style=for-the-badge" alt="Email Prolabs Robotics"></a>
-  <a href="https://www.youtube.com/watch?v=wpmh6HE-oz8"><img src="https://img.shields.io/badge/YouTube-Watch%20HOS-FF0000?style=for-the-badge" alt="Watch on YouTube"></a>
+  <a href="https://www.youtube.com/@prolabsrobotics"><img src="https://img.shields.io/badge/YouTube-%40prolabsrobotics-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Prolabs Robotics on YouTube"></a>
 </p>
 
 For collaboration, research, or project questions: **prolabsrobotics@gmail.com**
@@ -574,4 +620,7 @@ For collaboration, research, or project questions: **prolabsrobotics@gmail.com**
 | Link | Where |
 |---|---|
 | Product Hunt | [Humanoid Operating System](https://www.producthunt.com/products/humanoid-operating-system) |
-| Virtual License | [Virtual License](#) |
+| HOS website | [https://sites.google.com/view/prolabsrobotics/HOS](https://sites.google.com/view/prolabsrobotics/HOS) |
+| YouTube | [@prolabsrobotics](https://www.youtube.com/@prolabsrobotics) |
+| Newsletter and contact | [prolabsrobotics@gmail.com](mailto:prolabsrobotics@gmail.com) |
+| License | [MIT](LICENSE) |

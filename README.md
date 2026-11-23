@@ -15,7 +15,7 @@
   <b>Demo Videos</b> &nbsp;|&nbsp; <b>Camera-Ready Gripper</b> &nbsp;|&nbsp; <b>Architecture</b> &nbsp;|&nbsp; <b>Navigate</b> &nbsp;|&nbsp; <b>Roadmap</b> &nbsp;|&nbsp; <b>Running Cost</b> &nbsp;|&nbsp; <b>Run It</b> &nbsp;|&nbsp; <b>Team</b>
 </p>
 
-**The HOS website is live:** https://sites.google.com/view/prolabsrobotics/hos
+**The HOS website is live:** [https://sites.google.com/view/prolabsrobotics/hos](https://sites.google.com/view/prolabsrobotics/HOS)
 
 ---
 

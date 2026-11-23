@@ -32,7 +32,7 @@ Instead of training isolated models per task (the approach used by most VLA mode
 </p>
 
 
-**Status:** HOS 1.5 released (11 October 2026). Active research and prototyping continue. Built by Prolabs Robotics, Bengaluru, India.
+**Status:** HOS 1.5 released (11 October 2026). HOS X releases before 26 November 2026. HS2 (formerly HOS 2.0) is delayed to January 2027. Active research and prototyping continue. Built by Prolabs Robotics, Bengaluru, India.
 
 ---
 
@@ -91,6 +91,22 @@ Robots in homes and workspaces need more than a fixed sequence of moves. They ne
   <img src="assets/hos-timeline.svg" alt="Release timeline from HOS 0.9 to the camera-ready gripper" width="80%">
 </p>
 
+
+### 23 November 2026: HOS X release, HS2 delay and HOS 1.0 sunset
+
+**HOS X releases this week.** HOS X ships in the next 4 to 5 days, before Thursday, 26 November 2026. It builds on HOS 1.5 task compilation and is about bringing the robot into real-world applications. Release notes and a demo will follow at launch.
+
+**HS2 (formerly HOS 2.0) delayed to January 2027.** HOS 2.0 is now called HS2. It has been delayed further and is now expected in January 2027.
+
+**New IEEE paper.** Another research paper on the methods behind HOS will be submitted to IEEE soon.
+
+**HOS 1.0 and earlier: 7-day sunset.** HOS 1.0 and all earlier versions will be retired on 30 November 2026 and will no longer get fixes or support. Please move to HOS 1.5 now, or to HOS X when it launches.
+
+**Precision gripper.** The camera-ready gripper now uses back EMF readings from the motors for positioning, giving 15 times fewer errors in physical accuracy.
+
+**Backed by Makers Asylum.** HOS has received investor funding from Makers Asylum.
+
+**Hiring student interns.** We are looking for students who like robotics and maths to work on robot control, planning and vision. Email prolabsrobotics@gmail.com.
 
 ### 22 November 2026: Hardware and electronics guide for Shell-x v0.20
 

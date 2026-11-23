@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 440" width="1600" height="440" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif">
+<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1020"/><stop offset="1" stop-color="#1e1036"/></linearGradient>
+<linearGradient id="edge" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#22d3ee"/><stop offset="0.5" stop-color="#8b5cf6"/><stop offset="1" stop-color="#f97316"/></linearGradient>
+<pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#ffffff" stroke-opacity="0.05"/></pattern></defs>
+<rect width="1600" height="440" rx="28" fill="url(#bg)"/><rect width="1600" height="440" rx="28" fill="url(#grid)"/>
+<rect x="2" y="2" width="1596" height="436" rx="27" fill="none" stroke="url(#edge)" stroke-width="3"/>
+<text x="80" y="120" fill="#94a3b8" font-size="24" letter-spacing="4">PROLABS ROBOTICS</text>
+<text x="80" y="200" fill="#ffffff" font-size="72" font-weight="800">Humanoid Operating System</text>
+<text x="80" y="250" fill="#cbd5e1" font-size="28">An LLM-powered operating system for humanoid robots</text>
+<g font-size="20" font-weight="700">
+<rect x="80" y="285" width="110" height="44" rx="22" fill="#0e7490"/><text x="135" y="314" fill="#fff" text-anchor="middle">SEE</text>
+<rect x="210" y="285" width="130" height="44" rx="22" fill="#6d28d9"/><text x="275" y="314" fill="#fff" text-anchor="middle">REASON</text>
+<rect x="360" y="285" width="110" height="44" rx="22" fill="#4338ca"/><text x="415" y="314" fill="#fff" text-anchor="middle">PLAN</text>
+<rect x="490" y="285" width="100" height="44" rx="22" fill="#c2410c"/><text x="540" y="314" fill="#fff" text-anchor="middle">ACT</text></g>
+<text x="80" y="385" fill="#94a3b8" font-size="20">HOS 1.5 current  |  HOS X by 26 Nov 2026  |  HOS 2.0 Jan 2027  |  99% on MMRO (K5D)  |  Shell-x v0.20</text>
+<g transform="translate(1130,70)" stroke-linecap="round">
+<rect x="0" y="0" width="380" height="300" rx="20" fill="#0f172a" stroke="#334155" stroke-width="2"/>
+<path d="M40 60H340M40 60V260M340 60V260" stroke="#64748b" stroke-width="10"/>
+<path d="M40 150H340" stroke="#22d3ee" stroke-width="8"/>
+<rect x="175" y="130" width="50" height="40" rx="8" fill="#8b5cf6"/>
+<path d="M200 170V225" stroke="#e2e8f0" stroke-width="6"/>
+<path d="M185 225h30M185 225v15M215 225v15" stroke="#f97316" stroke-width="6" fill="none"/>
+<circle cx="110" cy="235" r="14" fill="#22c55e"/><rect x="255" y="222" width="28" height="28" rx="4" fill="#eab308"/>
+<circle cx="320" cy="35" r="10" fill="#ef4444"/><text x="300" y="41" fill="#94a3b8" font-size="16" text-anchor="end">vision</text>
+</g></svg>

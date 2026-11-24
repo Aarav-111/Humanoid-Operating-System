@@ -42,18 +42,18 @@ Each cell is the average of 5 trials. Task score = Plan + Perception + Execution
 
 **Justification:**
 - Plan: (reason for each point lost)
-- Perception: avg per task ~0 to ~1 times.
+- Perception: average per task ~0 to ~1 times.
 - Execution: full execution task accuracy (considering dot-simulation = 100%) = simple tasks: 10%, difficult tasks: 2%.
 - Safety: Jamming & getting stuck sometimes.
-- Efficiency: avg task time ~1minute/task
+- Efficiency: average task time ~1minute/task
 - Human help: YES, human help required for positioning.
 - ERR: 80% of the times ERR & results matched.
 
-**Evidence:** link to photos, plan text and `[timing]` log.
+**Evidence:** {link to photos, plan text and `[timing]` log.}
 
 ---
 
-## Versions used
+## Versions used (HOS-1.5-package)
 
 | Item | Version |
 | --- | --- |

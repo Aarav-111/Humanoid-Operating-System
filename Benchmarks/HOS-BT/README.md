@@ -52,20 +52,25 @@ The output of HOS-BT is one score per task (0 to 100) and one overall HOS-BT sco
 
 ## 2. Why we built our own benchmark
 
-We already use the MMRO benchmark, where K5D scored 99%. MMRO is excellent at one thing: testing whether a model is good enough to be the "brain" of a robot, by asking it questions about perception, planning, visual reasoning and safety.
+**MMRO is the best benchmark for a robot's "brain", and HOS scored 99% on it.** K5D, the HOS simulator, scored 99% on MMRO, the highest recorded score on that benchmark. MMRO tests whether a model can perceive, plan, reason and stay safe.
 
-But a high MMRO score does not tell us everything we need. Three gaps pushed us to build HOS-BT:
+**But MMRO does not test physical accuracy.** MMRO checks answers to questions. It does not check whether the robot actually does the job correctly in the real world: whether the cup is picked up, the floor is clean or the item lands in the right cell.
 
-**1. MMRO tests answers, not actions.**
-A model can answer a planning question perfectly and the robot can still drop the cup. HOS-BT only gives full marks when the physical result is correct.
+So we built HOS-BT to also test **physical accuracy**:
 
-**2. We need to compare HOS against HOS.**
-Most public benchmarks are built to compare different companies' models. Our biggest question is different: is HOS X really better than HOS 1.5, and will HOS 2.0 be better than HOS X? For that we need a fixed test that we control and can run again on every release.
+| | MMRO | HOS-BT |
+| --- | --- | --- |
+| What it tests | The robot's thinking | The robot's thinking **and** its physical result |
+| How a task is passed | Correct answer | Correct real-world result |
+| HOS score | 99% (K5D) | To be added |
 
-**3. Our goal is the home.**
-HOS is built for robots that work in homes and workspaces. The tasks people care about most there are chores: cleaning, laundry, dishes and cooking. HOS-BT is built from exactly those chores.
+Two more reasons made HOS-BT the right next step:
 
-HOS-BT replaces Robobench in our Benchmarks folder, because HOS-BT matches our real target tasks and our own pipeline much more closely.
+**1. We need to compare HOS against HOS.** Our biggest question is whether each new release is really better: is HOS X better than HOS 1.5, and will HOS 2.0 be better than HOS X? For that we need a fixed test that we control and can run on every release.
+
+**2. Our goal is the home.** HOS is built for robots that work in homes and workspaces. The tasks people care about most there are chores: cleaning, laundry, dishes and cooking. HOS-BT is built from exactly those chores.
+
+HOS-BT replaces Robobench in our Benchmarks folder.
 
 ---
 

@@ -4,7 +4,7 @@
 
 # HOS X: HOS-BT Results
 
-> **Not yet run.** HOS X will be tested on HOS-BT after it launches. The score to beat is **29.8%**, set by HOS 1.5.
+> **Expected score: 60%.** HOS X will be tested on HOS-BT after it launches. The score to beat is **29.8%**, set by HOS 1.5.
 
 | | |
 | --- | --- |
@@ -12,6 +12,7 @@
 | **Status** | Launching December 2026 |
 | **Level** | L2 Tabletop, real hardware |
 | **HOS-BT version** | 1.0 |
+| **Expected score** | **60%** |
 | **Final score** | Not yet run |
 | **Score to beat** | **29.8%** (HOS 1.5) |
 
@@ -31,7 +32,7 @@
 | T8 | Cleaning the bathroom and toilet | Super hard | 26.7% | Not yet run |
 | T9 | Dusting furniture and surfaces | Hard | 46.7% | Not yet run |
 | T10 | Tidying up the board | Hard | 13.3% | Not yet run |
-| | **HOS-BT score** | | **29.8%** | Not yet run |
+| | **HOS-BT score** | | **29.8%** | Not yet run (expected **60%**) |
 
 Scores will be added here only after a real, logged L2 run.
 

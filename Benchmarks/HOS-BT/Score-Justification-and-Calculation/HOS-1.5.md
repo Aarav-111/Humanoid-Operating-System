@@ -16,7 +16,7 @@ HOS 1.5 is the first model to be scored on HOS-BT. Its results set the baseline 
 
 | Level | HOS-BT score | Pass rate | Safety rate | Cost per trial | Date |
 | --- | --- | --- | --- | --- | --- |
-| L2 Tabletop | Run | NA | NA | ~0.1c/task | 21st October 2026 |
+| L2 Tabletop | Run | NA | NA | ~0.001$/task | 21st October 2026 |
 
 ---
 

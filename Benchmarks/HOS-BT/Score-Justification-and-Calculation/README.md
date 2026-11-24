@@ -4,8 +4,8 @@ This folder holds the working behind every HOS-BT score, one file per HOS model.
 
 | Model | Status | File |
 | --- | --- | --- |
-| HOS 1.5 | Current release (11 October 2026). **Scored 44.7%** | [HOS-1.5.md](HOS-1.5.md) |
-| HOS X | Launching December 2026 | [HOS-X.md](HOS-X.md) |
+| HOS 1.5 | Current release (11 October 2026). **Scored 29.8%** | [HOS-1.5.md](HOS-1.5.md) |
+| HOS X | Launching December 2026. Expected **60%** | [HOS-X.md](HOS-X.md) |
 | HOS 2.0 | Planned for late January or early February 2027 | [HOS-2.0.md](HOS-2.0.md) |
 
 HOS 1.0 and earlier retire on 30 November 2026 and are not scored.

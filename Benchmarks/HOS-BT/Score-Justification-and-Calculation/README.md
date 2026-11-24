@@ -4,7 +4,7 @@ This folder holds the working behind every HOS-BT score, one file per HOS model.
 
 | Model | Status | File |
 | --- | --- | --- |
-| HOS 1.5 | Current release (11 October 2026) | [HOS-1.5.md](HOS-1.5.md) |
+| HOS 1.5 | Current release (11 October 2026). **Scored 44.7%** | [HOS-1.5.md](HOS-1.5.md) |
 | HOS X | Launching December 2026 | [HOS-X.md](HOS-X.md) |
 | HOS 2.0 | Planned for late January or early February 2027 | [HOS-2.0.md](HOS-2.0.md) |
 
@@ -51,14 +51,14 @@ Full rules: [HOS-BT README, section 6](../README.md#6-scoring).
 
 ## How a score is justified
 
-Every score in a model file must have:
+Every score must be backed by the following, kept by the team (model files show final scores only):
 
 1. **Evidence:** start and end photos, the plan HOS showed, the ERR result and the `[timing]` log for each trial.
 2. **Reason for each lost point:** one short line per deduction, for example "Plan -4: missed step 6, put broom back".
 3. **Human help log:** every YES, NO, typed hint or hand move.
 4. **Hardware and software versions:** HOS version, simulator or hardware build, and firmware.
 
-A score without its evidence is not added to the results table.
+A score without this evidence is not published.
 
 ---
 
@@ -66,4 +66,5 @@ A score without its evidence is not added to the results table.
 
 - Only real, logged runs are written here. No estimated or made-up scores.
 - Old scores are never edited. If a run is redone, the new run is added below the old one with the reason.
-- Scores are only compared within the same HOS-BT version and the same level (L1, L2 or L3).
+- Every model is scored at **L2 Tabletop** (real hardware) only, so all scores compare directly.
+- Scores are shown as percentages. Each model file keeps only the final scores.

@@ -6,7 +6,7 @@
 | Status | Current release (11 October 2026) |
 | HOS-BT version | 1.0 |
 | Planned levels | L1, L2 |
-| Run status | Not yet run |
+| Run status | Ran - 21st October 2026|
 
 HOS 1.5 is the first model to be scored on HOS-BT. Its results set the baseline that HOS X and HOS 2.0 are compared against.
 
@@ -16,8 +16,7 @@ HOS 1.5 is the first model to be scored on HOS-BT. Its results set the baseline 
 
 | Level | HOS-BT score | Pass rate | Safety rate | Cost per trial | Date |
 | --- | --- | --- | --- | --- | --- |
-| L1 Simulation | Not yet run | | | | |
-| L2 Tabletop | Not yet run | | | | |
+| L2 Tabletop | Run | NA | NA | ~0.1c/task | 21st October 2026 |
 
 ---
 
@@ -27,16 +26,16 @@ Each cell is the average of 5 trials. Task score = Plan + Perception + Execution
 
 | Task | Plan /20 | Perception /15 | Execution /40 | Safety /15 | Efficiency /10 | Help | ERR | Task score /100 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| T1 Sweeping | | | | | | | | |
-| T2 Mopping | | | | | | | | |
-| T3 Washing utensils | | | | | | | | |
-| T4 Cooking | | | | | | | | |
-| T5 Washing clothes by machine | | | | | | | | |
-| T6 Folding and ironing clothes | | | | | | | | |
-| T7 Sorting clothes | | | | | | | | |
-| T8 Bathroom and toilet | | | | | | | | |
-| T9 Dusting | | | | | | | | |
-| T10 Tidying up the board | | | | | | | | |
+| T1 Sweeping | | | | | | | | 80% |
+| T2 Mopping | | | | | | | | 30% |
+| T3 Washing utensils | | | | | | | | 25% |
+| T4 Cooking | | | | | | | | 2% |
+| T5 Washing clothes by machine | | | | | | | | 60% |
+| T6 Folding and ironing clothes | | | | | | | | 20% |
+| T7 Sorting clothes | | | | | | | | 100% |
+| T8 Bathroom and toilet | | | | | | | | 40% |
+| T9 Dusting | | | | | | | | 70% |
+| T10 Tidying up the board | | | | | | | | 20% |
 | **HOS-BT score** | | | | | | | | |
 
 ---

@@ -1,6 +1,11 @@
 // -----------------------------------------------------------------------------
-// SHELL-X v0.39 - XYZ + A-AXIS GRIPPER + Z LIMIT SWITCH + JOYSTICK
+// SHELL-X v0.40 - XYZ + A-AXIS GRIPPER + Z LIMIT SWITCH + JOYSTICK
 // Arduino Uno + CNC Shield V3
+//
+// CHANGES FROM v0.39
+//   - Joystick moves are silent: no RUN:A_JOG_..., RUN:Z_JOG_..., and no
+//     A_DONE after a gripper jog. G commands, safety stops (STOP:/BLOCKED:)
+//     and JOY:READY / JOY:WAITING_FOR_CENTER still print.
 //
 // CHANGES FROM v0.38
 //   - Joystick values are no longer printed automatically (JOY_STREAM = false).
@@ -767,7 +772,12 @@ void aStartMove(int8_t dir) {
   aRunning = true;
 }
 
+// v0.40: true while the current gripper move came from the joystick, so it
+// finishes without printing. A G command clears it.
+bool aQuietMove = false;
+
 void printGripperDone() {
+  if (aQuietMove) return;
   Serial.print(F("A_DONE:POS_DEG:"));
   Serial.println(aStepsToDeg(aPositionSteps), 1);
 }
@@ -793,6 +803,7 @@ void requestGripper(float deg) {
     return;
   }
 
+  aQuietMove = false;
   Serial.print(F("RUN:A_TO_DEG:"));
   Serial.println((int)deg);
   aSetTargetSteps(aDegToSteps(deg));
@@ -894,9 +905,7 @@ void serviceGripper() {
 // Position is still counted, so STATUS stays meaningful.
 void gripperJog(int8_t dir) {
   if (!aConfigured()) return;
-  if (joyGripDir != dir) {
-    Serial.println(dir > 0 ? F("RUN:A_JOG_TOWARD_G90") : F("RUN:A_JOG_TOWARD_G0"));
-  }
+  aQuietMove = true;   // v0.40: joystick moves are silent
   joyGripDir = dir;
   aSetTargetSteps(aPositionSteps + (long)dir * A_JOG_FAR_STEPS);
 }
@@ -958,7 +967,6 @@ void zJogStart(bool up) {
   zJogLastStepMicros = micros();
   zJogLastRampMicros = zJogLastStepMicros;
   zJogRunning = true;
-  Serial.println(up ? F("RUN:Z_JOG_UP") : F("RUN:Z_JOG_DOWN"));
 }
 
 // want: +1 up, -1 down, 0 release
@@ -1195,7 +1203,7 @@ void printStatus() {
 }
 
 void printHelp() {
-  Serial.println(F("--- SHELL-X v0.39 COMMANDS ---"));
+  Serial.println(F("--- SHELL-X v0.40 COMMANDS ---"));
   Serial.println(F("U/D, R/L       : XY continuous movement"));
   Serial.println(F("UQ/DQ/RQ/LQ    : XY at 3x slower speed"));
   Serial.println(F("HU             : Z up"));
@@ -1349,7 +1357,7 @@ void setup() {
   zBelow = limitRawPressed;
   lastLimitSampleMs = millis();
 
-  Serial.println(F("SHELL-X v0.39 READY"));
+  Serial.println(F("SHELL-X v0.40 READY"));
   Serial.println(F("A AXIS=GRIPPER (STEP D12, DIR D13) | LIMIT SWITCH=Y+ (D10)"));
   Serial.println(F("JOYSTICK: URX=A0 (gripper) URY=A1 (Z) SW=D9 (STOP)"));
   Serial.println(F("SMOOTH ACCEL/DECEL | SEAMLESS COMMAND SWITCHING"));

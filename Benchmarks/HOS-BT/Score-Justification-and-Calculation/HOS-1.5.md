@@ -1,10 +1,10 @@
 <p align="center">
-  <img src="hos-1.5-banner.svg" alt="HOS 1.5 scored 44.7% on HOS-BT" width="100%">
+  <img src="hos-1.5-banner.svg" alt="HOS 1.5 scored 29.8% on HOS-BT" width="100%">
 </p>
 
 # HOS 1.5: HOS-BT Results
 
-> **HOS 1.5 scored 44.7%.** It is the first HOS model tested on HOS-BT, so this is the baseline that HOS X and HOS 2.0 must beat.
+> **HOS 1.5 scored 29.8%.** It is the first HOS model tested on HOS-BT, so this is the baseline that HOS X and HOS 2.0 must beat.
 
 | | |
 | --- | --- |
@@ -12,7 +12,8 @@
 | **Level** | L2 Tabletop, real hardware |
 | **Test date** | 21 October 2026 |
 | **HOS-BT version** | 1.0 |
-| **Final score** | **44.7%** |
+| **Scores revised** | 24 November 2026 |
+| **Final score** | **29.8%** |
 | **Cost** | About $0.001 per task |
 | **Speed** | About 1 minute per task |
 
@@ -22,28 +23,28 @@
 
 | # | Task | Difficulty | Score |
 | :-: | --- | :-: | :-: |
-| T1 | Sweeping | Hard | **80%** |
-| T2 | Mopping | Hard | **30%** |
-| T3 | Washing utensils | Super hard | **25%** |
-| T4 | Cooking | Near-impossible | **2%** |
-| T5 | Washing clothes by machine | Hard | **60%** |
-| T6 | Folding and ironing clothes | Near-impossible | **20%** |
-| T7 | Sorting clothes into black and white | Hard | **100%** |
-| T8 | Cleaning the bathroom and toilet | Super hard | **40%** |
-| T9 | Dusting furniture and surfaces | Hard | **70%** |
-| T10 | Tidying up the board | Hard | **20%** |
-| | **HOS-BT score** | | **44.7%** |
+| T1 | Sweeping | Hard | **53.3%** |
+| T2 | Mopping | Hard | **20%** |
+| T3 | Washing utensils | Super hard | **16.7%** |
+| T4 | Cooking | Near-impossible | **1.3%** |
+| T5 | Washing clothes by machine | Hard | **40%** |
+| T6 | Folding and ironing clothes | Near-impossible | **13.3%** |
+| T7 | Sorting clothes into black and white | Hard | **66.7%** |
+| T8 | Cleaning the bathroom and toilet | Super hard | **26.7%** |
+| T9 | Dusting furniture and surfaces | Hard | **46.7%** |
+| T10 | Tidying up the board | Hard | **13.3%** |
+| | **HOS-BT score** | | **29.8%** |
 
 ### By difficulty
 
 | Difficulty | Tasks | Average |
 | --- | --- | :-: |
-| Hard | T1, T2, T5, T7, T9, T10 | **60.0%** |
-| Super hard | T3, T8 | **32.5%** |
-| Near-impossible | T4, T6 | **11.0%** |
+| Hard | T1, T2, T5, T7, T9, T10 | **40.0%** |
+| Super hard | T3, T8 | **21.7%** |
+| Near-impossible | T4, T6 | **7.3%** |
 
-**Best:** T7 Sorting clothes, a perfect **100%**.
-**Hardest:** T4 Cooking, just **2%**.
+**Best:** T7 Sorting clothes, the top score at **66.7%**.
+**Hardest:** T4 Cooking, just **1.3%**.
 
 ---
 

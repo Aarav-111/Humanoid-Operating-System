@@ -13,16 +13,16 @@ Full task cards, scoring and rules: [HOS-BT README](https://github.com/Aarav-111
 
 | # | Task | Area | Difficulty | What the robot must do |
 | :-: | --- | --- | :-: | --- |
-| T1 | **Sweeping** | Floor cleaning | Medium | Sweep all debris in a marked area into a dustpan |
-| T2 | **Mopping** | Floor cleaning | Medium | Mop away all marks without leaving puddles |
-| T3 | **Washing utensils** | Kitchen | Hard | Scrub, rinse and rack a set of dirty utensils |
-| T4 | **Cooking** | Kitchen | Very hard | Cook a simple fixed recipe and turn the heat off |
-| T5 | **Washing clothes by machine** | Laundry | Medium | Load, add detergent, pick the right program, unload |
-| T6 | **Folding and ironing clothes** | Laundry | Very hard | Iron and neatly fold a set of clothes |
-| T7 | **Sorting clothes into black and white** | Laundry | Easy | Split a mixed pile into dark and light baskets |
-| T8 | **Cleaning the bathroom and toilet** | Cleaning | Hard | Clean sink, toilet and floor with separate tools |
-| T9 | **Dusting furniture and surfaces** | Cleaning | Easy | Dust surfaces and put every object back in place |
-| T10 | **Tidying up the board** | Organising | Easy | Move every item on the board to its marked cell |
+| T1 | **Sweeping** | Floor cleaning | Hard | Sweep all debris in a marked area into a dustpan |
+| T2 | **Mopping** | Floor cleaning | Hard | Mop away all marks without leaving puddles |
+| T3 | **Washing utensils** | Kitchen | Super hard | Scrub, rinse and rack a set of dirty utensils |
+| T4 | **Cooking** | Kitchen | Near-impossible | Cook a simple fixed recipe and turn the heat off |
+| T5 | **Washing clothes by machine** | Laundry | Hard | Load, add detergent, pick the right program, unload |
+| T6 | **Folding and ironing clothes** | Laundry | Near-impossible | Iron and neatly fold a set of clothes |
+| T7 | **Sorting clothes into black and white** | Laundry | Hard | Split a mixed pile into dark and light baskets |
+| T8 | **Cleaning the bathroom and toilet** | Cleaning | Super hard | Clean sink, toilet and floor with separate tools |
+| T9 | **Dusting furniture and surfaces** | Cleaning | Hard | Dust surfaces and put every object back in place |
+| T10 | **Tidying up the board** | Organising | Hard | Move every item on the board to its marked cell |
 
 ---
 
@@ -40,12 +40,13 @@ Full task cards, scoring and rules: [HOS-BT README](https://github.com/Aarav-111
 
 ## Difficulty Levels
 
+No HOS-BT task is easy. Every task asks a robot to do something people find simple but robots find very hard.
+
 | Level | Meaning | Tasks |
 | --- | --- | --- |
-| Easy | Few steps, rigid objects, low risk | T7, T9, T10 |
-| Medium | Many steps or a large area | T1, T2, T5 |
-| Hard | Hard-to-grasp objects, water or chemicals | T3, T8 |
-| Very hard | Long sequences, soft objects or heat | T4, T6 |
+| Hard | Rigid objects or large areas, many steps, low to medium risk | T1, T2, T5, T7, T9, T10 |
+| Super hard | Hard-to-grasp objects, water or chemicals, medium risk | T3, T8 |
+| Near-impossible | Long sequences, soft objects or heat, high risk | T4, T6 |
 
 ---
 

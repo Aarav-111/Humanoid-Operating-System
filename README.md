@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/Aarav-111/Humanoid-Operating-System#recent-updates"><img src="https://img.shields.io/badge/Latest-HOS%201.5-0ea5e9?style=flat-square" alt="Latest: HOS 1.5"></a>
-<a href="#release-timeline"><img src="https://img.shields.io/badge/Next-HOS%20X%20by%2026%20Nov%202026-f97316?style=flat-square" alt="Next: HOS X by 26 Nov 2026"></a>
+<a href="#release-timeline"><img src="https://img.shields.io/badge/Next-HOS%20X%20in%20Dec%202026-f97316?style=flat-square" alt="Next: HOS X in December 2026"></a>
   <a href="https://github.com/Aarav-111/Humanoid-Operating-System#benchmarking"><img src="assets/badges/hos-mmro.svg" alt="MMRO (K5D): 99%"></a>
   <a href="https://github.com/Aarav-111/Humanoid-Operating-System#camera-ready-gripper"><img src="assets/badges/hos-gripper.svg" alt="New: Camera-Ready Gripper"></a>
   <a href="https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Software"><img src="https://img.shields.io/badge/Python-3-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python: 3"></a>
@@ -33,7 +33,7 @@ Instead of training isolated models per task (the approach used by most VLA mode
 </p>
 
 
-**Status:** HOS 1.5 is the current release (11 October 2026). HOS X launches by 26 November 2026. HOS 1.0 and earlier retire on 30 November 2026. HOS 2.0 is expected in January 2027. Built by Prolabs Robotics, Bengaluru, India.
+**Status:** HOS 1.5 is the current release (11 October 2026). HOS X is delayed to December 2026. HOS 1.0 and earlier retire on 30 November 2026. HOS 2.0 is planned for late January or early February 2027. Built by Prolabs Robotics, Bengaluru, India.
 
 ---
 
@@ -50,9 +50,10 @@ timeline
     Nov 2026 : Newsletter and back EMF gripper (3 Nov)
              : Shell x TMC2209 build (14 Nov, dropped)
              : Shell-x v0.20 and docs v3.0 (22 Nov)
-             : HOS X launch (by 26 Nov)
+             : HOS-BT benchmark released (24 Nov)
              : HOS 1.0 and earlier retired (30 Nov)
-    Jan 2027 : HOS 2.0
+    Dec 2026 : HOS X launch
+    Jan to Feb 2027 : HOS 2.0
 ```
 
 | Version | Date | Status | What it is |
@@ -60,10 +61,11 @@ timeline
 | HOS 0.9 | 21 Sep 2026 | Retiring 30 Nov 2026 | First public launch |
 | HOS 1.0 | 2026 | Retiring 30 Nov 2026 | No fixes after 30 Nov |
 | **HOS 1.5** | 11 Oct 2026 | **Current** | Task compilation, S1.5-SRC, Re-execute |
-| **HOS X** | by 26 Nov 2026 | **Launching this week** | Real-world applications, S(x)-Src |
+| **HOS X** | Dec 2026 | **Delayed** | Real-world applications, S(x)-Src |
+| HOS-BT benchmark | 24 Nov 2026 | Released | Our own benchmark to compare HOS models |
 | Shell-x v0.20 | 22 Nov 2026 | Current hardware | A4988 on X, Y, Z with a pot Z sensor |
 | IEEE paper | Soon | In progress | Second paper on the methods behind HOS |
-| HOS 2.0 | Jan 2027 | Delayed | Next major version |
+| HOS 2.0 | Late Jan or early Feb 2027 | Planned | Next major version |
 
 ---
 
@@ -130,6 +132,14 @@ Robots in homes and workspaces need more than a fixed sequence of moves. They ne
   <img src="assets/hos-timeline.svg" alt="Release timeline from HOS 0.9 (Sep 2026) to HOS 2.0 (Jan 2027)" width="80%">
 </p>
 
+
+### 24 November 2026: HOS X moves to December, HOS-BT benchmark, HOS 2.0 date
+
+**HOS X delayed to December 2026.** We found integration issues during final testing. We want to keep our top quality standards, so HOS X now ships in December 2026 instead of 26 November.
+
+**HOS-BT benchmark released.** HOS-BT is our own benchmark to compare HOS models with each other. It lives in [Benchmarks/HOS-BT](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Benchmarks/HOS-BT). Robobench has been removed.
+
+**HOS 2.0 date.** HOS 2.0 is planned for late January or early February 2027.
 
 ### 23 November 2026: HOS X release, HOS 2.0 delay and HOS 1.0 sunset
 
@@ -269,7 +279,7 @@ Full commit history is on the [commits page](https://github.com/Aarav-111/Humano
 | Hardware | Firmware, hardware docs and 3D models | [Open folder](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware) |
 | Simulation/Virtual | K5D and K9D virtual simulators | [Open folder](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Simulation/Virtual) |
 | Simulation/Physical | A2.6-Sol and A3-Terra | [Open folder](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Simulation/Physical) |
-| Benchmarks | MMRO dataset, Robobench and task list | [Open folder](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Benchmarks) |
+| Benchmarks | MMRO dataset, HOS-BT benchmark and task list | [Open folder](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Benchmarks) |
 
 
 ### File index
@@ -284,7 +294,7 @@ Click any file to open it on GitHub.
 | Hardware/3D Models | [apriltag-connector](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/apriltag-connector.stl) [basic-robot](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/basic-robot.stl) [gripper-part-1](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/gripper-part-1.stl) [gripper-part-2-sponge](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/gripper-part-2-sponge.stl) [hub](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/hub.stl) [l-bracket](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/l-bracket.stl) [legs](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/legs.stl) [pulley-mount](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/pulley-mount.stl) [xy-interaxis-connector](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/xy-interaxis-connector.stl) [y-axis-holder](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/y-axis-holder.stl) [z-axis-mounter](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/z-axis-mounter.stl) |
 | Simulation/Virtual | [K5D](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Simulation/Virtual/K5D.py) [K9D](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Simulation/Virtual/K9D.py) [HOS_3D_preview.html](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Simulation/Virtual/HOS_3D_preview.html) |
 | Simulation/Physical | [A2.6-Sol.py](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Simulation/Physical/A2.6-Sol.py) [A3-Terra.py](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Simulation/Physical/A3-Terra.py) |
-| Benchmarks | [MMRO_Questions.json](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Benchmarks/MMRO/Dataset/MMRO_Questions.json) [K5D_Answers.json](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Benchmarks/MMRO/Dataset/K5D_Answers.json) [Why Choose the MMRO Benchmark](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Benchmarks/MMRO/Why%20Choose%20the%20MMRO%20Benchmark.md) [Robobench_benchmark.md](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Benchmarks/Robobench/Robobench_benchmark.md) [Benchmarking-tasks.md](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Benchmarks/Benchmarking-tasks.md) |
+| Benchmarks | [MMRO_Questions.json](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Benchmarks/MMRO/Dataset/MMRO_Questions.json) [K5D_Answers.json](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Benchmarks/MMRO/Dataset/K5D_Answers.json) [Why Choose the MMRO Benchmark](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Benchmarks/MMRO/Why%20Choose%20the%20MMRO%20Benchmark.md) [HOS-BT](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Benchmarks/HOS-BT) [Benchmarking-tasks.md](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Benchmarks/Benchmarking-tasks.md) |
 | Root | [LICENSE](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/LICENSE) [README.md](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/README.md) |
 
 Quick links: [Software](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Software) | [Hardware](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware) | [Firmware](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware/Firmware) | [3D Models](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware/3D%20Models) | [Simulation/Virtual](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Simulation/Virtual) | [Simulation/Physical](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Simulation/Physical) | [Benchmarks](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Benchmarks)
@@ -373,7 +383,7 @@ Download the STL files from [Hardware/3D Models](https://github.com/Aarav-111/Hu
 
 ## Roadmap
 
-Next up: HOS X launch (by 26 Nov 2026), HOS 1.0 sunset (30 Nov 2026), the second IEEE paper, camera-ready gripper files, and HOS 2.0 in January 2027. See the [Release Timeline](#release-timeline).
+Next up: HOS X launch (December 2026), HOS 1.0 sunset (30 Nov 2026), the second IEEE paper, camera-ready gripper files, and HOS 2.0 in late January or early February 2027. See the [Release Timeline](#release-timeline).
 
 <p align="center">
   <img src="assets/hos-roadmap.svg" alt="Roadmap: 9 done, 4 now, 3 next, with HOS X, the HOS 1.0 sunset and HOS 2.0" width="80%">
@@ -392,6 +402,10 @@ Next up: HOS X launch (by 26 Nov 2026), HOS 1.0 sunset (30 Nov 2026), the second
 <p align="center">
   <img src="assets/hos-benchmark.svg" alt="K5D scored 99 percent on the MMRO benchmark" width="80%">
 </p>
+
+### HOS-BT benchmark
+
+HOS-BT is our own benchmark for comparing HOS models with each other. Tasks and results: [Benchmarks/HOS-BT](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Benchmarks/HOS-BT).
 
 
 ---

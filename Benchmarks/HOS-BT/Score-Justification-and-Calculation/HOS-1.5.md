@@ -36,7 +36,7 @@ Each cell is the average of 5 trials. Task score = Plan + Perception + Execution
 | T8 Bathroom and toilet | | | | | | | | 40% |
 | T9 Dusting | | | | | | | | 70% |
 | T10 Tidying up the board | | | | | | | | 20% |
-| **HOS-BT score** | | | | | | | | 44.7% |
+| **HOS-BT score** | | | | | | | | **44.7%** |
 
 ---
 

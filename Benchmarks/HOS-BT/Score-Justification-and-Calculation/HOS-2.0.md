@@ -1,95 +1,42 @@
-# HOS 2.0: HOS-BT Score Calculation and Justification
+<p align="center">
+  <img src="hos-2.0-banner.svg" alt="HOS 2.0 HOS-BT results, coming early 2027" width="100%">
+</p>
 
-| Item | Value |
+# HOS 2.0: HOS-BT Results
+
+> **Not yet run.** HOS 2.0 will be tested on HOS-BT after it launches. The score to beat is **44.7%**, set by HOS 1.5.
+
+| | |
 | --- | --- |
-| Model | HOS 2.0 |
-| Status | Planned for late January or early February 2027 |
-| HOS-BT version | 1.0 |
-| Planned levels | L1, L2, and L3 when hardware is ready |
-| Run status | Not yet run |
-
-HOS 2.0 will be scored after release. It is the first model planned for L3 full-scale runs.
-
----
-
-## Summary
-
-| Level | HOS-BT score | Pass rate | Safety rate | Cost per trial | Date |
-| --- | --- | --- | --- | --- | --- |
-| L1 Simulation | Not yet run | | | | |
-| L2 Tabletop | Not yet run | | | | |
+| **Model** | HOS 2.0 |
+| **Status** | Planned for late January or early February 2027 |
+| **Level** | L2 Tabletop, real hardware |
+| **HOS-BT version** | 1.0 |
+| **Final score** | Not yet run |
+| **Score to beat** | **44.7%** (HOS 1.5) |
 
 ---
 
-## Score calculation per task (L1)
+## Final scores
 
-Each cell is the average of 5 trials. Task score = Plan + Perception + Execution + Safety + Efficiency - Help - ERR.
+| # | Task | Difficulty | HOS 1.5 | HOS 2.0 |
+| :-: | --- | :-: | :-: | :-: |
+| T1 | Sweeping | Hard | 80% | Not yet run |
+| T2 | Mopping | Hard | 30% | Not yet run |
+| T3 | Washing utensils | Super hard | 25% | Not yet run |
+| T4 | Cooking | Near-impossible | 2% | Not yet run |
+| T5 | Washing clothes by machine | Hard | 60% | Not yet run |
+| T6 | Folding and ironing clothes | Near-impossible | 20% | Not yet run |
+| T7 | Sorting clothes into black and white | Hard | 100% | Not yet run |
+| T8 | Cleaning the bathroom and toilet | Super hard | 40% | Not yet run |
+| T9 | Dusting furniture and surfaces | Hard | 70% | Not yet run |
+| T10 | Tidying up the board | Hard | 20% | Not yet run |
+| | **HOS-BT score** | | **44.7%** | Not yet run |
 
-| Task | Plan /20 | Perception /15 | Execution /40 | Safety /15 | Efficiency /10 | Help | ERR | Task score /100 |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| T1 Sweeping | | | | | | | | |
-| T2 Mopping | | | | | | | | |
-| T3 Washing utensils | | | | | | | | |
-| T4 Cooking | | | | | | | | |
-| T5 Washing clothes by machine | | | | | | | | |
-| T6 Folding and ironing clothes | | | | | | | | |
-| T7 Sorting clothes | | | | | | | | |
-| T8 Bathroom and toilet | | | | | | | | |
-| T9 Dusting | | | | | | | | |
-| T10 Tidying up the board | | | | | | | | |
-| **HOS-BT score** | | | | | | | | |
-
----
-
-## Score calculation per task (L2)
-
-| Task | Plan /20 | Perception /15 | Execution /40 | Safety /15 | Efficiency /10 | Help | ERR | Task score /100 |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| T1 Sweeping | | | | | | | | |
-| T2 Mopping | | | | | | | | |
-| T3 Washing utensils | | | | | | | | |
-| T4 Cooking | | | | | | | | |
-| T5 Washing clothes by machine | | | | | | | | |
-| T6 Folding and ironing clothes | | | | | | | | |
-| T7 Sorting clothes | | | | | | | | |
-| T8 Bathroom and toilet | | | | | | | | |
-| T9 Dusting | | | | | | | | |
-| T10 Tidying up the board | | | | | | | | |
-| **HOS-BT score** | | | | | | | | |
+Scores will be added here only after a real, logged L2 run.
 
 ---
 
-## Trial log (fill one block per task)
-
-### T_ Task name, Level L_
-
-| Trial | Seed | Plan | Perception | Execution | Safety | Efficiency | Help | ERR | Score |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | 1 | | | | | | | | |
-| 2 | 2 | | | | | | | | |
-| 3 | 3 | | | | | | | | |
-| 4 | 4 | | | | | | | | |
-| 5 | 5 | | | | | | | | |
-| **Average** | | | | | | | | | |
-
-**Justification:**
-- Plan: (reason for each point lost)
-- Perception: (objects missed or wrongly named)
-- Execution: (success check result, for example 16 of 20 items placed)
-- Safety: (any issue, or "all checks passed")
-- Efficiency: (time, replans, API calls)
-- Human help: (each YES, NO, hint or hand move)
-- ERR: (what ERR said vs the real result)
-
-**Evidence:** link to photos, plan text and `[timing]` log.
-
----
-
-## Versions used
-
-| Item | Version |
-| --- | --- |
-| HOS software | |
-| Simulator (L1) | |
-| Hardware and firmware (L2) | |
-| Planner model | |
+<p align="center">
+  <a href="HOS-1.5.md">HOS 1.5 results</a> · <a href="README.md">How scores are calculated</a> · <a href="../README.md">HOS-BT benchmark</a> · <a href="../Benchmarking-tasks.md">All tasks</a>
+</p>

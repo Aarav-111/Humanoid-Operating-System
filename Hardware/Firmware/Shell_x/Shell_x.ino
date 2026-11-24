@@ -1,6 +1,13 @@
 // -----------------------------------------------------------------------------
-// SHELL-X v0.40 - XYZ + A-AXIS GRIPPER + Z LIMIT SWITCH + JOYSTICK
+// SHELL-X v0.41 - XYZ + A-AXIS GRIPPER + Z LIMIT SWITCH + JOYSTICK
 // Arduino Uno + CNC Shield V3
+//
+// CHANGES FROM v0.40
+//   - Joystick prints nothing at all (JOY_MESSAGES = false): no
+//     STOP:JOYSTICK_SW, JOY:READY, JOY:WAITING_FOR_CENTER, and no Z stop /
+//     blocked lines caused by joystick Z. The behaviour is unchanged
+//     (SW still stops everything, limit switch still stops joystick Z).
+//     Serial commands (incl. HD/HU stops and STATUS) and JREAD still reply.
 //
 // CHANGES FROM v0.39
 //   - Joystick moves are silent: no RUN:A_JOG_..., RUN:Z_JOG_..., and no
@@ -373,6 +380,10 @@ const unsigned long JOY_SAMPLE_INTERVAL_MS = 5UL;
 // SW stop: pressing SW stops everything. SW counts as released again after
 // this long of continuous release (stops bounce from re-triggering).
 const bool JOY_SW_STOP_ENABLED = true;
+
+// v0.41: false = the joystick prints nothing (SW stop, ready/centre state,
+// joystick Z stops and blocks). Serial commands and JREAD still reply.
+const bool JOY_MESSAGES = false;
 const unsigned long JOY_SW_RELEASE_MS = 50UL;
 
 // Live joystick readings for the PC app (same format as JREAD).
@@ -525,7 +536,7 @@ void sampleLimitSwitch(bool force) {
     }
     if (zJogRunning && !zJogUp) {
       zJogStopNow();
-      Serial.println(F("STOP:LIMIT_SWITCH_BELOW"));
+      if (JOY_MESSAGES) Serial.println(F("STOP:LIMIT_SWITCH_BELOW"));
     }
   }
 
@@ -973,7 +984,7 @@ void zJogStart(bool up) {
 void zJogCommand(int8_t want) {
   if (want < 0 && !zDownAllowed()) {
     if (!zJogBlockedReported) {
-      Serial.println(F("BLOCKED:LIMIT_SWITCH_BELOW"));
+      if (JOY_MESSAGES) Serial.println(F("BLOCKED:LIMIT_SWITCH_BELOW"));
       zJogBlockedReported = true;
     }
     want = 0;
@@ -991,7 +1002,7 @@ void zJogCommand(int8_t want) {
   // Joystick takes Z over from a serial HU/HD move.
   if (motionRunning && activeAxis == 'Z') {
     stopXYZ();
-    Serial.println(F("STOP:Z_SERIAL_OVERRIDDEN_BY_JOYSTICK"));
+    if (JOY_MESSAGES) Serial.println(F("STOP:Z_SERIAL_OVERRIDDEN_BY_JOYSTICK"));
   }
   if (pendingValid && pendingAxis == 'Z') pendingValid = false;
 
@@ -1062,7 +1073,7 @@ void checkJoystickSwStop() {
     if (!joySwStopLatched) {
       joySwStopLatched = true;
       stopEverything();
-      Serial.println(F("STOP:JOYSTICK_SW"));
+      if (JOY_MESSAGES) Serial.println(F("STOP:JOYSTICK_SW"));
     }
   } else if (joySwStopLatched &&
              (unsigned long)(now - joySwReleasedSinceMs) >= JOY_SW_RELEASE_MS) {
@@ -1107,9 +1118,9 @@ void updateJoystick() {
     if (gripDir == 0 && zDir == 0 && !joySwPressed && !joySwStopLatched) {
       joyRequireNeutral = false;
       joyNeutralReported = false;
-      Serial.println(F("JOY:READY"));
+      if (JOY_MESSAGES) Serial.println(F("JOY:READY"));
     } else if (!joyNeutralReported) {
-      Serial.println(F("JOY:WAITING_FOR_CENTER"));
+      if (JOY_MESSAGES) Serial.println(F("JOY:WAITING_FOR_CENTER"));
       joyNeutralReported = true;
     }
     return;
@@ -1203,7 +1214,7 @@ void printStatus() {
 }
 
 void printHelp() {
-  Serial.println(F("--- SHELL-X v0.40 COMMANDS ---"));
+  Serial.println(F("--- SHELL-X v0.41 COMMANDS ---"));
   Serial.println(F("U/D, R/L       : XY continuous movement"));
   Serial.println(F("UQ/DQ/RQ/LQ    : XY at 3x slower speed"));
   Serial.println(F("HU             : Z up"));
@@ -1357,7 +1368,7 @@ void setup() {
   zBelow = limitRawPressed;
   lastLimitSampleMs = millis();
 
-  Serial.println(F("SHELL-X v0.40 READY"));
+  Serial.println(F("SHELL-X v0.41 READY"));
   Serial.println(F("A AXIS=GRIPPER (STEP D12, DIR D13) | LIMIT SWITCH=Y+ (D10)"));
   Serial.println(F("JOYSTICK: URX=A0 (gripper) URY=A1 (Z) SW=D9 (STOP)"));
   Serial.println(F("SMOOTH ACCEL/DECEL | SEAMLESS COMMAND SWITCHING"));

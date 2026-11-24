@@ -580,7 +580,7 @@ HOS 1.0 and earlier retire on 30 November 2026 and are not part of HOS-BT.
 | T9 Dusting | | | |
 | T10 Tidying the board | | | |
 
-Results will be added here as each run is finished. Only real, logged runs are added. The full working for every score, model by model, is in the [Scores](Scores) folder.
+Results will be added here as each run is finished. Only real, logged runs are added. The full working for every score, model by model, is in the [Score-Justification-and-Calculation](Score-Justification-and-Calculation) folder.
 
 ---
 
@@ -665,6 +665,6 @@ In section 9. They will be added as each run is finished and logged.
 | --- | --- |
 | [README.md](README.md) | This document: tasks, scoring and rules |
 | [Benchmarking-tasks.md](Benchmarking-tasks.md) | The list of the 10 HOS-BT tasks |
-| [Scores/](Scores) | Score calculation and justification for each HOS model |
+| [Score-Justification-and-Calculation/](Score-Justification-and-Calculation) | Score calculation and justification for each HOS model |
 
 Questions or results to share: **prolabsrobotics@gmail.com**

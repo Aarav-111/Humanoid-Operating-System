@@ -5,7 +5,7 @@
 | Model | HOS 1.5 |
 | Status | Current release (11 October 2026) |
 | HOS-BT version | 1.0 |
-| Planned levels | L1, L2 |
+| Planned levels | L2 Physical-execution |
 | Run status | Ran - 21st October 2026|
 
 HOS 1.5 is the first model to be scored on HOS-BT. Its results set the baseline that HOS X and HOS 2.0 are compared against.

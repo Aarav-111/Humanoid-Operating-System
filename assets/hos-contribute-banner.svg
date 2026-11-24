@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 380" width="1600" height="380" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#022c22"/>
+      <stop offset="1" stop-color="#0c1445"/>
+    </linearGradient>
+    <linearGradient id="t" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#34d399"/>
+      <stop offset="1" stop-color="#38bdf8"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="380" fill="url(#bg)"/>
+  <g fill="#34d399" fill-opacity="0.18">
+    <circle cx="1380" cy="80" r="6"/><circle cx="1460" cy="140" r="4"/><circle cx="1300" cy="200" r="5"/>
+    <circle cx="1500" cy="260" r="6"/><circle cx="1400" cy="310" r="4"/><circle cx="1220" cy="120" r="3"/>
+  </g>
+  <g stroke="#34d399" stroke-opacity="0.25" stroke-width="2">
+    <line x1="1380" y1="80" x2="1460" y2="140"/><line x1="1460" y1="140" x2="1300" y2="200"/>
+    <line x1="1300" y1="200" x2="1500" y2="260"/><line x1="1500" y1="260" x2="1400" y2="310"/>
+    <line x1="1220" y1="120" x2="1380" y2="80"/>
+  </g>
+  <text x="80" y="90" font-size="22" font-weight="700" letter-spacing="6" fill="#34d399">OPEN SOURCE · OPEN DOORS</text>
+  <text x="76" y="180" font-size="84" font-weight="900" fill="url(#t)" letter-spacing="-2">Build the robot brain with us.</text>
+  <text x="80" y="240" font-size="30" fill="#cbd5e1">Your code could be the reason a robot folds its first shirt.</text>
+  <g font-size="24" font-weight="800" fill="#ffffff">
+    <rect x="80" y="282" width="150" height="58" rx="29" fill="#065f46"/><text x="155" y="320" text-anchor="middle">STAR</text>
+    <rect x="250" y="282" width="150" height="58" rx="29" fill="#075985"/><text x="325" y="320" text-anchor="middle">FORK</text>
+    <rect x="420" y="282" width="150" height="58" rx="29" fill="#3730a3"/><text x="495" y="320" text-anchor="middle">BUILD</text>
+    <rect x="590" y="282" width="150" height="58" rx="29" fill="#9d174d"/><text x="665" y="320" text-anchor="middle">SHARE</text>
+  </g>
+</svg>

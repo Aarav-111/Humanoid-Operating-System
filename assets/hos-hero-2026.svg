@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 640" width="1600" height="640" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#050816"/>
+      <stop offset="0.55" stop-color="#0b1a3a"/>
+      <stop offset="1" stop-color="#1a0b2e"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.78" cy="0.45" r="0.45">
+      <stop offset="0" stop-color="#22d3ee" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="title" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#7dd3fc"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f97316"/>
+      <stop offset="1" stop-color="#ec4899"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#1e3a8a" stroke-opacity="0.35" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="1600" height="640" fill="url(#bg)"/>
+  <rect width="1600" height="640" fill="url(#grid)"/>
+  <rect width="1600" height="640" fill="url(#glow)"/>
+
+  <!-- robot head -->
+  <g transform="translate(1250 300)">
+    <circle r="190" fill="none" stroke="#22d3ee" stroke-opacity="0.25" stroke-width="2"/>
+    <circle r="150" fill="none" stroke="#22d3ee" stroke-opacity="0.4" stroke-width="2" stroke-dasharray="6 10"/>
+    <rect x="-95" y="-85" width="190" height="160" rx="42" fill="#0f172a" stroke="#7dd3fc" stroke-width="4"/>
+    <rect x="-70" y="-50" width="140" height="58" rx="29" fill="#020617" stroke="#22d3ee" stroke-width="2"/>
+    <circle cx="-32" cy="-21" r="13" fill="#22d3ee"/>
+    <circle cx="32" cy="-21" r="13" fill="#22d3ee"/>
+    <rect x="-34" y="32" width="68" height="8" rx="4" fill="#f97316"/>
+    <line x1="0" y1="-85" x2="0" y2="-125" stroke="#7dd3fc" stroke-width="4"/>
+    <circle cy="-132" r="10" fill="url(#accent)"/>
+    <rect x="-60" y="80" width="120" height="44" rx="12" fill="#0f172a" stroke="#7dd3fc" stroke-width="3"/>
+  </g>
+
+  <text x="90" y="120" font-size="22" font-weight="700" letter-spacing="6" fill="#f97316">PROLABS ROBOTICS · BENGALURU, INDIA</text>
+  <text x="84" y="270" font-size="168" font-weight="900" fill="url(#title)" letter-spacing="-4">HOS</text>
+  <text x="90" y="330" font-size="38" font-weight="700" fill="#e2e8f0">The open brain for humanoid robots.</text>
+  <text x="90" y="398" font-size="27" fill="#94a3b8">Every home has work that never ends.</text>
+  <text x="90" y="436" font-size="27" fill="#94a3b8">We are building the robot that helps. <tspan fill="#ffffff" font-weight="700">Not in 20 years. Now.</tspan></text>
+
+  <g font-size="22" font-weight="700">
+    <rect x="90" y="490" width="230" height="56" rx="28" fill="#0f172a" stroke="#22d3ee" stroke-width="2"/>
+    <text x="205" y="526" text-anchor="middle" fill="#22d3ee">99% on MMRO</text>
+    <rect x="340" y="490" width="270" height="56" rx="28" fill="#0f172a" stroke="#f97316" stroke-width="2"/>
+    <text x="475" y="526" text-anchor="middle" fill="#f97316">HOS-BT: 10 chores</text>
+    <rect x="630" y="490" width="230" height="56" rx="28" fill="url(#accent)"/>
+    <text x="745" y="526" text-anchor="middle" fill="#ffffff">Open source</text>
+  </g>
+</svg>

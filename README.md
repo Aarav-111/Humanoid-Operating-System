@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/hos-banner-2026.svg" alt="Humanoid Operating System banner" width="80%">
+  <img src="assets/hos-hero-2026.svg" alt="HOS: the open brain for humanoid robots" width="100%">
 </p>
 
 <p align="center">
@@ -22,7 +22,14 @@
 
 ## Overview
 
-> An LLM-powered control layer and modular operating system for humanoid robots.
+> ### Every home has work that never ends.
+> Floors to sweep. Clothes to fold. Dishes in the sink. A grandparent who can no longer bend down to pick up a dropped cup.
+>
+> **We believe a robot should help with that. Not in 20 years. Now.**
+>
+> HOS is an open, LLM-powered operating system for humanoid robots, built by a small student-led team in Bengaluru, India. It scored **99% on MMRO**. Now it is learning to do real chores, one task at a time.
+>
+> **Star it. Run it. Break it. Help us build it.** [Join us](#contribute-build-the-robot-brain-with-us)
 
 Jensen Huang has spoken about the need for a general-purpose robot breakthrough before humanoids can scale. HOS is our attempt at that: a foundational software and hardware framework that gives humanoid robots a generalized, reasoning-driven "mind."
 
@@ -117,7 +124,7 @@ Full specs, STL files, and setup notes will be added to the [Hardware](https://g
 
 ## Why HOS
 
-Robots in homes and workspaces need more than a fixed sequence of moves. They need to read a changing scene, reason about the outcome, decide whether a move is feasible, and show that decision to an operator before motion starts. HOS connects perception, planning, simulation, and hardware control, with clear review points at each step.
+Today's robots are brilliant in factories and helpless in a messy kitchen. Robots in homes and workspaces need more than a fixed sequence of moves. They need to read a changing scene, reason about the outcome, decide whether a move is feasible, and show that decision to an operator before motion starts. HOS connects perception, planning, simulation, and hardware control, with clear review points at each step.
 
 <p align="center">
   <img src="assets/hos-table-components.svg" alt="Two physical roles: robotic arm (worker) and mobile base (mover)" width="80%">
@@ -137,7 +144,9 @@ Robots in homes and workspaces need more than a fixed sequence of moves. They ne
 
 **HOS X delayed to December 2026.** We found integration issues during final testing. We want to keep our top quality standards, so HOS X now ships in December 2026 instead of 26 November.
 
-**HOS-BT benchmark released.** HOS-BT is our own benchmark to compare HOS models with each other. It lives in [Benchmarks/HOS-BT](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Benchmarks/HOS-BT). Robobench has been removed.
+**HOS-BT benchmark released.** HOS-BT is our own benchmark to compare HOS models with each other. HOS scored 99% on MMRO, the best benchmark for a robot's thinking, but MMRO does not test physical accuracy. HOS-BT does: 10 household tasks, each rated Hard, Super hard or Near-impossible, scored on the real result. It lives in [Benchmarks/HOS-BT](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Benchmarks/HOS-BT), with the score working for every HOS model in [Score-Justification-and-Calculation](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Benchmarks/HOS-BT/Score-Justification-and-Calculation). Robobench has been removed.
+
+**Repository clean-up.** Old files were removed: S1-SRC.py, A2.6-Sol.py and Shell_1.ino. Shell_x.ino now sits directly in Hardware/Firmware, and the old TMC2209 test harness was removed. All of them are still in the commit history.
 
 **HOS 2.0 date.** HOS 2.0 is planned for late January or early February 2027.
 
@@ -163,7 +172,7 @@ Robots in homes and workspaces need more than a fixed sequence of moves. They ne
 - HD now stops Z at the DOWN position. P1, P3, the gripper, the joystick and the TMC2209 sensorless Z are not used.
 - New pin map, pot wiring, command table, speeds, first power-on test and limits.
 - New hardware documentation PDF [HOS-Documentation-v3.0.pdf](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/HOS-Documentation-v3.0.pdf) for Shell-x v0.20. It replaces v2.5 and covers the A4988 wiring with a diagram, the sliding potentiometer, a new bill of materials, the v0.20 commands, speeds, first power-on test, troubleshooting and limits. The old v2.5 PDF was removed.
-- The Shell-x v0.20 firmware is now in the repository as [Shell_x.ino](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Firmware/Shell_x/Shell_x.ino). It compiles for the Arduino Uno with no extra libraries.
+- The Shell-x v0.20 firmware is now in the repository as [Shell_x.ino](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Firmware/Shell_x.ino). It compiles for the Arduino Uno with no extra libraries.
 
 <details>
 <summary><b>Older updates (12 October to 14 November 2026)</b></summary>
@@ -172,9 +181,9 @@ Robots in homes and workspaces need more than a fixed sequence of moves. They ne
 
 **The giga hardware upgrade:** Shell x firmware with a TMC2209 sensorless Z axis.
 
-- New firmware [Shell_x.ino](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Firmware/Shell_x/Shell_x.ino) for the Arduino Uno and CNC Shield V3. The time-of-flight (VL53L0X) and IR sensors are removed. The Z axis now uses an MKS TMC2209 V2.0 driver with StallGuard4 sensorless contact detection.
+- New firmware [Shell_x.ino](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Firmware/Shell_x.ino) for the Arduino Uno and CNC Shield V3. The time-of-flight (VL53L0X) and IR sensors are removed. The Z axis now uses an MKS TMC2209 V2.0 driver with StallGuard4 sensorless contact detection.
 - New Z commands: ZG (pickup descent until contact), ZP (press until a load threshold, then lift 0.5 mm), ZR (return exactly to the start height) and tuning commands. All Shell 1.5 X, Y, gripper and joystick behaviour is unchanged.
-- Tested in a host simulation: 26 of 26 tests pass ([test harness](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware/Firmware/Shell_x/test)). It has **not** been tested on real hardware yet. This design was later dropped. See [Hardware](#hardware) for the current Shell-x v0.20.
+- Tested in a host simulation: 26 of 26 tests pass (test harness, removed on 24 Nov 2026 and still in commit [69c1562](https://github.com/Aarav-111/Humanoid-Operating-System/commit/69c1562)). It has **not** been tested on real hardware yet. This design was later dropped. See [Hardware](#hardware) for the current Shell-x v0.20.
 - New browser preview of the gantry: [HOS_3D_preview.html](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Simulation/Virtual/HOS_3D_preview.html) (download and open it in a browser).
 
 ### 3 November 2026: Older virtual simulators removed
@@ -275,11 +284,11 @@ Full commit history is on the [commits page](https://github.com/Aarav-111/Humano
 | Folder | What you will find | Open |
 | --- | --- | --- |
 | README.md | Purpose, architecture, roadmap, history, benchmarks, team | [View](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/README.md) |
-| Software | S1-SRC, S1.5-SRC and the S(x) preview (HOS X, Preview-3) | [Open folder](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Software) |
+| Software | S1.5-SRC and the S(x) preview (HOS X, Preview-4) | [Open folder](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Software) |
 | Hardware | Firmware, hardware docs and 3D models | [Open folder](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware) |
 | Simulation/Virtual | K5D and K9D virtual simulators | [Open folder](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Simulation/Virtual) |
-| Simulation/Physical | A2.6-Sol and A3-Terra | [Open folder](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Simulation/Physical) |
-| Benchmarks | MMRO dataset, HOS-BT benchmark and task list | [Open folder](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Benchmarks) |
+| Simulation/Physical | A3-Terra | [Open folder](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Simulation/Physical) |
+| Benchmarks | MMRO dataset, HOS-BT benchmark, tasks and score files | [Open folder](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Benchmarks) |
 
 
 ### File index
@@ -288,13 +297,13 @@ Click any file to open it on GitHub.
 
 | Folder | Files |
 | --- | --- |
-| Software | [S1-SRC.py](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Software/S1-SRC.py) [S1.5-SRC.py](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Software/S1.5-SRC.py) [S(x)-Src-Preview-3.py](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Software/S(x)-Src-Preview-3.py) |
-| Hardware/Firmware | [Shell_1.ino](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Firmware/Shell_1.ino) [Shell_1.5.ino](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Firmware/Shell_1.5.ino) [Shell_x.ino](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Firmware/Shell_x/Shell_x.ino) [Shell x tests (old TMC2209 build)](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware/Firmware/Shell_x/test) |
+| Software | [S1.5-SRC.py](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Software/S1.5-SRC.py) [S(x)-Src-Preview-4.py](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Software/S(x)-Src-Preview-4.py) |
+| Hardware/Firmware | [Shell_1.5.ino](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Firmware/Shell_1.5.ino) [Shell_x.ino](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Firmware/Shell_x.ino) |
 | Hardware (docs) | [HOS Documentation v3.0, Shell-x v0.20 (PDF)](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/HOS-Documentation-v3.0.pdf) |
 | Hardware/3D Models | [apriltag-connector](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/apriltag-connector.stl) [basic-robot](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/basic-robot.stl) [gripper-part-1](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/gripper-part-1.stl) [gripper-part-2-sponge](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/gripper-part-2-sponge.stl) [hub](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/hub.stl) [l-bracket](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/l-bracket.stl) [legs](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/legs.stl) [pulley-mount](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/pulley-mount.stl) [xy-interaxis-connector](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/xy-interaxis-connector.stl) [y-axis-holder](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/y-axis-holder.stl) [z-axis-mounter](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/z-axis-mounter.stl) |
 | Simulation/Virtual | [K5D](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Simulation/Virtual/K5D.py) [K9D](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Simulation/Virtual/K9D.py) [HOS_3D_preview.html](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Simulation/Virtual/HOS_3D_preview.html) |
-| Simulation/Physical | [A2.6-Sol.py](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Simulation/Physical/A2.6-Sol.py) [A3-Terra.py](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Simulation/Physical/A3-Terra.py) |
-| Benchmarks | [MMRO_Questions.json](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Benchmarks/MMRO/Dataset/MMRO_Questions.json) [K5D_Answers.json](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Benchmarks/MMRO/Dataset/K5D_Answers.json) [Why Choose the MMRO Benchmark](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Benchmarks/MMRO/Why%20Choose%20the%20MMRO%20Benchmark.md) [HOS-BT](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Benchmarks/HOS-BT) [Benchmarking-tasks.md](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Benchmarks/Benchmarking-tasks.md) |
+| Simulation/Physical | [A3-Terra.py](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Simulation/Physical/A3-Terra.py) |
+| Benchmarks | [MMRO_Questions.json](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Benchmarks/MMRO/Dataset/MMRO_Questions.json) [K5D_Answers.json](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Benchmarks/MMRO/Dataset/K5D_Answers.json) [Why Choose the MMRO Benchmark](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Benchmarks/MMRO/Why%20Choose%20the%20MMRO%20Benchmark.md) [HOS-BT](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Benchmarks/HOS-BT) [Benchmarking-tasks.md](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Benchmarks/HOS-BT/Benchmarking-tasks.md) [Score files](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Benchmarks/HOS-BT/Score-Justification-and-Calculation) |
 | Root | [LICENSE](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/LICENSE) [README.md](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/README.md) |
 
 Quick links: [Software](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Software) | [Hardware](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware) | [Firmware](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware/Firmware) | [3D Models](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware/3D%20Models) | [Simulation/Virtual](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Simulation/Virtual) | [Simulation/Physical](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Simulation/Physical) | [Benchmarks](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Benchmarks)
@@ -360,9 +369,9 @@ The AI stages need your own OpenAI key. Never commit it to the repository.
 
 ### Flash the firmware
 
-Open `Hardware/Firmware/Shell_1.5.ino` in the Arduino IDE, select your board and port, then upload. Use `Shell_1.ino` for the older Shell 1 build.
+Open `Hardware/Firmware/Shell_1.5.ino` in the Arduino IDE, select your board and port, then upload.
 
-For Shell-x v0.20, open `Hardware/Firmware/Shell_x/Shell_x.ino` and upload it to the Uno. It needs no extra libraries. Set the Serial Monitor to 115200 baud and Newline, then type `HELP`.
+For Shell-x v0.20, open `Hardware/Firmware/Shell_x.ino` and upload it to the Uno. It needs no extra libraries. If the Arduino IDE asks to move the file into a `Shell_x` folder, click OK. Set the Serial Monitor to 115200 baud and Newline, then type `HELP`.
 
 Wire it as shown in [Electronics: Shell-x v0.20](#electronics-shell-x-v020) before you power on.
 
@@ -405,7 +414,34 @@ Next up: HOS X launch (December 2026), HOS 1.0 sunset (30 Nov 2026), the second 
 
 ### HOS-BT benchmark
 
-HOS-BT is our own benchmark for comparing HOS models with each other. Tasks and results: [Benchmarks/HOS-BT](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Benchmarks/HOS-BT).
+<p align="center">
+  <img src="assets/hos-bt-banner.svg" alt="HOS-BT: 99% on MMRO was not enough" width="100%">
+</p>
+
+HOS scored 99% on MMRO, the best benchmark for a robot's thinking. MMRO does not test **physical accuracy**, so we built HOS-BT. It runs every HOS model on the same 10 household tasks and scores the real result.
+
+| # | Task | Difficulty |
+| :-: | --- | :-: |
+| T1 | Sweeping | Hard |
+| T2 | Mopping | Hard |
+| T3 | Washing utensils | Super hard |
+| T4 | Cooking | Near-impossible |
+| T5 | Washing clothes by machine | Hard |
+| T6 | Folding and ironing clothes | Near-impossible |
+| T7 | Sorting clothes into black and white | Hard |
+| T8 | Cleaning the bathroom and toilet | Super hard |
+| T9 | Dusting furniture and surfaces | Hard |
+| T10 | Tidying up the board | Hard |
+
+Each task is scored out of 100: Plan 20, Perception 15, Execution 40, Safety 15, Efficiency 10. Each task runs 5 trials, and a strict safety failure scores 0.
+
+| Model | HOS-BT score |
+| --- | --- |
+| HOS 1.5 | Not yet run |
+| HOS X | Not yet run |
+| HOS 2.0 | Not yet run |
+
+Full spec: [HOS-BT README](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Benchmarks/HOS-BT/README.md) | Tasks: [Benchmarking-tasks.md](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Benchmarks/HOS-BT/Benchmarking-tasks.md) | Score working: [Score-Justification-and-Calculation](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Benchmarks/HOS-BT/Score-Justification-and-Calculation)
 
 
 ---
@@ -465,7 +501,7 @@ Source: [Software/S1.5-SRC.py](https://github.com/Aarav-111/Humanoid-Operating-S
 | Work area | 20 x 20 grid, columns A to T and rows 1 to 20 |
 | Vision | Overhead USB webcam and AprilTag 36h11 (used by the laptop software) |
 
-Full build guide, bill of materials, wiring diagram and assembly steps for Shell-x v0.20: [HOS-Documentation-v3.0.pdf](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/HOS-Documentation-v3.0.pdf). The firmware is [Shell_x.ino](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Firmware/Shell_x/Shell_x.ino).
+Full build guide, bill of materials, wiring diagram and assembly steps for Shell-x v0.20: [HOS-Documentation-v3.0.pdf](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/HOS-Documentation-v3.0.pdf). The firmware is [Shell_x.ino](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Firmware/Shell_x.ino).
 
 ### Electronics: Shell-x v0.20
 
@@ -588,8 +624,49 @@ Only one axis moves at a time. Step rates come from the firmware timing. Real mm
 
 ### Earlier: Shell x with TMC2209 sensorless Z (dropped)
 
-The 14 November build used an MKS TMC2209 V2.0 on Z with StallGuard over UART. It passed 26 of 26 tests in simulation ([test harness](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware/Firmware/Shell_x/test)), but on the real machine the UART link never worked reliably, so it was dropped for the A4988 and pot design above. Its wiring and commands are still in the commit history at [69c1562](https://github.com/Aarav-111/Humanoid-Operating-System/commit/69c1562).
+The 14 November build used an MKS TMC2209 V2.0 on Z with StallGuard over UART. It passed 26 of 26 tests in simulation (test harness, removed on 24 Nov 2026 and still in commit [69c1562](https://github.com/Aarav-111/Humanoid-Operating-System/commit/69c1562)), but on the real machine the UART link never worked reliably, so it was dropped for the A4988 and pot design above. Its wiring and commands are still in the commit history at [69c1562](https://github.com/Aarav-111/Humanoid-Operating-System/commit/69c1562).
 
+
+---
+
+## Contribute: Build the Robot Brain With Us
+
+<p align="center">
+  <img src="assets/hos-contribute-banner.svg" alt="Build the robot brain with us" width="100%">
+</p>
+
+Big labs spend billions on humanoid robots. We are a student team with a low-cost gantry robot, a laptop and a big idea: **a robot brain that anyone can read, run and improve.**
+
+If you have ever wanted to work on a real robot that does real work in a real home, this is your chance. Your code could be the reason a robot folds its first shirt.
+
+### Pick your mission
+
+| If you are... | Start here | Your mission |
+| --- | --- | --- |
+| Python developer | [Software](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Software) | Make the planner smarter and faster |
+| Arduino or embedded developer | [Shell_x.ino](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Firmware/Shell_x.ino) | Make the robot move more precisely |
+| Simulation fan | [Simulation/Virtual](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Simulation/Virtual) | Make K9D closer to the real world |
+| Robotics or ML researcher | [HOS-BT](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Benchmarks/HOS-BT) | Run the benchmark and add your score file |
+| Maker or 3D printing fan | [3D Models](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware/3D%20Models) | Design a better gripper |
+| Writer or designer | This README | Make HOS easier for the next person |
+
+### How to contribute
+
+1. **Star** the repo so you see every release.
+2. **Fork** it and make a new branch.
+3. **Build** your change and test it.
+4. **Open a pull request** that says what you changed and why.
+5. Have a bigger idea? **Open an issue** or email prolabsrobotics@gmail.com first.
+
+No change is too small. A fixed typo, a clearer comment or one new test all move HOS forward.
+
+### Spread the word
+
+Every star and every share brings another developer to HOS. If HOS made you think, tell someone.
+
+[![Share on X](https://img.shields.io/badge/Share%20on-X-000000?style=for-the-badge&logo=x&logoColor=white)](https://twitter.com/intent/tweet?text=HOS%3A%20an%20open%20LLM-powered%20operating%20system%20for%20humanoid%20robots%2C%2099%25%20on%20MMRO.%20Built%20by%20students%20in%20Bengaluru.&url=https%3A%2F%2Fgithub.com%2FAarav-111%2FHumanoid-Operating-System)
+[![Share on LinkedIn](https://img.shields.io/badge/Share%20on-LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fgithub.com%2FAarav-111%2FHumanoid-Operating-System)
+[![Star on GitHub](https://img.shields.io/github/stars/Aarav-111/Humanoid-Operating-System?style=for-the-badge&logo=github&label=Star)](https://github.com/Aarav-111/Humanoid-Operating-System)
 
 ---
 

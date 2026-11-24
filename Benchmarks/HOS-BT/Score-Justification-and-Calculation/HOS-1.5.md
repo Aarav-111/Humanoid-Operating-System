@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="hos-1.5-banner.svg" alt="HOS 1.5 scored 29.8% on HOS-BT" width="100%">
+  <img src="../../../assets/hos-1.5-banner.svg" alt="HOS 1.5 scored 29.8% on HOS-BT" width="100%">
 </p>
 
 # HOS 1.5: HOS-BT Results

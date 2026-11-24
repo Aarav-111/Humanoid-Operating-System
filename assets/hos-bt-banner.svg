@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 420" width="1600" height="420" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0a0a0a"/>
+      <stop offset="1" stop-color="#2a0f05"/>
+    </linearGradient>
+    <linearGradient id="t" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fb923c"/>
+      <stop offset="1" stop-color="#f43f5e"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="420" fill="url(#bg)"/>
+  <text x="80" y="90" font-size="22" font-weight="700" letter-spacing="6" fill="#fb923c">HOS BENCHMARK TASKS</text>
+  <text x="76" y="200" font-size="120" font-weight="900" fill="url(#t)" letter-spacing="-3">HOS-BT</text>
+  <text x="80" y="262" font-size="34" font-weight="700" fill="#f8fafc">99% on MMRO was not enough.</text>
+  <text x="80" y="306" font-size="28" fill="#a8a29e">So we tested what really matters: <tspan fill="#ffffff" font-weight="700">physical accuracy.</tspan></text>
+
+  <g font-size="22" font-weight="800">
+    <rect x="1010" y="70" width="510" height="76" rx="18" fill="#1c1917" stroke="#facc15" stroke-width="3"/>
+    <text x="1040" y="118" fill="#facc15">HARD</text>
+    <text x="1490" y="118" text-anchor="end" fill="#d6d3d1" font-weight="600">6 tasks</text>
+    <rect x="1010" y="166" width="510" height="76" rx="18" fill="#1c1917" stroke="#fb923c" stroke-width="3"/>
+    <text x="1040" y="214" fill="#fb923c">SUPER HARD</text>
+    <text x="1490" y="214" text-anchor="end" fill="#d6d3d1" font-weight="600">2 tasks</text>
+    <rect x="1010" y="262" width="510" height="76" rx="18" fill="#1c1917" stroke="#f43f5e" stroke-width="3"/>
+    <text x="1040" y="310" fill="#f43f5e">NEAR-IMPOSSIBLE</text>
+    <text x="1490" y="310" text-anchor="end" fill="#d6d3d1" font-weight="600">2 tasks</text>
+  </g>
+  <text x="80" y="370" font-size="22" fill="#78716c">10 household chores · 5 trials each · No easy tasks</text>
+</svg>

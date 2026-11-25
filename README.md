@@ -70,7 +70,7 @@ timeline
 | **HOS 1.5** | 11 Oct 2026 | **Current** | Task compilation, S1.5-SRC, Re-execute |
 | **HOS X** | Dec 2026 | **Delayed** | Real-world applications, S(x)-Src |
 | HOS-BT benchmark | 24 Nov 2026 | Released | Our own benchmark to compare HOS models |
-| Shell-x v0.20 | 22 Nov 2026 | Current hardware | A4988 on X, Y, Z with a pot Z sensor |
+| Shell-x | 22 Nov 2026 | Current hardware | A4988 on X, Y, Z with a pot Z sensor |
 | IEEE paper | Soon | In progress | Second paper on the methods behind HOS |
 | HOS 2.0 | Late Jan or early Feb 2027 | Planned | Next major version |
 
@@ -171,7 +171,7 @@ Today's robots are brilliant in factories and helpless in a messy kitchen. Robot
 - The [Hardware](#hardware) section now describes Shell-x: X, Y and Z on A4988 drivers, and a potentiometer on A0 read as a binary LIFTED or DOWN sensor for Z.
 - HD now stops Z at the DOWN position. P1, P3, the gripper, the joystick and the TMC2209 sensorless Z are not used.
 - New pin map, pot wiring, command table, speeds, first power-on test and limits.
-- New hardware documentation PDF [HOS-Documentation-v3.0.pdf](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/HOS-Documentation-v3.0.pdf) for Shell-x v0.20. It replaces v2.5 and covers the A4988 wiring with a diagram, the sliding potentiometer, a new bill of materials, the v0.20 commands, speeds, first power-on test, troubleshooting and limits. The old v2.5 PDF was removed.
+- New hardware documentation PDF [HOS-Documentation-v3.0.pdf](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/HOS-Documentation-v3.0.pdf) for Shell-x. It replaces v2.5 and covers the A4988 wiring with a diagram, the sliding potentiometer, a new bill of materials, the v0.20 commands, speeds, first power-on test, troubleshooting and limits. The old v2.5 PDF was removed.
 - The Shell-x firmware is now in the repository as [Shell_x.ino](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Firmware/Shell_x.ino). It compiles for the Arduino Uno with no extra libraries.
 
 <details>
@@ -183,7 +183,7 @@ Today's robots are brilliant in factories and helpless in a messy kitchen. Robot
 
 - New firmware [Shell_x.ino](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Firmware/Shell_x.ino) for the Arduino Uno and CNC Shield V3. The time-of-flight (VL53L0X) and IR sensors are removed. The Z axis now uses an MKS TMC2209 V2.0 driver with StallGuard4 sensorless contact detection.
 - New Z commands: ZG (pickup descent until contact), ZP (press until a load threshold, then lift 0.5 mm), ZR (return exactly to the start height) and tuning commands. All Shell 1.5 X, Y, gripper and joystick behaviour is unchanged.
-- Tested in a host simulation: 26 of 26 tests pass (test harness, removed on 24 Nov 2026 and still in commit [69c1562](https://github.com/Aarav-111/Humanoid-Operating-System/commit/69c1562)). It has **not** been tested on real hardware yet. This design was later dropped. See [Hardware](#hardware) for the current Shell-x v0.20.
+- Tested in a host simulation: 26 of 26 tests pass (test harness, removed on 24 Nov 2026 and still in commit [69c1562](https://github.com/Aarav-111/Humanoid-Operating-System/commit/69c1562)). It has **not** been tested on real hardware yet. This design was later dropped. See [Hardware](#hardware) for the current Shell-x.
 - New browser preview of the gantry: [HOS_3D_preview.html](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Simulation/Virtual/HOS_3D_preview.html) (download and open it in a browser).
 
 ### 3 November 2026: Older virtual simulators removed

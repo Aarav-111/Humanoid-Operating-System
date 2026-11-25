@@ -8,7 +8,7 @@
   <a href="https://github.com/Aarav-111/Humanoid-Operating-System#benchmarking"><img src="assets/badges/hos-mmro.svg" alt="MMRO (K5D): 99%"></a>
   <a href="https://github.com/Aarav-111/Humanoid-Operating-System#camera-ready-gripper"><img src="assets/badges/hos-gripper.svg" alt="New: Camera-Ready Gripper"></a>
   <a href="https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Software"><img src="https://img.shields.io/badge/Python-3-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python: 3"></a>
-  <a href="https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware/Firmware"><img src="https://img.shields.io/badge/Firmware-Shell--x%20v0.20-00979D?style=flat-square&logo=arduino&logoColor=white" alt="Firmware: Shell-x v0.20"></a>
+  <a href="https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware/Firmware"><img src="https://img.shields.io/badge/Firmware-Shell--x%20v0.46-00979D?style=flat-square&logo=arduino&logoColor=white" alt="Firmware: Shell-x v0.46"></a>
   <a href="https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-6366f1?style=flat-square" alt="License: MIT"></a>
 </p>
 
@@ -57,6 +57,7 @@ timeline
     Nov 2026 : Newsletter and back EMF gripper (3 Nov)
              : Shell x TMC2209 build (14 Nov, dropped)
              : Shell-x v0.20 and docs v3.0 (22 Nov)
+             : Shell-x v0.46 and docs v4.0 (25 Nov)
              : HOS-BT benchmark released (24 Nov)
              : HOS 1.0 and earlier retired (30 Nov)
     Dec 2026 : HOS X launch
@@ -70,7 +71,7 @@ timeline
 | **HOS 1.5** | 11 Oct 2026 | **Current** | Task compilation, S1.5-SRC, Re-execute |
 | **HOS X** | Dec 2026 | **Delayed** | Real-world applications, S(x)-Src |
 | HOS-BT benchmark | 24 Nov 2026 | Released | Our own benchmark to compare HOS models |
-| Shell-x v0.20 | 22 Nov 2026 | Current hardware | A4988 on X, Y, Z with a pot Z sensor |
+| Shell-x v0.46 | 25 Nov 2026 | Current hardware | A4988 on X, Y, Z and a gripper (A), limit switch on Z, joystick |
 | IEEE paper | Soon | In progress | Second paper on the methods behind HOS |
 | HOS 2.0 | Late Jan or early Feb 2027 | Planned | Next major version |
 
@@ -166,12 +167,17 @@ Today's robots are brilliant in factories and helpless in a messy kitchen. Robot
 
 **Hiring student interns.** We are looking for students who like robotics and maths to work on robot control, planning and vision. Email prolabsrobotics@gmail.com.
 
+### 25 November 2026: Shell-x v0.46 and hardware documentation v4.0
+
+- [Shell_x.ino](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Firmware/Shell_x.ino) is now v0.46, tested on the real machine. It adds the A-axis gripper (G0 to G90), a limit switch on Z, a joystick (Z, gripper, stop), seamless command switching and a Z engine tuned for the lead screw (full step, 6 to 15 mm/s with ramps). The potentiometer, THR and HYST are removed. It uses 45% of flash and 21% of RAM.
+- New documentation PDF [HOS-Documentation-v4.0.pdf](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/HOS-Documentation-v4.0.pdf) replaces v3.0 and covers the new pin map, wiring, four-driver bill of materials, commands, speeds and bring-up. The STL files are unchanged.
+
 ### 22 November 2026: Hardware and electronics guide for Shell-x v0.20
 
 - The [Hardware](#hardware) section now describes Shell-x v0.20: X, Y and Z on A4988 drivers, and a potentiometer on A0 read as a binary LIFTED or DOWN sensor for Z.
 - HD now stops Z at the DOWN position. P1, P3, the gripper, the joystick and the TMC2209 sensorless Z are not used.
 - New pin map, pot wiring, command table, speeds, first power-on test and limits.
-- New hardware documentation PDF [HOS-Documentation-v3.0.pdf](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/HOS-Documentation-v3.0.pdf) for Shell-x v0.20. It replaces v2.5 and covers the A4988 wiring with a diagram, the sliding potentiometer, a new bill of materials, the v0.20 commands, speeds, first power-on test, troubleshooting and limits. The old v2.5 PDF was removed.
+- New hardware documentation PDF HOS-Documentation-v3.0.pdf for Shell-x v0.20 (later replaced by [v4.0](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/HOS-Documentation-v4.0.pdf)). It replaces v2.5 and covers the A4988 wiring with a diagram, the sliding potentiometer, a new bill of materials, the v0.20 commands, speeds, first power-on test, troubleshooting and limits. The old v2.5 PDF was removed.
 - The Shell-x v0.20 firmware is now in the repository as [Shell_x.ino](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Firmware/Shell_x.ino). It compiles for the Arduino Uno with no extra libraries.
 
 <details>
@@ -198,7 +204,7 @@ Today's robots are brilliant in factories and helpless in a messy kitchen. Robot
 
 ### 25 October 2026: Hardware documentation v2.5 (Revision v4)
 
-- New hardware guide: HOS-Documentation-v2.5.pdf (v2.5, now replaced by [v3.0](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/HOS-Documentation-v3.0.pdf)) ([cf793e0](https://github.com/Aarav-111/Humanoid-Operating-System/commit/cf793e0dee092022a57b317fc203857f439dfc31)). It replaces the "updated v2" PDF, which was removed ([b89db36](https://github.com/Aarav-111/Humanoid-Operating-System/commit/b89db368e76bd83d162600d1aa5628314f03a0dc)).
+- New hardware guide: HOS-Documentation-v2.5.pdf (v2.5, now replaced by [v4.0](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/HOS-Documentation-v4.0.pdf)) ([cf793e0](https://github.com/Aarav-111/Humanoid-Operating-System/commit/cf793e0dee092022a57b317fc203857f439dfc31)). It replaces the "updated v2" PDF, which was removed ([b89db36](https://github.com/Aarav-111/Humanoid-Operating-System/commit/b89db368e76bd83d162600d1aa5628314f03a0dc)).
 - It is written for OSHWA open source hardware certification (CC BY-SA 4.0 docs, CERN-OHL-S-2.0 hardware).
 - New sections 16 to 22: laptop and system overview, a complete bill of materials (laptop included), wiring for the Shell_1.5 firmware, step-by-step assembly, software setup, first power-on test and troubleshooting, and extra safety notes.
 - A laptop is required for autonomous tasks. S1.5-SRC runs on an Apple Mac with macOS (Apple Silicon recommended). Windows and Linux are not supported in this version. The joystick can still jog the arm without the laptop.
@@ -299,7 +305,7 @@ Click any file to open it on GitHub.
 | --- | --- |
 | Software | [S1.5-SRC.py](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Software/S1.5-SRC.py) [S(x)-Src-Preview-4.py](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Software/S(x)-Src-Preview-4.py) |
 | Hardware/Firmware | [Shell_1.5.ino](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Firmware/Shell_1.5.ino) [Shell_x.ino](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Firmware/Shell_x.ino) |
-| Hardware (docs) | [HOS Documentation v3.0, Shell-x v0.20 (PDF)](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/HOS-Documentation-v3.0.pdf) |
+| Hardware (docs) | [HOS Documentation v4.0, Shell-x v0.46 (PDF)](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/HOS-Documentation-v4.0.pdf) |
 | Hardware/3D Models | [apriltag-connector](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/apriltag-connector.stl) [basic-robot](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/basic-robot.stl) [gripper-part-1](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/gripper-part-1.stl) [gripper-part-2-sponge](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/gripper-part-2-sponge.stl) [hub](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/hub.stl) [l-bracket](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/l-bracket.stl) [legs](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/legs.stl) [pulley-mount](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/pulley-mount.stl) [xy-interaxis-connector](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/xy-interaxis-connector.stl) [y-axis-holder](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/y-axis-holder.stl) [z-axis-mounter](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/z-axis-mounter.stl) |
 | Simulation/Virtual | [K5D](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Simulation/Virtual/K5D.py) [K9D](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Simulation/Virtual/K9D.py) [HOS_3D_preview.html](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Simulation/Virtual/HOS_3D_preview.html) |
 | Simulation/Physical | [A3-Terra.py](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Simulation/Physical/A3-Terra.py) |
@@ -353,7 +359,7 @@ git sparse-checkout set Hardware/3D%20Models
 
 ### Run the Python software
 
-S1.5-SRC needs an Apple Mac running macOS (Apple Silicon recommended). Windows and Linux are not supported in this version. See section 16 of the [hardware documentation v3.0](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/HOS-Documentation-v3.0.pdf) for the full list.
+S1.5-SRC needs an Apple Mac running macOS (Apple Silicon recommended). Windows and Linux are not supported in this version. See section 16 of the [hardware documentation v4.0](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/HOS-Documentation-v4.0.pdf) for the full list.
 
 Install the packages imported at the top of the file you run, then start it:
 
@@ -371,9 +377,9 @@ The AI stages need your own OpenAI key. Never commit it to the repository.
 
 Open `Hardware/Firmware/Shell_1.5.ino` in the Arduino IDE, select your board and port, then upload.
 
-For Shell-x v0.20, open `Hardware/Firmware/Shell_x.ino` and upload it to the Uno. It needs no extra libraries. If the Arduino IDE asks to move the file into a `Shell_x` folder, click OK. Set the Serial Monitor to 115200 baud and Newline, then type `HELP`.
+For Shell-x v0.46, open `Hardware/Firmware/Shell_x.ino` and upload it to the Uno. It needs no extra libraries. If the Arduino IDE asks to move the file into a `Shell_x` folder, click OK. Set the Serial Monitor to 115200 baud and Newline, then type `HELP`.
 
-Wire it as shown in [Electronics: Shell-x v0.20](#electronics-shell-x-v020) before you power on.
+Wire it as shown in [Electronics: Shell-x v0.46](#electronics-shell-x-v046) before you power on.
 
 ### Get the 3D parts
 
@@ -473,7 +479,7 @@ All numbers below are **estimates**, not measured bills. They cover the AI API o
 
 **Assumptions:** about 20,000 input and 3,000 output tokens for the planner, 5,000 in and 1,500 out for vision naming, 3,500 in and 1,000 out for ERR and Vision AI Sequence, 2,000 in and 500 out for dexterity. Photo token counts are rough guesses. No prompt caching. Output includes reasoning tokens. Taxes and transcription not included. Check the `[timing]` lines S1.5-SRC prints for real token counts.
 
-**Hardware:** the [hardware docs v3.0](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/HOS-Documentation-v3.0.pdf) list parts but no prices, so no hardware cost is given. Main parts: an Apple Mac laptop (required to run S1.5-SRC), overhead USB webcam, Arduino Uno and CNC Shield V3 with A4988 drivers, NEMA 17 steppers, 12 V 10 A power supply, 2020 V-slot frame, GT2 belts and pulleys, T8 lead screw, 8 mm rods, time-of-flight and IR sensors (Shell 1.5; Shell-x v0.20 replaces both with one sliding potentiometer on Z), AprilTag 36h11 and 3D-printed parts.
+**Hardware:** the [hardware docs v4.0](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/HOS-Documentation-v4.0.pdf) list parts but no prices, so no hardware cost is given. Main parts: an Apple Mac laptop (required to run S1.5-SRC), overhead USB webcam, Arduino Uno and CNC Shield V3 with four A4988 drivers, four NEMA 17 steppers (X, Y, Z and gripper), a limit switch and a joystick, 12 V 10 A power supply, 2020 V-slot frame, GT2 belts and pulleys, T8 lead screw, 8 mm rods, time-of-flight and IR sensors (Shell 1.5; Shell-x v0.46 replaces both with one limit switch on Z), AprilTag 36h11 and 3D-printed parts.
 
 Source: [Software/S1.5-SRC.py](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Software/S1.5-SRC.py), first worked out at commit [7fe076e](https://github.com/Aarav-111/Humanoid-Operating-System/commit/7fe076e6622cab2954850d361ee9b7810eea0f29) and rechecked at [3a3e359](https://github.com/Aarav-111/Humanoid-Operating-System/commit/3a3e359) (no change to models or call count).
 
@@ -485,25 +491,26 @@ Source: [Software/S1.5-SRC.py](https://github.com/Aarav-111/Humanoid-Operating-S
   <img src="assets/hos-hardware.svg" alt="Hardware bill of materials grouped by electronics, motion, sensing and mechanical" width="85%">
 </p>
 
-> **Current build: Shell-x v0.20.** X, Y and Z only, all on A4988 drivers. One sliding potentiometer on A0 tells the firmware if the Z tool is LIFTED or DOWN. The TMC2209 sensorless Z, the gripper (A axis), the joystick, IR and ToF sensors are not used in this version.
+> **Current build: Shell-x v0.46.** X, Y and Z on A4988 drivers plus a stepper gripper on the A axis, all at full step (no microstepping). A limit switch on Z tells the firmware when the tool is BELOW. A joystick gives hand control. The TMC2209 sensorless Z, the potentiometer, IR and ToF sensors are not used.
 
 ### Hardware overview
 
-| Part | Shell-x v0.20 |
+| Part | Shell-x v0.46 |
 | --- | --- |
-| Frame | Cartesian gantry on 2020 V-slot. X and Y on GT2 belts, Z on a T8 lead screw |
+| Frame | Cartesian gantry on 2020 V-slot. X and Y on GT2 belts, Z on a T8 lead screw (2 mm pitch, 8 mm lead) |
 | Controller | Arduino Uno with CNC Shield V3, USB serial to the laptop at 115200 baud |
-| Drivers | A4988 on X, Y and Z (all three) |
-| Motors | NEMA 17 steppers (17HS4401) on X, Y and Z |
+| Drivers | A4988 on X, Y, Z and A (four), no microstepping jumpers |
+| Motors | NEMA 17 steppers (17HS4401) on X, Y, Z and A (gripper) |
 | Power | 12 V 10 A supply into the CNC Shield screw terminal |
-| Z sensor | One sliding (linear) potentiometer read as a binary sensor: 1 = LIFTED, 0 = DOWN |
-| Not used in v0.20 | A axis and gripper, joystick, IR sensor, ToF sensor, TMC2209 |
+| Z sensor | One limit switch on the Y+ header (D10): pressed = BELOW, released = ABOVE |
+| Hand control | Analog joystick: URX = Z, URY = gripper, SW = stop everything |
+| Not used in v0.46 | Potentiometer, IR sensor, ToF sensor, TMC2209 |
 | Work area | 20 x 20 grid, columns A to T and rows 1 to 20 |
 | Vision | Overhead USB webcam and AprilTag 36h11 (used by the laptop software) |
 
-Full build guide, bill of materials, wiring diagram and assembly steps for Shell-x v0.20: [HOS-Documentation-v3.0.pdf](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/HOS-Documentation-v3.0.pdf). The firmware is [Shell_x.ino](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Firmware/Shell_x.ino).
+Full build guide, bill of materials, wiring diagram and assembly steps for Shell-x v0.46: [HOS-Documentation-v4.0.pdf](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/HOS-Documentation-v4.0.pdf). The firmware is [Shell_x.ino](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Firmware/Shell_x.ino).
 
-### Electronics: Shell-x v0.20
+### Electronics: Shell-x v0.46
 
 ```mermaid
 flowchart LR
@@ -513,8 +520,9 @@ flowchart LR
     SH --> XD["A4988 X"] --> XM["NEMA 17 X"]
     SH --> YD["A4988 Y"] --> YM["NEMA 17 Y"]
     SH --> ZD["A4988 Z"] --> ZM["NEMA 17 Z, lead screw"]
-    POT["Sliding potentiometer"] -- "wiper" --> A0["A0 (Abort header)"]
-    A0 --- UNO
+    SH --> AD["A4988 A"] --> AM["NEMA 17 A, gripper"]
+    LS["Limit switch"] --> D10["D10 (Y+ header)"] --- UNO
+    JS["Joystick"] --> JP["A0, A1, D9"] --- UNO
 ```
 
 #### Pin map
@@ -524,103 +532,75 @@ flowchart LR
 | X step / dir | D2 / D5 | X socket | A4988, direction inverted in firmware |
 | Y step / dir | D3 / D6 | Y socket | A4988 |
 | Z step / dir | D4 / D7 | Z socket | A4988, dir HIGH = Z up |
+| A step / dir (gripper) | D12 / D13 | A socket | A4988, set the A jumpers to D12 / D13 |
 | Enable (all drivers) | D8 | EN | active LOW, driven LOW at start-up |
-| Potentiometer wiper | A0 | Abort | binary Z sensor |
-| Free | D9 to D13, A1 to A5 | endstops, A axis, Hold, Resume, CoolEn, SDA, SCL | not used by v0.20 |
-
-#### Potentiometer wiring
-
-| Pot terminal | Connect to |
-| --- | --- |
-| One outer terminal | 5 V |
-| Other outer terminal | GND |
-| Middle (wiper) | A0, the Abort pin on the CNC Shield |
-
-Fix the body of the sliding pot so it does not move with Z, and link its slider to the Z tool so the slider moves with the tool. When the tool is lifted the reading must sit at the top of the range (1022 to 1023). When it reaches the down position the reading must fall to 1018 or lower. If it works the wrong way round, swap the two outer wires.
+| Limit switch | D10 | Y+ | switch to GND (C + NC), pressed = HIGH = BELOW |
+| Joystick URX (Z) | A0 | Abort | low = up, high = down |
+| Joystick URY (gripper) | A1 | Hold | high = toward G90 (closed) |
+| Joystick SW | D9 | X+ | active LOW, stops everything |
+| Free | D11, A2 to A5 | Spindle, Resume, CoolEn, SDA, SCL | not used by v0.46 |
 
 #### Driver setup (A4988)
 
-1. Put an A4988 in the X, Y and Z sockets. The Z socket no longer holds the TMC2209, so put back the microstep jumpers under Z to match X and Y, and the shield's normal RST/SLP link is fine again.
+1. Put an A4988 in the X, Y, Z and A sockets. Fit **no** microstepping jumpers: every axis runs at full step.
 2. Set each A4988 current with its Vref pot before connecting the motors.
 3. Never plug or unplug a motor while 12 V is on. This kills drivers.
-4. Plug the Uno USB in first, then turn on 12 V.
+4. Open the gripper by hand (G0) before power-on. The firmware assumes it starts fully open.
+5. Plug the Uno USB in first, then turn on 12 V.
 
-### How the binary Z sensor works
+### Z axis, limit switch and joystick
 
-The sliding pot is still analog. The firmware turns its reading into two states.
+- **Z motion.** 25 steps/mm at full step. Every Z move starts at 6 mm/s and ramps at 60 mm/s2 to 15 mm/s, which crosses the full-step resonance range in about 0.15 s. Do not slow Z down: the buzz comes from low speed, not from low torque.
+- **Limit switch.** Checked in the step interrupt before every downward step. `HD` stops at once with `STOP:LIMIT_SWITCH_BELOW` and is refused with `BLOCKED:ALREADY_AT_DOWN_POSITION` while pressed. If `READ` shows the wrong state, change `LIMIT_PRESSED_LEVEL` in the firmware.
+- **Joystick.** URX jogs Z while held, URY jogs the gripper while held, SW stops everything. A running serial `HU`, `HD` or `Gn` move continues after the stick is released. The joystick prints nothing while it moves. `JREAD` prints the raw values.
+- Centre the stick and release SW after power-on, or the joystick stays in `WAITING_FOR_CENTER`.
 
-| Reading (0 to 1023) | State |
-| --- | --- |
-| 1022 or higher | 1, LIFTED |
-| 1019 to 1021 | deadband, keeps the last state |
-| 1018 or lower | 0, DOWN |
+### Serial commands (v0.46)
 
-- Each reading is the rounded average of 16 ADC samples, taken every 5 ms.
-- A new state is only reported after it stays past its boundary for 100 ms.
-- During `HD`, Z stops **at once** the first time the reading hits 1018 or lower. It does not wait the 100 ms, so noise can stop Z early but cannot make it travel further.
-- `HD` is refused with `BLOCKED:ALREADY_AT_DOWN_POSITION` if the state is already DOWN.
-- There is no automatic lift. Send `HU` to go back up.
-- `THR n` moves the boundary (default 1020) and `HYST n` sets the deadband (default 2). Both are lost at power-off.
-
-```mermaid
-flowchart TD
-    A["HD"] --> B{"State already DOWN?"}
-    B -- yes --> C["BLOCKED:ALREADY_AT_DOWN_POSITION"]
-    B -- no --> D["Z moves down"]
-    D --> E{"Reading at or below 1018?"}
-    E -- no --> D
-    E -- yes --> F["Stop, STOP:DOWN_THRESHOLD_DETECTED"]
-    F --> G["After 100 ms: POT_STATE:0 DOWN"]
-```
-
-### Serial commands (v0.20)
-
-Set the Serial Monitor to 115200 baud and line ending to Newline (or Both NL and CR). Commands are not case sensitive.
+Set the Serial Monitor to 115200 baud and line ending to Newline (or Both NL and CR). Commands are not case sensitive. Commands can be sent at any time with no `S` in between: the firmware changes speed smoothly on the same axis, or decelerates, stops and then accelerates on a new axis.
 
 | Command | Action | Reply |
 | --- | --- | --- |
 | U / D | Y up / down, until S | `RUN:Y_UP` / `RUN:Y_DOWN` |
 | R / L | X right / left, until S | `RUN:X_RIGHT` / `RUN:X_LEFT` |
 | UQ / DQ / RQ / LQ | Same moves at one third speed | same as above |
-| HU | Z up, until S | `RUN:Z_UP` |
-| HD (or HX) | Z down, stops at DOWN | `RUN:Z_DOWN_SENSOR_STOP`, then `STOP:DOWN_THRESHOLD_DETECTED` |
-| S (or STOP) | Stop all motion | `STOPPED` |
-| READ | Pot reading and state | `POT_RAW: POT_STATE: POSITION: THR: HYST: LIFT_AT: DOWN_AT_OR_BELOW:` |
-| STATUS (or V, J) | Motion and sensor status | `MOTION:X/Y/Z_UP/Z_DOWN/STOPPED` plus the READ line |
-| THR 0 to 1023 | Set the boundary (RAM only) | `THR_SET:n` |
-| HYST 0 to 100 | Set the deadband (RAM only) | `HYST_SET:n` |
+| HU | Z up at 15 mm/s with ramps, until S | `RUN:Z_UP` |
+| HD (or HX) | Z down, stops at the limit switch | `RUN:Z_DOWN_SENSOR_STOP`, then `STOP:LIMIT_SWITCH_BELOW` |
+| G0 to G90 | Gripper to that angle. G0 = open, G90 = closed | `RUN:A_TO_DEG:n`, then `A_DONE:POS_DEG:n` |
+| S (or STOP) | Stop everything now | `STOPPED` |
+| READ | Limit switch state | `LIMIT:PRESSED/RELEASED POSITION:BELOW/ABOVE STABLE_MS:20` |
+| JREAD | Joystick raw values and button | `JOY_URX: JOY_URY: JOY_SW: JOY:` |
+| STATUS (or V) | Motion, Z, gripper and limit in one line | `MOTION:... | Z:... | A:... | LIMIT:...` |
 | HELP (or ?) | List commands | command list |
 
-Every state change also prints a line like `POT_CROSSED:BELOW | POT_STATE:0 | POSITION:DOWN | POT_RAW:1015`.
-
-Removed since earlier Shell x builds: G0 to G90 (gripper), P1 and P3, the 1/2/3 calibration, ZG, ZP, ZR and all TMC2209 commands, E, I, and joystick jog.
+Removed since v0.20: `THR`, `HYST` and the `POT_*` lines (no potentiometer).
 
 ### Speeds
 
-Only one axis moves at a time. Step rates come from the firmware timing. Real mm/s depends on your microstep jumpers and pulleys.
-
-| Move | Half period | Step rate |
+| Move | Step rate | Note |
 | --- | --- | --- |
-| X / Y normal | 2,672 us | about 187 steps/s |
-| X / Y slow (Q) | 8,016 us | about 62 steps/s |
-| Z (HU, HD) | 5,333 us | about 94 steps/s |
+| X / Y normal | about 187 steps/s | accel 400 steps/s2 |
+| X / Y slow (Q) | about 62 steps/s | same ramps |
+| Z start and end | 150 steps/s = 6 mm/s | 25 steps/mm |
+| Z top (HU, HD, joystick) | 375 steps/s = 15 mm/s | ramps 60 mm/s2 |
+| Gripper start / cruise | about 6 / 21 steps/s | 1.8 degrees per step, 90 degrees = 50 steps |
 
 ### First power-on test
 
-1. Upload Shell-x v0.20. The Uno prints `SHELL-X v0.20 READY` and a `POT_INITIAL` line.
-2. Send `READ`. With the tool lifted, `POT_STATE` must be 1 and `POT_RAW` 1022 or more.
-3. Turn on 12 V. Send `R`, then `S`. Repeat for L, U and D and check each direction.
-4. Send `HU`, then `S`. Check that Z goes up.
-5. Send `HD` with your hand near the 12 V switch. Z must stop by itself at the down position.
-6. If it stops too early or too late, use `READ` at both positions and adjust with `THR` and `HYST`.
+1. Upload Shell-x v0.46. The Uno prints `SHELL-X v0.46 READY`, a `Z_CONFIG` line with `MICROSTEP:1 STEPS_PER_MM:25` and a `LIMIT_INITIAL` line.
+2. Send `READ`. Released: `ABOVE`. Pressed by hand: `BELOW`.
+3. Turn on 12 V. Send `R`, then `S`. Repeat for L, U and D.
+4. Send `HU`, then `S`. Z must go up smoothly.
+5. Send `HD` with your hand near the 12 V switch. Z must stop by itself at the switch.
+6. Send `G45`, `G90`, `G0`. Then try the joystick and press SW during a move.
 
 ### Limits and safety
 
-- The pot reports position, not force. Do not use it as the only safety device.
-- The boundary sits at 1020 of 1023, very close to the top of the range. A 5 V dip can read as DOWN, which only stops Z early. But if the wiper wire comes loose, A0 floats and can stay high, and then HD never stops. Keep a hand on the power switch for the first tests.
-- HU has no top limit. Stop it yourself with S.
-- THR and HYST reset at every power-on.
-- If Z misses steps on the lead screw, the pot still tells the truth about position, but X and Y have no sensor at all.
+- The limit switch reports one position, not force. Do not use it as the only safety device.
+- Wire it C + NC so a cut wire reads as pressed (BELOW) and stops Z down. Check this with `READ`.
+- HU has no top limit. Stop it with S, SW or the joystick.
+- The gripper has no sensor and assumes fully open at power-on.
+- If Z misses steps, nothing tells the firmware. X and Y have no sensor at all.
 
 ### Earlier: Shell x with TMC2209 sensorless Z (dropped)
 

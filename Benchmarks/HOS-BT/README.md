@@ -486,7 +486,7 @@ Not every HOS model runs on the same robot. To compare them fairly, HOS-BT has t
 | **L2 Tabletop** | Shell-x gantry (20 by 20 grid) with scaled-down props | T1, T2, T7, T9, T10, and scaled versions of the others | Real hardware results on our current build |
 | **L3 Full scale** | A humanoid or full-size robot in a real room | All 10 | The final target for HOS |
 
-**About L2 Tabletop.** Shell-x v0.20 moves on X, Y and Z only, and the gripper is not used in that version. On L2, tasks that need grasping are only run when a build with a working gripper is used, and the hardware version is always recorded with the result. Scaled versions use small props on the grid, such as a mini broom on the board for T1, and a heater plate in place of a stove for T4.
+**About L2 Tabletop.** Shell-x v0.46 has X, Y, Z and a stepper gripper (A axis). On L2, tasks that need grasping are only run when a build with a working gripper is used, and the hardware version is always recorded with the result. Scaled versions use small props on the grid, such as a mini broom on the board for T1, and a heater plate in place of a stove for T4.
 
 **About L3 Full scale.** No HOS model has been run at L3 yet. L3 rules are included now so the benchmark is ready when the hardware is.
 

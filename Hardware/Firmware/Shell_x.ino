@@ -1,6 +1,62 @@
 // -----------------------------------------------------------------------------
-// SHELL-X v0.41 - XYZ + A-AXIS GRIPPER + Z LIMIT SWITCH + JOYSTICK
+// SHELL-X v0.46 - XYZ + A-AXIS GRIPPER + Z LIMIT SWITCH + JOYSTICK
 // Arduino Uno + CNC Shield V3
+//
+// CHANGES FROM v0.45 (Z speed settings only)
+//   - Hardware confirmed: A4988, NO microstepping, 8 mm lead, ~200 g, 12 V.
+//     v0.45 assumed 1/16 microstepping (from the Shell 1.5 notes), so at full
+//     step it would have asked Z for 6000 steps/s (30 rev/s). Corrected:
+//     Z_MICROSTEP 16 -> 1 (25 steps/mm).
+//   - Real cause of the vibration: v0.14-v0.44 ran Z at 20-94 full steps/s,
+//     the full-step resonance range. Z now starts at 6 mm/s (150 steps/s),
+//     accelerates at 60 mm/s^2 through that range in ~0.15 s, and cruises at
+//     15 mm/s (375 steps/s). Same profile for HU, HD and the joystick.
+//   - Everything else from v0.45 unchanged (timer-driven Z steps, joystick
+//     priority with serial resume, limit switch, SW stop, gripper, X/Y).
+//
+// CHANGES FROM v0.44
+//   - Z vibration fix. Z is a leadscrew at 1/16 microstepping (same set-up as
+//     Shell 1.5: "X/Y/Z: 1/16 microstepping", 8 mm lead). v0.14-v0.44 drove it
+//     at 35-94 steps/s, which at 1/16 is only 0.09-0.23 mm/s: a heavily loaded
+//     leadscrew sticks and slips at that crawl, so it buzzes and hardly moves.
+//     Z now runs like Shell 1.5: up to 15 mm/s (6000 steps/s), plus
+//     acceleration from 2.5 mm/s (20 mm/s^2) and a smooth slow-down (40 mm/s^2).
+//   - Z steps now come from a hardware timer (Timer1 interrupt), so step
+//     timing is exact and does not wobble with the rest of the loop. The
+//     interrupt also checks the limit switch before every down step.
+//   - Z speeds are set in mm/s. Z_MICROSTEP (default 16) must match the jumpers
+//     under the Z driver; with no jumpers set it to 1.
+//   - One Z engine for serial HU/HD and the joystick. The joystick has priority
+//     while held, but no longer cancels a serial move: a running HU/HD carries
+//     on after the stick is released, until S, SW, the limit switch (HD) or
+//     another serial motion command. HU/HD sent while the stick is held are
+//     accepted and run on release (no more BLOCKED:Z_JOYSTICK_ACTIVE).
+//   - Gripper, same rule: a running G move continues to its angle after a
+//     joystick jog is released.
+//   - HU and HD still use the same profile (the PC app times HU from HD).
+//   - X/Y, gripper ramps, limit switch, SW stop and messages otherwise unchanged.
+//
+// CHANGES FROM v0.43 (Z only)
+//   - Z up stall fix (buzzing, little lift):
+//       * Joystick Z up: start 20, top 35 steps/s, accel 60 steps/s^2.
+//       * Joystick Z down unchanged: start 40, top 65, accel 150.
+//       * Serial HU and HD: 94 -> 35 steps/s, accel 200 -> 60. Both kept
+//         equal so the PC app's timed lift (hu for as long as hd took)
+//         still returns the full distance.
+//   - All Z safety logic (limit switch stop, refuse at BELOW) unchanged.
+//
+// CHANGES FROM v0.42
+//   - BELOW and ABOVE swapped: LIMIT_PRESSED_LEVEL LOW -> HIGH.
+//     D10 HIGH (switch open) = BELOW, D10 LOW (switch closed to GND) = ABOVE.
+//     Z down stops/refuses at BELOW exactly as before.
+//     Fail-safe: an unplugged switch reads HIGH = BELOW, so Z down is refused.
+//
+// CHANGES FROM v0.41
+//   - Joystick axes swapped: URX (A0) now jogs Z, URY (A1) now jogs the
+//     gripper. URX low = Z up, high = Z down. URY high = toward G90.
+//   - Joystick Z stall fix: own speed profile, start 40 steps/s, top
+//     65 steps/s (was 25 -> 94), accel 150 steps/s^2. Serial HU/HD unchanged.
+//   - New LIMIT_PRESSED_LEVEL option for normally-closed switches.
 //
 // CHANGES FROM v0.40
 //   - Joystick prints nothing at all (JOY_MESSAGES = false): no
@@ -205,7 +261,7 @@
 //
 // JOYSTICK WIRING (v0.37)
 //   URX -> Abort (A0), URY -> Hold (A1), SW -> X+ (D9), VCC -> 5V, GND -> GND
-//   URX right/left = gripper jog, URY up/down = Z jog, SW = stop everything.
+//   v0.42: URX = Z jog, URY = gripper jog, SW = stop everything.
 //
 // SERIAL MONITOR
 //   Set line ending to Newline or Both NL & CR.
@@ -217,8 +273,9 @@
 //   RQ / LQ     = X right / left at 3x slower speed
 //
 // Z COMMANDS
-//   HU          = Z up continuously
+//   HU          = Z up continuously (v0.45: up to 15 mm/s, with acceleration)
 //   HD          = Z down; stops when the limit switch is pressed (BELOW)
+//   A joystick Z jog pauses a running HU/HD; it carries on after release.
 //
 // A-AXIS GRIPPER COMMANDS
 //   G0          = gripper to 0 deg (open)
@@ -261,8 +318,8 @@ const uint8_t A_DIR_PIN  = 13; // Note: D13 also drives the on-board LED.
 const uint8_t ENABLE_PIN = 8;  // Active LOW, shared by all drivers
 const uint8_t LIMIT_PIN  = 10; // Y+ on CNC Shield V3. Switch to GND, LOW = pressed = BELOW
 
-const uint8_t JOY_URX_PIN = A0; // Abort on CNC Shield V3: gripper jog
-const uint8_t JOY_URY_PIN = A1; // Hold on CNC Shield V3: Z jog
+const uint8_t JOY_URX_PIN = A0; // Abort on CNC Shield V3: Z jog (v0.42)
+const uint8_t JOY_URY_PIN = A1; // Hold on CNC Shield V3: gripper jog (v0.42)
 const uint8_t JOY_SW_PIN  = 9;  // X+ on CNC Shield V3, active LOW: stop everything
 
 const unsigned long SERIAL_BAUD = 115200UL;
@@ -274,7 +331,6 @@ const unsigned long SERIAL_BAUD = 115200UL;
 // Values carried forward from the recorded v0.14 configuration.
 const unsigned long XY_HALF_PERIOD_US      = 2672UL;
 const unsigned long XY_SLOW_HALF_PERIOD_US = XY_HALF_PERIOD_US * 3UL;
-const unsigned long Z_HALF_PERIOD_US       = 5333UL;
 
 const bool INVERT_X_DIRECTION = true;
 const bool INVERT_Y_DIRECTION = false;
@@ -285,20 +341,48 @@ const uint8_t Z_UP_DIR_LEVEL = HIGH;
 
 const unsigned int DIR_SETTLE_US = 50;
 
-// Step rates (full steps per second) derived from the half periods above.
+// X/Y step rates (steps per second) derived from the half periods above.
 // One step = two half periods (HIGH + LOW).
 const float XY_RATE      = 500000.0f / (float)XY_HALF_PERIOD_US;      // ~187 steps/s
 const float XY_SLOW_RATE = 500000.0f / (float)XY_SLOW_HALF_PERIOD_US; // ~62 steps/s
-const float Z_RATE       = 500000.0f / (float)Z_HALF_PERIOD_US;       // ~94 steps/s
 
-// Acceleration / deceleration in steps/s^2.
-// XY: 0 -> full speed in ~0.47 s. Z: 0 -> full speed in ~0.47 s.
+// X/Y acceleration / deceleration in steps/s^2 (0 -> full speed in ~0.47 s).
 const float XY_ACCEL = 400.0f;
-const float Z_ACCEL  = 200.0f;
 
-// Start / stop rate. Motion starts at this rate and finishes deceleration
-// here. Kept below the slow XY rate so Q commands also ramp.
+// X/Y start / stop rate. Motion starts at this rate and finishes
+// deceleration here. Kept below the slow XY rate so Q commands also ramp.
 const float MIN_RATE = 25.0f;
+
+// -----------------------------------------------------------------------------
+// Z AXIS CONFIGURATION (v0.45)
+// -----------------------------------------------------------------------------
+
+// v0.46 confirmed hardware: A4988 drivers with NO microstepping (full step),
+// leadscrew 2 mm pitch / 8 mm lead, about 200 g lifted, 12 V supply.
+// Speeds are set in mm/s and converted to steps here (25 full steps per mm).
+// Full step is roughest at about 50-200 steps/s (resonance: every 1.8 deg step
+// jolts the axis and rings). Z therefore starts at 150 steps/s, accelerates
+// through that range in about 0.15 s, and cruises above it at 375 steps/s.
+// If microstepping jumpers are fitted later, set Z_MICROSTEP to match them.
+const uint16_t Z_MOTOR_FULL_STEPS_PER_REV = 200;
+const uint8_t  Z_MICROSTEP = 1;   // 1 = full step (no jumpers)
+const float    Z_LEAD_MM_PER_REV = 8.0f;
+const float    Z_STEPS_PER_MM =
+  (float)Z_MOTOR_FULL_STEPS_PER_REV * (float)Z_MICROSTEP / Z_LEAD_MM_PER_REV;  // 25
+
+// HU and HD use the SAME profile on purpose: the PC app runs HU for as long
+// as HD took (AUTO_PICKUP_HU_SCALE = 1.0), so the lift returns the full way.
+const float Z_SPEED_MM_S       = 15.0f;  // Top speed, above the rough range (Shell 1.5 speed)
+const float Z_JOY_SPEED_MM_S   = 15.0f;  // Joystick top speed
+const float Z_START_SPEED_MM_S = 6.0f;   // Every Z move starts and ends here
+const float Z_ACCEL_MM_S2      = 60.0f;  // Speed-up: through the rough range in ~0.15 s
+const float Z_DECEL_MM_S2      = 60.0f;  // Slow-down for a normal stop or reversal
+
+const float Z_TOP_RATE   = Z_SPEED_MM_S * Z_STEPS_PER_MM;        // 375 steps/s
+const float Z_JOY_RATE   = Z_JOY_SPEED_MM_S * Z_STEPS_PER_MM;    // 375 steps/s
+const float Z_START_RATE = Z_START_SPEED_MM_S * Z_STEPS_PER_MM;  // 150 steps/s
+const float Z_ACCEL_RATE = Z_ACCEL_MM_S2 * Z_STEPS_PER_MM;       // 1500 steps/s^2
+const float Z_DECEL_RATE = Z_DECEL_MM_S2 * Z_STEPS_PER_MM;       // 1500 steps/s^2
 
 // -----------------------------------------------------------------------------
 // A-AXIS GRIPPER CONFIGURATION
@@ -357,6 +441,11 @@ const bool INVERT_A_DIRECTION = false;
 // Reported BELOW/ABOVE state changes only after this much stable reading.
 // The Z-down stop itself does not wait for this (it is immediate).
 const unsigned long LIMIT_STABLE_TIME_MS = 20UL;
+
+// v0.42: switch type. LOW = normally-open switch wired C + NO (pressed
+// pulls D10 to GND). Use HIGH for a normally-closed switch wired C + NC.
+// If READ says PRESSED while the switch is not touched, change this.
+const uint8_t LIMIT_PRESSED_LEVEL = HIGH;  // v0.43: swapped (D10 HIGH = BELOW)
 const unsigned long LIMIT_SAMPLE_INTERVAL_MS = 0UL; // 0 = read on every loop (fastest stop)
 
 // -----------------------------------------------------------------------------
@@ -370,9 +459,9 @@ const int JOY_X_CENTER = 512;
 const int JOY_Y_CENTER = 512;
 const int JOY_DEADZONE = 150;   // Counts from centre before the stick counts as moved
 
-// Default: URX right = gripper toward G90 (closing), left = toward G0 (opening).
+// v0.42 default: URY high = gripper toward G90 (closing), low = toward G0.
 const bool JOY_INVERT_GRIPPER = false;
-// Default: URY low = Z up, URY high = Z down.
+// v0.42 default: URX low = Z up, URX high = Z down.
 const bool JOY_INVERT_Z = false;
 
 const unsigned long JOY_SAMPLE_INTERVAL_MS = 5UL;
@@ -399,15 +488,13 @@ const long A_JOG_FAR_STEPS = 100000L;
 // RUNTIME STATE
 // -----------------------------------------------------------------------------
 
-bool motionRunning = false;
-bool zDownMonitoring = false;
+bool motionRunning = false;    // X/Y serial motion (main engine)
 
-// Active motion
+// Active X/Y motion
 char activeAxis = 'X';
 uint8_t activeStepPin = X_STEP_PIN;
 uint8_t activeDirPin  = X_DIR_PIN;
 bool activeDirLevel = LOW;     // Physical DIR pin level (after inversion)
-bool activeIsZDown = false;
 bool activeSlow = false;
 float activeAccel = XY_ACCEL;
 float currentRate = 0.0f;      // steps/s
@@ -420,9 +507,18 @@ unsigned long lastRampMicros = 0;
 bool pendingValid = false;
 char pendingAxis = 'X';
 bool pendingDirLevel = LOW;
-bool pendingIsZDown = false;
 bool pendingSlow = false;
 float pendingRate = 0.0f;
+
+// Serial motion slot (one serial motion at a time, as before):
+int8_t serialZCmd = 0;         // Current HU (+1) / HD (-1) / none (0). Kept until
+                               // S, SW, the limit switch (HD) or another command.
+int8_t pendingSerialZ = 0;     // HU/HD waiting for X/Y to slow to a stop first
+bool xyWaitValid = false;      // X/Y waiting for a serial HU/HD to slow to a stop
+char xyWaitAxis = 'X';
+bool xyWaitDirLevel = LOW;
+float xyWaitRate = 0.0f;
+bool xyWaitSlow = false;
 
 // A-axis gripper state (independent of the XYZ engine above)
 bool aRunning = false;
@@ -437,6 +533,8 @@ bool aReversing = false;       // Decelerating before a direction change
 unsigned long aDecelLeft = 0;  // Steps left in that deceleration
 unsigned long aHalfUs = 0;     // Current HIGH/LOW half duration
 unsigned long aLastStepMicros = 0;
+bool aSerialTargetValid = false;   // A G move is in progress (resumes after a jog)
+long aSerialTargetSteps = 0;
 
 // Limit switch state
 bool limitRawPressed = false;    // Latest single reading
@@ -445,17 +543,20 @@ bool limitCandidateActive = false;
 unsigned long limitCandidateSinceMs = 0;
 unsigned long lastLimitSampleMs = 0;
 
-// Z jog engine (joystick). Independent of the main XYZ engine, so Z can
-// move while X or Y is moving.
-bool zJogRunning = false;
-bool zJogUp = true;
-float zJogRate = 0.0f;           // steps/s
-float zJogTargetRate = 0.0f;     // 0 = decelerate to stop
-bool zJogStepState = LOW;
-unsigned long zJogLastStepMicros = 0;
-unsigned long zJogLastRampMicros = 0;
-int8_t zJogWanted = 0;           // From joystick: +1 up, -1 down, 0 none
-bool zJogBlockedReported = false;
+// Z engine (v0.45): serial HU/HD and the joystick share it.
+int8_t joyZCmd = 0;              // +1 up / -1 down while the stick is held, else 0
+bool joyZBlockedReported = false;
+bool zRunning = false;           // Z step timer running
+bool zUp = true;                 // Current Z direction
+float zRate = 0.0f;              // steps/s
+float zTargetRate = 0.0f;        // 0 = slow down to a stop
+unsigned long zLastRampMicros = 0;
+
+// Shared with the Timer1 interrupt.
+volatile uint16_t zIsrTicks = 1999;       // Timer ticks (0.5 us) per step, minus 1
+volatile bool zIsrCheckLimit = false;     // true while moving down
+volatile bool zIsrLimitStop = false;      // set when the interrupt stopped Z at BELOW
+volatile uint32_t zIsrSteps = 0;          // Z steps made (for STATUS)
 
 // Joystick state
 bool joyRequireNeutral = true;   // Stick must be centred before it is used
@@ -481,15 +582,15 @@ char commandBuffer[40];
 uint8_t commandLength = 0;
 
 // Defined below and also called by the limit switch code.
-void stopXYZ();
-void zJogStopNow();
+void stopXY();
+void zLimitStopped();
 
 // -----------------------------------------------------------------------------
 // LIMIT SWITCH READING
 // -----------------------------------------------------------------------------
 
 bool readLimitPressed() {
-  return digitalRead(LIMIT_PIN) == LOW;
+  return digitalRead(LIMIT_PIN) == LIMIT_PRESSED_LEVEL;
 }
 
 void printLimitTransition(bool below) {
@@ -521,7 +622,8 @@ void updateLimitState(bool pressed) {
 
 void sampleLimitSwitch(bool force) {
   unsigned long now = millis();
-  if (!force && (unsigned long)(now - lastLimitSampleMs) < LIMIT_SAMPLE_INTERVAL_MS) {
+  if (!force && LIMIT_SAMPLE_INTERVAL_MS > 0UL &&
+      (unsigned long)(now - lastLimitSampleMs) + 1UL <= LIMIT_SAMPLE_INTERVAL_MS) {
     return;
   }
   lastLimitSampleMs = now;
@@ -529,16 +631,8 @@ void sampleLimitSwitch(bool force) {
 
   // Fail-safe stop: Z down stops on the first pressed reading, without
   // waiting for the debounce. A bounce can stop Z early, never late.
-  if (limitRawPressed) {
-    if (motionRunning && zDownMonitoring) {
-      stopXYZ();
-      Serial.println(F("STOP:LIMIT_SWITCH_BELOW"));
-    }
-    if (zJogRunning && !zJogUp) {
-      zJogStopNow();
-      if (JOY_MESSAGES) Serial.println(F("STOP:LIMIT_SWITCH_BELOW"));
-    }
-  }
+  // (The Z step interrupt also checks the switch before every down step.)
+  if (limitRawPressed && zRunning && !zUp) zLimitStopped();
 
   updateLimitState(limitRawPressed);
 }
@@ -553,49 +647,30 @@ bool zDownAllowed() {
 // MOTION CONTROL
 // -----------------------------------------------------------------------------
 
-void stopXYZ() {
+void stopXY() {
   motionRunning = false;
-  zDownMonitoring = false;
   pendingValid = false;
+  pendingSerialZ = 0;
   currentRate = 0.0f;
   targetRate = 0.0f;
   stepState = LOW;
   digitalWrite(X_STEP_PIN, LOW);
   digitalWrite(Y_STEP_PIN, LOW);
-  if (!zJogRunning) digitalWrite(Z_STEP_PIN, LOW); // Z jog owns Z when running
-}
-
-// True while the joystick is driving (or about to drive) Z.
-bool zJoystickActive() {
-  return zJogRunning || zJogWanted != 0;
 }
 
 void axisPins(char axis, uint8_t &stepPin, uint8_t &dirPin) {
-  if (axis == 'Y')      { stepPin = Y_STEP_PIN; dirPin = Y_DIR_PIN; }
-  else if (axis == 'Z') { stepPin = Z_STEP_PIN; dirPin = Z_DIR_PIN; }
-  else                  { stepPin = X_STEP_PIN; dirPin = X_DIR_PIN; }
+  if (axis == 'Y') { stepPin = Y_STEP_PIN; dirPin = Y_DIR_PIN; }
+  else             { stepPin = X_STEP_PIN; dirPin = X_DIR_PIN; }
 }
 
-// Start a motion from standstill. DIR is only ever changed here, while
+// Start an X/Y motion from standstill. DIR is only ever changed here, while
 // the step output is LOW and the motor is stopped.
-bool beginMotion(char axis, bool dirLevel, float rate, bool isZDown, bool slow) {
-  if (axis == 'Z' && zJoystickActive()) {
-    stopXYZ();
-    Serial.println(F("BLOCKED:Z_JOYSTICK_ACTIVE"));
-    return false;
-  }
-  if (isZDown && !zDownAllowed()) {
-    stopXYZ();
-    Serial.println(F("BLOCKED:ALREADY_AT_DOWN_POSITION"));
-    return false;
-  }
-
+void beginMotion(char axis, bool dirLevel, float rate, bool slow) {
   uint8_t stepPin, dirPin;
   axisPins(axis, stepPin, dirPin);
 
   digitalWrite(X_STEP_PIN, LOW);
   digitalWrite(Y_STEP_PIN, LOW);
-  if (!zJogRunning) digitalWrite(Z_STEP_PIN, LOW);
   digitalWrite(dirPin, dirLevel ? HIGH : LOW);
   delayMicroseconds(DIR_SETTLE_US);
 
@@ -603,27 +678,45 @@ bool beginMotion(char axis, bool dirLevel, float rate, bool isZDown, bool slow) 
   activeStepPin = stepPin;
   activeDirPin = dirPin;
   activeDirLevel = dirLevel;
-  activeIsZDown = isZDown;
   activeSlow = slow;
-  activeAccel = (axis == 'Z') ? Z_ACCEL : XY_ACCEL;
+  activeAccel = XY_ACCEL;
   targetRate = rate;
   currentRate = rate < MIN_RATE ? rate : MIN_RATE;
   stepState = LOW;
   lastStepMicros = micros();
   lastRampMicros = lastStepMicros;
-
-  zDownMonitoring = isZDown;
   motionRunning = true;
-  return true;
 }
 
-// Request a motion. Handles seamless switching:
+// True while Z is still moving for a serial HU/HD (not under the joystick).
+bool zSerialMoving() {
+  return zRunning && joyZCmd == 0;
+}
+
+// Request an X/Y motion. Serial commands share one serial motion: a new one
+// replaces the old one, in the same order as before:
 //   - idle: start immediately with acceleration
 //   - same axis + same direction: change target speed, keep moving
-//   - otherwise: decelerate to stop, then start the new motion
-void requestMotion(char axis, bool dirLevel, float rate, bool isZDown, bool slow) {
+//   - otherwise (including a running HU/HD): slow to a stop, then start
+void requestMotion(char axis, bool dirLevel, float rate, bool slow) {
+  pendingSerialZ = 0;   // A newer X/Y command replaces a waiting HU/HD
+
+  if (serialZCmd != 0 || xyWaitValid) {
+    // HU/HD is the current serial motion: end it, start X/Y once Z stops.
+    serialZCmd = 0;
+    if (zSerialMoving()) {
+      xyWaitValid = true;
+      xyWaitAxis = axis;
+      xyWaitDirLevel = dirLevel;
+      xyWaitRate = rate;
+      xyWaitSlow = slow;
+      return;
+    }
+    xyWaitValid = false;
+  }
+
   if (!motionRunning) {
-    beginMotion(axis, dirLevel, rate, isZDown, slow);
+    beginMotion(axis, dirLevel, rate, slow);
     return;
   }
 
@@ -631,8 +724,6 @@ void requestMotion(char axis, bool dirLevel, float rate, bool isZDown, bool slow
     pendingValid = false;
     targetRate = rate;
     activeSlow = slow;
-    activeIsZDown = isZDown;
-    zDownMonitoring = isZDown;
     return;
   }
 
@@ -640,9 +731,8 @@ void requestMotion(char axis, bool dirLevel, float rate, bool isZDown, bool slow
   pendingAxis = axis;
   pendingDirLevel = dirLevel;
   pendingRate = rate;
-  pendingIsZDown = isZDown;
   pendingSlow = slow;
-  targetRate = 0.0f;  // Decelerate. Z-down monitoring stays active meanwhile.
+  targetRate = 0.0f;  // Decelerate, then start the pending motion.
 }
 
 void startXY(char axis, bool positiveDirection, bool slow) {
@@ -651,38 +741,55 @@ void startXY(char axis, bool positiveDirection, bool slow) {
     // R = LOW, L = HIGH before direction inversion.
     bool dir = positiveDirection ? LOW : HIGH;
     if (INVERT_X_DIRECTION) dir = !dir;
-    requestMotion('X', dir, rate, false, slow);
+    requestMotion('X', dir, rate, slow);
     Serial.print(positiveDirection ? F("RUN:X_RIGHT") : F("RUN:X_LEFT"));
   } else if (axis == 'Y') {
     // U = LOW, D = HIGH before direction inversion.
     bool dir = positiveDirection ? LOW : HIGH;
     if (INVERT_Y_DIRECTION) dir = !dir;
-    requestMotion('Y', dir, rate, false, slow);
+    requestMotion('Y', dir, rate, slow);
     Serial.print(positiveDirection ? F("RUN:Y_UP") : F("RUN:Y_DOWN"));
   }
   Serial.println(slow ? F("_SLOW") : F(""));
 }
 
+void zStopNow();
+
+// Serial HU / HD. Accepted even while the joystick holds Z: it then runs
+// when the stick is released.
 void startZ(bool up) {
-  if (zJoystickActive()) {
-    Serial.println(F("BLOCKED:Z_JOYSTICK_ACTIVE"));
-    return;
-  }
   if (!up && !zDownAllowed()) {
-    // Refuse HD while the limit switch is pressed (BELOW).
-    stopXYZ();
+    // Refuse HD while the limit switch is pressed (BELOW). As before, this
+    // also ends the current serial motion.
+    stopXY();
+    xyWaitValid = false;
+    if (zSerialMoving()) zStopNow();
+    serialZCmd = 0;
     Serial.println(F("BLOCKED:ALREADY_AT_DOWN_POSITION"));
     return;
   }
 
-  bool dir = up ? (Z_UP_DIR_LEVEL == HIGH) : (Z_UP_DIR_LEVEL != HIGH);
-  if (INVERT_Z_DIRECTION) dir = !dir;
-  requestMotion('Z', dir, Z_RATE, !up, false);
+  int8_t cmd = up ? 1 : -1;
+  xyWaitValid = false;   // HU/HD replaces an X/Y command waiting for Z
+  if (motionRunning) {
+    // X/Y is the current serial motion: slow it to a stop, then start Z.
+    pendingValid = false;
+    pendingSerialZ = cmd;
+    targetRate = 0.0f;
+  } else {
+    serialZCmd = cmd;    // The Z engine speeds up, or reverses if needed
+  }
   Serial.println(up ? F("RUN:Z_UP") : F("RUN:Z_DOWN_SENSOR_STOP"));
 }
 
-// Ramp the speed and generate step pulses. Called every loop.
+// X/Y ramp and step pulses. Called every loop.
 void serviceMotion() {
+  // X/Y command waiting for a serial HU/HD to finish slowing down.
+  if (xyWaitValid && !zSerialMoving()) {
+    xyWaitValid = false;
+    beginMotion(xyWaitAxis, xyWaitDirLevel, xyWaitRate, xyWaitSlow);
+  }
+
   if (!motionRunning) return;
 
   unsigned long now = micros();
@@ -704,11 +811,19 @@ void serviceMotion() {
     char pAxis = pendingAxis;
     bool pDir = pendingDirLevel;
     float pRate = pendingRate;
-    bool pZDown = pendingIsZDown;
     bool pSlow = pendingSlow;
+    int8_t pZ = pendingSerialZ;
 
-    stopXYZ();
-    if (hadPending) beginMotion(pAxis, pDir, pRate, pZDown, pSlow);
+    stopXY();
+    if (hadPending) {
+      beginMotion(pAxis, pDir, pRate, pSlow);
+    } else if (pZ != 0) {
+      if (pZ < 0 && !zDownAllowed()) {
+        Serial.println(F("BLOCKED:ALREADY_AT_DOWN_POSITION"));
+      } else {
+        serialZCmd = pZ;
+      }
+    }
     return;
   }
 
@@ -759,6 +874,7 @@ void stopGripper() {
   aStepState = LOW;
   aTargetSteps = aPositionSteps; // Nothing resumes after a stop
   aLimitSteps = aPositionSteps;
+  aSerialTargetValid = false;    // The G move is finished or cancelled
   digitalWrite(A_STEP_PIN, LOW);
 }
 
@@ -818,6 +934,9 @@ void requestGripper(float deg) {
   Serial.print(F("RUN:A_TO_DEG:"));
   Serial.println((int)deg);
   aSetTargetSteps(aDegToSteps(deg));
+  // v0.45: remember the G target, so a joystick jog cannot cancel it.
+  aSerialTargetSteps = aDegToSteps(deg);
+  aSerialTargetValid = aRunning;  // false if already at the angle (done)
 }
 
 // Shared target logic for G commands and the joystick jog.
@@ -921,9 +1040,15 @@ void gripperJog(int8_t dir) {
   aSetTargetSteps(aPositionSteps + (long)dir * A_JOG_FAR_STEPS);
 }
 
-// Stick released: ramp down over the ramp steps and stop where it ends.
+// Stick released. v0.45: if a G move was running, carry on to its angle.
+// Otherwise ramp down over the ramp steps and stop where it ends.
 void gripperJogRelease() {
   joyGripDir = 0;
+  if (aSerialTargetValid) {
+    aQuietMove = false;           // The G move reports A_DONE when it arrives
+    aSetTargetSteps(aSerialTargetSteps);
+    return;
+  }
   if (!aRunning) return;
   long rampDown;
   if (aReversing) {
@@ -951,102 +1076,159 @@ void printGripperStatus() {
 }
 
 // -----------------------------------------------------------------------------
-// Z JOG (JOYSTICK URY)
-// Own ramp and step timing, so Z can move while X/Y or the gripper move.
-// DIR is only changed while this Z jog is stopped.
+// Z ENGINE (v0.45)
+// One engine drives Z for serial HU/HD and the joystick. Steps come from a
+// Timer1 interrupt, so step timing is exact whatever else the loop is doing.
+//   - The joystick has priority while held. A running HU/HD is not cancelled:
+//     it carries on when the stick is released.
+//   - Same direction: speed changes smoothly. Opposite direction: slows to a
+//     stop, changes DIR while stopped, then speeds up the other way.
+//   - Never moves down at BELOW. While moving down the interrupt checks the
+//     switch before every step and stops on the first pressed reading.
 // -----------------------------------------------------------------------------
 
-void zJogStopNow() {
-  zJogRunning = false;
-  zJogRate = 0.0f;
-  zJogTargetRate = 0.0f;
-  zJogStepState = LOW;
+inline bool zLimitPressedFast() {
+  bool high = (PINB & _BV(2)) != 0;              // D10 = PB2
+  return high == (LIMIT_PRESSED_LEVEL == HIGH);
+}
+
+ISR(TIMER1_COMPA_vect) {
+  if (zIsrCheckLimit && zLimitPressedFast()) {
+    TIMSK1 &= (uint8_t)~_BV(OCIE1A);             // Stop at the switch, no step
+    zIsrLimitStop = true;
+    return;
+  }
+  PORTD |= _BV(4);                                // Z STEP (D4) high
+  OCR1A = zIsrTicks;                              // Interval to the next step
+  zIsrSteps++;
+  delayMicroseconds(2);                           // A4988 needs >= 1 us high
+  PORTD &= (uint8_t)~_BV(4);                      // Z STEP low
+}
+
+// Timer ticks (0.5 us each) for one step at this rate, as OCR1A wants it.
+uint16_t zTicksForRate(float rate) {
+  if (rate < 31.0f) rate = 31.0f;                 // Longest interval ~32 ms
+  float t = 2000000.0f / rate - 1.0f;
+  if (t > 65535.0f) t = 65535.0f;
+  if (t < 99.0f) t = 99.0f;                       // Shortest interval 50 us
+  return (uint16_t)t;
+}
+
+void zTimerStart(uint16_t ticks) {
+  noInterrupts();
+  TCCR1A = 0;
+  TCCR1B = 0;
+  TCNT1 = 0;
+  OCR1A = ticks;
+  zIsrTicks = ticks;
+  zIsrLimitStop = false;
+  TIFR1 = _BV(OCF1A);                             // Clear an old match
+  TIMSK1 |= _BV(OCIE1A);
+  TCCR1B = _BV(WGM12) | _BV(CS11);                // CTC on OCR1A, clk/8
+  interrupts();
+}
+
+void zTimerStop() {
+  noInterrupts();
+  TIMSK1 &= (uint8_t)~_BV(OCIE1A);
+  TCCR1B = 0;
+  interrupts();
   digitalWrite(Z_STEP_PIN, LOW);
 }
 
-void zJogStart(bool up) {
-  digitalWrite(Z_STEP_PIN, LOW);
+void zSetTicks(uint16_t ticks) {
+  noInterrupts();
+  zIsrTicks = ticks;
+  interrupts();
+}
+
+// Immediate stop, no ramp (S, SW, limit switch).
+void zStopNow() {
+  zTimerStop();
+  zRunning = false;
+  zRate = 0.0f;
+  zTargetRate = 0.0f;
+}
+
+// Start from standstill. DIR is only changed here, with the timer stopped.
+void zStartMove(bool up) {
   bool dir = up ? (Z_UP_DIR_LEVEL == HIGH) : (Z_UP_DIR_LEVEL != HIGH);
   if (INVERT_Z_DIRECTION) dir = !dir;
+  digitalWrite(Z_STEP_PIN, LOW);
   digitalWrite(Z_DIR_PIN, dir ? HIGH : LOW);
   delayMicroseconds(DIR_SETTLE_US);
 
-  zJogUp = up;
-  zJogTargetRate = Z_RATE;
-  zJogRate = Z_RATE < MIN_RATE ? Z_RATE : MIN_RATE;
-  zJogStepState = LOW;
-  zJogLastStepMicros = micros();
-  zJogLastRampMicros = zJogLastStepMicros;
-  zJogRunning = true;
+  zUp = up;
+  zRate = Z_START_RATE;
+  zTargetRate = Z_START_RATE;
+  zLastRampMicros = micros();
+  noInterrupts();
+  zIsrCheckLimit = !up;
+  interrupts();
+  zTimerStart(zTicksForRate(zRate));
+  zRunning = true;
 }
 
-// want: +1 up, -1 down, 0 release
-void zJogCommand(int8_t want) {
-  if (want < 0 && !zDownAllowed()) {
-    if (!zJogBlockedReported) {
-      if (JOY_MESSAGES) Serial.println(F("BLOCKED:LIMIT_SWITCH_BELOW"));
-      zJogBlockedReported = true;
+// Z reached the limit switch while moving down (seen by the interrupt or by
+// the loop, whichever was first).
+void zLimitStopped() {
+  bool wasRunning = zRunning;
+  zStopNow();
+  noInterrupts();
+  zIsrLimitStop = false;
+  interrupts();
+  if (!wasRunning) return;
+  if (serialZCmd < 0) {
+    serialZCmd = 0;                               // HD is complete
+    Serial.println(F("STOP:LIMIT_SWITCH_BELOW"));
+  } else if (JOY_MESSAGES) {
+    Serial.println(F("STOP:LIMIT_SWITCH_BELOW"));
+  }
+}
+
+// Ramp Z toward what is wanted now. Called every loop.
+void serviceZ() {
+  if (zIsrLimitStop) zLimitStopped();
+
+  bool fromJoystick = joyZCmd != 0;
+  int8_t cmd = fromJoystick ? joyZCmd : serialZCmd;
+
+  // Never drive down at BELOW.
+  if (cmd < 0 && (limitRawPressed || zBelow)) {
+    if (!fromJoystick) {
+      serialZCmd = 0;
+      Serial.println(F("BLOCKED:ALREADY_AT_DOWN_POSITION"));
     }
-    want = 0;
-  } else if (want >= 0) {
-    zJogBlockedReported = false;
+    cmd = 0;
   }
 
-  zJogWanted = want;
-
-  if (want == 0) {
-    if (zJogRunning) zJogTargetRate = 0.0f;  // Decelerate to stop
+  if (!zRunning) {
+    if (cmd != 0) zStartMove(cmd > 0);
     return;
   }
-
-  // Joystick takes Z over from a serial HU/HD move.
-  if (motionRunning && activeAxis == 'Z') {
-    stopXYZ();
-    if (JOY_MESSAGES) Serial.println(F("STOP:Z_SERIAL_OVERRIDDEN_BY_JOYSTICK"));
-  }
-  if (pendingValid && pendingAxis == 'Z') pendingValid = false;
-
-  bool up = want > 0;
-  if (!zJogRunning) {
-    zJogStart(up);
-  } else if (zJogUp == up) {
-    zJogTargetRate = Z_RATE;
-  } else {
-    zJogTargetRate = 0.0f;  // Decelerate, stop, then reverse (serviceZJog)
-  }
-}
-
-void serviceZJog() {
-  if (!zJogRunning) return;
 
   unsigned long now = micros();
-  float dt = (float)(unsigned long)(now - zJogLastRampMicros) * 1.0e-6f;
-  zJogLastRampMicros = now;
-  if (zJogRate < zJogTargetRate) {
-    zJogRate += Z_ACCEL * dt;
-    if (zJogRate > zJogTargetRate) zJogRate = zJogTargetRate;
-  } else if (zJogRate > zJogTargetRate) {
-    zJogRate -= Z_ACCEL * dt;
-    if (zJogRate < zJogTargetRate) zJogRate = zJogTargetRate;
+  float dt = (float)(unsigned long)(now - zLastRampMicros) * 1.0e-6f;
+  zLastRampMicros = now;
+
+  bool sameDir = (cmd > 0 && zUp) || (cmd < 0 && !zUp);
+  zTargetRate = sameDir ? (fromJoystick ? Z_JOY_RATE : Z_TOP_RATE) : 0.0f;
+
+  if (zRate < zTargetRate) {
+    zRate += Z_ACCEL_RATE * dt;
+    if (zRate > zTargetRate) zRate = zTargetRate;
+  } else if (zRate > zTargetRate) {
+    zRate -= Z_DECEL_RATE * dt;
+    if (zRate < zTargetRate) zRate = zTargetRate;
   }
 
-  if (zJogTargetRate <= 0.0f && zJogRate <= MIN_RATE) {
-    zJogStopNow();
-    // Reverse if the stick is now held the other way.
-    if (zJogWanted != 0) {
-      if (zJogWanted < 0 && !zDownAllowed()) return;
-      zJogStart(zJogWanted > 0);
-    }
+  if (zTargetRate <= 0.0f && zRate <= Z_START_RATE) {
+    zStopNow();                                   // Slowed down: stop
+    if (cmd != 0) zStartMove(cmd > 0);            // Then reverse if wanted
     return;
   }
-
-  if (zJogRate < 1.0f) return;
-  unsigned long halfPeriodUs = (unsigned long)(500000.0f / zJogRate);
-  if ((unsigned long)(now - zJogLastStepMicros) >= halfPeriodUs) {
-    zJogLastStepMicros = now;
-    zJogStepState = !zJogStepState;
-    digitalWrite(Z_STEP_PIN, zJogStepState);
-  }
+  if (zRate < Z_START_RATE) zRate = Z_START_RATE;
+  zSetTicks(zTicksForRate(zRate));
 }
 
 // -----------------------------------------------------------------------------
@@ -1054,9 +1236,11 @@ void serviceZJog() {
 // -----------------------------------------------------------------------------
 
 void stopEverything() {
-  zJogWanted = 0;
-  zJogStopNow();
-  stopXYZ();
+  joyZCmd = 0;
+  serialZCmd = 0;
+  zStopNow();
+  stopXY();
+  xyWaitValid = false;
   stopGripper();
   joyGripDir = 0;
   joyRequireNeutral = true;   // Stick must be centred (and SW released) first
@@ -1103,14 +1287,15 @@ void updateJoystick() {
   readJoystick();
   streamJoystick();
 
+  // v0.42: axes swapped. URY now drives the gripper, URX drives Z.
   int8_t gripDir = 0;
-  if (joyUrx > JOY_X_CENTER + JOY_DEADZONE) gripDir = 1;        // Right
-  else if (joyUrx < JOY_X_CENTER - JOY_DEADZONE) gripDir = -1;  // Left
+  if (joyUry > JOY_Y_CENTER + JOY_DEADZONE) gripDir = 1;        // toward G90
+  else if (joyUry < JOY_Y_CENTER - JOY_DEADZONE) gripDir = -1;  // toward G0
   if (JOY_INVERT_GRIPPER) gripDir = -gripDir;
 
   int8_t zDir = 0;
-  if (joyUry < JOY_Y_CENTER - JOY_DEADZONE) zDir = 1;           // Up
-  else if (joyUry > JOY_Y_CENTER + JOY_DEADZONE) zDir = -1;     // Down
+  if (joyUrx < JOY_X_CENTER - JOY_DEADZONE) zDir = 1;           // Z up
+  else if (joyUrx > JOY_X_CENTER + JOY_DEADZONE) zDir = -1;     // Z down
   if (JOY_INVERT_Z) zDir = -zDir;
 
   // After power-on or S, wait for a centred stick.
@@ -1126,12 +1311,21 @@ void updateJoystick() {
     return;
   }
 
-  // Gripper: URX
+  // Gripper: URY
   if (gripDir != 0) gripperJog(gripDir);
   else if (joyGripDir != 0) gripperJogRelease();
 
-  // Z: URY
-  if (zDir != 0 || zJogWanted != 0 || zJogRunning) zJogCommand(zDir);
+  // Z: URX. Priority while held; a serial HU/HD carries on after release.
+  if (zDir < 0 && !zDownAllowed()) {
+    if (JOY_MESSAGES && !joyZBlockedReported) {
+      Serial.println(F("BLOCKED:LIMIT_SWITCH_BELOW"));
+    }
+    joyZBlockedReported = true;
+    zDir = 0;
+  } else {
+    joyZBlockedReported = false;
+  }
+  joyZCmd = zDir;
 }
 
 void printJoystickLine() {
@@ -1187,26 +1381,27 @@ void printRead() {
 void printStatus() {
   Serial.print(F("MOTION:"));
   if (!motionRunning) {
-    Serial.print(F("STOPPED"));
+    Serial.print(xyWaitValid ? F("WAITING_FOR_Z") : F("STOPPED"));
   } else {
-    if (activeAxis == 'X')      Serial.print(F("X"));
-    else if (activeAxis == 'Y') Serial.print(F("Y"));
-    else Serial.print(activeIsZDown ? F("Z_DOWN") : F("Z_UP"));
+    Serial.print(activeAxis == 'Y' ? F("Y") : F("X"));
     if (activeSlow) Serial.print(F("_SLOW"));
     Serial.print(F(" RATE:"));
     Serial.print(currentRate, 1);
     Serial.print(F(" TARGET:"));
     Serial.print(targetRate, 1);
-    if (pendingValid) Serial.print(F(" SWITCHING"));
+    if (pendingValid || pendingSerialZ != 0) Serial.print(F(" SWITCHING"));
   }
-  Serial.print(F(" | ZJOG:"));
-  if (zJogRunning) {
-    Serial.print(zJogUp ? F("UP") : F("DOWN"));
-    Serial.print(F(" RATE:"));
-    Serial.print(zJogRate, 1);
+  Serial.print(F(" | Z:"));
+  if (zRunning) {
+    Serial.print(zUp ? F("UP") : F("DOWN"));
+    Serial.print(joyZCmd != 0 ? F(" JOY") : F(" SERIAL"));
+    Serial.print(F(" MM_S:"));
+    Serial.print(zRate / Z_STEPS_PER_MM, 1);
   } else {
     Serial.print(F("IDLE"));
   }
+  Serial.print(F(" SERIAL_Z:"));
+  Serial.print(serialZCmd > 0 ? F("HU") : (serialZCmd < 0 ? F("HD") : F("NONE")));
   Serial.print(F(" | "));
   printGripperStatus();
   Serial.print(F(" | "));
@@ -1214,10 +1409,10 @@ void printStatus() {
 }
 
 void printHelp() {
-  Serial.println(F("--- SHELL-X v0.41 COMMANDS ---"));
+  Serial.println(F("--- SHELL-X v0.46 COMMANDS ---"));
   Serial.println(F("U/D, R/L       : XY continuous movement"));
   Serial.println(F("UQ/DQ/RQ/LQ    : XY at 3x slower speed"));
-  Serial.println(F("HU             : Z up"));
+  Serial.println(F("HU             : Z up (15 mm/s, with acceleration)"));
   Serial.println(F("HD / HX        : Z down, stops when limit switch pressed (BELOW)"));
   Serial.println(F("G0             : gripper to 0 deg (open)"));
   Serial.println(F("G1..G89        : gripper to that angle (deg)"));
@@ -1228,8 +1423,8 @@ void printHelp() {
   Serial.println(F("STATUS or V    : motion + sensor status"));
   Serial.println(F("HELP or ?      : show this help"));
   Serial.println(F("JOYSTICK:"));
-  Serial.println(F("  right/left   : gripper jog while held, any position, no G logic"));
-  Serial.println(F("  up/down      : Z jog while held, runs alongside X/Y and gripper"));
+  Serial.println(F("  URY          : gripper jog while held; a running G move continues after"));
+  Serial.println(F("  URX          : Z jog while held; a running HU/HD continues after release"));
   Serial.println(F("  SW (press)   : stop everything, like S (no serial needed)"));
   Serial.println(F("  centre stick + release SW after power-on, S or SW stop"));
   Serial.println(F("Limit switch (Y+): pressed = BELOW, released = ABOVE."));
@@ -1356,7 +1551,8 @@ void setup() {
   digitalWrite(Z_STEP_PIN, LOW);
   digitalWrite(A_STEP_PIN, LOW);
 
-  stopXYZ();
+  stopXY();
+  zStopNow();             // Timer1 off until Z is asked to move
   initGripperConfig();
   stopGripper();
   Serial.begin(SERIAL_BAUD);
@@ -1368,10 +1564,20 @@ void setup() {
   zBelow = limitRawPressed;
   lastLimitSampleMs = millis();
 
-  Serial.println(F("SHELL-X v0.41 READY"));
+  Serial.println(F("SHELL-X v0.46 READY"));
   Serial.println(F("A AXIS=GRIPPER (STEP D12, DIR D13) | LIMIT SWITCH=Y+ (D10)"));
-  Serial.println(F("JOYSTICK: URX=A0 (gripper) URY=A1 (Z) SW=D9 (STOP)"));
+  Serial.println(F("JOYSTICK: URX=A0 (Z) URY=A1 (gripper) SW=D9 (STOP)"));
   Serial.println(F("SMOOTH ACCEL/DECEL | SEAMLESS COMMAND SWITCHING"));
+  Serial.print(F("Z_CONFIG: MICROSTEP:"));
+  Serial.print(Z_MICROSTEP);
+  Serial.print(F(" STEPS_PER_MM:"));
+  Serial.print(Z_STEPS_PER_MM, 0);
+  Serial.print(F(" MM_S:"));
+  Serial.print(Z_SPEED_MM_S, 1);
+  Serial.print(F(" START_MM_S:"));
+  Serial.print(Z_START_SPEED_MM_S, 1);
+  Serial.print(F(" ACCEL_MM_S2:"));
+  Serial.println(Z_ACCEL_MM_S2, 1);
   if (aConfigured()) {
     Serial.print(F("A_CONFIG: STEPS_PER_REV:"));
     Serial.print(A_STEPS_PER_REV);
@@ -1410,6 +1616,6 @@ void loop() {
   sampleLimitSwitch(false);
   updateJoystick();
   serviceMotion();
-  serviceZJog();
+  serviceZ();
   serviceGripper();
 }

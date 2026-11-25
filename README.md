@@ -443,7 +443,7 @@ Each task is scored out of 100: Plan 20, Perception 15, Execution 40, Safety 15,
 
 Full spec: [HOS-BT README](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Benchmarks/HOS-BT/README.md) | Tasks: [Benchmarking-tasks.md](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Benchmarks/HOS-BT/Benchmarking-tasks.md) | Score working: [Score-Justification-and-Calculation](https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Benchmarks/HOS-BT/Score-Justification-and-Calculation)
 
-**LIBERO-PRO benchmark:** the LIBERO-PRO benchmark test on HOS X will be hosted 1 to 3 days after launch.
+**LIBERO-PRO benchmark:** the LIBERO-PRO benchmark test on HOS X will happen after the HOS 2.0 launch.
 
 
 ---

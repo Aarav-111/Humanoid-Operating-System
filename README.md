@@ -8,7 +8,7 @@
   <a href="https://github.com/Aarav-111/Humanoid-Operating-System#benchmarking"><img src="assets/badges/hos-mmro.svg" alt="MMRO (K5D): 99%"></a>
   <a href="https://github.com/Aarav-111/Humanoid-Operating-System#camera-ready-gripper"><img src="assets/badges/hos-gripper.svg" alt="New: Camera-Ready Gripper"></a>
   <a href="https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Software"><img src="https://img.shields.io/badge/Python-3-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python: 3"></a>
-  <a href="https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware/Firmware"><img src="https://img.shields.io/badge/Firmware-Shell--x%20v0.20-00979D?style=flat-square&logo=arduino&logoColor=white" alt="Firmware: Shell-x v0.20"></a>
+  <a href="https://github.com/Aarav-111/Humanoid-Operating-System/tree/main/Hardware/Firmware"><img src="https://img.shields.io/badge/Firmware-Shell--x%20v0.20-00979D?style=flat-square&logo=arduino&logoColor=white" alt="Firmware: Shell-x"></a>
   <a href="https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-6366f1?style=flat-square" alt="License: MIT"></a>
 </p>
 

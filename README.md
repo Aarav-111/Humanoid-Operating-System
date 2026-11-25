@@ -56,7 +56,7 @@ timeline
              : Hardware docs v2.5 (25 Oct)
     Nov 2026 : Newsletter and back EMF gripper (3 Nov)
              : Shell x TMC2209 build (14 Nov, dropped)
-             : Shell-x v0.20 and docs v3.0 (22 Nov)
+             : Shell-x and docs v3.0 (22 Nov)
              : HOS-BT benchmark released (24 Nov)
              : HOS 1.0 and earlier retired (30 Nov)
     Dec 2026 : HOS X launch
@@ -166,13 +166,13 @@ Today's robots are brilliant in factories and helpless in a messy kitchen. Robot
 
 **Hiring student interns.** We are looking for students who like robotics and maths to work on robot control, planning and vision. Email prolabsrobotics@gmail.com.
 
-### 22 November 2026: Hardware and electronics guide for Shell-x v0.20
+### 22 November 2026: Hardware and electronics guide for Shell-x
 
-- The [Hardware](#hardware) section now describes Shell-x v0.20: X, Y and Z on A4988 drivers, and a potentiometer on A0 read as a binary LIFTED or DOWN sensor for Z.
+- The [Hardware](#hardware) section now describes Shell-x: X, Y and Z on A4988 drivers, and a potentiometer on A0 read as a binary LIFTED or DOWN sensor for Z.
 - HD now stops Z at the DOWN position. P1, P3, the gripper, the joystick and the TMC2209 sensorless Z are not used.
 - New pin map, pot wiring, command table, speeds, first power-on test and limits.
 - New hardware documentation PDF [HOS-Documentation-v3.0.pdf](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/HOS-Documentation-v3.0.pdf) for Shell-x v0.20. It replaces v2.5 and covers the A4988 wiring with a diagram, the sliding potentiometer, a new bill of materials, the v0.20 commands, speeds, first power-on test, troubleshooting and limits. The old v2.5 PDF was removed.
-- The Shell-x v0.20 firmware is now in the repository as [Shell_x.ino](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Firmware/Shell_x.ino). It compiles for the Arduino Uno with no extra libraries.
+- The Shell-x firmware is now in the repository as [Shell_x.ino](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Firmware/Shell_x.ino). It compiles for the Arduino Uno with no extra libraries.
 
 <details>
 <summary><b>Older updates (12 October to 14 November 2026)</b></summary>
@@ -299,7 +299,7 @@ Click any file to open it on GitHub.
 | --- | --- |
 | Software | [S1.5-SRC.py](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Software/S1.5-SRC.py) [S(x)-Src-Preview-4.py](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Software/S(x)-Src-Preview-4.py) |
 | Hardware/Firmware | [Shell_1.5.ino](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Firmware/Shell_1.5.ino) [Shell_x.ino](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Firmware/Shell_x.ino) |
-| Hardware (docs) | [HOS Documentation v3.0, Shell-x v0.20 (PDF)](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/HOS-Documentation-v3.0.pdf) |
+| Hardware (docs) | [HOS Documentation v3.0, Shell-x (PDF)](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/HOS-Documentation-v3.0.pdf) |
 | Hardware/3D Models | [apriltag-connector](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/apriltag-connector.stl) [basic-robot](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/basic-robot.stl) [gripper-part-1](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/gripper-part-1.stl) [gripper-part-2-sponge](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/gripper-part-2-sponge.stl) [hub](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/hub.stl) [l-bracket](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/l-bracket.stl) [legs](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/legs.stl) [pulley-mount](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/pulley-mount.stl) [xy-interaxis-connector](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/xy-interaxis-connector.stl) [y-axis-holder](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/y-axis-holder.stl) [z-axis-mounter](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/3D%20Models/z-axis-mounter.stl) |
 | Simulation/Virtual | [K5D](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Simulation/Virtual/K5D.py) [K9D](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Simulation/Virtual/K9D.py) [HOS_3D_preview.html](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Simulation/Virtual/HOS_3D_preview.html) |
 | Simulation/Physical | [A3-Terra.py](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Simulation/Physical/A3-Terra.py) |
@@ -371,9 +371,9 @@ The AI stages need your own OpenAI key. Never commit it to the repository.
 
 Open `Hardware/Firmware/Shell_1.5.ino` in the Arduino IDE, select your board and port, then upload.
 
-For Shell-x v0.20, open `Hardware/Firmware/Shell_x.ino` and upload it to the Uno. It needs no extra libraries. If the Arduino IDE asks to move the file into a `Shell_x` folder, click OK. Set the Serial Monitor to 115200 baud and Newline, then type `HELP`.
+For Shell-x, open `Hardware/Firmware/Shell_x.ino` and upload it to the Uno. It needs no extra libraries. If the Arduino IDE asks to move the file into a `Shell_x` folder, click OK. Set the Serial Monitor to 115200 baud and Newline, then type `HELP`.
 
-Wire it as shown in [Electronics: Shell-x v0.20](#electronics-shell-x-v020) before you power on.
+Wire it as shown in [Electronics: Shell-x](#electronics-shell-x) before you power on.
 
 ### Get the 3D parts
 
@@ -473,7 +473,7 @@ All numbers below are **estimates**, not measured bills. They cover the AI API o
 
 **Assumptions:** about 20,000 input and 3,000 output tokens for the planner, 5,000 in and 1,500 out for vision naming, 3,500 in and 1,000 out for ERR and Vision AI Sequence, 2,000 in and 500 out for dexterity. Photo token counts are rough guesses. No prompt caching. Output includes reasoning tokens. Taxes and transcription not included. Check the `[timing]` lines S1.5-SRC prints for real token counts.
 
-**Hardware:** the [hardware docs v3.0](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/HOS-Documentation-v3.0.pdf) list parts but no prices, so no hardware cost is given. Main parts: an Apple Mac laptop (required to run S1.5-SRC), overhead USB webcam, Arduino Uno and CNC Shield V3 with A4988 drivers, NEMA 17 steppers, 12 V 10 A power supply, 2020 V-slot frame, GT2 belts and pulleys, T8 lead screw, 8 mm rods, time-of-flight and IR sensors (Shell 1.5; Shell-x v0.20 replaces both with one sliding potentiometer on Z), AprilTag 36h11 and 3D-printed parts.
+**Hardware:** the [hardware docs v3.0](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/HOS-Documentation-v3.0.pdf) list parts but no prices, so no hardware cost is given. Main parts: an Apple Mac laptop (required to run S1.5-SRC), overhead USB webcam, Arduino Uno and CNC Shield V3 with A4988 drivers, NEMA 17 steppers, 12 V 10 A power supply, 2020 V-slot frame, GT2 belts and pulleys, T8 lead screw, 8 mm rods, time-of-flight and IR sensors (Shell 1.5; Shell-x replaces both with one sliding potentiometer on Z), AprilTag 36h11 and 3D-printed parts.
 
 Source: [Software/S1.5-SRC.py](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Software/S1.5-SRC.py), first worked out at commit [7fe076e](https://github.com/Aarav-111/Humanoid-Operating-System/commit/7fe076e6622cab2954850d361ee9b7810eea0f29) and rechecked at [3a3e359](https://github.com/Aarav-111/Humanoid-Operating-System/commit/3a3e359) (no change to models or call count).
 
@@ -485,11 +485,11 @@ Source: [Software/S1.5-SRC.py](https://github.com/Aarav-111/Humanoid-Operating-S
   <img src="assets/hos-hardware.svg" alt="Hardware bill of materials grouped by electronics, motion, sensing and mechanical" width="85%">
 </p>
 
-> **Current build: Shell-x v0.20.** X, Y and Z only, all on A4988 drivers. One sliding potentiometer on A0 tells the firmware if the Z tool is LIFTED or DOWN. The TMC2209 sensorless Z, the gripper (A axis), the joystick, IR and ToF sensors are not used in this version.
+> **Current build: Shell-x** X, Y and Z only, all on A4988 drivers. One sliding potentiometer on A0 tells the firmware if the Z tool is LIFTED or DOWN. The TMC2209 sensorless Z, the gripper (A axis), the joystick, IR and ToF sensors are not used in this version.
 
 ### Hardware overview
 
-| Part | Shell-x v0.20 |
+| Part | Shell-x |
 | --- | --- |
 | Frame | Cartesian gantry on 2020 V-slot. X and Y on GT2 belts, Z on a T8 lead screw |
 | Controller | Arduino Uno with CNC Shield V3, USB serial to the laptop at 115200 baud |
@@ -501,9 +501,9 @@ Source: [Software/S1.5-SRC.py](https://github.com/Aarav-111/Humanoid-Operating-S
 | Work area | 20 x 20 grid, columns A to T and rows 1 to 20 |
 | Vision | Overhead USB webcam and AprilTag 36h11 (used by the laptop software) |
 
-Full build guide, bill of materials, wiring diagram and assembly steps for Shell-x v0.20: [HOS-Documentation-v3.0.pdf](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/HOS-Documentation-v3.0.pdf). The firmware is [Shell_x.ino](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Firmware/Shell_x.ino).
+Full build guide, bill of materials, wiring diagram and assembly steps for Shell-x: [HOS-Documentation-v3.0.pdf](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/HOS-Documentation-v3.0.pdf). The firmware is [Shell_x.ino](https://github.com/Aarav-111/Humanoid-Operating-System/blob/main/Hardware/Firmware/Shell_x.ino).
 
-### Electronics: Shell-x v0.20
+### Electronics: Shell-x
 
 ```mermaid
 flowchart LR
@@ -607,7 +607,7 @@ Only one axis moves at a time. Step rates come from the firmware timing. Real mm
 
 ### First power-on test
 
-1. Upload Shell-x v0.20. The Uno prints `SHELL-X v0.20 READY` and a `POT_INITIAL` line.
+1. Upload Shell-x. The Uno prints `SHELL-X READY` and a `POT_INITIAL` line.
 2. Send `READ`. With the tool lifted, `POT_STATE` must be 1 and `POT_RAW` 1022 or more.
 3. Turn on 12 V. Send `R`, then `S`. Repeat for L, U and D and check each direction.
 4. Send `HU`, then `S`. Check that Z goes up.

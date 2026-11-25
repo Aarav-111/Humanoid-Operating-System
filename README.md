@@ -715,3 +715,6 @@ For collaboration, research, or project questions: **prolabsrobotics@gmail.com**
 | YouTube | [@prolabsrobotics](https://www.youtube.com/@prolabsrobotics) |
 | Newsletter and contact | [prolabsrobotics@gmail.com](mailto:prolabsrobotics@gmail.com) |
 | License | [MIT](LICENSE) |
+| Hackaday Project | [https://hackaday.io/project/205206-humanoid-operating-system]([url](https://hackaday.io/project/205206-humanoid-operating-system)) |
+
+
